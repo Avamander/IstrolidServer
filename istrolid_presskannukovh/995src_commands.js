@@ -374,7 +374,7 @@
                             return results;
                         } else {
                             if (!quiet) {
-                                server.say("uannot parse " + str + " to " + t);
+                                server.say("Cannot parse " + str + " to " + t);
                             }
                             return null;
                         }

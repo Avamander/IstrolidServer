@@ -1,4 +1,4 @@
-//from src/aidata.js
+//require('../src/aidata.js');
 ais.all = {};
 ais.all.AlphaStriker = [{
     "parts": [{"pos": [20, -40], "type": "DamageMod", "dir": 0}, {
@@ -5484,92 +5484,100 @@ ais.all.FireShower = [{
     "aiRules": [["Stay in #m range of slot # units", 350, 10], ["Avoid over #damage shots", 45], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Flee", "More expensive", 800, 1850], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Flee", "Stronger", "More expensive", 1850], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Flee", "More DPS", "---", 1850], ["Stay in #m range of slot # units", -500, 10], ["Field # at priority #", 1, 2], ["Goto @locationTypes", "Friendly Spawn"]]
 }, {
     "parts": [{"pos": [-80, 20], "type": "TargetingMod", "dir": 0}, {
-        "pos": [80, 20],
-        "type": "TargetingMod",
+        "pos": [150, 90],
+        "type": "HArmor1x1Angle",
         "dir": 0
-    }, {"pos": [-120, 40], "type": "Mount10Range", "dir": 0}, {
-        "pos": [-160, 20],
-        "type": "TargetingMod",
-        "dir": 0
-    }, {"pos": [120, 40], "type": "Mount10Range", "dir": 0}, {
-        "pos": [160, 60],
-        "type": "TargetingMod",
-        "dir": 0
-    }, {"pos": [160, 20], "type": "TargetingMod", "dir": 0}, {
-        "pos": [40, 40],
+    }, {"pos": [80, 20], "type": "TargetingMod", "dir": 0}, {
+        "pos": [-120, 40],
         "type": "Mount10Range",
         "dir": 0
-    }, {"pos": [0, 20], "type": "TargetingMod", "dir": 0}, {
-        "pos": [0, 90],
-        "type": "Reactor2x1",
+    }, {"pos": [-160, 20], "type": "TargetingMod", "dir": 0}, {
+        "pos": [120, 40],
+        "type": "Mount10Range",
         "dir": 0
-    }, {"pos": [-80, 100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [80, 100],
+    }, {"pos": [160, 60], "type": "TargetingMod", "dir": 0}, {
+        "pos": [160, 20],
+        "type": "TargetingMod",
+        "dir": 0
+    }, {"pos": [40, 40], "type": "Mount10Range", "dir": 0}, {
+        "pos": [0, 20],
+        "type": "TargetingMod",
+        "dir": 0
+    }, {"pos": [0, 90], "type": "Reactor2x1", "dir": 0}, {
+        "pos": [-80, 100],
         "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [80, -20], "type": "Reactor2x2", "dir": 0}, {
-        "pos": [-80, -20],
+    }, {"pos": [80, 100], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [80, -20],
         "type": "Reactor2x2",
         "dir": 0
-    }, {"pos": [40, -100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-40, -100],
+    }, {"pos": [-80, -20], "type": "Reactor2x2", "dir": 0}, {
+        "pos": [40, -100],
         "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [40, 130], "type": "HArmor2x1", "dir": 0}, {
-        "pos": [-40, 130],
+    }, {"pos": [-40, -100], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [40, 130],
         "type": "HArmor2x1",
         "dir": 0
-    }, {"pos": [80, 130], "type": "HArmor2x1", "dir": 0}, {
-        "pos": [-120, -60],
+    }, {"pos": [-40, 130], "type": "HArmor2x1", "dir": 0}, {
+        "pos": [80, 130],
+        "type": "HArmor2x1",
+        "dir": 0
+    }, {"pos": [-120, -60], "type": "HArmor2x2AngleBack", "dir": 0}, {
+        "pos": [-120, -20],
+        "type": "HArmor2x2",
+        "dir": 0
+    }, {"pos": [-80, 130], "type": "HArmor2x1", "dir": 0}, {
+        "pos": [-80, -60],
+        "type": "HArmor2x2",
+        "dir": 0
+    }, {"pos": [120, -20], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [80, -60],
+        "type": "HArmor2x2",
+        "dir": 0
+    }, {"pos": [-110, 130], "type": "HArmor1x1Angle", "dir": 0}, {
+        "pos": [110, 130],
+        "type": "HArmor1x1Angle",
+        "dir": 0
+    }, {"pos": [-170, -20], "type": "Wing2x1", "dir": 1}, {
+        "pos": [120, -60],
         "type": "HArmor2x2AngleBack",
         "dir": 0
-    }, {"pos": [-120, -20], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-80, 130],
-        "type": "HArmor2x1",
-        "dir": 0
-    }, {"pos": [-80, -60], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [120, -20],
-        "type": "HArmor2x2",
-        "dir": 0
-    }, {"pos": [80, -60], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-170, -20],
-        "type": "Wing2x1",
-        "dir": 1
-    }, {"pos": [120, -60], "type": "HArmor2x2AngleBack", "dir": 0}, {
-        "pos": [150, -30],
+    }, {"pos": [150, -30], "type": "Engine02", "dir": 0}, {
+        "pos": [-150, -30],
         "type": "Engine02",
         "dir": 0
-    }, {"pos": [-150, -30], "type": "Engine02", "dir": 0}, {
-        "pos": [170, -20],
-        "type": "Wing2x1",
-        "dir": 3
-    }, {"pos": [-100, -100], "type": "HArmor2x2AngleBack", "dir": 0}, {
-        "pos": [80, -140],
+    }, {"pos": [170, -20], "type": "Wing2x1", "dir": 3}, {
+        "pos": [-100, -100],
         "type": "HArmor2x2AngleBack",
         "dir": 0
-    }, {"pos": [100, -100], "type": "HArmor2x2AngleBack", "dir": 0}, {
-        "pos": [40, -140],
+    }, {"pos": [80, -140], "type": "HArmor2x2AngleBack", "dir": 0}, {
+        "pos": [100, -100],
+        "type": "HArmor2x2AngleBack",
+        "dir": 0
+    }, {"pos": [40, -140], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [-40, -140],
         "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [-40, -140], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-80, -140],
-        "type": "HArmor2x2AngleBack",
-        "dir": 0
-    }, {"pos": [120, 100], "type": "HArmor2x2Angle", "dir": 0}, {
-        "pos": [-120, 100],
+    }, {"pos": [-80, -140], "type": "HArmor2x2AngleBack", "dir": 0}, {
+        "pos": [120, 100],
         "type": "HArmor2x2Angle",
         "dir": 0
-    }, {"pos": [-40, 100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-70, -100],
-        "type": "HArmor1x2",
+    }, {"pos": [-120, 100], "type": "HArmor2x2Angle", "dir": 0}, {
+        "pos": [-40, 100],
+        "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [40, 100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [70, -100],
-        "type": "HArmor1x2",
+    }, {"pos": [-70, -100], "type": "HArmor1x2", "dir": 0}, {
+        "pos": [40, 100],
+        "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [40, -40], "type": "Mount10Range", "dir": 0}, {
-        "pos": [-40, 40],
+    }, {"pos": [70, -100], "type": "HArmor1x2", "dir": 0}, {
+        "pos": [40, -40],
         "type": "Mount10Range",
+        "dir": 0
+    }, {"pos": [-40, 40], "type": "Mount10Range", "dir": 0}, {
+        "pos": [-150, 90],
+        "type": "HArmor1x1Angle",
         "dir": 0
     }, {"pos": [-160, 60], "type": "TargetingMod", "dir": 0}, {
         "pos": [0, -140],
@@ -5601,9 +5609,9 @@ ais.all.FireShower = [{
         "dir": 0
     }, {"pos": [0, -170], "type": "HArmor2x1", "dir": 0}, {
         "pos": [-30, -170],
-        "type": "HArmor1x1Angle",
-        "dir": 1
-    }, {"pos": [30, -170], "type": "HArmor1x1Angle", "dir": 3}, {
+        "type": "HArmor1x1AngleBack",
+        "dir": 0
+    }, {"pos": [30, -170], "type": "HArmor1x1AngleBack", "dir": 0}, {
         "pos": [-120, -60],
         "type": "SymbolDecal3",
         "dir": 3
@@ -5647,23 +5655,23 @@ ais.all.FireShower = [{
         "pos": [0, -140],
         "type": "SymbolDecal3",
         "dir": 0
-    }, {"pos": [-40, -40], "type": "WavePushTurret", "dir": 0}, {
-        "pos": [40, -40],
+    }, {"pos": [40, -40], "type": "WavePushTurret", "dir": 0}, {
+        "pos": [-40, -40],
         "type": "WavePushTurret",
         "dir": 0
     }, {"pos": [0, -100], "type": "WavePushTurret", "dir": 0}, {
-        "pos": [-120, 40],
+        "pos": [120, 40],
         "type": "TeslaTurret",
         "dir": 0
-    }, {"pos": [120, 40], "type": "TeslaTurret", "dir": 0}, {
+    }, {"pos": [-120, 40], "type": "TeslaTurret", "dir": 0}, {
         "pos": [0, 120],
         "type": "PDTurret",
         "dir": 0
     }, {"pos": [0, -20], "type": "HeavyPDTurret", "dir": 0}, {
-        "pos": [-40, 40],
+        "pos": [40, 40],
         "type": "PlasmaTurret",
         "dir": 0
-    }, {"pos": [40, 40], "type": "PlasmaTurret", "dir": 0}],
+    }, {"pos": [-40, 40], "type": "PlasmaTurret", "dir": 0}],
     "name": "",
     "aiRules": [["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More DPS", 60, 1300], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 400, 1900], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More DPS", 35, 1800], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 800, 4000], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More DPS", 10, 1260], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 650, 5000], ["@capTypes Command Points within #m", "Protect", 1800], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Attack", "Not Cloaked", "---", 1650], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 800, 10000], ["@capTypes Command Points within #m", "Capture", 10000], ["Field # at priority #", 1, 1]]
 }];
