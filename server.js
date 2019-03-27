@@ -1,7 +1,7 @@
-var config = require('./config.json');
-var WebSocket = require('ws');
-require('./fix');
-var Istrolid = require('./istrolid.js');
+var config = require("./config.json");
+var WebSocket = require("ws");
+require("./fix");
+var Istrolid = require("./istrolid.js");
 
 const allowedCmds = ["playerJoin", "alpha", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "configGame", "startGame", "addAi", "switchSide", "kickPlayer", "surrender"]
 
@@ -37,7 +37,7 @@ global.Server = function () {
     };
 
     this.say = msg => {
-        root.sendData(['message', {
+        root.sendData(["message", {
             text: msg,
             channel: config.name,
             color: "FFFFFF",
@@ -49,18 +49,18 @@ global.Server = function () {
     var connectToRoot = () => {
         root = new WebSocket(config.root_addr);
 
-        root.on('open', () => {
+        root.on("open", () => {
             console.log("connected to root");
             sendInfo();
             lastInfoTime = now();
         });
 
-        root.on('close', () => {
+        root.on("close", () => {
             console.log("cannot connect to root, retrying");
             setTimeout(connectToRoot, 5000);
         });
 
-        root.on('error', e => {
+        root.on("error", e => {
             console.log("connection to root failed");
         });
 
@@ -88,21 +88,21 @@ global.Server = function () {
             version: VERSION,
             state: sim.state
         };
-        root.sendData(['setServer', info]);
+        root.sendData(["setServer", info]);
     };
 
     connectToRoot();
 
-    wss.on('connection', (ws, req) => {
+    wss.on("connection", (ws, req) => {
         console.log("connection from", req.connection.remoteAddress);
 
-        let id = req.headers['sec-websocket-key'];
+        let id = req.headers["sec-websocket-key"];
 
-        ws.on('message', msg => {
+        ws.on("message", msg => {
             let packet = new DataView(new Uint8Array(msg).buffer);
             let data = sim.zJson.loadDv(packet);
             //console.log(data);
-            if (data[0] === 'playerJoin') {
+            if (data[0] === "playerJoin") {
                 let player = sim.playerJoin(...data);
                 player.ws = ws;
                 players[id] = player;
@@ -112,7 +112,7 @@ global.Server = function () {
             }
         });
 
-        ws.on('close', e => {
+        ws.on("close", e => {
             if (players[id]) {
                 players[id].connected = false;
                 delete players[id];
@@ -148,12 +148,12 @@ global.Server = function () {
 global.server = new Server();
 
 // Remote repl
-var repl = require('repl');
-var net = require('net');
+var repl = require("repl");
+var net = require("net");
 net.createServer(function (socket) {
     repl.start({
         input: socket,
         output: socket,
         terminal: true
-    }).on('exit', () => socket.end());
+    }).on("exit", () => socket.end());
 }).listen(5001, "localhost");

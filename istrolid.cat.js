@@ -5382,13 +5382,13 @@ zjson - binary json sirelizer with some strange features
         return console.log(list.sort().join("\n"));
     };
 
-    window.commonZJsonBytePattrns = {};
+    window.commonZJsonBytePatterns = {};
 
-    window.commonZJsonBytePattrnsGet = function () {
+    window.commonZJsonBytePatternsGet = function () {
         var e, j, k, len, list, ref, results, v;
         list = [];
-        for (k in commonZJsonBytePattrns) {
-            v = commonZJsonBytePattrns[k];
+        for (k in commonZJsonBytePatterns) {
+            v = commonZJsonBytePatterns[k];
             list.push([k, v]);
         }
         list = list.sort(function (a, b) {
@@ -5649,7 +5649,7 @@ zjson - binary json sirelizer with some strange features
             /*
       if COLLECT_STATS
            * look at common byte patterns
-          bp = commonZJsonBytePattrns
+          bp = commonZJsonBytePatterns
           for i in [0...dv.byteLength]
               for pattern in [1...4]
                   if i + pattern < dv.byteLength
