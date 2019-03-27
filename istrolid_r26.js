@@ -1,2224 +1,5 @@
-//from lib/detect.min.js
-(function (e) {
-    Array.prototype.map || (Array.prototype.map = function (e, r) {
-        var a, o, i;
-        if (null == this) throw new TypeError(" this is null or not defined");
-        var n = Object(this), t = n.length >>> 0;
-        if ("function" != typeof e) throw new TypeError(e + " is not a function");
-        for (r && (a = r), o = Array(t), i = 0; t > i;) {
-            var l, c;
-            i in n && (l = n[i], c = e.call(a, l, i, n), o[i] = c), i++
-        }
-        return o
-    });
-    var r = e.detect = function () {
-        var e = function () {
-        }, r = {
-            browser_parsers: [{
-                regex: "^(Opera)/(\\d+)\\.(\\d+) \\(Nintendo Wii",
-                family_replacement: "Wii",
-                manufacturer: "Nintendo"
-            }, {
-                regex: "(SeaMonkey|Camino)/(\\d+)\\.(\\d+)\\.?([ab]?\\d+[a-z]*)",
-                family_replacement: "Camino",
-                other: !0
-            }, {
-                regex: "(Pale[Mm]oon)/(\\d+)\\.(\\d+)\\.?(\\d+)?",
-                family_replacement: "Pale Moon (Firefox Variant)",
-                other: !0
-            }, {
-                regex: "(Fennec)/(\\d+)\\.(\\d+)\\.?([ab]?\\d+[a-z]*)",
-                family_replacement: "Firefox Mobile"
-            }, {
-                regex: "(Fennec)/(\\d+)\\.(\\d+)(pre)",
-                family_replacment: "Firefox Mobile"
-            }, {
-                regex: "(Fennec)/(\\d+)\\.(\\d+)",
-                family_replacement: "Firefox Mobile"
-            }, {
-                regex: "Mobile.*(Firefox)/(\\d+)\\.(\\d+)",
-                family_replacement: "Firefox Mobile"
-            }, {
-                regex: "(Namoroka|Shiretoko|Minefield)/(\\d+)\\.(\\d+)\\.(\\d+(?:pre)?)",
-                family_replacement: "Firefox ($1)"
-            }, {
-                regex: "(Firefox)/(\\d+)\\.(\\d+)(a\\d+[a-z]*)",
-                family_replacement: "Firefox Alpha"
-            }, {
-                regex: "(Firefox)/(\\d+)\\.(\\d+)(b\\d+[a-z]*)",
-                family_replacement: "Firefox Beta"
-            }, {
-                regex: "(Firefox)-(?:\\d+\\.\\d+)?/(\\d+)\\.(\\d+)(a\\d+[a-z]*)",
-                family_replacement: "Firefox Alpha"
-            }, {
-                regex: "(Firefox)-(?:\\d+\\.\\d+)?/(\\d+)\\.(\\d+)(b\\d+[a-z]*)",
-                family_replacement: "Firefox Beta"
-            }, {
-                regex: "(Namoroka|Shiretoko|Minefield)/(\\d+)\\.(\\d+)([ab]\\d+[a-z]*)?",
-                family_replacement: "Firefox ($1)"
-            }, {
-                regex: "(Firefox).*Tablet browser (\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "MicroB",
-                tablet: !0
-            }, {regex: "(MozillaDeveloperPreview)/(\\d+)\\.(\\d+)([ab]\\d+[a-z]*)?"}, {
-                regex: "(Flock)/(\\d+)\\.(\\d+)(b\\d+?)",
-                family_replacement: "Flock",
-                other: !0
-            }, {
-                regex: "(RockMelt)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Rockmelt",
-                other: !0
-            }, {
-                regex: "(Navigator)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Netscape"
-            }, {
-                regex: "(Navigator)/(\\d+)\\.(\\d+)([ab]\\d+)",
-                family_replacement: "Netscape"
-            }, {
-                regex: "(Netscape6)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Netscape"
-            }, {
-                regex: "(MyIBrow)/(\\d+)\\.(\\d+)",
-                family_replacement: "My Internet Browser",
-                other: !0
-            }, {
-                regex: "(Opera Tablet).*Version/(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                family_replacement: "Opera Tablet",
-                tablet: !0
-            }, {
-                regex: "(Opera)/.+Opera Mobi.+Version/(\\d+)\\.(\\d+)",
-                family_replacement: "Opera Mobile"
-            }, {regex: "Opera Mobi", family_replacement: "Opera Mobile"}, {
-                regex: "(Opera Mini)/(\\d+)\\.(\\d+)",
-                family_replacement: "Opera Mini"
-            }, {
-                regex: "(Opera Mini)/att/(\\d+)\\.(\\d+)",
-                family_replacement: "Opera Mini"
-            }, {
-                regex: "(Opera)/9.80.*Version/(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                family_replacement: "Opera"
-            }, {
-                regex: "(webOSBrowser)/(\\d+)\\.(\\d+)",
-                family_replacement: "webOS"
-            }, {
-                regex: "(webOS)/(\\d+)\\.(\\d+)",
-                family_replacement: "webOS"
-            }, {
-                regex: "(wOSBrowser).+TouchPad/(\\d+)\\.(\\d+)",
-                family_replacement: "webOS TouchPad"
-            }, {
-                regex: "(luakit)",
-                family_replacement: "LuaKit",
-                other: !0
-            }, {
-                regex: "(Lightning)/(\\d+)\\.(\\d+)([ab]?\\d+[a-z]*)",
-                family_replacement: "Lightning",
-                other: !0
-            }, {
-                regex: "(Firefox)/(\\d+)\\.(\\d+)\\.(\\d+(?:pre)?) \\(Swiftfox\\)",
-                family_replacement: "Swiftfox",
-                other: !0
-            }, {
-                regex: "(Firefox)/(\\d+)\\.(\\d+)([ab]\\d+[a-z]*)? \\(Swiftfox\\)",
-                family_replacement: "Swiftfox",
-                other: !0
-            }, {
-                regex: "rekonq",
-                family_replacement: "Rekonq",
-                other: !0
-            }, {
-                regex: "(conkeror|Conkeror)/(\\d+)\\.(\\d+)\\.?(\\d+)?",
-                family_replacement: "Conkeror",
-                other: !0
-            }, {
-                regex: "(konqueror)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Konqueror",
-                other: !0
-            }, {
-                regex: "(WeTab)-Browser",
-                family_replacement: "WeTab",
-                other: !0
-            }, {
-                regex: "(Comodo_Dragon)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Comodo Dragon",
-                other: !0
-            }, {
-                regex: "(YottaaMonitor)",
-                family_replacement: "Yottaa Monitor",
-                other: !0
-            }, {regex: "(Kindle)/(\\d+)\\.(\\d+)", family_replacement: "Kindle"}, {
-                regex: "(Symphony) (\\d+).(\\d+)",
-                family_replacement: "Symphony",
-                other: !0
-            }, {
-                regex: "Minimo",
-                family_replacement: "Minimo",
-                other: !0
-            }, {
-                regex: "(CrMo)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Chrome Mobile"
-            }, {
-                regex: "(CriOS)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Chrome Mobile iOS"
-            }, {
-                regex: "(Chrome)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+) Mobile",
-                family_replacement: "Chrome Mobile"
-            }, {
-                regex: "(chromeframe)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Chrome Frame"
-            }, {
-                regex: "(UC Browser)(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "UC Browser",
-                other: !0
-            }, {
-                regex: "(SLP Browser)/(\\d+)\\.(\\d+)",
-                family_replacement: "Tizen Browser",
-                other: !0
-            }, {
-                regex: "(Epiphany)/(\\d+)\\.(\\d+).(\\d+)",
-                family_replacement: "Epiphany",
-                other: !0
-            }, {
-                regex: "(SE 2\\.X) MetaSr (\\d+)\\.(\\d+)",
-                family_replacement: "Sogou Explorer",
-                other: !0
-            }, {
-                regex: "(Pingdom.com_bot_version_)(\\d+)\\.(\\d+)",
-                family_replacement: "PingdomBot",
-                other: !0
-            }, {
-                regex: "(facebookexternalhit)/(\\d+)\\.(\\d+)",
-                family_replacement: "FacebookBot"
-            }, {
-                regex: "(Twitterbot)/(\\d+)\\.(\\d+)",
-                family_replacement: "TwitterBot"
-            }, {regex: "(AdobeAIR|Chromium|FireWeb|Jasmine|ANTGalio|Midori|Fresco|Lobo|PaleMoon|Maxthon|Lynx|OmniWeb|Dillo|Camino|Demeter|Fluid|Fennec|Shiira|Sunrise|Chrome|Flock|Netscape|Lunascape|WebPilot|NetFront|Netfront|Konqueror|SeaMonkey|Kazehakase|Vienna|Iceape|Iceweasel|IceWeasel|Iron|K-Meleon|Sleipnir|Galeon|GranParadiso|Opera Mini|iCab|NetNewsWire|ThunderBrowse|Iron|Iris|UP\\.Browser|Bunjaloo|Google Earth|Raven for Mac)/(\\d+)\\.(\\d+)\\.(\\d+)"}, {regex: "(Bolt|Jasmine|IceCat|Skyfire|Midori|Maxthon|Lynx|Arora|IBrowse|Dillo|Camino|Shiira|Fennec|Phoenix|Chrome|Flock|Netscape|Lunascape|Epiphany|WebPilot|Opera Mini|Opera|NetFront|Netfront|Konqueror|Googlebot|SeaMonkey|Kazehakase|Vienna|Iceape|Iceweasel|IceWeasel|Iron|K-Meleon|Sleipnir|Galeon|GranParadiso|iCab|NetNewsWire|Iron|Space Bison|Stainless|Orca|Dolfin|BOLT|Minimo|Tizen Browser|Polaris)/(\\d+)\\.(\\d+)"}, {regex: "(iRider|Crazy Browser|SkipStone|iCab|Lunascape|Sleipnir|Maemo Browser) (\\d+)\\.(\\d+)\\.(\\d+)"}, {regex: "(iCab|Lunascape|Opera|Android|Jasmine|Polaris|BREW) (\\d+)\\.(\\d+)\\.?(\\d+)?"}, {
-                regex: "(Android) Donut",
-                v2_replacement: "2",
-                v1_replacement: "1"
-            }, {regex: "(Android) Eclair", v2_replacement: "1", v1_replacement: "2"}, {
-                regex: "(Android) Froyo",
-                v2_replacement: "2",
-                v1_replacement: "2"
-            }, {
-                regex: "(Android) Gingerbread",
-                v2_replacement: "3",
-                v1_replacement: "2"
-            }, {regex: "(Android) Honeycomb", v1_replacement: "3"}, {
-                regex: "(IEMobile)[ /](\\d+)\\.(\\d+)",
-                family_replacement: "IE Mobile"
-            }, {
-                regex: "(MSIE) (\\d+)\\.(\\d+).*XBLWP7",
-                family_replacement: "IE Large Screen"
-            }, {regex: "(Firefox)/(\\d+)\\.(\\d+)\\.(\\d+)"}, {regex: "(Firefox)/(\\d+)\\.(\\d+)(pre|[ab]\\d+[a-z]*)?"}, {
-                regex: "(Obigo)InternetBrowser",
-                other: !0
-            }, {regex: "(Obigo)\\-Browser", other: !0}, {
-                regex: "(Obigo|OBIGO)[^\\d]*(\\d+)(?:.(\\d+))?",
-                other: !0
-            }, {
-                regex: "(MAXTHON|Maxthon) (\\d+)\\.(\\d+)",
-                family_replacement: "Maxthon",
-                other: !0
-            }, {regex: "(Maxthon|MyIE2|Uzbl|Shiira)", v1_replacement: "0", other: !0}, {
-                regex: "(PLAYSTATION) (\\d+)",
-                family_replacement: "PlayStation",
-                manufacturer: "Sony"
-            }, {
-                regex: "(PlayStation Portable)[^\\d]+(\\d+).(\\d+)",
-                manufacturer: "Sony"
-            }, {regex: "(BrowseX) \\((\\d+)\\.(\\d+)\\.(\\d+)", other: !0}, {
-                regex: "(POLARIS)/(\\d+)\\.(\\d+)",
-                family_replacement: "Polaris",
-                other: !0
-            }, {
-                regex: "(Embider)/(\\d+)\\.(\\d+)",
-                family_replacement: "Polaris",
-                other: !0
-            }, {
-                regex: "(BonEcho)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Bon Echo",
-                other: !0
-            }, {
-                regex: "(iPod).+Version/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Mobile Safari",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPod).*Version/(\\d+)\\.(\\d+)",
-                family_replacement: "Mobile Safari",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPod)",
-                family_replacement: "Mobile Safari",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPhone).*Version/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Mobile Safari",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPhone).*Version/(\\d+)\\.(\\d+)",
-                family_replacement: "Mobile Safari",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPhone)",
-                family_replacement: "Mobile Safari",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPad).*Version/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Mobile Safari",
-                tablet: !0,
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPad).*Version/(\\d+)\\.(\\d+)",
-                family_replacement: "Mobile Safari",
-                tablet: !0,
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPad)",
-                family_replacement: "Mobile Safari",
-                tablet: !0,
-                manufacturer: "Apple"
-            }, {regex: "(AvantGo) (\\d+).(\\d+)", other: !0}, {
-                regex: "(Avant)",
-                v1_replacement: "1",
-                other: !0
-            }, {
-                regex: "^(Nokia)",
-                family_replacement: "Nokia Services (WAP) Browser",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(NokiaBrowser)/(\\d+)\\.(\\d+).(\\d+)\\.(\\d+)",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(NokiaBrowser)/(\\d+)\\.(\\d+).(\\d+)",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(NokiaBrowser)/(\\d+)\\.(\\d+)",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(BrowserNG)/(\\d+)\\.(\\d+).(\\d+)",
-                family_replacement: "NokiaBrowser",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(Series60)/5\\.0",
-                v2_replacement: "0",
-                v1_replacement: "7",
-                family_replacement: "NokiaBrowser",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(Series60)/(\\d+)\\.(\\d+)",
-                family_replacement: "Nokia OSS Browser",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(S40OviBrowser)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Nokia Series 40 Ovi Browser",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(Nokia)[EN]?(\\d+)",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(PlayBook).+RIM Tablet OS (\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Blackberry WebKit",
-                tablet: !0,
-                manufacturer: "Nokia"
-            }, {
-                regex: "(Black[bB]erry).+Version/(\\d+)\\.(\\d+)\\.(\\d+)",
-                family_replacement: "Blackberry WebKit",
-                manufacturer: "RIM"
-            }, {
-                regex: "(Black[bB]erry)\\s?(\\d+)",
-                family_replacement: "Blackberry",
-                manufacturer: "RIM"
-            }, {regex: "(OmniWeb)/v(\\d+)\\.(\\d+)", other: !0}, {
-                regex: "(Blazer)/(\\d+)\\.(\\d+)",
-                family_replacement: "Palm Blazer",
-                manufacturer: "Palm"
-            }, {
-                regex: "(Pre)/(\\d+)\\.(\\d+)",
-                family_replacement: "Palm Pre",
-                manufacturer: "Palm"
-            }, {regex: "(Links) \\((\\d+)\\.(\\d+)", other: !0}, {
-                regex: "(QtWeb) Internet Browser/(\\d+)\\.(\\d+)",
-                other: !0
-            }, {
-                regex: "(Silk)/(\\d+)\\.(\\d+)(?:\\.([0-9\\-]+))?",
-                other: !0,
-                tablet: !0
-            }, {
-                regex: "(AppleWebKit)/(\\d+)\\.?(\\d+)?\\+ .* Version/\\d+\\.\\d+.\\d+ Safari/",
-                family_replacement: "WebKit Nightly"
-            }, {
-                regex: "(Version)/(\\d+)\\.(\\d+)(?:\\.(\\d+))?.*Safari/",
-                family_replacement: "Safari"
-            }, {regex: "(Safari)/\\d+"}, {
-                regex: "(OLPC)/Update(\\d+)\\.(\\d+)",
-                other: !0
-            }, {
-                regex: "(OLPC)/Update()\\.(\\d+)",
-                v1_replacement: "0",
-                other: !0
-            }, {regex: "(SEMC\\-Browser)/(\\d+)\\.(\\d+)", other: !0}, {
-                regex: "(Teleca)",
-                family_replacement: "Teleca Browser",
-                other: !0
-            }, {regex: "Trident(.*)rv.(\\d+)\\.(\\d+)", family_replacement: "IE"}, {
-                regex: "(MSIE) (\\d+)\\.(\\d+)",
-                family_replacement: "IE"
-            }],
-            os_parsers: [{regex: "(Android) (\\d+)\\.(\\d+)(?:[.\\-]([a-z0-9]+))?"}, {regex: "(Android)\\-(\\d+)\\.(\\d+)(?:[.\\-]([a-z0-9]+))?"}, {
-                regex: "(Android) Donut",
-                os_v2_replacement: "2",
-                os_v1_replacement: "1"
-            }, {regex: "(Android) Eclair", os_v2_replacement: "1", os_v1_replacement: "2"}, {
-                regex: "(Android) Froyo",
-                os_v2_replacement: "2",
-                os_v1_replacement: "2"
-            }, {
-                regex: "(Android) Gingerbread",
-                os_v2_replacement: "3",
-                os_v1_replacement: "2"
-            }, {regex: "(Android) Honeycomb", os_v1_replacement: "3"}, {
-                regex: "(Silk-Accelerated=[a-z]{4,5})",
-                os_replacement: "Android"
-            }, {regex: "(Windows Phone 6\\.5)"}, {
-                regex: "(Windows (?:NT 5\\.2|NT 5\\.1))",
-                os_replacement: "Windows XP"
-            }, {regex: "(XBLWP7)", os_replacement: "Windows Phone OS"}, {
-                regex: "(Windows NT 6\\.1)",
-                os_replacement: "Windows 7"
-            }, {
-                regex: "(Windows NT 6\\.0)",
-                os_replacement: "Windows Vista"
-            }, {regex: "(Windows 98|Windows XP|Windows ME|Windows 95|Windows CE|Windows 7|Windows NT 4\\.0|Windows Vista|Windows 2000)"}, {
-                regex: "(Windows NT 6\\.2)",
-                os_replacement: "Windows 8"
-            }, {regex: "(Windows Phone 8)", os_replacement: "Windows Phone 8"}, {
-                regex: "(Windows NT 5\\.0)",
-                os_replacement: "Windows 2000"
-            }, {regex: "(Windows Phone OS) (\\d+)\\.(\\d+)"}, {
-                regex: "(Windows ?Mobile)",
-                os_replacement: "Windows Mobile"
-            }, {regex: "(WinNT4.0)", os_replacement: "Windows NT 4.0"}, {
-                regex: "(Win98)",
-                os_replacement: "Windows 98"
-            }, {regex: "(Tizen)/(\\d+)\\.(\\d+)", other: !0}, {
-                regex: "(Mac OS X) (\\d+)[_.](\\d+)(?:[_.](\\d+))?",
-                manufacturer: "Apple"
-            }, {
-                regex: "(?:PPC|Intel) (Mac OS X)",
-                manufacturer: "Apple"
-            }, {
-                regex: "(CPU OS|iPhone OS) (\\d+)_(\\d+)(?:_(\\d+))?",
-                os_replacement: "iOS",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPhone|iPad|iPod); Opera",
-                os_replacement: "iOS",
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPad); Opera",
-                tablet: !0,
-                manufacturer: "Apple"
-            }, {
-                regex: "(iPhone|iPad|iPod).*Mac OS X.*Version/(\\d+)\\.(\\d+)",
-                os_replacement: "iOS",
-                manufacturer: "Apple"
-            }, {
-                regex: "(CrOS) [a-z0-9_]+ (\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                os_replacement: "Chrome OS"
-            }, {
-                regex: "(Debian)-(\\d+)\\.(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                other: !0
-            }, {
-                regex: "(Linux Mint)(?:/(\\d+))?",
-                other: !0
-            }, {
-                regex: "(Mandriva)(?: Linux)?/(\\d+)\\.(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                other: !0
-            }, {
-                regex: "(Symbian[Oo][Ss])/(\\d+)\\.(\\d+)",
-                os_replacement: "Symbian OS"
-            }, {
-                regex: "(Symbian/3).+NokiaBrowser/7\\.3",
-                os_replacement: "Symbian^3 Anna"
-            }, {regex: "(Symbian/3).+NokiaBrowser/7\\.4", os_replacement: "Symbian^3 Belle"}, {
-                regex: "(Symbian/3)",
-                os_replacement: "Symbian^3"
-            }, {regex: "(Series 60|SymbOS|S60)", os_replacement: "Symbian OS"}, {
-                regex: "(MeeGo)",
-                other: !0
-            }, {
-                regex: "Symbian [Oo][Ss]",
-                os_replacement: "Symbian OS"
-            }, {
-                regex: "(Black[Bb]erry)[0-9a-z]+/(\\d+)\\.(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                os_replacement: "BlackBerry OS",
-                manufacturer: "RIM"
-            }, {
-                regex: "(Black[Bb]erry).+Version/(\\d+)\\.(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                os_replacement: "BlackBerry OS",
-                manufacturer: "RIM"
-            }, {
-                regex: "(RIM Tablet OS) (\\d+)\\.(\\d+)\\.(\\d+)",
-                os_replacement: "BlackBerry Tablet OS",
-                tablet: !0,
-                manufacturer: "RIM"
-            }, {
-                regex: "(Play[Bb]ook)",
-                os_replacement: "BlackBerry Tablet OS",
-                tablet: !0,
-                manufacturer: "RIM"
-            }, {
-                regex: "(Black[Bb]erry)",
-                os_replacement: "Blackberry OS",
-                manufacturer: "RIM"
-            }, {
-                regex: "(webOS|hpwOS)/(\\d+)\\.(\\d+)(?:\\.(\\d+))?",
-                os_replacement: "webOS"
-            }, {
-                regex: "(SUSE|Fedora|Red Hat|PCLinuxOS)/(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)",
-                other: !0
-            }, {
-                regex: "(SUSE|Fedora|Red Hat|Puppy|PCLinuxOS|CentOS)/(\\d+)\\.(\\d+)\\.(\\d+)",
-                other: !0
-            }, {regex: "(Ubuntu|Kindle|Bada|Lubuntu|BackTrack|Red Hat|Slackware)/(\\d+)\\.(\\d+)"}, {regex: "(Windows|OpenBSD|FreeBSD|NetBSD|Ubuntu|Kubuntu|Android|Arch Linux|CentOS|WeTab|Slackware)"}, {
-                regex: "(Linux|BSD)",
-                other: !0
-            }],
-            mobile_os_families: ["Windows Phone 6.5", "Windows CE", "Symbian OS"],
-            device_parsers: [{
-                regex: "HTC ([A-Z][a-z0-9]+) Build",
-                device_replacement: "HTC $1",
-                manufacturer: "HTC"
-            }, {
-                regex: "HTC ([A-Z][a-z0-9 ]+) \\d+\\.\\d+\\.\\d+\\.\\d+",
-                device_replacement: "HTC $1",
-                manufacturer: "HTC"
-            }, {
-                regex: "HTC_Touch_([A-Za-z0-9]+)",
-                device_replacement: "HTC Touch ($1)",
-                manufacturer: "HTC"
-            }, {
-                regex: "USCCHTC(\\d+)",
-                device_replacement: "HTC $1 (US Cellular)",
-                manufacturer: "HTC"
-            }, {
-                regex: "Sprint APA(9292)",
-                device_replacement: "HTC $1 (Sprint)",
-                manufacturer: "HTC"
-            }, {
-                regex: "HTC ([A-Za-z0-9]+ [A-Z])",
-                device_replacement: "HTC $1",
-                manufacturer: "HTC"
-            }, {
-                regex: "HTC-([A-Za-z0-9]+)",
-                device_replacement: "HTC $1",
-                manufacturer: "HTC"
-            }, {
-                regex: "HTC_([A-Za-z0-9]+)",
-                device_replacement: "HTC $1",
-                manufacturer: "HTC"
-            }, {
-                regex: "HTC ([A-Za-z0-9]+)",
-                device_replacement: "HTC $1",
-                manufacturer: "HTC"
-            }, {regex: "(ADR[A-Za-z0-9]+)", device_replacement: "HTC $1", manufacturer: "HTC"}, {
-                regex: "(HTC)",
-                manufacturer: "HTC"
-            }, {
-                regex: "SonyEricsson([A-Za-z0-9]+)/",
-                device_replacement: "Ericsson $1",
-                other: !0,
-                manufacturer: "Sony"
-            }, {regex: "Android[\\- ][\\d]+\\.[\\d]+\\; [A-Za-z]{2}\\-[A-Za-z]{2}\\; WOWMobile (.+) Build"}, {regex: "Android[\\- ][\\d]+\\.[\\d]+\\.[\\d]+; [A-Za-z]{2}\\-[A-Za-z]{2}\\; (.+) Build"}, {regex: "Android[\\- ][\\d]+\\.[\\d]+\\-update1\\; [A-Za-z]{2}\\-[A-Za-z]{2}\\; (.+) Build"}, {regex: "Android[\\- ][\\d]+\\.[\\d]+\\; [A-Za-z]{2}\\-[A-Za-z]{2}\\; (.+) Build"}, {regex: "Android[\\- ][\\d]+\\.[\\d]+\\.[\\d]+; (.+) Build"}, {
-                regex: "NokiaN([0-9]+)",
-                device_replacement: "Nokia N$1",
-                manufacturer: "Nokia"
-            }, {
-                regex: "Nokia([A-Za-z0-9\\v-]+)",
-                device_replacement: "Nokia $1",
-                manufacturer: "Nokia"
-            }, {
-                regex: "NOKIA ([A-Za-z0-9\\-]+)",
-                device_replacement: "Nokia $1",
-                manufacturer: "Nokia"
-            }, {
-                regex: "Nokia ([A-Za-z0-9\\-]+)",
-                device_replacement: "Nokia $1",
-                manufacturer: "Nokia"
-            }, {
-                regex: "Lumia ([A-Za-z0-9\\-]+)",
-                device_replacement: "Lumia $1",
-                manufacturer: "Nokia"
-            }, {
-                regex: "Symbian",
-                device_replacement: "Nokia",
-                manufacturer: "Nokia"
-            }, {
-                regex: "(PlayBook).+RIM Tablet OS",
-                device_replacement: "Blackberry Playbook",
-                tablet: !0,
-                manufacturer: "RIM"
-            }, {regex: "(Black[Bb]erry [0-9]+);", manufacturer: "RIM"}, {
-                regex: "Black[Bb]erry([0-9]+)",
-                device_replacement: "BlackBerry $1",
-                manufacturer: "RIM"
-            }, {
-                regex: "(Pre)/(\\d+)\\.(\\d+)",
-                device_replacement: "Palm Pre",
-                manufacturer: "Palm"
-            }, {
-                regex: "(Pixi)/(\\d+)\\.(\\d+)",
-                device_replacement: "Palm Pixi",
-                manufacturer: "Palm"
-            }, {
-                regex: "(Touchpad)/(\\d+)\\.(\\d+)",
-                device_replacement: "HP Touchpad",
-                manufacturer: "HP"
-            }, {
-                regex: "HPiPAQ([A-Za-z0-9]+)/(\\d+).(\\d+)",
-                device_replacement: "HP iPAQ $1",
-                manufacturer: "HP"
-            }, {
-                regex: "Palm([A-Za-z0-9]+)",
-                device_replacement: "Palm $1",
-                manufacturer: "Palm"
-            }, {
-                regex: "Treo([A-Za-z0-9]+)",
-                device_replacement: "Palm Treo $1",
-                manufacturer: "Palm"
-            }, {
-                regex: "webOS.*(P160UNA)/(\\d+).(\\d+)",
-                device_replacement: "HP Veer",
-                manufacturer: "HP"
-            }, {regex: "(Kindle Fire)", manufacturer: "Amazon"}, {
-                regex: "(Kindle)",
-                manufacturer: "Amazon"
-            }, {
-                regex: "(Silk)/(\\d+)\\.(\\d+)(?:\\.([0-9\\-]+))?",
-                device_replacement: "Kindle Fire",
-                tablet: !0,
-                manufacturer: "Amazon"
-            }, {regex: "(iPad) Simulator;", manufacturer: "Apple"}, {
-                regex: "(iPad);",
-                manufacturer: "Apple"
-            }, {regex: "(iPod);", manufacturer: "Apple"}, {
-                regex: "(iPhone) Simulator;",
-                manufacturer: "Apple"
-            }, {regex: "(iPhone);", manufacturer: "Apple"}, {
-                regex: "Nexus\\ ([A-Za-z0-9\\-]+)",
-                device_replacement: "Nexus $1"
-            }, {
-                regex: "acer_([A-Za-z0-9]+)_",
-                device_replacement: "Acer $1",
-                manufacturer: "Acer"
-            }, {
-                regex: "acer_([A-Za-z0-9]+)_",
-                device_replacement: "Acer $1",
-                manufacturer: "Acer"
-            }, {
-                regex: "Amoi\\-([A-Za-z0-9]+)",
-                device_replacement: "Amoi $1",
-                other: !0,
-                manufacturer: "Amoi"
-            }, {
-                regex: "AMOI\\-([A-Za-z0-9]+)",
-                device_replacement: "Amoi $1",
-                other: !0,
-                manufacturer: "Amoi"
-            }, {
-                regex: "Asus\\-([A-Za-z0-9]+)",
-                device_replacement: "Asus $1",
-                manufacturer: "Asus"
-            }, {
-                regex: "ASUS\\-([A-Za-z0-9]+)",
-                device_replacement: "Asus $1",
-                manufacturer: "Asus"
-            }, {
-                regex: "BIRD\\-([A-Za-z0-9]+)",
-                device_replacement: "Bird $1",
-                other: !0
-            }, {
-                regex: "BIRD\\.([A-Za-z0-9]+)",
-                device_replacement: "Bird $1",
-                other: !0
-            }, {regex: "BIRD ([A-Za-z0-9]+)", device_replacement: "Bird $1", other: !0}, {
-                regex: "Dell ([A-Za-z0-9]+)",
-                device_replacement: "Dell $1",
-                manufacturer: "Dell"
-            }, {
-                regex: "DoCoMo/2\\.0 ([A-Za-z0-9]+)",
-                device_replacement: "DoCoMo $1",
-                other: !0
-            }, {
-                regex: "([A-Za-z0-9]+)\\_W\\;FOMA",
-                device_replacement: "DoCoMo $1",
-                other: !0
-            }, {
-                regex: "([A-Za-z0-9]+)\\;FOMA",
-                device_replacement: "DoCoMo $1",
-                other: !0
-            }, {
-                regex: "vodafone([A-Za-z0-9]+)",
-                device_replacement: "Huawei Vodafone $1",
-                other: !0
-            }, {
-                regex: "i\\-mate ([A-Za-z0-9]+)",
-                device_replacement: "i-mate $1",
-                other: !0
-            }, {
-                regex: "Kyocera\\-([A-Za-z0-9]+)",
-                device_replacement: "Kyocera $1",
-                other: !0
-            }, {
-                regex: "KWC\\-([A-Za-z0-9]+)",
-                device_replacement: "Kyocera $1",
-                other: !0
-            }, {
-                regex: "Lenovo\\-([A-Za-z0-9]+)",
-                device_replacement: "Lenovo $1",
-                manufacturer: "Lenovo"
-            }, {
-                regex: "Lenovo\\_([A-Za-z0-9]+)",
-                device_replacement: "Lenovo $1",
-                manufacturer: "Levovo"
-            }, {
-                regex: "LG/([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LG-LG([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LGE-LG([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LGE VX([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LG ([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LGE LG\\-AX([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LG\\-([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LGE\\-([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "LG([A-Za-z0-9]+)",
-                device_replacement: "LG $1",
-                manufacturer: "LG"
-            }, {
-                regex: "(KIN)\\.One (\\d+)\\.(\\d+)",
-                device_replacement: "Microsoft $1"
-            }, {
-                regex: "(KIN)\\.Two (\\d+)\\.(\\d+)",
-                device_replacement: "Microsoft $1"
-            }, {regex: "(Motorola)\\-([A-Za-z0-9]+)", manufacturer: "Motorola"}, {
-                regex: "MOTO\\-([A-Za-z0-9]+)",
-                device_replacement: "Motorola $1",
-                manufacturer: "Motorola"
-            }, {
-                regex: "MOT\\-([A-Za-z0-9]+)",
-                device_replacement: "Motorola $1",
-                manufacturer: "Motorola"
-            }, {
-                regex: "Philips([A-Za-z0-9]+)",
-                device_replacement: "Philips $1",
-                manufacturer: "Philips"
-            }, {
-                regex: "Philips ([A-Za-z0-9]+)",
-                device_replacement: "Philips $1",
-                manufacturer: "Philips"
-            }, {
-                regex: "SAMSUNG-([A-Za-z0-9\\-]+)",
-                device_replacement: "Samsung $1",
-                manufacturer: "Samsung"
-            }, {
-                regex: "SAMSUNG\\; ([A-Za-z0-9\\-]+)",
-                device_replacement: "Samsung $1",
-                manufacturer: "Samsung"
-            }, {
-                regex: "Softbank/1\\.0/([A-Za-z0-9]+)",
-                device_replacement: "Softbank $1",
-                other: !0
-            }, {
-                regex: "Softbank/2\\.0/([A-Za-z0-9]+)",
-                device_replacement: "Softbank $1",
-                other: !0
-            }, {
-                regex: "(hiptop|avantgo|plucker|xiino|blazer|elaine|up.browser|up.link|mmp|smartphone|midp|wap|vodafone|o2|pocket|mobile|pda)",
-                device_replacement: "Generic Smartphone"
-            }, {
-                regex: "^(1207|3gso|4thp|501i|502i|503i|504i|505i|506i|6310|6590|770s|802s|a wa|acer|acs\\-|airn|alav|asus|attw|au\\-m|aur |aus |abac|acoo|aiko|alco|alca|amoi|anex|anny|anyw|aptu|arch|argo|bell|bird|bw\\-n|bw\\-u|beck|benq|bilb|blac|c55/|cdm\\-|chtm|capi|comp|cond|craw|dall|dbte|dc\\-s|dica|ds\\-d|ds12|dait|devi|dmob|doco|dopo|el49|erk0|esl8|ez40|ez60|ez70|ezos|ezze|elai|emul|eric|ezwa|fake|fly\\-|fly\\_|g\\-mo|g1 u|g560|gf\\-5|grun|gene|go.w|good|grad|hcit|hd\\-m|hd\\-p|hd\\-t|hei\\-|hp i|hpip|hs\\-c|htc |htc\\-|htca|htcg)",
-                device_replacement: "Generic Feature Phone"
-            }, {
-                regex: "^(htcp|htcs|htct|htc\\_|haie|hita|huaw|hutc|i\\-20|i\\-go|i\\-ma|i230|iac|iac\\-|iac/|ig01|im1k|inno|iris|jata|java|kddi|kgt|kgt/|kpt |kwc\\-|klon|lexi|lg g|lg\\-a|lg\\-b|lg\\-c|lg\\-d|lg\\-f|lg\\-g|lg\\-k|lg\\-l|lg\\-m|lg\\-o|lg\\-p|lg\\-s|lg\\-t|lg\\-u|lg\\-w|lg/k|lg/l|lg/u|lg50|lg54|lge\\-|lge/|lynx|leno|m1\\-w|m3ga|m50/|maui|mc01|mc21|mcca|medi|meri|mio8|mioa|mo01|mo02|mode|modo|mot |mot\\-|mt50|mtp1|mtv |mate|maxo|merc|mits|mobi|motv|mozz|n100|n101|n102|n202|n203|n300|n302|n500|n502|n505|n700|n701|n710|nec\\-|nem\\-|newg|neon)",
-                device_replacement: "Generic Feature Phone"
-            }, {
-                regex: "^(netf|noki|nzph|o2 x|o2\\-x|opwv|owg1|opti|oran|ot\\-s|p800|pand|pg\\-1|pg\\-2|pg\\-3|pg\\-6|pg\\-8|pg\\-c|pg13|phil|pn\\-2|pt\\-g|palm|pana|pire|pock|pose|psio|qa\\-a|qc\\-2|qc\\-3|qc\\-5|qc\\-7|qc07|qc12|qc21|qc32|qc60|qci\\-|qwap|qtek|r380|r600|raks|rim9|rove|s55/|sage|sams|sc01|sch\\-|scp\\-|sdk/|se47|sec\\-|sec0|sec1|semc|sgh\\-|shar|sie\\-|sk\\-0|sl45|slid|smb3|smt5|sp01|sph\\-|spv |spv\\-|sy01|samm|sany|sava|scoo|send|siem|smar|smit|soft|sony|t\\-mo|t218|t250|t600|t610|t618|tcl\\-|tdg\\-|telm|tim\\-|ts70|tsm\\-|tsm3|tsm5|tx\\-9|tagt)",
-                device_replacement: "Generic Feature Phone"
-            }, {
-                regex: "^(talk|teli|topl|tosh|up.b|upg1|utst|v400|v750|veri|vk\\-v|vk40|vk50|vk52|vk53|vm40|vx98|virg|vite|voda|vulc|w3c |w3c\\-|wapj|wapp|wapu|wapm|wig |wapi|wapr|wapv|wapy|wapa|waps|wapt|winc|winw|wonu|x700|xda2|xdag|yas\\-|your|zte\\-|zeto|aste|audi|avan|blaz|brew|brvw|bumb|ccwa|cell|cldc|cmd\\-|dang|eml2|fetc|hipt|http|ibro|idea|ikom|ipaq|jbro|jemu|jigs|keji|kyoc|kyok|libw|m\\-cr|midp|mmef|moto|mwbp|mywa|newt|nok6|o2im|pant|pdxg|play|pluc|port|prox|rozo|sama|seri|smal|symb|treo|upsi|vx52|vx53|vx60|vx61|vx70|vx80|vx81|vx83|vx85|wap\\-|webc|whit|wmlb|xda\\-|xda\\_)",
-                device_replacement: "Generic Feature Phone"
-            }, {
-                regex: "(bot|borg|google(^tv)|yahoo|slurp|msnbot|msrbot|openbot|archiver|netresearch|lycos|scooter|altavista|teoma|gigabot|baiduspider|blitzbot|oegp|charlotte|furlbot|http%20client|polybot|htdig|ichiro|mogimogi|larbin|pompos|scrubby|searchsight|seekbot|semanticdiscovery|silk|snappy|speedy|spider|voila|vortex|voyager|zao|zeal|fast\\-webcrawler|converacrawler|dataparksearch|findlinks)",
-                device_replacement: "Spider"
-            }],
-            mobile_browser_families: ["Firefox Mobile", "Opera Mobile", "Opera Mini", "Mobile Safari", "webOS", "IE Mobile", "Playstation Portable", "Nokia", "Blackberry", "Palm", "Silk", "Android", "Maemo", "Obigo", "Netfront", "AvantGo", "Teleca", "SEMC-Browser", "Bolt", "Iris", "UP.Browser", "Symphony", "Minimo", "Bunjaloo", "Jasmine", "Dolfin", "Polaris", "BREW", "Chrome Mobile", "Chrome Mobile iOS", "UC Browser", "Tizen Browser"]
-        };
-        e.parsers = ["device_parsers", "browser_parsers", "os_parsers", "mobile_os_families", "mobile_browser_families"], e.types = ["browser", "os", "device"], e.regexes = r || function () {
-            var r = {};
-            return e.parsers.map(function (e) {
-                r[e] = []
-            }), r
-        }(), e.families = function () {
-            var r = {};
-            return e.types.map(function (e) {
-                r[e] = []
-            }), r
-        }();
-        var a = Array.prototype, o = (Object.prototype, Function.prototype, a.forEach);
-        a.indexOf;
-        var i = function (e, r) {
-            for (var a = {}, o = 0; r.length > o && !(a = r[o](e)); o++) ;
-            return a
-        }, n = function (e, r) {
-            t(e, function (e) {
-                t(r, function (r) {
-                    delete e[r]
-                })
-            })
-        }, t = forEach = function (e, r, a) {
-            if (null != e) if (o && e.forEach === o) e.forEach(r, a); else if (e.length === +e.length) for (var i = 0, n = e.length; n > i; i++) r.call(a, e[i], i, e); else for (var t in e) _.has(e, t) && r.call(a, e[t], t, e)
-        }, l = function (e) {
-            return !(!e || e === undefined || null == e)
-        }, c = function (e) {
-            var r = "";
-            return e = e || {}, l(e) && l(e.major) && (r += e.major, l(e.minor) && (r += "." + e.minor, l(e.patch) && (r += "." + e.patch))), r
-        }, d = function (e) {
-            e = e || {};
-            var r = c(e);
-            return r && (r = " " + r), e && l(e.family) ? e.family + r : ""
-        };
-        return e.parse = function (r) {
-            var a = function (r) {
-                return e.regexes[r + "_parsers"].map(function (e) {
-                    function a(r) {
-                        var a = r.match(o);
-                        if (!a) return null;
-                        var t = {};
-                        return t.family = (i ? i.replace("$1", a[1]) : a[1]) || "other", t.major = parseInt(n ? n : a[2]) || null, t.minor = a[3] ? parseInt(a[3]) : null, t.patch = a[4] ? parseInt(a[4]) : null, t.tablet = e.tablet, t.man = e.manufacturer || null, t
-                    }
-
-                    var o = RegExp(e.regex), i = e[("browser" === r ? "family" : r) + "_replacement"],
-                        n = e.major_version_replacement;
-                    return a
-                })
-            }, o = function () {
-            }, t = a("browser"), m = a("os"), p = a("device"), s = new o;
-            s.source = r, s.browser = i(r, t), l(s.browser) ? (s.browser.name = d(s.browser), s.browser.version = c(s.browser)) : s.browser = {}, s.os = i(r, m), l(s.os) ? (s.os.name = d(s.os), s.os.version = c(s.os)) : s.os = {}, s.device = i(r, p), l(s.device) ? (s.device.name = d(s.device), s.device.version = c(s.device)) : s.device = {
-                tablet: !1,
-                family: "Other"
-            };
-            var g = {};
-            return e.regexes.mobile_browser_families.map(function (e) {
-                g[e] = !0
-            }), e.regexes.mobile_os_families.map(function (e) {
-                g[e] = !0
-            }), s.device.type = "Spider" === s.browser.family ? "Spider" : s.browser.tablet || s.os.tablet || s.device.tablet ? "Tablet" : g.hasOwnProperty(s.browser.family) ? "Mobile" : "Desktop", s.device.manufacturer = s.browser.man || s.os.man || s.device.man || null, n([s.browser, s.os, s.device], ["tablet", "man"]), s
-        }, e
-    }();
-    "undefined" != typeof exports ? ("undefined" != typeof module && module.exports && (exports = module.exports = r), exports.detect = r) : e.detect = r, "function" == typeof define && define.amd && define(function () {
-        return r
-    })
-})(window);
-;
-
-
-//from lib/moment.min.js
-//! moment.js
-//! version : 2.11.1
-//! authors : Tim Wood, Iskren Chernev, Moment.js contributors
-//! license : MIT
-//! momentjs.com
-!function (a, b) {
-    "object" == typeof exports && "undefined" != typeof module ? module.exports = b() : "function" == typeof define && define.amd ? define(b) : a.moment = b()
-}(this, function () {
-    "use strict";
-
-    function a() {
-        return Uc.apply(null, arguments)
-    }
-
-    function b(a) {
-        Uc = a
-    }
-
-    function c(a) {
-        return "[object Array]" === Object.prototype.toString.call(a)
-    }
-
-    function d(a) {
-        return a instanceof Date || "[object Date]" === Object.prototype.toString.call(a)
-    }
-
-    function e(a, b) {
-        var c, d = [];
-        for (c = 0; c < a.length; ++c) d.push(b(a[c], c));
-        return d
-    }
-
-    function f(a, b) {
-        return Object.prototype.hasOwnProperty.call(a, b)
-    }
-
-    function g(a, b) {
-        for (var c in b) f(b, c) && (a[c] = b[c]);
-        return f(b, "toString") && (a.toString = b.toString), f(b, "valueOf") && (a.valueOf = b.valueOf), a
-    }
-
-    function h(a, b, c, d) {
-        return Da(a, b, c, d, !0).utc()
-    }
-
-    function i() {
-        return {
-            empty: !1,
-            unusedTokens: [],
-            unusedInput: [],
-            overflow: -2,
-            charsLeftOver: 0,
-            nullInput: !1,
-            invalidMonth: null,
-            invalidFormat: !1,
-            userInvalidated: !1,
-            iso: !1
-        }
-    }
-
-    function j(a) {
-        return null == a._pf && (a._pf = i()), a._pf
-    }
-
-    function k(a) {
-        if (null == a._isValid) {
-            var b = j(a);
-            a._isValid = !(isNaN(a._d.getTime()) || !(b.overflow < 0) || b.empty || b.invalidMonth || b.invalidWeekday || b.nullInput || b.invalidFormat || b.userInvalidated), a._strict && (a._isValid = a._isValid && 0 === b.charsLeftOver && 0 === b.unusedTokens.length && void 0 === b.bigHour)
-        }
-        return a._isValid
-    }
-
-    function l(a) {
-        var b = h(NaN);
-        return null != a ? g(j(b), a) : j(b).userInvalidated = !0, b
-    }
-
-    function m(a) {
-        return void 0 === a
-    }
-
-    function n(a, b) {
-        var c, d, e;
-        if (m(b._isAMomentObject) || (a._isAMomentObject = b._isAMomentObject), m(b._i) || (a._i = b._i), m(b._f) || (a._f = b._f), m(b._l) || (a._l = b._l), m(b._strict) || (a._strict = b._strict), m(b._tzm) || (a._tzm = b._tzm), m(b._isUTC) || (a._isUTC = b._isUTC), m(b._offset) || (a._offset = b._offset), m(b._pf) || (a._pf = j(b)), m(b._locale) || (a._locale = b._locale), Wc.length > 0) for (c in Wc) d = Wc[c], e = b[d], m(e) || (a[d] = e);
-        return a
-    }
-
-    function o(b) {
-        n(this, b), this._d = new Date(null != b._d ? b._d.getTime() : NaN), Xc === !1 && (Xc = !0, a.updateOffset(this), Xc = !1)
-    }
-
-    function p(a) {
-        return a instanceof o || null != a && null != a._isAMomentObject
-    }
-
-    function q(a) {
-        return 0 > a ? Math.ceil(a) : Math.floor(a)
-    }
-
-    function r(a) {
-        var b = +a, c = 0;
-        return 0 !== b && isFinite(b) && (c = q(b)), c
-    }
-
-    function s(a, b, c) {
-        var d, e = Math.min(a.length, b.length), f = Math.abs(a.length - b.length), g = 0;
-        for (d = 0; e > d; d++) (c && a[d] !== b[d] || !c && r(a[d]) !== r(b[d])) && g++;
-        return g + f
-    }
-
-    function t() {
-    }
-
-    function u(a) {
-        return a ? a.toLowerCase().replace("_", "-") : a
-    }
-
-    function v(a) {
-        for (var b, c, d, e, f = 0; f < a.length;) {
-            for (e = u(a[f]).split("-"), b = e.length, c = u(a[f + 1]), c = c ? c.split("-") : null; b > 0;) {
-                if (d = w(e.slice(0, b).join("-"))) return d;
-                if (c && c.length >= b && s(e, c, !0) >= b - 1) break;
-                b--
-            }
-            f++
-        }
-        return null
-    }
-
-    function w(a) {
-        var b = null;
-        if (!Yc[a] && "undefined" != typeof module && module && module.exports) try {
-            b = Vc._abbr, require("./locale/" + a), x(b)
-        } catch (c) {
-        }
-        return Yc[a]
-    }
-
-    function x(a, b) {
-        var c;
-        return a && (c = m(b) ? z(a) : y(a, b), c && (Vc = c)), Vc._abbr
-    }
-
-    function y(a, b) {
-        return null !== b ? (b.abbr = a, Yc[a] = Yc[a] || new t, Yc[a].set(b), x(a), Yc[a]) : (delete Yc[a], null)
-    }
-
-    function z(a) {
-        var b;
-        if (a && a._locale && a._locale._abbr && (a = a._locale._abbr), !a) return Vc;
-        if (!c(a)) {
-            if (b = w(a)) return b;
-            a = [a]
-        }
-        return v(a)
-    }
-
-    function A(a, b) {
-        var c = a.toLowerCase();
-        Zc[c] = Zc[c + "s"] = Zc[b] = a
-    }
-
-    function B(a) {
-        return "string" == typeof a ? Zc[a] || Zc[a.toLowerCase()] : void 0
-    }
-
-    function C(a) {
-        var b, c, d = {};
-        for (c in a) f(a, c) && (b = B(c), b && (d[b] = a[c]));
-        return d
-    }
-
-    function D(a) {
-        return a instanceof Function || "[object Function]" === Object.prototype.toString.call(a)
-    }
-
-    function E(b, c) {
-        return function (d) {
-            return null != d ? (G(this, b, d), a.updateOffset(this, c), this) : F(this, b)
-        }
-    }
-
-    function F(a, b) {
-        return a.isValid() ? a._d["get" + (a._isUTC ? "UTC" : "") + b]() : NaN
-    }
-
-    function G(a, b, c) {
-        a.isValid() && a._d["set" + (a._isUTC ? "UTC" : "") + b](c)
-    }
-
-    function H(a, b) {
-        var c;
-        if ("object" == typeof a) for (c in a) this.set(c, a[c]); else if (a = B(a), D(this[a])) return this[a](b);
-        return this
-    }
-
-    function I(a, b, c) {
-        var d = "" + Math.abs(a), e = b - d.length, f = a >= 0;
-        return (f ? c ? "+" : "" : "-") + Math.pow(10, Math.max(0, e)).toString().substr(1) + d
-    }
-
-    function J(a, b, c, d) {
-        var e = d;
-        "string" == typeof d && (e = function () {
-            return this[d]()
-        }), a && (bd[a] = e), b && (bd[b[0]] = function () {
-            return I(e.apply(this, arguments), b[1], b[2])
-        }), c && (bd[c] = function () {
-            return this.localeData().ordinal(e.apply(this, arguments), a)
-        })
-    }
-
-    function K(a) {
-        return a.match(/\[[\s\S]/) ? a.replace(/^\[|\]$/g, "") : a.replace(/\\/g, "")
-    }
-
-    function L(a) {
-        var b, c, d = a.match($c);
-        for (b = 0, c = d.length; c > b; b++) bd[d[b]] ? d[b] = bd[d[b]] : d[b] = K(d[b]);
-        return function (e) {
-            var f = "";
-            for (b = 0; c > b; b++) f += d[b] instanceof Function ? d[b].call(e, a) : d[b];
-            return f
-        }
-    }
-
-    function M(a, b) {
-        return a.isValid() ? (b = N(b, a.localeData()), ad[b] = ad[b] || L(b), ad[b](a)) : a.localeData().invalidDate()
-    }
-
-    function N(a, b) {
-        function c(a) {
-            return b.longDateFormat(a) || a
-        }
-
-        var d = 5;
-        for (_c.lastIndex = 0; d >= 0 && _c.test(a);) a = a.replace(_c, c), _c.lastIndex = 0, d -= 1;
-        return a
-    }
-
-    function O(a, b, c) {
-        td[a] = D(b) ? b : function (a, d) {
-            return a && c ? c : b
-        }
-    }
-
-    function P(a, b) {
-        return f(td, a) ? td[a](b._strict, b._locale) : new RegExp(Q(a))
-    }
-
-    function Q(a) {
-        return R(a.replace("\\", "").replace(/\\(\[)|\\(\])|\[([^\]\[]*)\]|\\(.)/g, function (a, b, c, d, e) {
-            return b || c || d || e
-        }))
-    }
-
-    function R(a) {
-        return a.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
-    }
-
-    function S(a, b) {
-        var c, d = b;
-        for ("string" == typeof a && (a = [a]), "number" == typeof b && (d = function (a, c) {
-            c[b] = r(a)
-        }), c = 0; c < a.length; c++) ud[a[c]] = d
-    }
-
-    function T(a, b) {
-        S(a, function (a, c, d, e) {
-            d._w = d._w || {}, b(a, d._w, d, e)
-        })
-    }
-
-    function U(a, b, c) {
-        null != b && f(ud, a) && ud[a](b, c._a, c, a)
-    }
-
-    function V(a, b) {
-        return new Date(Date.UTC(a, b + 1, 0)).getUTCDate()
-    }
-
-    function W(a, b) {
-        return c(this._months) ? this._months[a.month()] : this._months[Ed.test(b) ? "format" : "standalone"][a.month()]
-    }
-
-    function X(a, b) {
-        return c(this._monthsShort) ? this._monthsShort[a.month()] : this._monthsShort[Ed.test(b) ? "format" : "standalone"][a.month()]
-    }
-
-    function Y(a, b, c) {
-        var d, e, f;
-        for (this._monthsParse || (this._monthsParse = [], this._longMonthsParse = [], this._shortMonthsParse = []), d = 0; 12 > d; d++) {
-            if (e = h([2e3, d]), c && !this._longMonthsParse[d] && (this._longMonthsParse[d] = new RegExp("^" + this.months(e, "").replace(".", "") + "$", "i"), this._shortMonthsParse[d] = new RegExp("^" + this.monthsShort(e, "").replace(".", "") + "$", "i")), c || this._monthsParse[d] || (f = "^" + this.months(e, "") + "|^" + this.monthsShort(e, ""), this._monthsParse[d] = new RegExp(f.replace(".", ""), "i")), c && "MMMM" === b && this._longMonthsParse[d].test(a)) return d;
-            if (c && "MMM" === b && this._shortMonthsParse[d].test(a)) return d;
-            if (!c && this._monthsParse[d].test(a)) return d
-        }
-    }
-
-    function Z(a, b) {
-        var c;
-        return a.isValid() ? "string" == typeof b && (b = a.localeData().monthsParse(b), "number" != typeof b) ? a : (c = Math.min(a.date(), V(a.year(), b)), a._d["set" + (a._isUTC ? "UTC" : "") + "Month"](b, c), a) : a
-    }
-
-    function $(b) {
-        return null != b ? (Z(this, b), a.updateOffset(this, !0), this) : F(this, "Month")
-    }
-
-    function _() {
-        return V(this.year(), this.month())
-    }
-
-    function aa(a) {
-        return this._monthsParseExact ? (f(this, "_monthsRegex") || ca.call(this), a ? this._monthsShortStrictRegex : this._monthsShortRegex) : this._monthsShortStrictRegex && a ? this._monthsShortStrictRegex : this._monthsShortRegex
-    }
-
-    function ba(a) {
-        return this._monthsParseExact ? (f(this, "_monthsRegex") || ca.call(this), a ? this._monthsStrictRegex : this._monthsRegex) : this._monthsStrictRegex && a ? this._monthsStrictRegex : this._monthsRegex
-    }
-
-    function ca() {
-        function a(a, b) {
-            return b.length - a.length
-        }
-
-        var b, c, d = [], e = [], f = [];
-        for (b = 0; 12 > b; b++) c = h([2e3, b]), d.push(this.monthsShort(c, "")), e.push(this.months(c, "")), f.push(this.months(c, "")), f.push(this.monthsShort(c, ""));
-        for (d.sort(a), e.sort(a), f.sort(a), b = 0; 12 > b; b++) d[b] = R(d[b]), e[b] = R(e[b]), f[b] = R(f[b]);
-        this._monthsRegex = new RegExp("^(" + f.join("|") + ")", "i"), this._monthsShortRegex = this._monthsRegex, this._monthsStrictRegex = new RegExp("^(" + e.join("|") + ")$", "i"), this._monthsShortStrictRegex = new RegExp("^(" + d.join("|") + ")$", "i")
-    }
-
-    function da(a) {
-        var b, c = a._a;
-        return c && -2 === j(a).overflow && (b = c[wd] < 0 || c[wd] > 11 ? wd : c[xd] < 1 || c[xd] > V(c[vd], c[wd]) ? xd : c[yd] < 0 || c[yd] > 24 || 24 === c[yd] && (0 !== c[zd] || 0 !== c[Ad] || 0 !== c[Bd]) ? yd : c[zd] < 0 || c[zd] > 59 ? zd : c[Ad] < 0 || c[Ad] > 59 ? Ad : c[Bd] < 0 || c[Bd] > 999 ? Bd : -1, j(a)._overflowDayOfYear && (vd > b || b > xd) && (b = xd), j(a)._overflowWeeks && -1 === b && (b = Cd), j(a)._overflowWeekday && -1 === b && (b = Dd), j(a).overflow = b), a
-    }
-
-    function ea(b) {
-        a.suppressDeprecationWarnings === !1 && "undefined" != typeof console && console.warn && console.warn("Deprecation warning: " + b)
-    }
-
-    function fa(a, b) {
-        var c = !0;
-        return g(function () {
-            return c && (ea(a + "\nArguments: " + Array.prototype.slice.call(arguments).join(", ") + "\n" + (new Error).stack), c = !1), b.apply(this, arguments)
-        }, b)
-    }
-
-    function ga(a, b) {
-        Jd[a] || (ea(b), Jd[a] = !0)
-    }
-
-    function ha(a) {
-        var b, c, d, e, f, g, h = a._i, i = Kd.exec(h) || Ld.exec(h);
-        if (i) {
-            for (j(a).iso = !0, b = 0, c = Nd.length; c > b; b++) if (Nd[b][1].exec(i[1])) {
-                e = Nd[b][0], d = Nd[b][2] !== !1;
-                break
-            }
-            if (null == e) return void (a._isValid = !1);
-            if (i[3]) {
-                for (b = 0, c = Od.length; c > b; b++) if (Od[b][1].exec(i[3])) {
-                    f = (i[2] || " ") + Od[b][0];
-                    break
-                }
-                if (null == f) return void (a._isValid = !1)
-            }
-            if (!d && null != f) return void (a._isValid = !1);
-            if (i[4]) {
-                if (!Md.exec(i[4])) return void (a._isValid = !1);
-                g = "Z"
-            }
-            a._f = e + (f || "") + (g || ""), wa(a)
-        } else a._isValid = !1
-    }
-
-    function ia(b) {
-        var c = Pd.exec(b._i);
-        return null !== c ? void (b._d = new Date(+c[1])) : (ha(b), void (b._isValid === !1 && (delete b._isValid, a.createFromInputFallback(b))))
-    }
-
-    function ja(a, b, c, d, e, f, g) {
-        var h = new Date(a, b, c, d, e, f, g);
-        return 100 > a && a >= 0 && isFinite(h.getFullYear()) && h.setFullYear(a), h
-    }
-
-    function ka(a) {
-        var b = new Date(Date.UTC.apply(null, arguments));
-        return 100 > a && a >= 0 && isFinite(b.getUTCFullYear()) && b.setUTCFullYear(a), b
-    }
-
-    function la(a) {
-        return ma(a) ? 366 : 365
-    }
-
-    function ma(a) {
-        return a % 4 === 0 && a % 100 !== 0 || a % 400 === 0
-    }
-
-    function na() {
-        return ma(this.year())
-    }
-
-    function oa(a, b, c) {
-        var d = 7 + b - c, e = (7 + ka(a, 0, d).getUTCDay() - b) % 7;
-        return -e + d - 1
-    }
-
-    function pa(a, b, c, d, e) {
-        var f, g, h = (7 + c - d) % 7, i = oa(a, d, e), j = 1 + 7 * (b - 1) + h + i;
-        return 0 >= j ? (f = a - 1, g = la(f) + j) : j > la(a) ? (f = a + 1, g = j - la(a)) : (f = a, g = j), {
-            year: f,
-            dayOfYear: g
-        }
-    }
-
-    function qa(a, b, c) {
-        var d, e, f = oa(a.year(), b, c), g = Math.floor((a.dayOfYear() - f - 1) / 7) + 1;
-        return 1 > g ? (e = a.year() - 1, d = g + ra(e, b, c)) : g > ra(a.year(), b, c) ? (d = g - ra(a.year(), b, c), e = a.year() + 1) : (e = a.year(), d = g), {
-            week: d,
-            year: e
-        }
-    }
-
-    function ra(a, b, c) {
-        var d = oa(a, b, c), e = oa(a + 1, b, c);
-        return (la(a) - d + e) / 7
-    }
-
-    function sa(a, b, c) {
-        return null != a ? a : null != b ? b : c
-    }
-
-    function ta(b) {
-        var c = new Date(a.now());
-        return b._useUTC ? [c.getUTCFullYear(), c.getUTCMonth(), c.getUTCDate()] : [c.getFullYear(), c.getMonth(), c.getDate()]
-    }
-
-    function ua(a) {
-        var b, c, d, e, f = [];
-        if (!a._d) {
-            for (d = ta(a), a._w && null == a._a[xd] && null == a._a[wd] && va(a), a._dayOfYear && (e = sa(a._a[vd], d[vd]), a._dayOfYear > la(e) && (j(a)._overflowDayOfYear = !0), c = ka(e, 0, a._dayOfYear), a._a[wd] = c.getUTCMonth(), a._a[xd] = c.getUTCDate()), b = 0; 3 > b && null == a._a[b]; ++b) a._a[b] = f[b] = d[b];
-            for (; 7 > b; b++) a._a[b] = f[b] = null == a._a[b] ? 2 === b ? 1 : 0 : a._a[b];
-            24 === a._a[yd] && 0 === a._a[zd] && 0 === a._a[Ad] && 0 === a._a[Bd] && (a._nextDay = !0, a._a[yd] = 0), a._d = (a._useUTC ? ka : ja).apply(null, f), null != a._tzm && a._d.setUTCMinutes(a._d.getUTCMinutes() - a._tzm), a._nextDay && (a._a[yd] = 24)
-        }
-    }
-
-    function va(a) {
-        var b, c, d, e, f, g, h, i;
-        b = a._w, null != b.GG || null != b.W || null != b.E ? (f = 1, g = 4, c = sa(b.GG, a._a[vd], qa(Ea(), 1, 4).year), d = sa(b.W, 1), e = sa(b.E, 1), (1 > e || e > 7) && (i = !0)) : (f = a._locale._week.dow, g = a._locale._week.doy, c = sa(b.gg, a._a[vd], qa(Ea(), f, g).year), d = sa(b.w, 1), null != b.d ? (e = b.d, (0 > e || e > 6) && (i = !0)) : null != b.e ? (e = b.e + f, (b.e < 0 || b.e > 6) && (i = !0)) : e = f), 1 > d || d > ra(c, f, g) ? j(a)._overflowWeeks = !0 : null != i ? j(a)._overflowWeekday = !0 : (h = pa(c, d, e, f, g), a._a[vd] = h.year, a._dayOfYear = h.dayOfYear)
-    }
-
-    function wa(b) {
-        if (b._f === a.ISO_8601) return void ha(b);
-        b._a = [], j(b).empty = !0;
-        var c, d, e, f, g, h = "" + b._i, i = h.length, k = 0;
-        for (e = N(b._f, b._locale).match($c) || [], c = 0; c < e.length; c++) f = e[c], d = (h.match(P(f, b)) || [])[0], d && (g = h.substr(0, h.indexOf(d)), g.length > 0 && j(b).unusedInput.push(g), h = h.slice(h.indexOf(d) + d.length), k += d.length), bd[f] ? (d ? j(b).empty = !1 : j(b).unusedTokens.push(f), U(f, d, b)) : b._strict && !d && j(b).unusedTokens.push(f);
-        j(b).charsLeftOver = i - k, h.length > 0 && j(b).unusedInput.push(h), j(b).bigHour === !0 && b._a[yd] <= 12 && b._a[yd] > 0 && (j(b).bigHour = void 0), b._a[yd] = xa(b._locale, b._a[yd], b._meridiem), ua(b), da(b)
-    }
-
-    function xa(a, b, c) {
-        var d;
-        return null == c ? b : null != a.meridiemHour ? a.meridiemHour(b, c) : null != a.isPM ? (d = a.isPM(c), d && 12 > b && (b += 12), d || 12 !== b || (b = 0), b) : b
-    }
-
-    function ya(a) {
-        var b, c, d, e, f;
-        if (0 === a._f.length) return j(a).invalidFormat = !0, void (a._d = new Date(NaN));
-        for (e = 0; e < a._f.length; e++) f = 0, b = n({}, a), null != a._useUTC && (b._useUTC = a._useUTC), b._f = a._f[e], wa(b), k(b) && (f += j(b).charsLeftOver, f += 10 * j(b).unusedTokens.length, j(b).score = f, (null == d || d > f) && (d = f, c = b));
-        g(a, c || b)
-    }
-
-    function za(a) {
-        if (!a._d) {
-            var b = C(a._i);
-            a._a = e([b.year, b.month, b.day || b.date, b.hour, b.minute, b.second, b.millisecond], function (a) {
-                return a && parseInt(a, 10)
-            }), ua(a)
-        }
-    }
-
-    function Aa(a) {
-        var b = new o(da(Ba(a)));
-        return b._nextDay && (b.add(1, "d"), b._nextDay = void 0), b
-    }
-
-    function Ba(a) {
-        var b = a._i, e = a._f;
-        return a._locale = a._locale || z(a._l), null === b || void 0 === e && "" === b ? l({nullInput: !0}) : ("string" == typeof b && (a._i = b = a._locale.preparse(b)), p(b) ? new o(da(b)) : (c(e) ? ya(a) : e ? wa(a) : d(b) ? a._d = b : Ca(a), k(a) || (a._d = null), a))
-    }
-
-    function Ca(b) {
-        var f = b._i;
-        void 0 === f ? b._d = new Date(a.now()) : d(f) ? b._d = new Date(+f) : "string" == typeof f ? ia(b) : c(f) ? (b._a = e(f.slice(0), function (a) {
-            return parseInt(a, 10)
-        }), ua(b)) : "object" == typeof f ? za(b) : "number" == typeof f ? b._d = new Date(f) : a.createFromInputFallback(b)
-    }
-
-    function Da(a, b, c, d, e) {
-        var f = {};
-        return "boolean" == typeof c && (d = c, c = void 0), f._isAMomentObject = !0, f._useUTC = f._isUTC = e, f._l = c, f._i = a, f._f = b, f._strict = d, Aa(f)
-    }
-
-    function Ea(a, b, c, d) {
-        return Da(a, b, c, d, !1)
-    }
-
-    function Fa(a, b) {
-        var d, e;
-        if (1 === b.length && c(b[0]) && (b = b[0]), !b.length) return Ea();
-        for (d = b[0], e = 1; e < b.length; ++e) (!b[e].isValid() || b[e][a](d)) && (d = b[e]);
-        return d
-    }
-
-    function Ga() {
-        var a = [].slice.call(arguments, 0);
-        return Fa("isBefore", a)
-    }
-
-    function Ha() {
-        var a = [].slice.call(arguments, 0);
-        return Fa("isAfter", a)
-    }
-
-    function Ia(a) {
-        var b = C(a), c = b.year || 0, d = b.quarter || 0, e = b.month || 0, f = b.week || 0, g = b.day || 0,
-            h = b.hour || 0, i = b.minute || 0, j = b.second || 0, k = b.millisecond || 0;
-        this._milliseconds = +k + 1e3 * j + 6e4 * i + 36e5 * h, this._days = +g + 7 * f, this._months = +e + 3 * d + 12 * c, this._data = {}, this._locale = z(), this._bubble()
-    }
-
-    function Ja(a) {
-        return a instanceof Ia
-    }
-
-    function Ka(a, b) {
-        J(a, 0, 0, function () {
-            var a = this.utcOffset(), c = "+";
-            return 0 > a && (a = -a, c = "-"), c + I(~~(a / 60), 2) + b + I(~~a % 60, 2)
-        })
-    }
-
-    function La(a, b) {
-        var c = (b || "").match(a) || [], d = c[c.length - 1] || [], e = (d + "").match(Ud) || ["-", 0, 0],
-            f = +(60 * e[1]) + r(e[2]);
-        return "+" === e[0] ? f : -f
-    }
-
-    function Ma(b, c) {
-        var e, f;
-        return c._isUTC ? (e = c.clone(), f = (p(b) || d(b) ? +b : +Ea(b)) - +e, e._d.setTime(+e._d + f), a.updateOffset(e, !1), e) : Ea(b).local()
-    }
-
-    function Na(a) {
-        return 15 * -Math.round(a._d.getTimezoneOffset() / 15)
-    }
-
-    function Oa(b, c) {
-        var d, e = this._offset || 0;
-        return this.isValid() ? null != b ? ("string" == typeof b ? b = La(qd, b) : Math.abs(b) < 16 && (b = 60 * b), !this._isUTC && c && (d = Na(this)), this._offset = b, this._isUTC = !0, null != d && this.add(d, "m"), e !== b && (!c || this._changeInProgress ? cb(this, Za(b - e, "m"), 1, !1) : this._changeInProgress || (this._changeInProgress = !0, a.updateOffset(this, !0), this._changeInProgress = null)), this) : this._isUTC ? e : Na(this) : null != b ? this : NaN
-    }
-
-    function Pa(a, b) {
-        return null != a ? ("string" != typeof a && (a = -a), this.utcOffset(a, b), this) : -this.utcOffset()
-    }
-
-    function Qa(a) {
-        return this.utcOffset(0, a)
-    }
-
-    function Ra(a) {
-        return this._isUTC && (this.utcOffset(0, a), this._isUTC = !1, a && this.subtract(Na(this), "m")), this
-    }
-
-    function Sa() {
-        return this._tzm ? this.utcOffset(this._tzm) : "string" == typeof this._i && this.utcOffset(La(pd, this._i)), this
-    }
-
-    function Ta(a) {
-        return this.isValid() ? (a = a ? Ea(a).utcOffset() : 0, (this.utcOffset() - a) % 60 === 0) : !1
-    }
-
-    function Ua() {
-        return this.utcOffset() > this.clone().month(0).utcOffset() || this.utcOffset() > this.clone().month(5).utcOffset()
-    }
-
-    function Va() {
-        if (!m(this._isDSTShifted)) return this._isDSTShifted;
-        var a = {};
-        if (n(a, this), a = Ba(a), a._a) {
-            var b = a._isUTC ? h(a._a) : Ea(a._a);
-            this._isDSTShifted = this.isValid() && s(a._a, b.toArray()) > 0
-        } else this._isDSTShifted = !1;
-        return this._isDSTShifted
-    }
-
-    function Wa() {
-        return this.isValid() ? !this._isUTC : !1
-    }
-
-    function Xa() {
-        return this.isValid() ? this._isUTC : !1
-    }
-
-    function Ya() {
-        return this.isValid() ? this._isUTC && 0 === this._offset : !1
-    }
-
-    function Za(a, b) {
-        var c, d, e, g = a, h = null;
-        return Ja(a) ? g = {
-            ms: a._milliseconds,
-            d: a._days,
-            M: a._months
-        } : "number" == typeof a ? (g = {}, b ? g[b] = a : g.milliseconds = a) : (h = Vd.exec(a)) ? (c = "-" === h[1] ? -1 : 1, g = {
-            y: 0,
-            d: r(h[xd]) * c,
-            h: r(h[yd]) * c,
-            m: r(h[zd]) * c,
-            s: r(h[Ad]) * c,
-            ms: r(h[Bd]) * c
-        }) : (h = Wd.exec(a)) ? (c = "-" === h[1] ? -1 : 1, g = {
-            y: $a(h[2], c),
-            M: $a(h[3], c),
-            d: $a(h[4], c),
-            h: $a(h[5], c),
-            m: $a(h[6], c),
-            s: $a(h[7], c),
-            w: $a(h[8], c)
-        }) : null == g ? g = {} : "object" == typeof g && ("from" in g || "to" in g) && (e = ab(Ea(g.from), Ea(g.to)), g = {}, g.ms = e.milliseconds, g.M = e.months), d = new Ia(g), Ja(a) && f(a, "_locale") && (d._locale = a._locale), d
-    }
-
-    function $a(a, b) {
-        var c = a && parseFloat(a.replace(",", "."));
-        return (isNaN(c) ? 0 : c) * b
-    }
-
-    function _a(a, b) {
-        var c = {milliseconds: 0, months: 0};
-        return c.months = b.month() - a.month() + 12 * (b.year() - a.year()), a.clone().add(c.months, "M").isAfter(b) && --c.months, c.milliseconds = +b - +a.clone().add(c.months, "M"), c
-    }
-
-    function ab(a, b) {
-        var c;
-        return a.isValid() && b.isValid() ? (b = Ma(b, a), a.isBefore(b) ? c = _a(a, b) : (c = _a(b, a), c.milliseconds = -c.milliseconds, c.months = -c.months), c) : {
-            milliseconds: 0,
-            months: 0
-        }
-    }
-
-    function bb(a, b) {
-        return function (c, d) {
-            var e, f;
-            return null === d || isNaN(+d) || (ga(b, "moment()." + b + "(period, number) is deprecated. Please use moment()." + b + "(number, period)."), f = c, c = d, d = f), c = "string" == typeof c ? +c : c, e = Za(c, d), cb(this, e, a), this
-        }
-    }
-
-    function cb(b, c, d, e) {
-        var f = c._milliseconds, g = c._days, h = c._months;
-        b.isValid() && (e = null == e ? !0 : e, f && b._d.setTime(+b._d + f * d), g && G(b, "Date", F(b, "Date") + g * d), h && Z(b, F(b, "Month") + h * d), e && a.updateOffset(b, g || h))
-    }
-
-    function db(a, b) {
-        var c = a || Ea(), d = Ma(c, this).startOf("day"), e = this.diff(d, "days", !0),
-            f = -6 > e ? "sameElse" : -1 > e ? "lastWeek" : 0 > e ? "lastDay" : 1 > e ? "sameDay" : 2 > e ? "nextDay" : 7 > e ? "nextWeek" : "sameElse",
-            g = b && (D(b[f]) ? b[f]() : b[f]);
-        return this.format(g || this.localeData().calendar(f, this, Ea(c)))
-    }
-
-    function eb() {
-        return new o(this)
-    }
-
-    function fb(a, b) {
-        var c = p(a) ? a : Ea(a);
-        return this.isValid() && c.isValid() ? (b = B(m(b) ? "millisecond" : b), "millisecond" === b ? +this > +c : +c < +this.clone().startOf(b)) : !1
-    }
-
-    function gb(a, b) {
-        var c = p(a) ? a : Ea(a);
-        return this.isValid() && c.isValid() ? (b = B(m(b) ? "millisecond" : b), "millisecond" === b ? +c > +this : +this.clone().endOf(b) < +c) : !1
-    }
-
-    function hb(a, b, c) {
-        return this.isAfter(a, c) && this.isBefore(b, c)
-    }
-
-    function ib(a, b) {
-        var c, d = p(a) ? a : Ea(a);
-        return this.isValid() && d.isValid() ? (b = B(b || "millisecond"), "millisecond" === b ? +this === +d : (c = +d, +this.clone().startOf(b) <= c && c <= +this.clone().endOf(b))) : !1
-    }
-
-    function jb(a, b) {
-        return this.isSame(a, b) || this.isAfter(a, b)
-    }
-
-    function kb(a, b) {
-        return this.isSame(a, b) || this.isBefore(a, b)
-    }
-
-    function lb(a, b, c) {
-        var d, e, f, g;
-        return this.isValid() ? (d = Ma(a, this), d.isValid() ? (e = 6e4 * (d.utcOffset() - this.utcOffset()), b = B(b), "year" === b || "month" === b || "quarter" === b ? (g = mb(this, d), "quarter" === b ? g /= 3 : "year" === b && (g /= 12)) : (f = this - d, g = "second" === b ? f / 1e3 : "minute" === b ? f / 6e4 : "hour" === b ? f / 36e5 : "day" === b ? (f - e) / 864e5 : "week" === b ? (f - e) / 6048e5 : f), c ? g : q(g)) : NaN) : NaN
-    }
-
-    function mb(a, b) {
-        var c, d, e = 12 * (b.year() - a.year()) + (b.month() - a.month()), f = a.clone().add(e, "months");
-        return 0 > b - f ? (c = a.clone().add(e - 1, "months"), d = (b - f) / (f - c)) : (c = a.clone().add(e + 1, "months"), d = (b - f) / (c - f)), -(e + d)
-    }
-
-    function nb() {
-        return this.clone().locale("en").format("ddd MMM DD YYYY HH:mm:ss [GMT]ZZ")
-    }
-
-    function ob() {
-        var a = this.clone().utc();
-        return 0 < a.year() && a.year() <= 9999 ? D(Date.prototype.toISOString) ? this.toDate().toISOString() : M(a, "YYYY-MM-DD[T]HH:mm:ss.SSS[Z]") : M(a, "YYYYYY-MM-DD[T]HH:mm:ss.SSS[Z]")
-    }
-
-    function pb(b) {
-        var c = M(this, b || a.defaultFormat);
-        return this.localeData().postformat(c)
-    }
-
-    function qb(a, b) {
-        return this.isValid() && (p(a) && a.isValid() || Ea(a).isValid()) ? Za({
-            to: this,
-            from: a
-        }).locale(this.locale()).humanize(!b) : this.localeData().invalidDate()
-    }
-
-    function rb(a) {
-        return this.from(Ea(), a)
-    }
-
-    function sb(a, b) {
-        return this.isValid() && (p(a) && a.isValid() || Ea(a).isValid()) ? Za({
-            from: this,
-            to: a
-        }).locale(this.locale()).humanize(!b) : this.localeData().invalidDate()
-    }
-
-    function tb(a) {
-        return this.to(Ea(), a)
-    }
-
-    function ub(a) {
-        var b;
-        return void 0 === a ? this._locale._abbr : (b = z(a), null != b && (this._locale = b), this)
-    }
-
-    function vb() {
-        return this._locale
-    }
-
-    function wb(a) {
-        switch (a = B(a)) {
-            case"year":
-                this.month(0);
-            case"quarter":
-            case"month":
-                this.date(1);
-            case"week":
-            case"isoWeek":
-            case"day":
-                this.hours(0);
-            case"hour":
-                this.minutes(0);
-            case"minute":
-                this.seconds(0);
-            case"second":
-                this.milliseconds(0)
-        }
-        return "week" === a && this.weekday(0), "isoWeek" === a && this.isoWeekday(1), "quarter" === a && this.month(3 * Math.floor(this.month() / 3)), this
-    }
-
-    function xb(a) {
-        return a = B(a), void 0 === a || "millisecond" === a ? this : this.startOf(a).add(1, "isoWeek" === a ? "week" : a).subtract(1, "ms")
-    }
-
-    function yb() {
-        return +this._d - 6e4 * (this._offset || 0)
-    }
-
-    function zb() {
-        return Math.floor(+this / 1e3)
-    }
-
-    function Ab() {
-        return this._offset ? new Date(+this) : this._d
-    }
-
-    function Bb() {
-        var a = this;
-        return [a.year(), a.month(), a.date(), a.hour(), a.minute(), a.second(), a.millisecond()]
-    }
-
-    function Cb() {
-        var a = this;
-        return {
-            years: a.year(),
-            months: a.month(),
-            date: a.date(),
-            hours: a.hours(),
-            minutes: a.minutes(),
-            seconds: a.seconds(),
-            milliseconds: a.milliseconds()
-        }
-    }
-
-    function Db() {
-        return this.isValid() ? this.toISOString() : "null"
-    }
-
-    function Eb() {
-        return k(this)
-    }
-
-    function Fb() {
-        return g({}, j(this))
-    }
-
-    function Gb() {
-        return j(this).overflow
-    }
-
-    function Hb() {
-        return {input: this._i, format: this._f, locale: this._locale, isUTC: this._isUTC, strict: this._strict}
-    }
-
-    function Ib(a, b) {
-        J(0, [a, a.length], 0, b)
-    }
-
-    function Jb(a) {
-        return Nb.call(this, a, this.week(), this.weekday(), this.localeData()._week.dow, this.localeData()._week.doy)
-    }
-
-    function Kb(a) {
-        return Nb.call(this, a, this.isoWeek(), this.isoWeekday(), 1, 4)
-    }
-
-    function Lb() {
-        return ra(this.year(), 1, 4)
-    }
-
-    function Mb() {
-        var a = this.localeData()._week;
-        return ra(this.year(), a.dow, a.doy)
-    }
-
-    function Nb(a, b, c, d, e) {
-        var f;
-        return null == a ? qa(this, d, e).year : (f = ra(a, d, e), b > f && (b = f), Ob.call(this, a, b, c, d, e))
-    }
-
-    function Ob(a, b, c, d, e) {
-        var f = pa(a, b, c, d, e), g = ka(f.year, 0, f.dayOfYear);
-        return this.year(g.getUTCFullYear()), this.month(g.getUTCMonth()), this.date(g.getUTCDate()), this
-    }
-
-    function Pb(a) {
-        return null == a ? Math.ceil((this.month() + 1) / 3) : this.month(3 * (a - 1) + this.month() % 3)
-    }
-
-    function Qb(a) {
-        return qa(a, this._week.dow, this._week.doy).week
-    }
-
-    function Rb() {
-        return this._week.dow
-    }
-
-    function Sb() {
-        return this._week.doy
-    }
-
-    function Tb(a) {
-        var b = this.localeData().week(this);
-        return null == a ? b : this.add(7 * (a - b), "d")
-    }
-
-    function Ub(a) {
-        var b = qa(this, 1, 4).week;
-        return null == a ? b : this.add(7 * (a - b), "d")
-    }
-
-    function Vb(a, b) {
-        return "string" != typeof a ? a : isNaN(a) ? (a = b.weekdaysParse(a), "number" == typeof a ? a : null) : parseInt(a, 10)
-    }
-
-    function Wb(a, b) {
-        return c(this._weekdays) ? this._weekdays[a.day()] : this._weekdays[this._weekdays.isFormat.test(b) ? "format" : "standalone"][a.day()]
-    }
-
-    function Xb(a) {
-        return this._weekdaysShort[a.day()]
-    }
-
-    function Yb(a) {
-        return this._weekdaysMin[a.day()]
-    }
-
-    function Zb(a, b, c) {
-        var d, e, f;
-        for (this._weekdaysParse || (this._weekdaysParse = [], this._minWeekdaysParse = [], this._shortWeekdaysParse = [], this._fullWeekdaysParse = []), d = 0; 7 > d; d++) {
-            if (e = Ea([2e3, 1]).day(d), c && !this._fullWeekdaysParse[d] && (this._fullWeekdaysParse[d] = new RegExp("^" + this.weekdays(e, "").replace(".", ".?") + "$", "i"), this._shortWeekdaysParse[d] = new RegExp("^" + this.weekdaysShort(e, "").replace(".", ".?") + "$", "i"), this._minWeekdaysParse[d] = new RegExp("^" + this.weekdaysMin(e, "").replace(".", ".?") + "$", "i")), this._weekdaysParse[d] || (f = "^" + this.weekdays(e, "") + "|^" + this.weekdaysShort(e, "") + "|^" + this.weekdaysMin(e, ""), this._weekdaysParse[d] = new RegExp(f.replace(".", ""), "i")), c && "dddd" === b && this._fullWeekdaysParse[d].test(a)) return d;
-            if (c && "ddd" === b && this._shortWeekdaysParse[d].test(a)) return d;
-            if (c && "dd" === b && this._minWeekdaysParse[d].test(a)) return d;
-            if (!c && this._weekdaysParse[d].test(a)) return d
-        }
-    }
-
-    function $b(a) {
-        if (!this.isValid()) return null != a ? this : NaN;
-        var b = this._isUTC ? this._d.getUTCDay() : this._d.getDay();
-        return null != a ? (a = Vb(a, this.localeData()), this.add(a - b, "d")) : b
-    }
-
-    function _b(a) {
-        if (!this.isValid()) return null != a ? this : NaN;
-        var b = (this.day() + 7 - this.localeData()._week.dow) % 7;
-        return null == a ? b : this.add(a - b, "d")
-    }
-
-    function ac(a) {
-        return this.isValid() ? null == a ? this.day() || 7 : this.day(this.day() % 7 ? a : a - 7) : null != a ? this : NaN
-    }
-
-    function bc(a) {
-        var b = Math.round((this.clone().startOf("day") - this.clone().startOf("year")) / 864e5) + 1;
-        return null == a ? b : this.add(a - b, "d")
-    }
-
-    function cc() {
-        return this.hours() % 12 || 12
-    }
-
-    function dc(a, b) {
-        J(a, 0, 0, function () {
-            return this.localeData().meridiem(this.hours(), this.minutes(), b)
-        })
-    }
-
-    function ec(a, b) {
-        return b._meridiemParse
-    }
-
-    function fc(a) {
-        return "p" === (a + "").toLowerCase().charAt(0)
-    }
-
-    function gc(a, b, c) {
-        return a > 11 ? c ? "pm" : "PM" : c ? "am" : "AM"
-    }
-
-    function hc(a, b) {
-        b[Bd] = r(1e3 * ("0." + a))
-    }
-
-    function ic() {
-        return this._isUTC ? "UTC" : ""
-    }
-
-    function jc() {
-        return this._isUTC ? "Coordinated Universal Time" : ""
-    }
-
-    function kc(a) {
-        return Ea(1e3 * a)
-    }
-
-    function lc() {
-        return Ea.apply(null, arguments).parseZone()
-    }
-
-    function mc(a, b, c) {
-        var d = this._calendar[a];
-        return D(d) ? d.call(b, c) : d
-    }
-
-    function nc(a) {
-        var b = this._longDateFormat[a], c = this._longDateFormat[a.toUpperCase()];
-        return b || !c ? b : (this._longDateFormat[a] = c.replace(/MMMM|MM|DD|dddd/g, function (a) {
-            return a.slice(1)
-        }), this._longDateFormat[a])
-    }
-
-    function oc() {
-        return this._invalidDate
-    }
-
-    function pc(a) {
-        return this._ordinal.replace("%d", a)
-    }
-
-    function qc(a) {
-        return a
-    }
-
-    function rc(a, b, c, d) {
-        var e = this._relativeTime[c];
-        return D(e) ? e(a, b, c, d) : e.replace(/%d/i, a)
-    }
-
-    function sc(a, b) {
-        var c = this._relativeTime[a > 0 ? "future" : "past"];
-        return D(c) ? c(b) : c.replace(/%s/i, b)
-    }
-
-    function tc(a) {
-        var b, c;
-        for (c in a) b = a[c], D(b) ? this[c] = b : this["_" + c] = b;
-        this._ordinalParseLenient = new RegExp(this._ordinalParse.source + "|" + /\d{1,2}/.source)
-    }
-
-    function uc(a, b, c, d) {
-        var e = z(), f = h().set(d, b);
-        return e[c](f, a)
-    }
-
-    function vc(a, b, c, d, e) {
-        if ("number" == typeof a && (b = a, a = void 0), a = a || "", null != b) return uc(a, b, c, e);
-        var f, g = [];
-        for (f = 0; d > f; f++) g[f] = uc(a, f, c, e);
-        return g
-    }
-
-    function wc(a, b) {
-        return vc(a, b, "months", 12, "month")
-    }
-
-    function xc(a, b) {
-        return vc(a, b, "monthsShort", 12, "month")
-    }
-
-    function yc(a, b) {
-        return vc(a, b, "weekdays", 7, "day")
-    }
-
-    function zc(a, b) {
-        return vc(a, b, "weekdaysShort", 7, "day")
-    }
-
-    function Ac(a, b) {
-        return vc(a, b, "weekdaysMin", 7, "day")
-    }
-
-    function Bc() {
-        var a = this._data;
-        return this._milliseconds = se(this._milliseconds), this._days = se(this._days), this._months = se(this._months), a.milliseconds = se(a.milliseconds), a.seconds = se(a.seconds), a.minutes = se(a.minutes), a.hours = se(a.hours), a.months = se(a.months), a.years = se(a.years), this
-    }
-
-    function Cc(a, b, c, d) {
-        var e = Za(b, c);
-        return a._milliseconds += d * e._milliseconds, a._days += d * e._days, a._months += d * e._months, a._bubble()
-    }
-
-    function Dc(a, b) {
-        return Cc(this, a, b, 1)
-    }
-
-    function Ec(a, b) {
-        return Cc(this, a, b, -1)
-    }
-
-    function Fc(a) {
-        return 0 > a ? Math.floor(a) : Math.ceil(a)
-    }
-
-    function Gc() {
-        var a, b, c, d, e, f = this._milliseconds, g = this._days, h = this._months, i = this._data;
-        return f >= 0 && g >= 0 && h >= 0 || 0 >= f && 0 >= g && 0 >= h || (f += 864e5 * Fc(Ic(h) + g), g = 0, h = 0), i.milliseconds = f % 1e3, a = q(f / 1e3), i.seconds = a % 60, b = q(a / 60), i.minutes = b % 60, c = q(b / 60), i.hours = c % 24, g += q(c / 24), e = q(Hc(g)), h += e, g -= Fc(Ic(e)), d = q(h / 12), h %= 12, i.days = g, i.months = h, i.years = d, this
-    }
-
-    function Hc(a) {
-        return 4800 * a / 146097
-    }
-
-    function Ic(a) {
-        return 146097 * a / 4800
-    }
-
-    function Jc(a) {
-        var b, c, d = this._milliseconds;
-        if (a = B(a), "month" === a || "year" === a) return b = this._days + d / 864e5, c = this._months + Hc(b), "month" === a ? c : c / 12;
-        switch (b = this._days + Math.round(Ic(this._months)), a) {
-            case"week":
-                return b / 7 + d / 6048e5;
-            case"day":
-                return b + d / 864e5;
-            case"hour":
-                return 24 * b + d / 36e5;
-            case"minute":
-                return 1440 * b + d / 6e4;
-            case"second":
-                return 86400 * b + d / 1e3;
-            case"millisecond":
-                return Math.floor(864e5 * b) + d;
-            default:
-                throw new Error("Unknown unit " + a)
-        }
-    }
-
-    function Kc() {
-        return this._milliseconds + 864e5 * this._days + this._months % 12 * 2592e6 + 31536e6 * r(this._months / 12)
-    }
-
-    function Lc(a) {
-        return function () {
-            return this.as(a)
-        }
-    }
-
-    function Mc(a) {
-        return a = B(a), this[a + "s"]()
-    }
-
-    function Nc(a) {
-        return function () {
-            return this._data[a]
-        }
-    }
-
-    function Oc() {
-        return q(this.days() / 7)
-    }
-
-    function Pc(a, b, c, d, e) {
-        return e.relativeTime(b || 1, !!c, a, d)
-    }
-
-    function Qc(a, b, c) {
-        var d = Za(a).abs(), e = Ie(d.as("s")), f = Ie(d.as("m")), g = Ie(d.as("h")), h = Ie(d.as("d")),
-            i = Ie(d.as("M")), j = Ie(d.as("y")),
-            k = e < Je.s && ["s", e] || 1 >= f && ["m"] || f < Je.m && ["mm", f] || 1 >= g && ["h"] || g < Je.h && ["hh", g] || 1 >= h && ["d"] || h < Je.d && ["dd", h] || 1 >= i && ["M"] || i < Je.M && ["MM", i] || 1 >= j && ["y"] || ["yy", j];
-        return k[2] = b, k[3] = +a > 0, k[4] = c, Pc.apply(null, k)
-    }
-
-    function Rc(a, b) {
-        return void 0 === Je[a] ? !1 : void 0 === b ? Je[a] : (Je[a] = b, !0)
-    }
-
-    function Sc(a) {
-        var b = this.localeData(), c = Qc(this, !a, b);
-        return a && (c = b.pastFuture(+this, c)), b.postformat(c)
-    }
-
-    function Tc() {
-        var a, b, c, d = Ke(this._milliseconds) / 1e3, e = Ke(this._days), f = Ke(this._months);
-        a = q(d / 60), b = q(a / 60), d %= 60, a %= 60, c = q(f / 12), f %= 12;
-        var g = c, h = f, i = e, j = b, k = a, l = d, m = this.asSeconds();
-        return m ? (0 > m ? "-" : "") + "P" + (g ? g + "Y" : "") + (h ? h + "M" : "") + (i ? i + "D" : "") + (j || k || l ? "T" : "") + (j ? j + "H" : "") + (k ? k + "M" : "") + (l ? l + "S" : "") : "P0D"
-    }
-
-    var Uc, Vc, Wc = a.momentProperties = [], Xc = !1, Yc = {}, Zc = {},
-        $c = /(\[[^\[]*\])|(\\)?([Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Qo?|YYYYYY|YYYYY|YYYY|YY|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?|.)/g,
-        _c = /(\[[^\[]*\])|(\\)?(LTS|LT|LL?L?L?|l{1,4})/g, ad = {}, bd = {}, cd = /\d/, dd = /\d\d/, ed = /\d{3}/,
-        fd = /\d{4}/, gd = /[+-]?\d{6}/, hd = /\d\d?/, id = /\d\d\d\d?/, jd = /\d\d\d\d\d\d?/, kd = /\d{1,3}/,
-        ld = /\d{1,4}/, md = /[+-]?\d{1,6}/, nd = /\d+/, od = /[+-]?\d+/, pd = /Z|[+-]\d\d:?\d\d/gi,
-        qd = /Z|[+-]\d\d(?::?\d\d)?/gi, rd = /[+-]?\d+(\.\d{1,3})?/,
-        sd = /[0-9]*['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i,
-        td = {}, ud = {}, vd = 0, wd = 1, xd = 2, yd = 3, zd = 4, Ad = 5, Bd = 6, Cd = 7, Dd = 8;
-    J("M", ["MM", 2], "Mo", function () {
-        return this.month() + 1
-    }), J("MMM", 0, 0, function (a) {
-        return this.localeData().monthsShort(this, a)
-    }), J("MMMM", 0, 0, function (a) {
-        return this.localeData().months(this, a)
-    }), A("month", "M"), O("M", hd), O("MM", hd, dd), O("MMM", function (a, b) {
-        return b.monthsShortRegex(a)
-    }), O("MMMM", function (a, b) {
-        return b.monthsRegex(a)
-    }), S(["M", "MM"], function (a, b) {
-        b[wd] = r(a) - 1
-    }), S(["MMM", "MMMM"], function (a, b, c, d) {
-        var e = c._locale.monthsParse(a, d, c._strict);
-        null != e ? b[wd] = e : j(c).invalidMonth = a
-    });
-    var Ed = /D[oD]?(\[[^\[\]]*\]|\s+)+MMMM?/,
-        Fd = "January_February_March_April_May_June_July_August_September_October_November_December".split("_"),
-        Gd = "Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec".split("_"), Hd = sd, Id = sd, Jd = {};
-    a.suppressDeprecationWarnings = !1;
-    var Kd = /^\s*((?:[+-]\d{6}|\d{4})-(?:\d\d-\d\d|W\d\d-\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?::\d\d(?::\d\d(?:[.,]\d+)?)?)?)([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?/,
-        Ld = /^\s*((?:[+-]\d{6}|\d{4})(?:\d\d\d\d|W\d\d\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?:\d\d(?:\d\d(?:[.,]\d+)?)?)?)([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?/,
-        Md = /Z|[+-]\d\d(?::?\d\d)?/,
-        Nd = [["YYYYYY-MM-DD", /[+-]\d{6}-\d\d-\d\d/], ["YYYY-MM-DD", /\d{4}-\d\d-\d\d/], ["GGGG-[W]WW-E", /\d{4}-W\d\d-\d/], ["GGGG-[W]WW", /\d{4}-W\d\d/, !1], ["YYYY-DDD", /\d{4}-\d{3}/], ["YYYY-MM", /\d{4}-\d\d/, !1], ["YYYYYYMMDD", /[+-]\d{10}/], ["YYYYMMDD", /\d{8}/], ["GGGG[W]WWE", /\d{4}W\d{3}/], ["GGGG[W]WW", /\d{4}W\d{2}/, !1], ["YYYYDDD", /\d{7}/]],
-        Od = [["HH:mm:ss.SSSS", /\d\d:\d\d:\d\d\.\d+/], ["HH:mm:ss,SSSS", /\d\d:\d\d:\d\d,\d+/], ["HH:mm:ss", /\d\d:\d\d:\d\d/], ["HH:mm", /\d\d:\d\d/], ["HHmmss.SSSS", /\d\d\d\d\d\d\.\d+/], ["HHmmss,SSSS", /\d\d\d\d\d\d,\d+/], ["HHmmss", /\d\d\d\d\d\d/], ["HHmm", /\d\d\d\d/], ["HH", /\d\d/]],
-        Pd = /^\/?Date\((\-?\d+)/i;
-    a.createFromInputFallback = fa("moment construction falls back to js Date. This is discouraged and will be removed in upcoming major release. Please refer to https://github.com/moment/moment/issues/1407 for more info.", function (a) {
-        a._d = new Date(a._i + (a._useUTC ? " UTC" : ""))
-    }), J("Y", 0, 0, function () {
-        var a = this.year();
-        return 9999 >= a ? "" + a : "+" + a
-    }), J(0, ["YY", 2], 0, function () {
-        return this.year() % 100
-    }), J(0, ["YYYY", 4], 0, "year"), J(0, ["YYYYY", 5], 0, "year"), J(0, ["YYYYYY", 6, !0], 0, "year"), A("year", "y"), O("Y", od), O("YY", hd, dd), O("YYYY", ld, fd), O("YYYYY", md, gd), O("YYYYYY", md, gd), S(["YYYYY", "YYYYYY"], vd), S("YYYY", function (b, c) {
-        c[vd] = 2 === b.length ? a.parseTwoDigitYear(b) : r(b)
-    }), S("YY", function (b, c) {
-        c[vd] = a.parseTwoDigitYear(b)
-    }), S("Y", function (a, b) {
-        b[vd] = parseInt(a, 10)
-    }), a.parseTwoDigitYear = function (a) {
-        return r(a) + (r(a) > 68 ? 1900 : 2e3)
-    };
-    var Qd = E("FullYear", !1);
-    a.ISO_8601 = function () {
-    };
-    var Rd = fa("moment().min is deprecated, use moment.min instead. https://github.com/moment/moment/issues/1548", function () {
-            var a = Ea.apply(null, arguments);
-            return this.isValid() && a.isValid() ? this > a ? this : a : l()
-        }),
-        Sd = fa("moment().max is deprecated, use moment.max instead. https://github.com/moment/moment/issues/1548", function () {
-            var a = Ea.apply(null, arguments);
-            return this.isValid() && a.isValid() ? a > this ? this : a : l()
-        }), Td = function () {
-            return Date.now ? Date.now() : +new Date
-        };
-    Ka("Z", ":"), Ka("ZZ", ""), O("Z", qd), O("ZZ", qd), S(["Z", "ZZ"], function (a, b, c) {
-        c._useUTC = !0, c._tzm = La(qd, a)
-    });
-    var Ud = /([\+\-]|\d\d)/gi;
-    a.updateOffset = function () {
-    };
-    var Vd = /(\-)?(?:(\d*)[. ])?(\d+)\:(\d+)(?:\:(\d+)\.?(\d{3})?)?/,
-        Wd = /^(-)?P(?:(?:([0-9,.]*)Y)?(?:([0-9,.]*)M)?(?:([0-9,.]*)D)?(?:T(?:([0-9,.]*)H)?(?:([0-9,.]*)M)?(?:([0-9,.]*)S)?)?|([0-9,.]*)W)$/;
-    Za.fn = Ia.prototype;
-    var Xd = bb(1, "add"), Yd = bb(-1, "subtract");
-    a.defaultFormat = "YYYY-MM-DDTHH:mm:ssZ";
-    var Zd = fa("moment().lang() is deprecated. Instead, use moment().localeData() to get the language configuration. Use moment().locale() to change languages.", function (a) {
-        return void 0 === a ? this.localeData() : this.locale(a)
-    });
-    J(0, ["gg", 2], 0, function () {
-        return this.weekYear() % 100
-    }), J(0, ["GG", 2], 0, function () {
-        return this.isoWeekYear() % 100
-    }), Ib("gggg", "weekYear"), Ib("ggggg", "weekYear"), Ib("GGGG", "isoWeekYear"), Ib("GGGGG", "isoWeekYear"), A("weekYear", "gg"), A("isoWeekYear", "GG"), O("G", od), O("g", od), O("GG", hd, dd), O("gg", hd, dd), O("GGGG", ld, fd), O("gggg", ld, fd), O("GGGGG", md, gd), O("ggggg", md, gd), T(["gggg", "ggggg", "GGGG", "GGGGG"], function (a, b, c, d) {
-        b[d.substr(0, 2)] = r(a)
-    }), T(["gg", "GG"], function (b, c, d, e) {
-        c[e] = a.parseTwoDigitYear(b)
-    }), J("Q", 0, "Qo", "quarter"), A("quarter", "Q"), O("Q", cd), S("Q", function (a, b) {
-        b[wd] = 3 * (r(a) - 1)
-    }), J("w", ["ww", 2], "wo", "week"), J("W", ["WW", 2], "Wo", "isoWeek"), A("week", "w"), A("isoWeek", "W"), O("w", hd), O("ww", hd, dd), O("W", hd), O("WW", hd, dd), T(["w", "ww", "W", "WW"], function (a, b, c, d) {
-        b[d.substr(0, 1)] = r(a)
-    });
-    var $d = {dow: 0, doy: 6};
-    J("D", ["DD", 2], "Do", "date"), A("date", "D"), O("D", hd), O("DD", hd, dd), O("Do", function (a, b) {
-        return a ? b._ordinalParse : b._ordinalParseLenient
-    }), S(["D", "DD"], xd), S("Do", function (a, b) {
-        b[xd] = r(a.match(hd)[0], 10)
-    });
-    var _d = E("Date", !0);
-    J("d", 0, "do", "day"), J("dd", 0, 0, function (a) {
-        return this.localeData().weekdaysMin(this, a)
-    }), J("ddd", 0, 0, function (a) {
-        return this.localeData().weekdaysShort(this, a)
-    }), J("dddd", 0, 0, function (a) {
-        return this.localeData().weekdays(this, a)
-    }), J("e", 0, 0, "weekday"), J("E", 0, 0, "isoWeekday"), A("day", "d"), A("weekday", "e"), A("isoWeekday", "E"), O("d", hd), O("e", hd), O("E", hd), O("dd", sd), O("ddd", sd), O("dddd", sd), T(["dd", "ddd", "dddd"], function (a, b, c, d) {
-        var e = c._locale.weekdaysParse(a, d, c._strict);
-        null != e ? b.d = e : j(c).invalidWeekday = a
-    }), T(["d", "e", "E"], function (a, b, c, d) {
-        b[d] = r(a)
-    });
-    var ae = "Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday".split("_"),
-        be = "Sun_Mon_Tue_Wed_Thu_Fri_Sat".split("_"), ce = "Su_Mo_Tu_We_Th_Fr_Sa".split("_");
-    J("DDD", ["DDDD", 3], "DDDo", "dayOfYear"), A("dayOfYear", "DDD"), O("DDD", kd), O("DDDD", ed), S(["DDD", "DDDD"], function (a, b, c) {
-        c._dayOfYear = r(a)
-    }), J("H", ["HH", 2], 0, "hour"), J("h", ["hh", 2], 0, cc), J("hmm", 0, 0, function () {
-        return "" + cc.apply(this) + I(this.minutes(), 2)
-    }), J("hmmss", 0, 0, function () {
-        return "" + cc.apply(this) + I(this.minutes(), 2) + I(this.seconds(), 2)
-    }), J("Hmm", 0, 0, function () {
-        return "" + this.hours() + I(this.minutes(), 2)
-    }), J("Hmmss", 0, 0, function () {
-        return "" + this.hours() + I(this.minutes(), 2) + I(this.seconds(), 2)
-    }), dc("a", !0), dc("A", !1), A("hour", "h"), O("a", ec), O("A", ec), O("H", hd), O("h", hd), O("HH", hd, dd), O("hh", hd, dd), O("hmm", id), O("hmmss", jd), O("Hmm", id), O("Hmmss", jd), S(["H", "HH"], yd), S(["a", "A"], function (a, b, c) {
-        c._isPm = c._locale.isPM(a), c._meridiem = a
-    }), S(["h", "hh"], function (a, b, c) {
-        b[yd] = r(a), j(c).bigHour = !0
-    }), S("hmm", function (a, b, c) {
-        var d = a.length - 2;
-        b[yd] = r(a.substr(0, d)), b[zd] = r(a.substr(d)), j(c).bigHour = !0
-    }), S("hmmss", function (a, b, c) {
-        var d = a.length - 4, e = a.length - 2;
-        b[yd] = r(a.substr(0, d)), b[zd] = r(a.substr(d, 2)), b[Ad] = r(a.substr(e)), j(c).bigHour = !0
-    }), S("Hmm", function (a, b, c) {
-        var d = a.length - 2;
-        b[yd] = r(a.substr(0, d)), b[zd] = r(a.substr(d))
-    }), S("Hmmss", function (a, b, c) {
-        var d = a.length - 4, e = a.length - 2;
-        b[yd] = r(a.substr(0, d)), b[zd] = r(a.substr(d, 2)), b[Ad] = r(a.substr(e))
-    });
-    var de = /[ap]\.?m?\.?/i, ee = E("Hours", !0);
-    J("m", ["mm", 2], 0, "minute"), A("minute", "m"), O("m", hd), O("mm", hd, dd), S(["m", "mm"], zd);
-    var fe = E("Minutes", !1);
-    J("s", ["ss", 2], 0, "second"), A("second", "s"), O("s", hd), O("ss", hd, dd), S(["s", "ss"], Ad);
-    var ge = E("Seconds", !1);
-    J("S", 0, 0, function () {
-        return ~~(this.millisecond() / 100)
-    }), J(0, ["SS", 2], 0, function () {
-        return ~~(this.millisecond() / 10)
-    }), J(0, ["SSS", 3], 0, "millisecond"), J(0, ["SSSS", 4], 0, function () {
-        return 10 * this.millisecond()
-    }), J(0, ["SSSSS", 5], 0, function () {
-        return 100 * this.millisecond()
-    }), J(0, ["SSSSSS", 6], 0, function () {
-        return 1e3 * this.millisecond()
-    }), J(0, ["SSSSSSS", 7], 0, function () {
-        return 1e4 * this.millisecond()
-    }), J(0, ["SSSSSSSS", 8], 0, function () {
-        return 1e5 * this.millisecond()
-    }), J(0, ["SSSSSSSSS", 9], 0, function () {
-        return 1e6 * this.millisecond()
-    }), A("millisecond", "ms"), O("S", kd, cd), O("SS", kd, dd), O("SSS", kd, ed);
-    var he;
-    for (he = "SSSS"; he.length <= 9; he += "S") O(he, nd);
-    for (he = "S"; he.length <= 9; he += "S") S(he, hc);
-    var ie = E("Milliseconds", !1);
-    J("z", 0, 0, "zoneAbbr"), J("zz", 0, 0, "zoneName");
-    var je = o.prototype;
-    je.add = Xd, je.calendar = db, je.clone = eb, je.diff = lb, je.endOf = xb, je.format = pb, je.from = qb, je.fromNow = rb, je.to = sb, je.toNow = tb, je.get = H, je.invalidAt = Gb, je.isAfter = fb, je.isBefore = gb, je.isBetween = hb, je.isSame = ib, je.isSameOrAfter = jb, je.isSameOrBefore = kb, je.isValid = Eb, je.lang = Zd, je.locale = ub, je.localeData = vb, je.max = Sd, je.min = Rd, je.parsingFlags = Fb, je.set = H, je.startOf = wb, je.subtract = Yd, je.toArray = Bb, je.toObject = Cb, je.toDate = Ab, je.toISOString = ob, je.toJSON = Db, je.toString = nb, je.unix = zb, je.valueOf = yb, je.creationData = Hb, je.year = Qd, je.isLeapYear = na, je.weekYear = Jb, je.isoWeekYear = Kb, je.quarter = je.quarters = Pb, je.month = $, je.daysInMonth = _, je.week = je.weeks = Tb, je.isoWeek = je.isoWeeks = Ub, je.weeksInYear = Mb, je.isoWeeksInYear = Lb, je.date = _d, je.day = je.days = $b, je.weekday = _b, je.isoWeekday = ac, je.dayOfYear = bc, je.hour = je.hours = ee, je.minute = je.minutes = fe, je.second = je.seconds = ge, je.millisecond = je.milliseconds = ie, je.utcOffset = Oa, je.utc = Qa, je.local = Ra, je.parseZone = Sa, je.hasAlignedHourOffset = Ta, je.isDST = Ua, je.isDSTShifted = Va, je.isLocal = Wa, je.isUtcOffset = Xa, je.isUtc = Ya, je.isUTC = Ya, je.zoneAbbr = ic, je.zoneName = jc, je.dates = fa("dates accessor is deprecated. Use date instead.", _d), je.months = fa("months accessor is deprecated. Use month instead", $), je.years = fa("years accessor is deprecated. Use year instead", Qd), je.zone = fa("moment().zone is deprecated, use moment().utcOffset instead. https://github.com/moment/moment/issues/1779", Pa);
-    var ke = je, le = {
-        sameDay: "[Today at] LT",
-        nextDay: "[Tomorrow at] LT",
-        nextWeek: "dddd [at] LT",
-        lastDay: "[Yesterday at] LT",
-        lastWeek: "[Last] dddd [at] LT",
-        sameElse: "L"
-    }, me = {
-        LTS: "h:mm:ss A",
-        LT: "h:mm A",
-        L: "MM/DD/YYYY",
-        LL: "MMMM D, YYYY",
-        LLL: "MMMM D, YYYY h:mm A",
-        LLLL: "dddd, MMMM D, YYYY h:mm A"
-    }, ne = "Invalid date", oe = "%d", pe = /\d{1,2}/, qe = {
-        future: "in %s",
-        past: "%s ago",
-        s: "a few seconds",
-        m: "a minute",
-        mm: "%d minutes",
-        h: "an hour",
-        hh: "%d hours",
-        d: "a day",
-        dd: "%d days",
-        M: "a month",
-        MM: "%d months",
-        y: "a year",
-        yy: "%d years"
-    }, re = t.prototype;
-    re._calendar = le, re.calendar = mc, re._longDateFormat = me, re.longDateFormat = nc, re._invalidDate = ne, re.invalidDate = oc, re._ordinal = oe, re.ordinal = pc, re._ordinalParse = pe, re.preparse = qc, re.postformat = qc, re._relativeTime = qe, re.relativeTime = rc, re.pastFuture = sc, re.set = tc, re.months = W, re._months = Fd, re.monthsShort = X, re._monthsShort = Gd, re.monthsParse = Y, re._monthsRegex = Id, re.monthsRegex = ba, re._monthsShortRegex = Hd, re.monthsShortRegex = aa, re.week = Qb, re._week = $d, re.firstDayOfYear = Sb, re.firstDayOfWeek = Rb, re.weekdays = Wb, re._weekdays = ae, re.weekdaysMin = Yb, re._weekdaysMin = ce, re.weekdaysShort = Xb, re._weekdaysShort = be, re.weekdaysParse = Zb, re.isPM = fc, re._meridiemParse = de, re.meridiem = gc, x("en", {
-        ordinalParse: /\d{1,2}(th|st|nd|rd)/,
-        ordinal: function (a) {
-            var b = a % 10, c = 1 === r(a % 100 / 10) ? "th" : 1 === b ? "st" : 2 === b ? "nd" : 3 === b ? "rd" : "th";
-            return a + c
-        }
-    }), a.lang = fa("moment.lang is deprecated. Use moment.locale instead.", x), a.langData = fa("moment.langData is deprecated. Use moment.localeData instead.", z);
-    var se = Math.abs, te = Lc("ms"), ue = Lc("s"), ve = Lc("m"), we = Lc("h"), xe = Lc("d"), ye = Lc("w"),
-        ze = Lc("M"), Ae = Lc("y"), Be = Nc("milliseconds"), Ce = Nc("seconds"), De = Nc("minutes"), Ee = Nc("hours"),
-        Fe = Nc("days"), Ge = Nc("months"), He = Nc("years"), Ie = Math.round, Je = {s: 45, m: 45, h: 22, d: 26, M: 11},
-        Ke = Math.abs, Le = Ia.prototype;
-    Le.abs = Bc, Le.add = Dc, Le.subtract = Ec, Le.as = Jc, Le.asMilliseconds = te, Le.asSeconds = ue, Le.asMinutes = ve, Le.asHours = we, Le.asDays = xe, Le.asWeeks = ye, Le.asMonths = ze, Le.asYears = Ae, Le.valueOf = Kc, Le._bubble = Gc, Le.get = Mc, Le.milliseconds = Be, Le.seconds = Ce, Le.minutes = De, Le.hours = Ee, Le.days = Fe, Le.weeks = Oc, Le.months = Ge, Le.years = He, Le.humanize = Sc, Le.toISOString = Tc, Le.toString = Tc, Le.toJSON = Tc, Le.locale = ub, Le.localeData = vb, Le.toIsoString = fa("toIsoString() is deprecated. Please use toISOString() instead (notice the capitals)", Tc), Le.lang = Zd, J("X", 0, 0, "unix"), J("x", 0, 0, "valueOf"), O("x", od), O("X", rd), S("X", function (a, b, c) {
-        c._d = new Date(1e3 * parseFloat(a, 10))
-    }), S("x", function (a, b, c) {
-        c._d = new Date(r(a))
-    }), a.version = "2.11.1", b(Ea), a.fn = ke, a.min = Ga, a.max = Ha, a.now = Td, a.utc = h, a.unix = kc, a.months = wc, a.isDate = d, a.locale = x, a.invalid = l, a.duration = Za, a.isMoment = p, a.weekdays = yc, a.parseZone = lc, a.localeData = z, a.isDuration = Ja, a.monthsShort = xc, a.weekdaysMin = Ac, a.defineLocale = y, a.weekdaysShort = zc, a.normalizeUnits = B, a.relativeTimeThreshold = Rc, a.prototype = ke;
-    var Me = a;
-    return Me
-});
-;
-
-
-//from lib/mtwist.js
-// Generated by CoffeeScript 1.10.0
+//require('../lib/mtwist.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
     var bind = function (fn, me) {
         return function () {
@@ -2324,8 +105,106 @@
 ;
 
 
-//from src/maths.js
-// Generated by CoffeeScript 1.10.0
+//require('../src/hspace.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var PRIME, clamp, overlapRectCircle;
+
+    PRIME = 677;
+
+    clamp = function (value, min, max) {
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
+    };
+
+    overlapRectCircle = function (point, radius, x, y, w, h) {
+        var dx, dy;
+        dx = point[0] - clamp(point[0], x, x + w);
+        dy = point[1] - clamp(point[1], y, y + h);
+        return (dx * dx + dy * dy) <= (radius * radius);
+    };
+
+    window.HSpace = (function () {
+        function HSpace(resolution) {
+            this.resolution = resolution;
+            this.hash = new Map();
+        }
+
+        HSpace.prototype.key = function (pos) {
+            return Math.floor(pos[0] / this.resolution) + Math.floor(pos[1] / this.resolution) * PRIME;
+        };
+
+        HSpace.prototype.insert = function (thing) {
+            var posKey, things;
+            posKey = this.key(thing.pos);
+            things = this.hash.get(posKey);
+            if (things == null) {
+                return this.hash.set(posKey, [thing]);
+            } else {
+                return things.push(thing);
+            }
+        };
+
+        HSpace.prototype.findInRange = function (point, range, cb) {
+            var d, i, j, k, len, posKey, px, py, ref, ref1, ref2, ref3, rx, ry, thing, things, x, y;
+            sim.timeStart("findInRange");
+            d = Math.floor(range / this.resolution) + 1;
+            px = Math.floor(point[0] / this.resolution);
+            py = Math.floor(point[1] / this.resolution);
+            for (x = i = ref = -d, ref1 = d + 1; ref <= ref1 ? i < ref1 : i > ref1; x = ref <= ref1 ? ++i : --i) {
+                for (y = j = ref2 = -d, ref3 = d + 1; ref2 <= ref3 ? j < ref3 : j > ref3; y = ref2 <= ref3 ? ++j : --j) {
+                    rx = px + x;
+                    ry = py + y;
+                    if (overlapRectCircle(point, range, rx * this.resolution, ry * this.resolution, this.resolution, this.resolution)) {
+                        posKey = rx + ry * PRIME;
+                        things = this.hash.get(posKey);
+                        if (things) {
+                            for (k = 0, len = things.length; k < len; k++) {
+                                thing = things[k];
+                                if (cb(thing)) {
+                                    sim.timeEnd("findInRange");
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            sim.timeEnd("findInRange");
+        };
+
+        return HSpace;
+
+    })();
+
+}).call(this);
+;
+
+
+//require('../src/protocol.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    window.prot = {};
+
+    prot.commonWords = "1v1\n1v1r\n2v2\n3v3\n@attackTypes enemy @unitTypes within #m\n@attackTypes enemy that is @absoluteTypes then # within #m\n@attackTypes enemy that is @relativeTypes and @relativeTypes within #m\n@attackTypes enemy within #m\n@capTypes Command Points within #m\naction\naddAi\nai\nAi1\nAi3\nAi4\naiRules\nalpha\nAOEWarhead\napm\nArtilleryTurret\nAttack\nAutoTurret\nAvoid #dps danger areas\nAvoid everything\nAvoid over #damage shots\nBackstab\nBattery1x1\nBattery1x2\nBattery2x1\nBattery2x2\nBattleship\nbeta\nBomb\nBomber\nBomber\nBombGun\nbuildQ\nbuildRq\nBulletSpeedMod\nburn\ncapping\ncapps\nCapture\nCarrier\nCarrier\nCircle\ncloak\nCloak Counter Need\nCloaked\nCloakGenerator\ncolor\nCommandPoint\nconnected\nCruiser\nDamageMod\ndead\nDestroyer\nDestroyer\ndir\nDroneBody\nEMPGun\nEMPGun2\nEmpty\nEnemy Army Middle\nEnemy Spawn\nenergy\nEnergyTransfer\nEngine01\nEngine02\nEngine03\nEngine04\nEngine05\nEngine06\nEngine07\nFaction1\nFaction2\nFaction3\nFaction4\nFaction5\nFaction6\nFaction7\nFaster\nField # at priority #\nField # at start\nField # for # of @needTypes at priority #\nField # for # of enemy @unitTypes at priority #\nField # for # of ship in slot # at priority #\nField # when money over # at priority #\nFighter\nfillColor\nFind recharger\nFind units that are out of energy\nFlackTurret\nFlameTurret\nFlee\nFlee enemies\nFollow\nFriendly Army Middle\nFriendly Spawn\nFriendly Spawn\nfullUpdate\nghostCopy\ngoto\nGoto @locationTypes\nGuard\nHAarmor1x2Curved\nHArmor1x1\nHArmor1x1Angle\nHArmor1x1AngleBack\nHArmor1x2\nHArmor1x2Back1\nHArmor1x2Back2\nHArmor1x2Curved2\nHArmor1x2Font1\nHArmor1x2Front2\nHArmor2x1\nHArmor2x1Curved2\nHArmor2x2\nHArmor2x2Angle\nHArmor2x2AngleBack\nHArmor2x2Back1\nHArmor2x2Back2\nHArmor2x2Curved\nHArmor2x2Front1\nHArmor2x2Front2\nHeavyBeamTurret\nHeavyPDTurret\nHold Position\nholdPosition\nhost\nhp\nimage\nimg/debree/acloud01.png\nimg/debree/acloud02.png\nimg/debree/acloud03.png\nimg/debree/acloud04.png\nimg/debree/bigdebree01.png\nimg/debree/bigdebree02.png\nimg/debree/bigdebree03.png\nimg/debree/bigdebree04.png\nimg/debree/bigdebree05.png\nimg/debree/bigdebree06.png\nimg/debree/bigdebree07.png\nimg/debree/bigdebree08.png\nimg/debree/bigdebree09.png\nimg/debree/bigdebree10.png\nimg/debree/bigdebree11.png\nimg/debree/bigdebree12.png\nimg/debree/civ01.png\nimg/debree/civ02.png\nimg/debree/civ03.png\nimg/debree/civ04.png\nimg/debree/civ05.png\nimg/debree/debree01.png\nimg/debree/debree02.png\nimg/debree/debree03.png\nimg/debree/debree04.png\nimg/debree/debree05.png\nimg/debree/debree06.png\nimg/debree/debree07.png\nimg/debree/debree08.png\nimg/debree/debree09.png\nimg/debree/debree10.png\nimg/debree/debree11.png\nimg/debree/debree12.png\nimg/debree/debree13.png\nimg/debree/debree14.png\nimg/debree/debree15.png\nimg/debree/debree16.png\nimg/debree/debree17.png\nimg/debree/debree18.png\nimg/debree/debree19.png\nimg/debree/debree20.png\nimg/debree/debree21.png\nimg/debree/debree22.png\nimg/debree/debree23.png\nimg/debree/debree24.png\nimg/debree/debree25.png\nimg/debree/gcloud01.png\nimg/debree/gcloud02.png\nimg/debree/gcloud03.png\nimg/debree/gcloud04.png\nimg/debree/scloud01.png\nimg/debree/scloud02.png\nimg/debree/scloud03.png\nimg/debree/scloud04.png\nimg/debree/vcloud01.png\nimg/debree/vcloud02.png\nimg/debree/vcloud03.png\nimg/debree/vcloud04.png\nimg/dodads/bigdodad01.png\nimg/dodads/bigdodad02.png\nimg/dodads/bigdodad03.png\nimg/dodads/bigdodad04.png\nimg/dodads/bigdodad05.png\nimg/dodads/meddodad01.png\nimg/dodads/meddodad02.png\nimg/dodads/meddodad03.png\nimg/dodads/meddodad04.png\nimg/point02.png\nimg/rocks/lrock01.png\nimg/rocks/lrock02.png\nimg/rocks/lrock03.png\nimg/rocks/lrock04.png\nimg/rocks/lrock05.png\nimg/rocks/mrock01.png\nimg/rocks/mrock02.png\nimg/rocks/mrock03.png\nimg/rocks/mrock04.png\nimg/rocks/mrock05.png\nimg/rocks/mrock06.png\nimg/rocks/srock01.png\nimg/rocks/srock02.png\nimg/rocks/srock03.png\nimg/rocks/srock04.png\nimg/rocks/srock05.png\nimg/rocks/srock06.png\nimg/rocks/srock07.png\nimg/rocks/srock08.png\nInterceptor\nJumpEngine\nkickPlayer\nkills\nKite\nLess Brawling Value\nLess DPS\nLess expensive\nLess HP\nLess Range\nLetter0\nLetter1\nLetter2\nLetter3\nLetter4\nLetter5\nLetter6\nLetter7\nLetter8\nLetter9\nLetterA\nLetterB\nLetterC\nLetterD\nLetterDot\nLetterE\nLetterF\nLetterG\nLetterH\nLetterI\nLetterJ\nLetterK\nLetterL\nLetterM\nLetterN\nLetterO\nLetterP\nLetterPound\nLetterQ\nLetterR\nLetterS\nLetterT\nLetterU\nLetterV\nLetterW\nLetterX\nLetterY\nLetterZ\nLightBeamTurret\nmessage\nMineTurret\nMissileTurret\nmoney\nmoneyEarned\nMore Arc\nMore Brawling Value\nMore DPS\nMore expensive\nMore HP\nMore Range\nMore Range\nMount10Range\nMount180\nMount270\nMount30\nMount360\nMount360Micro\nMount90\nmouse\nmouseMove\nMove\nmoveOrder\nname\nNo PD\nNot Cloaked\nnumbers\nOverKillAi\nowner\nPad2x2\npartId\nparts\npartTargetId\npartWorking\nPDTurret\nperf\nPlasmaTurret\nplayerJoin\nplayerNumber\nplayers\nplayerSelected\npos\nProtect\nradius\nrallyPoint\nRam\nReactor1x1\nReactor1x2\nReactor2x1\nReactor2x2\nReloaderMod\nRest\nRest\nRingTurret\nRock\nrockColor\nrot\nrunning\nScout\nSelf Destruct\nsend other\nsend players\nsend things\nsend things fields\nsend things parts\nsend things roots\nsend zJson\nserverType\nShadowNArmor1x1\nShadowNArmor1x2\nShadowNArmor2x1\nShadowNArmor2x2\nShadowNArmor2x2Angle\nShapedWarhead\nshield\nShieldGen1x1\nShieldGen2x1\nShieldGen2x2\nside\nsim\nsize\nSlower\nSniperGun\nSolar1x1\nSolar2x2\nSolar3x3\nspacesRebuild\nSpawnPoint\nspec\nsplayers\nspotColor\nSpread to\nstartGame\nStasisField\nstate\nStay at range\nStay in #m range of friendly units\nStay in #m range of slot # units\nStayaway in #m range from slot # units\nstep\nsthings\nStop\nstopOrder\nStripe1x1\nStripe1x1Corner\nStripe1x2\nStripe2x1\nStripe2x2\nStripe2x2Corner\nStripe2x2Round\nStripeDouble2x1\nStripeDouble2x2\nStronger\nSwarmer\nSymbolDecal1\nSymbolDecal10\nSymbolDecal11\nSymbolDecal12\nSymbolDecal13\nSymbolDecal14\nSymbolDecal15\nSymbolDecal16\nSymbolDecal17\nSymbolDecal18\nSymbolDecal19\nSymbolDecal2\nSymbolDecal20\nSymbolDecal21\nSymbolDecal22\nSymbolDecal23\nSymbolDecal24\nSymbolDecal3\nSymbolDecal4\nSymbolDecal5\nSymbolDecal6\nSymbolDecal7\nSymbolDecal8\nSymbolDecal9\nTargetingMod\nTeslaTurret\ntheme\nthingId\nthings\ntimeings\nTorpTurret\ntreeform\nTry to field # every # seconds\ntype\nUArmor1x1\nUArmor1x1Angle\nUArmor1x1AngleBack\nUArmor1x1Notch1\nUArmor1x1Notch2\nUArmor1x1Spike\nUArmor1x2\nUArmor1x2Notch1\nUArmor1x2Notch2\nUArmor2x1\nUArmor2x2\nUnit\nunitsBuilt\nunitsCollide\nvalidBar\nVArmor1x1\nVArmor1x1Angle\nVArmor1x1Corner1\nVArmor1x1Corner2\nVArmor1x1Corner3\nVArmor1x1CornerBack\nVArmor1x1Curve\nVArmor1x1Hook\nVArmor1x2\nVArmor1x2Corner4\nVArmor1x2Curved\nVArmor1x2End\nVArmor1x2IBeam\nVArmor1x2SideBar\nVArmor1x2SideBarFilled\nVArmor2x1Curved\nVArmor2x2\nVArmor2x2Angle\nVArmor2x2Curve\nVArmor2x2Curved\nvel\nwarpIn\nWavePullTurret\nWavePushTurret\nWeaker\nWhen #% of energy, @chargeTypes\nWing1x1Angle\nWing1x1Notch\nWing1x1Round\nWing1x2\nWing2x1\nWing2x2\nwinningSide\nz".split("\n");
+
+
+    /*
+  afk
+  waiting
+   */
+
+}).call(this);
+;
+
+
+//require('../src/maths.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
     var f, m3, m4, q4, v2, v3, v4;
 
@@ -2428,6 +307,10 @@
         return d;
     };
 
+    v2.cross = function (a, b) {
+        return a[0] * b[1] - b[0] * a[1];
+    };
+
     v2.angle = function (a) {
         a = Math.atan2(a[1], a[0]) + Math.PI / 2;
         while (a > Math.PI) {
@@ -2468,6 +351,13 @@
         x = to[0] - from[0];
         y = to[1] - from[1];
         return Math.sqrt(x * x + y * y);
+    };
+
+    v2.distanceSq = function (from, to) {
+        var x, y;
+        x = to[0] - from[0];
+        y = to[1] - from[1];
+        return x * x + y * y;
     };
 
     v2.lerp = function (a, b, lerp, d) {
@@ -3661,1136 +1551,13 @@
 ;
 
 
-//from src/hspace.js
-// Generated by CoffeeScript 1.10.0
+//require('../src/maps.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
-    var PRIME, clamp, overlapRectCircle;
-
-    PRIME = 677;
-
-    clamp = function (value, min, max) {
-        if (value < min) {
-            return min;
-        }
-        if (value > max) {
-            return max;
-        }
-        return value;
-    };
-
-    overlapRectCircle = function (point, radius, x, y, w, h) {
-        var dx, dy;
-        dx = point[0] - clamp(point[0], x, x + w);
-        dy = point[1] - clamp(point[1], y, y + h);
-        return (dx * dx + dy * dy) <= (radius * radius);
-    };
-
-    window.HSpace = (function () {
-        function HSpace(resolution) {
-            this.resolution = resolution;
-            this.hash = new Map();
-        }
-
-        HSpace.prototype.key = function (pos) {
-            return Math.floor(pos[0] / this.resolution) + Math.floor(pos[1] / this.resolution) * PRIME;
-        };
-
-        HSpace.prototype.insert = function (thing) {
-            var posKey, things;
-            posKey = this.key(thing.pos);
-            things = this.hash.get(posKey);
-            if (things == null) {
-                return this.hash.set(posKey, [thing]);
-            } else {
-                return things.push(thing);
-            }
-        };
-
-        HSpace.prototype.findInRange = function (point, range, cb) {
-            var d, i, j, k, len, posKey, px, py, ref, ref1, ref2, ref3, rx, ry, thing, things, x, y;
-            sim.timeStart("findInRange");
-            d = Math.floor(range / this.resolution) + 1;
-            px = Math.floor(point[0] / this.resolution);
-            py = Math.floor(point[1] / this.resolution);
-            for (x = i = ref = -d, ref1 = d + 1; ref <= ref1 ? i < ref1 : i > ref1; x = ref <= ref1 ? ++i : --i) {
-                for (y = j = ref2 = -d, ref3 = d + 1; ref2 <= ref3 ? j < ref3 : j > ref3; y = ref2 <= ref3 ? ++j : --j) {
-                    rx = px + x;
-                    ry = py + y;
-                    if (overlapRectCircle(point, range, rx * this.resolution, ry * this.resolution, this.resolution, this.resolution)) {
-                        posKey = rx + ry * PRIME;
-                        things = this.hash.get(posKey);
-                        if (things) {
-                            for (k = 0, len = things.length; k < len; k++) {
-                                thing = things[k];
-                                if (cb(thing)) {
-                                    sim.timeEnd("findInRange");
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            sim.timeEnd("findInRange");
-        };
-
-        return HSpace;
-
-    })();
-
-}).call(this);
-;
-
-
-//from src/linky.js
-// Generated by CoffeeScript 1.10.0
-(function () {
-    var cache, contains, endsWith, examine, pairs, tlds;
-
-    window.linky = {};
-
-    tlds = 'abbott abogado ac academy accountants active actor ad adult ae aero af ag agency ai airforce al allfinanz alsace am amsterdam an android ao apartments aq aquarelle ar archi army arpa as asia associates at attorney au auction audio autos aw ax axa az ba band bank bar barclaycard barclays bargains bayern bb bd be beer berlin best bf bg bh bi bid bike bingo bio biz bj black blackfriday bloomberg blue bm bmw bn bnpparibas bo boats boo boutique br brussels bs bt budapest build builders business buzz bv bw by bz bzh ca cab cal camera camp cancerresearch canon capetown capital caravan cards care career careers cartier casa cash casino cat catering cbn cc cd center ceo cern cf cg ch channel chat cheap chloe christmas chrome church ci citic city ck cl claims cleaning click clinic clothing club cm cn co coach codes coffee college cologne com community company computer condos construction consulting contractors cooking cool coop country courses cr credit creditcard cricket crs cruises cu cuisinella cv cw cx cy cymru cz dabur dad dance dating datsun day dclk de deals degree delivery democrat dental dentist desi design dev diamonds diet digital direct directory discount dj dk dm dnp do docs domains doosan durban dvag dz eat ec edu education ee eg email emerck energy engineer engineering enterprises epson equipment er erni es esq estate et eu eurovision eus events everbank exchange expert exposed fail fans farm fashion feedback fi finance financial firmdale fish fishing fit fitness fj fk flights florist flowers flsmidth fly fm fo foo football forex forsale foundation fr frl frogans fund furniture futbol ga gal gallery garden gb gbiz gd gdn ge gent gf gg ggee gh gi gift gifts gives gl glass gle global globo gm gmail gmo gmx gn goldpoint goo goog google gop gov gp gq gr graphics gratis green gripe gs gt gu guide guitars guru gw gy hamburg hangout haus healthcare help here hermes hiphop hiv hk hm hn holdings holiday homes horse host hosting house how hr ht hu ibm id ie ifm il im immo immobilien in industries infiniti info ing ink institute insure int international investments io iq ir irish is it iwc java jcb je jetzt jm jo jobs joburg jp juegos kaufen kddi ke kg kh ki kim kitchen kiwi km kn koeln kp kr krd kred kw ky kyoto kz la lacaixa land lat latrobe lawyer lb lc lds lease leclerc legal lgbt li lidl life lighting limited limo link lk loans london lotte lotto lr ls lt ltda lu luxe luxury lv ly ma madrid maif maison management mango market marketing markets marriott mc md me media meet melbourne meme memorial menu mg mh miami mil mini mk ml mm mn mo mobi moda moe monash money mormon mortgage moscow motorcycles mov mp mq mr ms mt mtpc mu museum mv mw mx my mz na nagoya name navy nc ne net network neustar new nexus nf ng ngo nhk ni nico ninja nissan nl no np nr nra nrw ntt nu nyc nz okinawa om one ong onl ooo oracle org organic osaka otsuka ovh pa paris partners parts party pe pf pg ph pharmacy photo photography photos physio pics pictet pictures pink pizza pk pl place plumbing pm pn pohl poker porn post pr praxi press pro prod productions prof properties property ps pt pub pw py qa qpon quebec re realtor recipes red rehab reise reisen reit ren rentals repair report republican rest restaurant reviews rich rio rip ro rocks rodeo rs rsvp ru ruhr rw ryukyu sa saarland sale samsung sarl saxo sb sc sca scb schmidt school schule schwarz science scot sd se services sew sexy sg sh shiksha shoes shriram si singles sj sk sky sl sm sn so social software sohu solar solutions soy space spiegel sr st study style su sucks supplies supply support surf surgery suzuki sv sx sy sydney systems sz taipei tatar tattoo tax tc td technology tel temasek tennis tf tg th tienda tips tires tirol tj tk tl tm tn to today tokyo tools top toshiba town toys tr trade training travel trust tt tui tv tw tz ua ug uk university uno uol us uy uz va vacations vc ve vegas ventures versicherung vet vg vi viajes video villas vision vlaanderen vn vodka vote voting voto voyage vu wales wang watch webcam website wed wedding wf whoswho wien wiki williamhill wme work works world ws wtc wtf xin xxx xyz yachts yandex ye yodobashi yoga yokohama youtube yt za zip zm zone zuerich zw'.split(" ");
-
-    pairs = [["(", ")"], ["[", "]"], ["{", "}"], ["'", "'"], ['"', '"']];
-
-    endsWith = function (text, str) {
-        return text.slice(text.length - str.length) === str;
-    };
-
-    contains = function (text, str) {
-        return text.indexOf(str) !== -1;
-    };
-
-    cache = {};
-
-    linky.linkfy = function (text) {
-        var j, len, output, parts, t;
-        if (cache[text] != null) {
-            return cache[text];
-        }
-        parts = linky.analyze(text);
-        output = "";
-        for (j = 0, len = parts.length; j < len; j++) {
-            t = parts[j];
-            if (t[0] === "url") {
-                output += "<a href='" + t[1] + "' target='_blank'>" + t[2] + "</a>";
-            } else {
-                output += t;
-            }
-        }
-        cache[text] = output;
-        return output;
-    };
-
-    linky.isLink = function (text) {
-        var parts;
-        parts = linky.analyze(text);
-        if (parts.length === 1 && parts[0][0] === "url") {
-            return parts[0][1];
-        } else {
-            return false;
-        }
-    };
-
-    linky.analyze = function (text) {
-        var i, j, k, l, len, len1, len2, len3, m, output, outputAdd, r, ref, result, t, tld, token, tokens, v;
-        ref = [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
-        for (j = 0, len = ref.length; j < len; j++) {
-            v = ref[j];
-            text = text.replace(new RegExp(v[0], "gm"), v[1]);
-        }
-        tokens = text.split(/(\s+)/);
-        output = [];
-        outputAdd = function (r) {
-            var ref1;
-            if (r) {
-                if ((typeof output[output.length - 1] === (ref1 = typeof r) && ref1 === "string")) {
-                    return output[output.length - 1] += r;
-                } else {
-                    return output.push(r);
-                }
-            }
-        };
-        for (i = k = 0, len1 = tokens.length; k < len1; i = ++k) {
-            token = tokens[i];
-            r = token;
-            t = token.toLowerCase();
-            for (l = 0, len2 = tlds.length; l < len2; l++) {
-                tld = tlds[l];
-                if (contains(t, "." + tld)) {
-                    result = examine(token, tld);
-                    if (result) {
-                        for (m = 0, len3 = result.length; m < len3; m++) {
-                            r = result[m];
-                            outputAdd(r);
-                        }
-                        r = "";
-                        break;
-                    }
-                }
-            }
-            outputAdd(r);
-        }
-        return output;
-    };
-
-    examine = function (t, tld) {
-        var a, b, j, len, post, pre, ref, url;
-        pre = "";
-        post = "";
-        if (t[t.length - 1] === ".") {
-            post = "." + post;
-            t = t.slice(0, t.length - 1);
-        }
-        for (j = 0, len = pairs.length; j < len; j++) {
-            ref = pairs[j], a = ref[0], b = ref[1];
-            if (t[0] === a && t[t.length - 1] === b) {
-                pre = pre + a;
-                post = b + post;
-                t = t.slice(1, t.length - 1);
-            }
-        }
-        if (!(endsWith(t, "." + tld) || contains(t, "." + tld + "/") || contains(t, "." + tld + ":"))) {
-            return false;
-        }
-        if (t[0] === ".") {
-            return false;
-        }
-        if (t.slice(0, 4) !== "http") {
-            url = "http://" + t;
-        } else {
-            url = t;
-        }
-        return [pre, ["url", url, t], post];
-    };
-
-}).call(this);
-;
-
-
-//from src/zjson.js
-// Generated by CoffeeScript 1.10.0
-
-/*
-zjson - binary json sirelizer with some strange features
-
-* It does hte basic json to bin and bin to json
-* You can Diffs and send thouse instead
-* You can add a Strings table
-    list wich both ends need to agree on
-    usuly used for keys that are present in every msg
- */
-
-(function () {
-    var COLLECT_STATS, MAX16, MAX32, MAX8, toHex;
-
-    Number.prototype.isInt = function (n) {
-        return n !== "" && !isNaN(n) && Math.round(n) === n;
-    };
-
-    Number.prototype.isFloat = function (n) {
-        return n !== "" && !isNaN(n) && Math.round(n) !== n;
-    };
-
-    MAX8 = 256;
-
-    MAX16 = 256 * 256;
-
-    MAX32 = 256 * 256 * 256 * 256;
-
-    COLLECT_STATS = true;
-
-    window.commonZJsonStrings = {};
-
-    window.commonZJsonStringsGet = function () {
-        var k, list;
-        list = [];
-        for (k in commonZJsonStrings) {
-            if (commonZJsonStrings[k] > 2) {
-                list.push(k);
-            }
-        }
-        return console.log(list.sort().join("\n"));
-    };
-
-    window.commonZJsonBytePattrns = {};
-
-    window.commonZJsonBytePattrnsGet = function () {
-        var e, j, k, len, list, ref, results, v;
-        list = [];
-        for (k in commonZJsonBytePattrns) {
-            v = commonZJsonBytePattrns[k];
-            list.push([k, v]);
-        }
-        list = list.sort(function (a, b) {
-            return b[1] - a[1];
-        });
-        ref = list.slice(0, 256);
-        results = [];
-        for (j = 0, len = ref.length; j < len; j++) {
-            e = ref[j];
-            results.push(console.log(e[0], e[1]));
-        }
-        return results;
-    };
-
-    window.ZJson = (function () {
-        ZJson.prototype.JSON_MARK = 90;
-
-        ZJson.prototype.JSON_DIFF_MARK = 91;
-
-        ZJson.prototype.OBJECT_MARK8 = 0x10;
-
-        ZJson.prototype.OBJECT_MARK16 = 0x11;
-
-        ZJson.prototype.ARRAY_MARK8 = 0x20;
-
-        ZJson.prototype.ARRAY_MARK16 = 0x21;
-
-        ZJson.prototype.ARRAY0_MARK = 0x22;
-
-        ZJson.prototype.ARRAY1_MARK = 0x23;
-
-        ZJson.prototype.ARRAY2_MARK = 0x24;
-
-        ZJson.prototype.ARRAY3_MARK = 0x25;
-
-        ZJson.prototype.ARRAY4_MARK = 0x26;
-
-        ZJson.prototype.STRING_MARK8 = 0x30;
-
-        ZJson.prototype.STRING_MARK16 = 0x31;
-
-        ZJson.prototype.STRING_TABLE_MARK = 0x32;
-
-        ZJson.prototype.NUMBER_MARK8 = 0x40;
-
-        ZJson.prototype.NUMBER_MARK16 = 0x41;
-
-        ZJson.prototype.NUMBER_MARK32 = 0x42;
-
-        ZJson.prototype.NUMBER_MARK32F = 0x43;
-
-        ZJson.prototype.BOOL_TRUE_MARK = 0x50;
-
-        ZJson.prototype.BOOL_FALSE_MARK = 0x51;
-
-        ZJson.prototype.NULL_MARK = 0x52;
-
-        ZJson.prototype.UNDEFINED_MARK = 0x53;
-
-        function ZJson(strTable) {
-            var i, j, len, str;
-            if (strTable == null) {
-                strTable = null;
-            }
-            this.buffSize = 1024 * 1024;
-            this.buffer = new ArrayBuffer(this.buffSize);
-            this.dv = new DataView(this.buffer);
-            this.str2num = new Map();
-            this.num2str = new Map();
-            if (strTable) {
-                for (i = j = 0, len = strTable.length; j < len; i = ++j) {
-                    str = strTable[i];
-                    this.str2num.set(str, i);
-                    this.num2str.set(i, str);
-                }
-                if (i > MAX16) {
-                    throw "Too many strings in the string table";
-                }
-            }
-        }
-
-        ZJson.prototype.dumpDv = function (json) {
-            var buf, dv, end, i, j, ref;
-            this.i = 0;
-            this.dumpNode(json);
-            end = "END";
-            this.dv.setUint8(this.i, end.charCodeAt(0));
-            this.i += 1;
-            this.dv.setUint8(this.i, end.charCodeAt(1));
-            this.i += 1;
-            this.dv.setUint8(this.i, end.charCodeAt(2));
-            this.i += 1;
-            buf = new ArrayBuffer(this.i);
-            dv = new DataView(buf);
-            for (i = j = 0, ref = this.i; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-                dv.setUint8(i, this.dv.getUint8(i));
-            }
-            return dv;
-        };
-
-        ZJson.prototype.dumpNode = function (json) {
-            var e, i, j, k, l, len, length, num, ref, results, results1, results2, v;
-            if (json === null) {
-                this.dv.setUint8(this.i, this.NULL_MARK);
-                this.i += 1;
-                return;
-            }
-            if (json === void 0) {
-                this.dv.setUint8(this.i, this.UNDEFINED_MARK);
-                this.i += 1;
-                return;
-            }
-            switch (typeof json) {
-                case "object":
-                    if (json.length != null) {
-                        length = json.length;
-                        if (length === 0) {
-                            this.dv.setUint8(this.i, this.ARRAY0_MARK);
-                            this.i += 1;
-                        } else if (length === 1) {
-                            this.dv.setUint8(this.i, this.ARRAY1_MARK);
-                            this.i += 1;
-                        } else if (length === 2) {
-                            this.dv.setUint8(this.i, this.ARRAY2_MARK);
-                            this.i += 1;
-                        } else if (length === 3) {
-                            this.dv.setUint8(this.i, this.ARRAY3_MARK);
-                            this.i += 1;
-                        } else if (length === 4) {
-                            this.dv.setUint8(this.i, this.ARRAY4_MARK);
-                            this.i += 1;
-                        } else if (length < MAX8) {
-                            this.dv.setUint8(this.i, this.ARRAY_MARK8);
-                            this.i += 1;
-                            this.dv.setUint8(this.i, length);
-                            this.i += 1;
-                        } else if (length < MAX16) {
-                            this.dv.setUint8(this.i, this.ARRAY_MARK16);
-                            this.i += 1;
-                            this.dv.setUint16(this.i, length);
-                            this.i += 2;
-                        } else {
-                            throw "Array size of " + length + " not supproted";
-                        }
-                        results = [];
-                        for (j = 0, len = json.length; j < len; j++) {
-                            e = json[j];
-                            results.push(this.dumpNode(e));
-                        }
-                        return results;
-                    } else {
-                        length = 0;
-                        for (k in json) {
-                            v = json[k];
-                            length += 1;
-                        }
-                        if (length < MAX8) {
-                            this.dv.setUint8(this.i, this.OBJECT_MARK8);
-                            this.i += 1;
-                            this.dv.setUint8(this.i, length);
-                            this.i += 1;
-                        } else if (length < MAX16) {
-                            this.dv.setUint8(this.i, this.OBJECT_MARK16);
-                            this.i += 1;
-                            this.dv.setUint16(this.i, length);
-                            this.i += 2;
-                        } else {
-                            throw "Object size of " + length + " not supproted";
-                        }
-                        results1 = [];
-                        for (k in json) {
-                            v = json[k];
-                            this.dumpNode(k);
-                            results1.push(this.dumpNode(v));
-                        }
-                        return results1;
-                    }
-                    break;
-                case "number":
-                    if (Math.round(json) === json && json > 0 && json < 256 * 256 * 256 * 256) {
-                        if (json < MAX8) {
-                            this.dv.setUint8(this.i, this.NUMBER_MARK8);
-                            this.i += 1;
-                            this.dv.setUint8(this.i, json);
-                            return this.i += 1;
-                        } else if (json < MAX16) {
-                            this.dv.setUint8(this.i, this.NUMBER_MARK16);
-                            this.i += 1;
-                            this.dv.setUint16(this.i, json);
-                            return this.i += 2;
-                        } else if (json < MAX32) {
-                            this.dv.setUint8(this.i, this.NUMBER_MARK32);
-                            this.i += 1;
-                            this.dv.setUint32(this.i, json);
-                            return this.i += 4;
-                        } else {
-                            throw "Invalid number integer " + json + " not supported";
-                        }
-                    } else {
-                        this.dv.setUint8(this.i, this.NUMBER_MARK32F);
-                        this.i += 1;
-                        this.dv.setFloat32(this.i, json);
-                        return this.i += 4;
-                    }
-                    break;
-                case "string":
-                    num = this.str2num.get(json);
-                    if (num != null) {
-                        this.dv.setUint8(this.i, this.STRING_TABLE_MARK);
-                        this.i += 1;
-                        this.dv.setUint16(this.i, num);
-                        return this.i += 2;
-                    } else {
-                        if (COLLECT_STATS) {
-                            commonZJsonStrings[json] = (commonZJsonStrings[json] || 0) + 1;
-                        }
-                        length = json.length;
-                        if (length < MAX8) {
-                            this.dv.setUint8(this.i, this.STRING_MARK8);
-                            this.i += 1;
-                            this.dv.setUint8(this.i, json.length);
-                            this.i += 1;
-                        } else if (length < MAX16) {
-                            this.dv.setUint8(this.i, this.STRING_MARK16);
-                            this.i += 1;
-                            this.dv.setUint16(this.i, json.length);
-                            this.i += 2;
-                        } else {
-                            throw "String size of " + length + " not supproted";
-                        }
-                        results2 = [];
-                        for (i = l = 0, ref = length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
-                            this.dv.setUint8(this.i, json.charCodeAt(i));
-                            results2.push(this.i += 1);
-                        }
-                        return results2;
-                    }
-                    break;
-                case "boolean":
-                    if (json === true) {
-                        this.dv.setUint8(this.i, this.BOOL_TRUE_MARK);
-                        return this.i += 1;
-                    } else {
-                        this.dv.setUint8(this.i, this.BOOL_FALSE_MARK);
-                        return this.i += 1;
-                    }
-                    break;
-                default:
-                    throw "Type " + (typeof json) + " not supported";
-            }
-        };
-
-        ZJson.prototype.loadDv = function (dv) {
-            var json;
-            this.i = 0;
-            json = this.loadNode(dv);
-
-            /*
-      if COLLECT_STATS
-           * look at common byte patterns
-          bp = commonZJsonBytePattrns
-          for i in [0...dv.byteLength]
-              for pattern in [1...4]
-                  if i + pattern < dv.byteLength
-                      arr = []
-                      for n in [0...pattern]
-                          arr.push(dv.getUint8(i + n))
-                      key = arr.join(",")
-                      bp[key] = (bp[key] or 0) + 1
-       */
-            return json;
-        };
-
-        ZJson.prototype.loadNode = function (dv) {
-            var count, e, i, j, json, k, l, length, m, mark, num, ref, ref1, ref2, v;
-            mark = dv.getUint8(this.i);
-            this.i += 1;
-            switch (mark) {
-                case 0:
-                    throw "Zero mark error";
-                    break;
-                case this.ARRAY_MARK8:
-                case this.ARRAY_MARK16:
-                case this.ARRAY0_MARK:
-                case this.ARRAY1_MARK:
-                case this.ARRAY2_MARK:
-                case this.ARRAY3_MARK:
-                case this.ARRAY4_MARK:
-                    if (mark === this.ARRAY0_MARK) {
-                        length = 0;
-                    } else if (mark === this.ARRAY1_MARK) {
-                        length = 1;
-                    } else if (mark === this.ARRAY2_MARK) {
-                        length = 2;
-                    } else if (mark === this.ARRAY3_MARK) {
-                        length = 3;
-                    } else if (mark === this.ARRAY4_MARK) {
-                        length = 4;
-                    } else if (mark === this.ARRAY_MARK8) {
-                        length = dv.getUint8(this.i);
-                        this.i += 1;
-                    } else if (mark === this.ARRAY_MARK16) {
-                        length = dv.getUint16(this.i);
-                        this.i += 2;
-                    } else {
-                        throw "Arrays mark error" + mark;
-                    }
-                    json = [];
-                    for (count = j = 0, ref = length; 0 <= ref ? j < ref : j > ref; count = 0 <= ref ? ++j : --j) {
-                        e = this.loadNode(dv);
-                        json.push(e);
-                    }
-                    return json;
-                case this.OBJECT_MARK8:
-                case this.OBJECT_MARK16:
-                    if (mark === this.OBJECT_MARK8) {
-                        length = dv.getUint8(this.i);
-                        this.i += 1;
-                    } else if (mark === this.OBJECT_MARK16) {
-                        length = dv.getUint16(this.i);
-                        this.i += 2;
-                    } else {
-                        throw "Objext mark error";
-                    }
-                    json = {};
-                    for (count = l = 0, ref1 = length; 0 <= ref1 ? l < ref1 : l > ref1; count = 0 <= ref1 ? ++l : --l) {
-                        k = this.loadNode(dv);
-                        v = this.loadNode(dv);
-                        json[k] = v;
-                    }
-                    return json;
-                case this.STRING_TABLE_MARK:
-                    num = dv.getUint16(this.i);
-                    this.i += 2;
-                    return this.num2str.get(num);
-                case this.STRING_MARK8:
-                case this.STRING_MARK16:
-                    if (mark === this.STRING_MARK8) {
-                        length = dv.getUint8(this.i);
-                        this.i += 1;
-                    } else if (mark === this.STRING_MARK16) {
-                        length = dv.getUint16(this.i);
-                        this.i += 2;
-                    } else {
-                        throw "String mark error";
-                    }
-                    json = "";
-                    for (i = m = 0, ref2 = length; 0 <= ref2 ? m < ref2 : m > ref2; i = 0 <= ref2 ? ++m : --m) {
-                        json += String.fromCharCode(dv.getUint8(this.i));
-                        this.i += 1;
-                    }
-                    return json;
-                case this.NUMBER_MARK8:
-                    json = dv.getUint8(this.i);
-                    this.i += 1;
-                    return json;
-                case this.NUMBER_MARK16:
-                    json = dv.getUint16(this.i);
-                    this.i += 2;
-                    return json;
-                case this.NUMBER_MARK32:
-                    json = dv.getUint32(this.i);
-                    this.i += 4;
-                    return json;
-                case this.NUMBER_MARK32F:
-                    json = dv.getFloat32(this.i);
-                    this.i += 4;
-                    return json;
-                case this.BOOL_TRUE_MARK:
-                    return true;
-                case this.BOOL_FALSE_MARK:
-                    return false;
-                case this.NULL_MARK:
-                    return null;
-                case this.UNDEFINED_MARK:
-                    return void 0;
-                default:
-                    throw "Mark " + mark + " unkown";
-            }
-        };
-
-        return ZJson;
-
-    })();
-
-    toHex = function (number, n) {
-        var hex;
-        if (n == null) {
-            n = 4;
-        }
-        hex = number.toString(16);
-        while (hex.length < n) {
-            hex = "0" + hex;
-        }
-        return hex;
-    };
-
-    window.hexDisplay = function (dv) {
-        var address, ascii, byte, bytes, i, j, r, results;
-        i = 0;
-        results = [];
-        while (i < dv.byteLength) {
-            address = toHex(i, 4);
-            bytes = [];
-            ascii = [];
-            for (r = j = 0; j < 16; r = ++j) {
-                if (i >= dv.byteLength) {
-                    bytes.push("  ");
-                    ascii.push(" ");
-                } else {
-                    byte = dv.getUint8(i);
-                    bytes.push(toHex(byte, 2));
-                    if ((20 < byte && byte < 128)) {
-                        ascii.push(String.fromCharCode(byte));
-                    } else {
-                        ascii.push(".");
-                    }
-                }
-                i += 1;
-            }
-            results.push(console.log(address + "   " + bytes.join(" ") + "   " + ascii.join("")));
-        }
-        return results;
-    };
-
-}).call(this);
-;
-
-
-//from src/protocol.js
-// Generated by CoffeeScript 1.10.0
-(function () {
-    window.prot = {};
-
-    prot.commonWords = "1v1\n1v1r\n2v2\n3v3\n@attackTypes enemy @unitTypes within #m\n@attackTypes enemy that is @absoluteTypes then # within #m\n@attackTypes enemy that is @relativeTypes and @relativeTypes within #m\n@attackTypes enemy within #m\n@capTypes Command Points within #m\naction\naddAi\nai\nAi1\nAi3\nAi4\naiRules\nalpha\nAOEWarhead\napm\nArtilleryTurret\nAttack\nAutoTurret\nAvoid #dps danger areas\nAvoid everything\nAvoid over #damage shots\nBackstab\nBattery1x1\nBattery1x2\nBattery2x1\nBattery2x2\nBattleship\nbeta\nBomb\nBomber\nBomber\nBombGun\nbuildQ\nbuildRq\nBulletSpeedMod\nburn\ncapping\ncapps\nCapture\nCarrier\nCarrier\nCircle\ncloak\nCloak Counter Need\nCloaked\nCloakGenerator\ncolor\nCommandPoint\nconnected\nCruiser\nDamageMod\ndead\nDestroyer\nDestroyer\ndir\nDroneBody\nEMPGun\nEMPGun2\nEmpty\nEnemy Army Middle\nEnemy Spawn\nenergy\nEnergyTransfer\nEngine01\nEngine02\nEngine03\nEngine04\nEngine05\nEngine06\nEngine07\nFaction1\nFaction2\nFaction3\nFaction4\nFaction5\nFaction6\nFaction7\nFaster\nField # at priority #\nField # at start\nField # for # of @needTypes at priority #\nField # for # of enemy @unitTypes at priority #\nField # for # of ship in slot # at priority #\nField # when money over # at priority #\nFighter\nfillColor\nFind recharger\nFind units that are out of energy\nFlackTurret\nFlameTurret\nFlee\nFlee enemies\nFollow\nFriendly Army Middle\nFriendly Spawn\nFriendly Spawn\nfullUpdate\nghostCopy\ngoto\nGoto @locationTypes\nGuard\nHAarmor1x2Curved\nHArmor1x1\nHArmor1x1Angle\nHArmor1x1AngleBack\nHArmor1x2\nHArmor1x2Back1\nHArmor1x2Back2\nHArmor1x2Curved2\nHArmor1x2Font1\nHArmor1x2Front2\nHArmor2x1\nHArmor2x1Curved2\nHArmor2x2\nHArmor2x2Angle\nHArmor2x2AngleBack\nHArmor2x2Back1\nHArmor2x2Back2\nHArmor2x2Curved\nHArmor2x2Front1\nHArmor2x2Front2\nHeavyBeamTurret\nHeavyPDTurret\nHold Position\nholdPosition\nhost\nhp\nimage\nimg/debree/acloud01.png\nimg/debree/acloud02.png\nimg/debree/acloud03.png\nimg/debree/acloud04.png\nimg/debree/bigdebree01.png\nimg/debree/bigdebree02.png\nimg/debree/bigdebree03.png\nimg/debree/bigdebree04.png\nimg/debree/bigdebree05.png\nimg/debree/bigdebree06.png\nimg/debree/bigdebree07.png\nimg/debree/bigdebree08.png\nimg/debree/bigdebree09.png\nimg/debree/bigdebree10.png\nimg/debree/bigdebree11.png\nimg/debree/bigdebree12.png\nimg/debree/civ01.png\nimg/debree/civ02.png\nimg/debree/civ03.png\nimg/debree/civ04.png\nimg/debree/civ05.png\nimg/debree/debree01.png\nimg/debree/debree02.png\nimg/debree/debree03.png\nimg/debree/debree04.png\nimg/debree/debree05.png\nimg/debree/debree06.png\nimg/debree/debree07.png\nimg/debree/debree08.png\nimg/debree/debree09.png\nimg/debree/debree10.png\nimg/debree/debree11.png\nimg/debree/debree12.png\nimg/debree/debree13.png\nimg/debree/debree14.png\nimg/debree/debree15.png\nimg/debree/debree16.png\nimg/debree/debree17.png\nimg/debree/debree18.png\nimg/debree/debree19.png\nimg/debree/debree20.png\nimg/debree/debree21.png\nimg/debree/debree22.png\nimg/debree/debree23.png\nimg/debree/debree24.png\nimg/debree/debree25.png\nimg/debree/gcloud01.png\nimg/debree/gcloud02.png\nimg/debree/gcloud03.png\nimg/debree/gcloud04.png\nimg/debree/scloud01.png\nimg/debree/scloud02.png\nimg/debree/scloud03.png\nimg/debree/scloud04.png\nimg/debree/vcloud01.png\nimg/debree/vcloud02.png\nimg/debree/vcloud03.png\nimg/debree/vcloud04.png\nimg/dodads/bigdodad01.png\nimg/dodads/bigdodad02.png\nimg/dodads/bigdodad03.png\nimg/dodads/bigdodad04.png\nimg/dodads/bigdodad05.png\nimg/dodads/meddodad01.png\nimg/dodads/meddodad02.png\nimg/dodads/meddodad03.png\nimg/dodads/meddodad04.png\nimg/point02.png\nimg/rocks/lrock01.png\nimg/rocks/lrock02.png\nimg/rocks/lrock03.png\nimg/rocks/lrock04.png\nimg/rocks/lrock05.png\nimg/rocks/mrock01.png\nimg/rocks/mrock02.png\nimg/rocks/mrock03.png\nimg/rocks/mrock04.png\nimg/rocks/mrock05.png\nimg/rocks/mrock06.png\nimg/rocks/srock01.png\nimg/rocks/srock02.png\nimg/rocks/srock03.png\nimg/rocks/srock04.png\nimg/rocks/srock05.png\nimg/rocks/srock06.png\nimg/rocks/srock07.png\nimg/rocks/srock08.png\nInterceptor\nJumpEngine\nkickPlayer\nkills\nKite\nLess Brawling Value\nLess DPS\nLess expensive\nLess HP\nLess Range\nLetter0\nLetter1\nLetter2\nLetter3\nLetter4\nLetter5\nLetter6\nLetter7\nLetter8\nLetter9\nLetterA\nLetterB\nLetterC\nLetterD\nLetterDot\nLetterE\nLetterF\nLetterG\nLetterH\nLetterI\nLetterJ\nLetterK\nLetterL\nLetterM\nLetterN\nLetterO\nLetterP\nLetterPound\nLetterQ\nLetterR\nLetterS\nLetterT\nLetterU\nLetterV\nLetterW\nLetterX\nLetterY\nLetterZ\nLightBeamTurret\nmessage\nMineTurret\nMissileTurret\nmoney\nmoneyEarned\nMore Arc\nMore Brawling Value\nMore DPS\nMore expensive\nMore HP\nMore Range\nMore Range\nMount10Range\nMount180\nMount270\nMount30\nMount360\nMount360Micro\nMount90\nmouse\nmouseMove\nMove\nmoveOrder\nname\nNo PD\nNot Cloaked\nnumbers\nOverKillAi\nowner\nPad2x2\npartId\nparts\npartTargetId\npartWorking\nPDTurret\nperf\nPlasmaTurret\nplayerJoin\nplayerNumber\nplayers\nplayerSelected\npos\nProtect\nradius\nrallyPoint\nRam\nReactor1x1\nReactor1x2\nReactor2x1\nReactor2x2\nReloaderMod\nRest\nRest\nRingTurret\nRock\nrockColor\nrot\nrunning\nScout\nSelf Destruct\nsend other\nsend players\nsend things\nsend things fields\nsend things parts\nsend things roots\nsend zJson\nserverType\nShadowNArmor1x1\nShadowNArmor1x2\nShadowNArmor2x1\nShadowNArmor2x2\nShadowNArmor2x2Angle\nShapedWarhead\nshield\nShieldGen1x1\nShieldGen2x1\nShieldGen2x2\nside\nsim\nsize\nSlower\nSniperGun\nSolar1x1\nSolar2x2\nSolar3x3\nspacesRebuild\nSpawnPoint\nspec\nsplayers\nspotColor\nSpread to\nstartGame\nStasisField\nstate\nStay at range\nStay in #m range of friendly units\nStay in #m range of slot # units\nStayaway in #m range from slot # units\nstep\nsthings\nStop\nstopOrder\nStripe1x1\nStripe1x1Corner\nStripe1x2\nStripe2x1\nStripe2x2\nStripe2x2Corner\nStripe2x2Round\nStripeDouble2x1\nStripeDouble2x2\nStronger\nSwarmer\nSymbolDecal1\nSymbolDecal10\nSymbolDecal11\nSymbolDecal12\nSymbolDecal13\nSymbolDecal14\nSymbolDecal15\nSymbolDecal16\nSymbolDecal17\nSymbolDecal18\nSymbolDecal19\nSymbolDecal2\nSymbolDecal20\nSymbolDecal21\nSymbolDecal22\nSymbolDecal23\nSymbolDecal24\nSymbolDecal3\nSymbolDecal4\nSymbolDecal5\nSymbolDecal6\nSymbolDecal7\nSymbolDecal8\nSymbolDecal9\nTargetingMod\nTeslaTurret\ntheme\nthingId\nthings\ntimeings\nTorpTurret\ntreeform\nTry to field # every # seconds\ntype\nUArmor1x1\nUArmor1x1Angle\nUArmor1x1AngleBack\nUArmor1x1Notch1\nUArmor1x1Notch2\nUArmor1x1Spike\nUArmor1x2\nUArmor1x2Notch1\nUArmor1x2Notch2\nUArmor2x1\nUArmor2x2\nUnit\nunitsBuilt\nunitsCollide\nvalidBar\nVArmor1x1\nVArmor1x1Angle\nVArmor1x1Corner1\nVArmor1x1Corner2\nVArmor1x1Corner3\nVArmor1x1CornerBack\nVArmor1x1Curve\nVArmor1x1Hook\nVArmor1x2\nVArmor1x2Corner4\nVArmor1x2Curved\nVArmor1x2End\nVArmor1x2IBeam\nVArmor1x2SideBar\nVArmor1x2SideBarFilled\nVArmor2x1Curved\nVArmor2x2\nVArmor2x2Angle\nVArmor2x2Curve\nVArmor2x2Curved\nvel\nwarpIn\nWavePullTurret\nWavePushTurret\nWeaker\nWhen #% of energy, @chargeTypes\nWing1x1Angle\nWing1x1Notch\nWing1x1Round\nWing1x2\nWing2x1\nWing2x2\nwinningSide\nz".split("\n");
-
-
-    /*
-  afk
-  waiting
-   */
-
-}).call(this);
-;
-
-
-//from src/utils.js
-// Generated by CoffeeScript 1.10.0
-(function () {
-    var stats,
-        slice = [].slice,
-        hasProp = {}.hasOwnProperty;
-
-    window.print = function () {
-        var args;
-        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-        return console.log.apply(console, args);
-    };
-
-    window.choose = function (list) {
-        return list[Math.floor(Math.random() * list.length)];
-    };
-
-    window.chooseInt = function (a, b) {
-        return Math.floor(a + Math.random() * (b - a));
-    };
-
-    window.json = {
-        dumps: JSON.stringify,
-        loads: JSON.parse
-    };
-
-    window.deepCopy = function (src) {
-        var i, j, key, len, ret, thing;
-        if (Array.isArray(src)) {
-            ret = [];
-            for (i = j = 0, len = src.length; j < len; i = ++j) {
-                thing = src[i];
-                ret[i] = deepCopy(thing);
-            }
-            return ret;
-        }
-        if (typeof src === 'object') {
-            ret = {};
-            for (key in src) {
-                if (!hasProp.call(src, key)) continue;
-                ret[key] = deepCopy(src[key]);
-            }
-            return ret;
-        }
-        return src;
-    };
-
-    window.deepEq = function (a, b) {
-        return JSON.stringify(a) === JSON.stringify(b);
-    };
-
-    window.formatTime = function (t) {
-        var minutes, seconds;
-        t = Math.floor(t);
-        seconds = t % 60;
-        minutes = Math.floor(t / 60);
-        if (seconds < 10) {
-            seconds = "0" + seconds;
-        }
-        return minutes + ":" + seconds;
-    };
-
-    window.track = function (name, kargs) {
-        var xhr;
-        if (!kargs) {
-            kargs = {};
-        }
-        console.log("track:", name, JSON.stringify(kargs));
-        if (window.location && window.location.href.indexOf("gamedev.html") !== -1) {
-            return;
-        }
-        xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://andrelytics.com/track");
-        kargs.name = "game_" + name;
-        kargs.api_key = "pub_H4TvK8mxcRPextxxIHOhtstH7YRCAHM2";
-        kargs.user_iden = typeof commander !== "undefined" && commander !== null ? commander.id : void 0;
-        kargs.user_name = typeof commander !== "undefined" && commander !== null ? commander.name : void 0;
-        kargs.version = window.VERSION + "." + MINOR_VERSION;
-        return xhr.send(JSON.stringify(kargs));
-    };
-
-    window.after = function (ms, fn) {
-        return setTimeout(fn, ms);
-    };
-
-    window.doAfter = function (ms, fn) {
-        return setTimeout(fn, ms);
-    };
-
-    window.now = function () {
-        var n, ref, s;
-        if (typeof process !== "undefined" && process !== null) {
-            ref = process.hrtime(), s = ref[0], n = ref[1];
-            return (s * 1000000 + n / 1000) / 1000;
-        } else {
-            return performance.now();
-        }
-    };
-
-    window.ab2str = function (buf) {
-        var bufView, i, j, ref, str;
-        str = "";
-        bufView = new Uint8Array(buf);
-        for (i = j = 0, ref = bufView.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-            str += String.fromCharCode(bufView[i]);
-        }
-        return str;
-    };
-
-    window.str2ab = function (str) {
-        var buf, bufView, i, j, ref;
-        buf = new ArrayBuffer(str.length);
-        bufView = new Uint8Array(buf);
-        for (i = j = 0, ref = str.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-            bufView[i] = str.charCodeAt(i);
-        }
-        return buf;
-    };
-
-    window.dv2str = function (dv) {
-        var i, j, ref, str;
-        str = "";
-        for (i = j = 0, ref = dv.byteLength; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-            str += String.fromCharCode(dv.getUint8(i));
-        }
-        return str;
-    };
-
-    window.str2dv = function (str) {
-        return new DataView(str2ab(str));
-    };
-
-    window.strBuff = function (buf) {
-        var j, len, n, str, u8;
-        str = "";
-        u8 = new Uint8Array(buf);
-        for (j = 0, len = u8.length; j < len; j++) {
-            n = u8[j];
-            str += n + " ";
-        }
-        return str;
-    };
-
-    window.stats = stats = {
-        fps: {},
-        net: {},
-        sim: {}
-    };
-
-    stats.fpsAdd = function (n) {
-        if (n == null) {
-            n = 1;
-        }
-        return stats.add(stats.fps, n);
-    };
-
-    stats.netAdd = function (n) {
-        if (n == null) {
-            n = 1;
-        }
-        return stats.add(stats.net, n);
-    };
-
-    stats.simAdd = function (n) {
-        if (n == null) {
-            n = 1;
-        }
-        return stats.add(stats.sim, n);
-    };
-
-    stats.add = function (frames, n) {
-        var sec;
-        sec = Math.floor(Date.now() / 1000);
-        if (frames[sec] != null) {
-            return frames[sec] += n;
-        } else {
-            return frames[sec] = n;
-        }
-    };
-
-    stats.draw = function () {
-        if (!control.perf) {
-            return;
-        }
-        stats.drawFrames(stats.fps, 10, 60, 160);
-        stats.drawFrames(stats.sim, 1, 16, 320);
-        return stats.drawFrames(stats.net, 1024 * 10, 1024, 720);
-    };
-
-    stats.drawFrames = function (frames, div, max, yadj) {
-        var color, j, nFrames, results, sec, sx, sy, x, y;
-        sec = Math.floor(Date.now() / 1000);
-        results = [];
-        for (x = j = 0; j < 31; x = ++j) {
-            sx = -x * 16 + window.innerWidth - 20;
-            sy = window.innerHeight - yadj;
-            nFrames = frames[sec - 30 + x] || 0;
-            color = [255, 255, 255, 100];
-            results.push((function () {
-                var k, ref, results1;
-                results1 = [];
-                for (y = k = 0, ref = Math.ceil(nFrames / div); 0 <= ref ? k < ref : k > ref; y = 0 <= ref ? ++k : --k) {
-                    results1.push(baseAtlas.drawSprite("parts/sel1x1.png", [sx, sy - y * 16], [.5, .5], 0, color));
-                }
-                return results1;
-            })());
-        }
-        return results;
-    };
-
-    window.sha1 = function (msg) {
-        fcc = String.fromCharCode;
-
-        function rotl(n, s) {
-            return n << s | n >>> 32 - s;
-        };
-
-        function tohex(i) {
-            for (var h = "", s = 28; ; s -= 4) {
-                h += (i >>> s & 0xf).toString(16);
-                if (!s) return h;
-            }
-        };
-        var H0 = 0x67452301, H1 = 0xEFCDAB89, H2 = 0x98BADCFE, H3 = 0x10325476, H4 = 0xC3D2E1F0, M = 0x0ffffffff;
-        var i, t, W = new Array(80), ml = msg.length, wa = new Array();
-        msg += fcc(0x80);
-        while (msg.length % 4) msg += fcc(0);
-        for (i = 0; i < msg.length; i += 4) wa.push(msg.charCodeAt(i) << 24 | msg.charCodeAt(i + 1) << 16 | msg.charCodeAt(i + 2) << 8 | msg.charCodeAt(i + 3));
-        while (wa.length % 16 != 14) wa.push(0);
-        wa.push(ml >>> 29), wa.push((ml << 3) & M);
-        for (var bo = 0; bo < wa.length; bo += 16) {
-            for (i = 0; i < 16; i++) W[i] = wa[bo + i];
-            for (i = 16; i <= 79; i++) W[i] = rotl(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
-            var A = H0, B = H1, C = H2, D = H3, E = H4;
-            for (i = 0; i <= 19; i++) t = (rotl(A, 5) + (B & C | ~B & D) + E + W[i] + 0x5A827999) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
-            for (i = 20; i <= 39; i++) t = (rotl(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ED9EBA1) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
-            for (i = 40; i <= 59; i++) t = (rotl(A, 5) + (B & C | B & D | C & D) + E + W[i] + 0x8F1BBCDC) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
-            for (i = 60; i <= 79; i++) t = (rotl(A, 5) + (B ^ C ^ D) + E + W[i] + 0xCA62C1D6) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
-            H0 = H0 + A & M;
-            H1 = H1 + B & M;
-            H2 = H2 + C & M;
-            H3 = H3 + D & M;
-            H4 = H4 + E & M;
-        }
-        return tohex(H0) + tohex(H1) + tohex(H2) + tohex(H3) + tohex(H4);
-    };
-
-    Array.prototype.last = function () {
-        return this[this.length - 1];
-    };
-
-}).call(this);
-;
-
-
-//from src/db.js
-// Generated by CoffeeScript 1.10.0
-(function () {
-    window.db = {};
-
-    db.save = function (key, value) {
-        var data;
-        data = JSON.stringify(value);
-        return localStorage[key] = data;
-    };
-
-    db.load = function (key) {
-        var data;
-        if (!localStorage[key]) {
-            return void 0;
-        }
-        try {
-            data = JSON.parse(localStorage[key]);
-        } catch (undefined) {
-        }
-        return data;
-    };
-
-}).call(this);
-;
-
-
-//from src/colors.js
-// Generated by CoffeeScript 1.10.0
-(function () {
-    var hex, j, len, ref;
-
-    window.colors = {};
-
-    colors.nice = [];
-
-    colors.niceHex = ["D24D57", "F22613", "D91E18", "96281B", "EF4836", "D64541", "C0392B", "CF000F", "E74C3C", "DB0A5B", "F64747", "F1A9A0", "D2527F", "E08283", "F62459", "E26A6A", "DCC6E0", "663399", "674172", "AEA8D3", "913D88", "9A12B3", "BF55EC", "BE90D4", "8E44AD", "9B59B6", "446CB3", "E4F1FE", "4183D7", "59ABE3", "81CFE0", "52B3D9", "C5EFF7", "22A7F0", "3498DB", "2C3E50", "19B5FE", "336E7B", "22313F", "6BB9F0", "1E8BC3", "3A539B", "34495E", "67809F", "2574A9", "1F3A93", "89C4F4", "4B77BE", "5C97BF", "4ECDC4", "A2DED0", "87D37C", "90C695", "26A65B", "03C9A9", "68C3A3", "65C6BB", "1BBC9B", "1BA39C", "66CC99", "BADA55", "36D7B7", "C8F7C5", "86E2D5", "2ECC71", "16a085", "3FC380", "019875", "03A678", "4DAF7C", "2ABB9B", "00B16A", "1E824C", "049372", "26C281", "F5D76E", "F7CA18", "F4D03F", "e9d460", "FDE3A7", "F89406", "EB9532", "E87E04", "F4B350", "F2784B", "EB974E", "F5AB35", "D35400", "F39C12", "F9690E", "F9BF3B", "F27935", "E67E22", "ececec", "6C7A89", "D2D7D3", "EEEEEE", "BDC3C7", "ECF0F1", "95A5A6", "DADFE1", "ABB7B7", "F2F1EF", "BFBFBF"];
-
-    colors.validate = function (a) {
-        var b, i, j, ref;
-        b = [0, 0, 0, 0];
-        for (i = j = 0; j < 4; i = ++j) {
-            if (Number.isInteger(a[i]) && (0 <= (ref = a[i]) && ref < 256)) {
-                b[i] = Math.floor(a[i]);
-            }
-        }
-        return b;
-    };
-
-    colors.brightness = function (c) {
-        return (c[0] + c[1] + c[2]) / 3;
-    };
-
-    colors.copy = function (c) {
-        return [c[0], c[1], c[2], c[3]];
-    };
-
-    colors.blackOrWhite = function (c) {
-        if ((c[0] + c[1] + c[2]) / 3 > 128) {
-            return [0, 0, 0, 255];
-        } else {
-            return [255, 255, 255, 255];
-        }
-    };
-
-    colors.hsl2rgb = function (c) {
-        var a, b, g, h, hue2rgb, l, p, q, r, s;
-        h = c[0], s = c[1], l = c[2], a = c[3];
-        if (s === 0) {
-            r = g = b = l;
-        } else {
-            hue2rgb = function (p, q, t) {
-                if (t < 0) {
-                    t += 1;
-                }
-                if (t > 1) {
-                    t -= 1;
-                }
-                if (t < 1 / 6) {
-                    return p + (q - p) * 6 * t;
-                }
-                if (t < 1 / 2) {
-                    return q;
-                }
-                if (t < 2 / 3) {
-                    return p + (q - p) * (2 / 3 - t) * 6;
-                }
-                return p;
-            };
-            q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
-        }
-        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), a];
-    };
-
-    colors.rgb2hsl = function (c) {
-        var a, b, d, g, h, l, max, min, r, s;
-        r = c[0], g = c[1], b = c[2], a = c[3];
-        r /= 255;
-        g /= 255;
-        b /= 255;
-        max = Math.max(r, g, b);
-        min = Math.min(r, g, b);
-        l = (max + min) / 2;
-        if (max === min) {
-            h = s = 0;
-        } else {
-            d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r:
-                    h = (g - b) / d + (g < b ? 6 : 0);
-                    break;
-                case g:
-                    h = (b - r) / d + 2;
-                    break;
-                case b:
-                    h = (r - g) / d + 4;
-            }
-            h /= 6;
-        }
-        return [h, s, l, a];
-    };
-
-    colors.fromHex = function (c) {
-        var a, b, g, r;
-        r = parseInt(c.slice(0, 2), 16);
-        g = parseInt(c.slice(2, 4), 16);
-        b = parseInt(c.slice(4, 6), 16);
-        a = 255;
-        return colors.validate([r, g, b, a]);
-    };
-
-    colors.toHex = function (c) {
-        var chr;
-        chr = function (i) {
-            if (!i) {
-                return "00";
-            }
-            i = i.toString(16);
-            if (i.length === 1) {
-                i = "0" + i;
-            }
-            return i;
-        };
-        return chr(c[0]) + chr(c[1]) + chr(c[2]);
-    };
-
-    colors.cssRgba = function (c) {
-        return "rgba(" + (c[0] || 0) + "," + (c[1] || 0) + "," + (c[2] || 0) + "," + (c[3] || 255) + ")";
-    };
-
-    ref = colors.niceHex;
-    for (j = 0, len = ref.length; j < len; j++) {
-        hex = ref[j];
-        colors.nice.push(colors.fromHex(hex));
-    }
-
-}).call(this);
-;
-
-//from src/maps.js
-// Generated by CoffeeScript 1.10.0
-(function () {
-    var blue, bluebrown, chooseNumber, chooseOne, darkness, fadered, genBox, genClouds, genDebree, genDodads, genRocks,
-        genSymetrical, grayblue, greenbrown, greenpurple, lemondarkred, main, moonyellow, orange, pinkpurple,
-        randomVector, redgreen, tanslate, tealorange, tealwhite, whitepurple, yellowcyan, yellowpuce;
+    var blue, bluebrown, chooseNumber, chooseOne, darkness, fadered, genBox, genCTF, genClouds, genDebree, genDodads,
+        genFFA, genRocks, genSurvival, genSymetrical, genTTT, grayblue, greenbrown, greenpurple, lemondarkred, main,
+        moonyellow, orange, pinkpurple, randomVector, redgreen, space, tanslate, tealorange, tealwhite, whitepurple,
+        yellowcyan, yellowpuce;
 
     window.mapping = {};
 
@@ -4928,25 +1695,48 @@ zjson - binary json sirelizer with some strange features
         fillColor: [60, 133, 111, 255]
     };
 
-    mapping.themes = [main, main, grayblue, orange, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce];
+    space = {
+        rockColor: [200, 255, 200, 255],
+        spotColor: [0, 0, 0, 255],
+        fillColor: [0, 0, 50, 255]
+    };
+
+    mapping.themes = [main, main, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
 
     mapping.generate = function (seed) {
-        var a, fillColor, fns, r, spotColor;
+        var fns, r;
         window.mr = new MTwist(seed);
         sim.things = {};
-        if (mr.random() < .1) {
-            sim.theme = chooseOne(mapping.themes);
-        } else {
-            a = mr.random();
-            spotColor = colors.hsl2rgb([a, .5, .7, 255]);
-            fillColor = colors.hsl2rgb([a + mr.random() * .8 - .4, .3, .2, 255]);
-            sim.theme = {
-                rockColor: spotColor,
-                spotColor: spotColor,
-                fillColor: fillColor
-            };
+
+        /*
+    if mr.random() < .1
+        sim.theme = chooseOne(mapping.themes)
+    else
+        a = mr.random()
+        spotColor = colors.hsl2rgb([a, .5, .7, 255])
+        fillColor = colors.hsl2rgb([a+mr.random()*.8-.4, .3, .2, 255])
+        sim.theme =
+            rockColor: spotColor
+            spotColor: spotColor
+            fillColor: fillColor
+     */
+        sim.theme = chooseOne(mapping.themes);
+        switch (sim.serverType) {
+            case "Survival":
+                genSurvival();
+                break;
+            case "FFA":
+                genFFA();
+                break;
+            case "CTF":
+                genCTF();
+                break;
+            case "TicTacToe":
+                genTTT();
+                break;
+            default:
+                genSymetrical();
         }
-        genSymetrical();
         if (sim.makeRocks) {
             fns = shuffle([genClouds, genDebree, genRocks, genDodads]);
             r = mr.random();
@@ -5039,6 +1829,90 @@ zjson - binary json sirelizer with some strange features
         return results;
     };
 
+    genFFA = function () {
+        var _, a, i, len, m, o, p, pos, q, r, ref, ref1, ref2, results, s, t, tooClose, w;
+        for (i = m = 0; m < 4; i = ++m) {
+            s = new types.SpawnPoint();
+            s.side = "alpha";
+            s.spawn = "alpha";
+            if (i === 0) {
+                s.pos[0] = -sim.mapScale * 3000;
+                s.pos[1] = mr.random() * 3000 - 1500;
+            } else if (i === 1) {
+                s.pos[0] = sim.mapScale * 3000;
+                s.pos[1] = mr.random() * 3000 - 1500;
+            } else if (i === 2) {
+                s.pos[0] = mr.random() * 3000 - 1500;
+                s.pos[1] = -sim.mapScale * 3000;
+            } else if (i === 3) {
+                s.pos[0] = mr.random() * 3000 - 1500;
+                s.pos[1] = sim.mapScale * 3000;
+            }
+            sim.things[s.id] = s;
+        }
+        pos = [];
+        for (i = o = 0, ref = sim.numComPoints; 0 <= ref ? o < ref : o > ref; i = 0 <= ref ? ++o : --o) {
+            a = new types.CommandPoint();
+            a.value = Math.random() * .8 + .2;
+            a.size = [a.value, a.value];
+            a.radius *= a.value;
+            a.side = "neutral";
+            a.z = -.01;
+            for (i = q = 0; q < 10; i = ++q) {
+                tooClose = false;
+                randomVector(a.pos);
+                v2.scale(a.pos, (300 + mr.random() * 2000) * sim.mapScale);
+                ref1 = sim.things;
+                for (_ in ref1) {
+                    t = ref1[_];
+                    if (v2.distance(t.pos, a.pos) < (t.radius + a.radius + 100)) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (!tooClose) {
+                    break;
+                }
+            }
+            sim.things[a.id] = a;
+        }
+        ref2 = sim.players;
+        results = [];
+        for (w = 0, len = ref2.length; w < len; w++) {
+            p = ref2[w];
+            r = new types.Rock();
+            r.image = "parts/fireFlackExp1.png";
+            r.z = -0.1;
+            r["static"] = false;
+            r.player = p;
+            r.tick = function () {
+                var found, ref3;
+                found = false;
+                ref3 = sim.things;
+                for (_ in ref3) {
+                    t = ref3[_];
+                    if (t.unit && t.owner === this.player.number) {
+                        this.pos = t.pos;
+                        this.vel = t.vel;
+                        this.size = [t.radius / 30, t.radius / 30];
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    return this.color = [245, 171, 53, this.player.money / sim.victoryGoal * 255];
+                } else {
+                    return this.color = [0, 0, 0, 0];
+                }
+            };
+            r.move = function () {
+                return this.rot += .08;
+            };
+            results.push(sim.things[r.id] = r);
+        }
+        return results;
+    };
+
     genSymetrical = function () {
         var _, a, b, from_center, i, m, mainSpawn, o, pos, ref, ref1, results, t, tooClose;
         mainSpawn = a = new types.SpawnPoint();
@@ -5092,6 +1966,310 @@ zjson - binary json sirelizer with some strange features
         return results;
     };
 
+    genSurvival = function () {
+        var cp, i, m, ref, results, spawn, th;
+        spawn = new types.SpawnPoint();
+        spawn.side = "alpha";
+        spawn.spawn = "alpha";
+        spawn.pos = v2.create([0, 0]);
+        sim.things[spawn.id] = spawn;
+        cp = function (r, th, side) {
+            var point;
+            point = new types.CommandPoint();
+            point.z = -.01;
+            point.pos[0] = Math.cos(th) * r * sim.mapScale;
+            point.pos[1] = Math.sin(th) * r * sim.mapScale;
+            point.side = side;
+            return sim.things[point.id] = point;
+        };
+        results = [];
+        for (i = m = 0, ref = sim.numComPoints; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
+            th = i * Math.PI * 2 / sim.numComPoints;
+            if (i % 2 === 0) {
+                results.push(cp(1320, th, "beta"));
+            } else {
+                results.push(cp(960, th, "alpha"));
+            }
+        }
+        return results;
+    };
+
+    genCTF = function () {
+        var _, a, alphaSpawn, b, betaSpawn, createFlag, flag, from_center, homePoints, i, len, m, o, point, pos, q, ref,
+            ref1, ref2, results, t, tooClose;
+        createFlag = function () {
+            var flag;
+            flag = new types.Rock();
+            flag.flag = true;
+            flag["static"] = false;
+            flag.z = 2;
+            flag.torq = Math.random() * .2;
+            flag.image = types.Flag.prototype.image;
+            flag.color = types.Flag.prototype.color;
+            flag.size = types.Flag.prototype.size;
+            flag.tick = function () {
+                var closest, eHome, eHomeDist, enemySpawn, home, homeDist, minDist, ref, ref1, ref2, ref3, spawn;
+                closest = function (pos, fn, maxDist) {
+                    var _, dist, minDist, minT, ref, t;
+                    if (maxDist == null) {
+                        maxDist = 10000000;
+                    }
+                    minDist = 0;
+                    minT = null;
+                    ref = sim.things;
+                    for (_ in ref) {
+                        t = ref[_];
+                        if (fn(t)) {
+                            dist = v2.distance(pos, t.pos);
+                            if (dist > maxDist) {
+                                continue;
+                            }
+                            if (dist < minDist || minT === null) {
+                                minDist = dist;
+                                minT = t;
+                            }
+                        }
+                    }
+                    return minT;
+                };
+                spawn = sim.findSpawnPoint(this.side);
+                enemySpawn = sim.findSpawnPoint(otherSide(this.side));
+                if (!spawn || !enemySpawn) {
+                    return;
+                }
+                home = closest(spawn.pos, function (t) {
+                    return t.commandPoint;
+                }) || spawn;
+                eHome = closest(enemySpawn.pos, function (t) {
+                    return t.commandPoint;
+                }) || enemySpawn;
+                homeDist = v2.distance(this.pos, home.pos);
+                eHomeDist = v2.distance(this.pos, eHome.pos);
+                if (homeDist < home.radius) {
+                    this.home = true;
+                    if (this.side === ((ref = this.target) != null ? ref.side : void 0)) {
+                        this.target.carryFlag = false;
+                        this.target = null;
+                    }
+                } else {
+                    this.home = false;
+                    if (eHomeDist < eHome.radius) {
+                        this.side = otherSide(this.side);
+                        if (this.target) {
+                            this.target.carryFlag = false;
+                            if ((ref1 = sim.players[this.target.owner]) != null) {
+                                ref1.capps += 1;
+                            }
+                            this.target = null;
+                        }
+                    }
+                }
+                if (!this.target || v2.distance(this.pos, this.target.pos) > types.Flag.prototype.range || this.target.dead) {
+                    if ((ref2 = this.target) != null) {
+                        ref2.carryFlag = false;
+                    }
+                    closest = null;
+                    minDist = 2e308;
+                    if (homeDist > home.radius) {
+                        sim.unitSpaces[this.side].findInRange(this.pos, types.Flag.prototype.range, (function (_this) {
+                            return function (u) {
+                                var dist;
+                                if (u.carryFlag) {
+                                    return false;
+                                }
+                                dist = v2.distanceSq(_this.pos, u.pos) < minDist;
+                                if (dist < minDist) {
+                                    closest = u;
+                                    minDist - dist;
+                                }
+                                return false;
+                            };
+                        })(this));
+                    }
+                    if (eHomeDist > eHome.radius) {
+                        sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, types.Flag.prototype.range, (function (_this) {
+                            return function (u) {
+                                var dist;
+                                if (u.carryFlag) {
+                                    return false;
+                                }
+                                dist = v2.distanceSq(_this.pos, u.pos) < minDist;
+                                if (dist < minDist) {
+                                    closest = u;
+                                    minDist - dist;
+                                }
+                                return false;
+                            };
+                        })(this));
+                    }
+                    this.target = closest;
+                    if ((ref3 = this.target) != null) {
+                        ref3.carryFlag = true;
+                    }
+                }
+                if (this.target) {
+                    this.target.cloak = 0;
+                    this.target.jump = 0;
+                    return v2.scale(this.target.vel, types.Flag.prototype.slow);
+                }
+            };
+            flag.move = function () {
+                var s;
+                if (this.target) {
+                    v2.scale(v2.norm(v2.sub(this.target.pos, this.pos, this.vel)), v2.distance(this.pos, this.target.pos) / (types.Flag.prototype.range - 10) * this.target.maxSpeed);
+                } else {
+                    v2.scale(this.vel, types.Flag.prototype.stopFriction);
+                }
+                v2.add(this.pos, this.vel);
+                this.rot += this.torq;
+                s = 20000;
+                if (this.pos[0] > s) {
+                    this.pos[0] = s;
+                }
+                if (this.pos[0] < -s) {
+                    this.pos[0] = -s;
+                }
+                if (this.pos[1] > s) {
+                    this.pos[1] = s;
+                }
+                if (this.pos[1] < -s) {
+                    return this.pos[1] = -s;
+                }
+            };
+            return sim.things[flag.id] = flag;
+        };
+        alphaSpawn = a = new types.SpawnPoint();
+        a.side = "alpha";
+        a.spawn = "alpha";
+        a.pos[0] = -sim.mapScale * 3000;
+        a.pos[1] = mr.random() * 3000 - 1500;
+        sim.things[a.id] = a;
+        betaSpawn = b = new types.SpawnPoint();
+        b.side = "beta";
+        b.spawn = "beta";
+        b.pos[0] = sim.mapScale * 3000;
+        b.pos[1] = -a.pos[1];
+        sim.things[b.id] = b;
+        pos = [];
+        homePoints = [];
+        for (i = m = 0, ref = sim.numComPoints / 2; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
+            a = new types.CommandPoint();
+            a.z = -.01;
+            if (i === 0) {
+                v2.set(alphaSpawn.pos, a.pos);
+                from_center = v2.mag(a.pos);
+                v2.scale(a.pos, (from_center - 1500) / from_center);
+            } else {
+                for (i = o = 0; o < 10; i = ++o) {
+                    tooClose = false;
+                    randomVector(a.pos);
+                    v2.scale(a.pos, (300 + mr.random() * 2000) * sim.mapScale);
+                    ref1 = sim.things;
+                    for (_ in ref1) {
+                        t = ref1[_];
+                        if (v2.distance(t.pos, a.pos) < (t.radius + a.radius + 100)) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    if (!tooClose) {
+                        break;
+                    }
+                }
+            }
+            sim.things[a.id] = a;
+            b = new types.CommandPoint();
+            b.z = -.01;
+            b.pos[0] = -a.pos[0];
+            b.pos[1] = -a.pos[1];
+            a.side = "alpha";
+            b.side = "beta";
+            sim.things[b.id] = b;
+            if (i === 0) {
+                homePoints = [a, b];
+            }
+        }
+        a = homePoints[0] || alphaSpawn;
+        b = homePoints[1] || betaSpawn;
+        ref2 = [a, b];
+        results = [];
+        for (q = 0, len = ref2.length; q < len; q++) {
+            point = ref2[q];
+            results.push((function () {
+                var ref3, results1, w;
+                results1 = [];
+                for (i = w = 0, ref3 = sim.numFlags; 0 <= ref3 ? w < ref3 : w > ref3; i = 0 <= ref3 ? ++w : --w) {
+                    flag = createFlag();
+                    flag.side = point.side;
+                    results1.push(v2.add(v2.scale(v2.random(flag.pos), Math.random() * point.radius), point.pos));
+                }
+                return results1;
+            })());
+        }
+        return results;
+    };
+
+    genTTT = function () {
+        var alpha, beta, i, m, mu, o, q, results, u, x, y;
+        for (x = m = -1; m <= 1; x = ++m) {
+            for (y = o = -1; o <= 1; y = ++o) {
+                u = new types.Unit('{"parts":[{"pos":[120,120],"type":"HArmor2x2","dir":0},{"pos":[-120,120],"type":"HArmor2x2","dir":0},{"pos":[-160,80],"type":"HArmor2x2","dir":0},{"pos":[-40,120],"type":"HArmor2x2","dir":0},{"pos":[-80,120],"type":"HArmor2x2","dir":0},{"pos":[0,120],"type":"HArmor2x2","dir":0},{"pos":[80,120],"type":"HArmor2x2","dir":0},{"pos":[-160,40],"type":"HArmor2x2","dir":0},{"pos":[-160,0],"type":"HArmor2x2","dir":0},{"pos":[160,0],"type":"HArmor2x2","dir":0},{"pos":[40,120],"type":"HArmor2x2","dir":0},{"pos":[0,40],"type":"HArmor2x2","dir":0},{"pos":[80,-40],"type":"HArmor2x2","dir":0},{"pos":[80,0],"type":"HArmor2x2","dir":0},{"pos":[-80,-40],"type":"HArmor2x2","dir":0},{"pos":[-80,0],"type":"HArmor2x2","dir":0},{"pos":[-80,40],"type":"HArmor2x2","dir":0},{"pos":[80,40],"type":"HArmor2x2","dir":0},{"pos":[-40,80],"type":"HArmor2x2","dir":0},{"pos":[120,-160],"type":"HArmor2x2","dir":0},{"pos":[0,80],"type":"HArmor2x2","dir":0},{"pos":[0,-80],"type":"HArmor2x2","dir":0},{"pos":[-40,-80],"type":"HArmor2x2","dir":0},{"pos":[40,-80],"type":"HArmor2x2","dir":0},{"pos":[-120,-80],"type":"HArmor2x2","dir":0},{"pos":[-80,-120],"type":"HArmor2x2","dir":0},{"pos":[120,-80],"type":"HArmor2x2","dir":0},{"pos":[-40,-120],"type":"HArmor2x2","dir":0},{"pos":[80,-120],"type":"HArmor2x2","dir":0},{"pos":[120,-40],"type":"HArmor2x2","dir":0},{"pos":[40,-120],"type":"HArmor2x2","dir":0},{"pos":[-120,0],"type":"HArmor2x2","dir":0},{"pos":[-120,-40],"type":"HArmor2x2","dir":0},{"pos":[0,-120],"type":"HArmor2x2","dir":0},{"pos":[120,0],"type":"HArmor2x2","dir":0},{"pos":[120,40],"type":"HArmor2x2","dir":0},{"pos":[-120,40],"type":"HArmor2x2","dir":0},{"pos":[-120,80],"type":"HArmor2x2","dir":0},{"pos":[120,80],"type":"HArmor2x2","dir":0},{"pos":[-40,0],"type":"HArmor2x2","dir":0},{"pos":[40,0],"type":"HArmor2x2","dir":0},{"pos":[-80,80],"type":"HArmor2x2","dir":0},{"pos":[80,80],"type":"HArmor2x2","dir":0},{"pos":[-40,40],"type":"HArmor2x2","dir":0},{"pos":[40,40],"type":"HArmor2x2","dir":0},{"pos":[-40,-40],"type":"HArmor2x2","dir":0},{"pos":[-120,-120],"type":"HArmor2x2","dir":0},{"pos":[120,-120],"type":"HArmor2x2","dir":0},{"pos":[-80,-80],"type":"HArmor2x2","dir":0},{"pos":[80,-80],"type":"HArmor2x2","dir":0},{"pos":[40,-40],"type":"HArmor2x2","dir":0},{"pos":[160,80],"type":"HArmor2x2","dir":0},{"pos":[0,0],"type":"HArmor2x2","dir":0},{"pos":[160,40],"type":"HArmor2x2","dir":0},{"pos":[0,-40],"type":"HArmor2x2","dir":0},{"pos":[-160,-40],"type":"HArmor2x2","dir":0},{"pos":[160,-40],"type":"HArmor2x2","dir":0},{"pos":[-160,-160],"type":"HArmor2x2","dir":0},{"pos":[-120,-160],"type":"HArmor2x2","dir":0},{"pos":[-160,-120],"type":"HArmor2x2","dir":0},{"pos":[160,-120],"type":"HArmor2x2","dir":0},{"pos":[160,-160],"type":"HArmor2x2","dir":0},{"pos":[40,80],"type":"HArmor2x2","dir":0},{"pos":[80,-160],"type":"HArmor2x2","dir":0},{"pos":[-80,-160],"type":"HArmor2x2","dir":0},{"pos":[-120,160],"type":"HArmor2x2","dir":0},{"pos":[160,160],"type":"HArmor2x2","dir":0},{"pos":[-40,-160],"type":"HArmor2x2","dir":0},{"pos":[40,-160],"type":"HArmor2x2","dir":0},{"pos":[0,-160],"type":"HArmor2x2","dir":0},{"pos":[-160,160],"type":"HArmor2x2","dir":0},{"pos":[-80,160],"type":"HArmor2x2","dir":0},{"pos":[80,160],"type":"HArmor2x2","dir":0},{"pos":[120,160],"type":"HArmor2x2","dir":0},{"pos":[40,160],"type":"HArmor2x2","dir":0},{"pos":[-160,120],"type":"HArmor2x2","dir":0},{"pos":[0,160],"type":"HArmor2x2","dir":0},{"pos":[-40,160],"type":"HArmor2x2","dir":0},{"pos":[160,120],"type":"HArmor2x2","dir":0},{"pos":[-160,-80],"type":"HArmor2x2","dir":0},{"pos":[160,-80],"type":"HArmor2x2","dir":0},{"pos":[-140,140],"type":"Stripe2x2Corner","dir":0},{"pos":[170,-170],"type":"Stripe1x1Corner","dir":3},{"pos":[-170,-150],"type":"Stripe1x1","dir":0},{"pos":[170,80],"type":"Stripe1x2","dir":0},{"pos":[-170,40],"type":"Stripe1x2","dir":0},{"pos":[170,40],"type":"Stripe1x2","dir":0},{"pos":[-170,80],"type":"Stripe1x2","dir":0},{"pos":[-170,170],"type":"Stripe1x1Corner","dir":0},{"pos":[170,0],"type":"Stripe1x2","dir":0},{"pos":[100,-140],"type":"Stripe2x2","dir":3},{"pos":[80,-170],"type":"Stripe1x2","dir":3},{"pos":[20,-140],"type":"Stripe2x2","dir":3},{"pos":[-170,0],"type":"Stripe1x2","dir":0},{"pos":[-170,-120],"type":"Stripe1x2","dir":0},{"pos":[170,-120],"type":"Stripe1x2","dir":0},{"pos":[-170,-40],"type":"Stripe1x2","dir":0},{"pos":[-170,120],"type":"Stripe1x2","dir":0},{"pos":[170,170],"type":"Stripe1x1Corner","dir":0},{"pos":[-120,170],"type":"Stripe1x2","dir":3},{"pos":[150,170],"type":"Stripe1x1","dir":1},{"pos":[-150,170],"type":"Stripe1x1","dir":3},{"pos":[-170,-170],"type":"Stripe1x1Corner","dir":1},{"pos":[-80,170],"type":"Stripe1x2","dir":3},{"pos":[80,170],"type":"Stripe1x2","dir":1},{"pos":[-40,170],"type":"Stripe1x2","dir":3},{"pos":[40,170],"type":"Stripe1x2","dir":1},{"pos":[0,170],"type":"Stripe1x2","dir":1},{"pos":[-150,-170],"type":"Stripe1x1","dir":1},{"pos":[150,-170],"type":"Stripe1x1","dir":3},{"pos":[-120,-170],"type":"Stripe1x2","dir":1},{"pos":[120,-170],"type":"Stripe1x2","dir":3},{"pos":[0,-170],"type":"Stripe1x2","dir":3},{"pos":[170,-80],"type":"Stripe1x2","dir":0},{"pos":[120,170],"type":"Stripe1x2","dir":1},{"pos":[170,120],"type":"Stripe1x2","dir":0},{"pos":[-170,-80],"type":"Stripe1x2","dir":0},{"pos":[170,-150],"type":"Stripe1x1","dir":0},{"pos":[40,-170],"type":"Stripe1x2","dir":3},{"pos":[170,150],"type":"Stripe1x1","dir":0},{"pos":[-100,-100],"type":"Stripe2x2Corner","dir":1},{"pos":[100,-100],"type":"Stripe2x2Corner","dir":3},{"pos":[-140,-140],"type":"Stripe2x2Corner","dir":1},{"pos":[140,-140],"type":"Stripe2x2Corner","dir":3},{"pos":[60,-60],"type":"Stripe2x2Corner","dir":3},{"pos":[140,140],"type":"Stripe2x2Corner","dir":0},{"pos":[-100,100],"type":"Stripe2x2Corner","dir":0},{"pos":[100,100],"type":"Stripe2x2Corner","dir":0},{"pos":[-60,60],"type":"Stripe2x2Corner","dir":0},{"pos":[60,60],"type":"Stripe2x2Corner","dir":0},{"pos":[-140,100],"type":"Stripe2x2","dir":0},{"pos":[140,100],"type":"Stripe2x2","dir":0},{"pos":[-140,60],"type":"Stripe2x2","dir":0},{"pos":[140,60],"type":"Stripe2x2","dir":0},{"pos":[-140,20],"type":"Stripe2x2","dir":0},{"pos":[140,20],"type":"Stripe2x2","dir":0},{"pos":[-140,-20],"type":"Stripe2x2","dir":0},{"pos":[140,-20],"type":"Stripe2x2","dir":0},{"pos":[-140,-60],"type":"Stripe2x2","dir":0},{"pos":[140,-60],"type":"Stripe2x2","dir":0},{"pos":[-140,-100],"type":"Stripe2x2","dir":0},{"pos":[140,-100],"type":"Stripe2x2","dir":0},{"pos":[-100,-60],"type":"Stripe2x2","dir":0},{"pos":[100,-60],"type":"Stripe2x2","dir":0},{"pos":[-100,-20],"type":"Stripe2x2","dir":0},{"pos":[100,-20],"type":"Stripe2x2","dir":0},{"pos":[-100,20],"type":"Stripe2x2","dir":0},{"pos":[100,20],"type":"Stripe2x2","dir":0},{"pos":[-40,-170],"type":"Stripe1x2","dir":1},{"pos":[-100,60],"type":"Stripe2x2","dir":0},{"pos":[100,60],"type":"Stripe2x2","dir":0},{"pos":[-60,20],"type":"Stripe2x2","dir":0},{"pos":[60,20],"type":"Stripe2x2","dir":0},{"pos":[-60,-20],"type":"Stripe2x2","dir":0},{"pos":[60,-20],"type":"Stripe2x2","dir":0},{"pos":[-20,-60],"type":"Stripe2x2","dir":1},{"pos":[20,-60],"type":"Stripe2x2","dir":3},{"pos":[20,20],"type":"Stripe2x2Corner","dir":0},{"pos":[-20,20],"type":"Stripe2x2Corner","dir":0},{"pos":[20,-20],"type":"Stripe2x2Corner","dir":3},{"pos":[-20,-20],"type":"Stripe2x2Corner","dir":1},{"pos":[-20,60],"type":"Stripe2x2","dir":1},{"pos":[20,60],"type":"Stripe2x2","dir":3},{"pos":[-60,100],"type":"Stripe2x2","dir":1},{"pos":[60,100],"type":"Stripe2x2","dir":3},{"pos":[-60,-60],"type":"Stripe2x2Corner","dir":1},{"pos":[-170,150],"type":"Stripe1x1","dir":0},{"pos":[-20,100],"type":"Stripe2x2","dir":1},{"pos":[20,100],"type":"Stripe2x2","dir":3},{"pos":[-100,140],"type":"Stripe2x2","dir":1},{"pos":[100,140],"type":"Stripe2x2","dir":3},{"pos":[-60,140],"type":"Stripe2x2","dir":1},{"pos":[60,140],"type":"Stripe2x2","dir":3},{"pos":[-20,140],"type":"Stripe2x2","dir":1},{"pos":[20,140],"type":"Stripe2x2","dir":3},{"pos":[-60,-100],"type":"Stripe2x2","dir":1},{"pos":[60,-100],"type":"Stripe2x2","dir":3},{"pos":[-20,-100],"type":"Stripe2x2","dir":1},{"pos":[20,-100],"type":"Stripe2x2","dir":3},{"pos":[-100,-140],"type":"Stripe2x2","dir":1},{"pos":[-80,-170],"type":"Stripe1x2","dir":1},{"pos":[-60,-140],"type":"Stripe2x2","dir":1},{"pos":[60,-140],"type":"Stripe2x2","dir":3},{"pos":[-20,-140],"type":"Stripe2x2","dir":1},{"pos":[170,-40],"type":"Stripe1x2","dir":0}],"name":"","aiRules":[]}');
+                u.side = "neutral";
+                u.grid = [x, y];
+                u.pos = [2 * x * u.radius, 2 * y * u.radius];
+                u.ttt = "_";
+                u.warpIn = 1;
+                u.tick = function () {
+                    switch (this.ttt) {
+                        case "alpha":
+                            return this.color = [0, 0, 255, 255];
+                        case "beta":
+                            return this.color = [255, 255, 0, 255];
+                        default:
+                            return this.color = [0, 0, 0, 255];
+                    }
+                };
+                sim.things[u.id] = u;
+            }
+        }
+        alpha = "ALPHA";
+        beta = "BETA";
+        results = [];
+        for (i = q = 0; q < 5; i = ++q) {
+            mu = new types.Rock;
+            mu.z = 10;
+            mu["static"] = false;
+            mu.size = [5, 5];
+            mu.vel = [-350, 0];
+            mu.pos = [(i - alpha.length / 2) * 180, 1000];
+            mu.char = {
+                alpha: alpha[i],
+                beta: beta[i]
+            };
+            mu.tick = function () {
+                var char;
+                char = this.char[sim.turn];
+                if (char) {
+                    this.image = "parts/decals/letter" + char + ".png";
+                    return this.color = (function () {
+                        switch (sim.turn) {
+                            case "alpha":
+                                return [0, 0, 255, 255];
+                            case "beta":
+                                return [255, 255, 0, 255];
+                            default:
+                                return [0, 0, 0, 255];
+                        }
+                    })();
+                } else {
+                    return this.color = [0, 0, 0, 0];
+                }
+            };
+            results.push(sim.things[mu.id] = mu);
+        }
+        return results;
+    };
+
     genClouds = function () {
         var alpha, c, cloud, clouds, i, len, m, n, o, otherCloud, overlaps, ref, results, s, type;
         if (mr.random() < .3) {
@@ -5120,9 +2298,12 @@ zjson - binary json sirelizer with some strange features
                 continue;
             }
             cloud.color = v4.create(sim.theme.rockColor);
-            cloud.color[0] = c;
-            cloud.color[1] = c;
-            cloud.color[2] = c;
+
+            /*
+      cloud.color[0] = c
+      cloud.color[1] = c
+      cloud.color[2] = c
+       */
             cloud.color[3] = alpha;
             s = 4 + mr.random() * 4;
             cloud.size = [s, s];
@@ -5389,21 +2570,21 @@ zjson - binary json sirelizer with some strange features
 ;
 
 
-//from src/sim.js
-// Generated by CoffeeScript 1.10.0
+//require('../src/sim.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
-    var DEBUG, _offset, _pos, _vel, isArray,
+    var _offset, _pos, _vel, isArray,
         bind = function (fn, me) {
             return function () {
                 return fn.apply(me, arguments);
             };
         };
 
-    DEBUG = 1;
+    window.DEBUG = false;
 
     window.VERSION = 49;
 
-    window.MINOR_VERSION = 1;
+    window.MINOR_VERSION = 2;
 
     _pos = v2.create();
 
@@ -5443,6 +2624,8 @@ zjson - binary json sirelizer with some strange features
     };
 
     window.types = {};
+
+    window.modes = {};
 
     isArray = function (a) {
         if (Array.isArray(a)) {
@@ -5523,6 +2706,37 @@ zjson - binary json sirelizer with some strange features
 
         Sim.prototype.nGamesPlayed = 0;
 
+        Sim.prototype.validTypes = {
+            "1v1": "1v1",
+            "1v1r": "1v1r",
+            "1v1t": "1v1t",
+            "2v2": "2v2",
+            "3v3": "3v3",
+            "nvn": "nvn",
+            "Survival": "Survival",
+            "FFA": "FFA",
+            "CTF": "CTF",
+            "TicTacToe": "TicTacToe"
+        };
+
+        Sim.prototype.numComPoints = 8;
+
+        Sim.prototype.mapScale = 1.5;
+
+        Sim.prototype.moneyRatio = 1;
+
+        Sim.prototype.tickTime = 63;
+
+        Sim.prototype.unitLimit = 100;
+
+        Sim.prototype.enableAi = true;
+
+        Sim.prototype.check = true;
+
+        Sim.prototype.NxN = 24;
+
+        Sim.prototype.gameFields = ["players", "things", "aiTestMode", "nGamesPlayed", "numBattles", "local", "step", "timeDelta", "winningSide", "numBattles", "unitSpaces", "projSpaces", "zJson", "serverType", "theme"];
+
         Sim.prototype.say = function (message) {
             if (typeof server !== "undefined" && server !== null) {
                 return server.say(message);
@@ -5553,22 +2767,22 @@ zjson - binary json sirelizer with some strange features
         }
 
         Sim.prototype.start = function () {
-            var key, p, ref;
+            var l, len1, p, ref;
             this.net = {};
             this.step = 0;
             this.timeDelta = 0;
             this.winningSide = null;
             this.lastId = 0;
             this.counting = 0;
-            this.generateMap(this.mapScale, this.numComPoints);
+            this.generateMap(this.mapScale, this.numComPoints, this.mapSeed);
             if (this.players == null) {
                 this.players = {};
             } else {
                 ref = this.players;
-                for (key in ref) {
-                    p = ref[key];
-                    if (p && p.connected) {
-                        p.reset();
+                for (l = 0, len1 = ref.length; l < len1; l++) {
+                    p = ref[l];
+                    p.reset();
+                    if (p.connected) {
                         this.validateBuildBar(p);
                     }
                 }
@@ -5583,7 +2797,7 @@ zjson - binary json sirelizer with some strange features
         };
 
         Sim.prototype.configGame = function (p, config) {
-            var l, len1, player, ref, validTypes;
+            var field, l, len1, len2, m, newMode, newSim, player, ref, ref1;
             print("config game!", config);
             if (this.state !== "waiting") {
                 print("Can't set config on game in progress");
@@ -5604,21 +2818,72 @@ zjson - binary json sirelizer with some strange features
                     player.connected = false;
                 }
             }
-            validTypes = {
-                "1v1": "1v1",
-                "1v1r": "1v1r",
-                "1v1t": "1v1t",
-                "2v2": "2v2",
-                "3v3": "3v3"
-            };
-            if (!validTypes[config.type]) {
+            if (!this.validTypes[config.type]) {
                 print("Config type is not valid");
                 return;
             }
             if (this.serverType !== config.type) {
                 this.serverType = config.type;
                 this.say(p.name + " changed server type to " + config.type);
-                return typeof serverTick === "function" ? serverTick() : void 0;
+                if (typeof serverTick === "function") {
+                    serverTick();
+                }
+                newMode = modes[config.type] || Sim;
+                if (this.constructor.name !== newMode.name) {
+                    newSim = new newMode();
+                    ref1 = this.gameFields;
+                    for (m = 0, len2 = ref1.length; m < len2; m++) {
+                        field = ref1[m];
+                        newSim[field] = this[field];
+                    }
+                    if (typeof newSim.init === "function") {
+                        newSim.init();
+                    }
+                    window.sim = newSim;
+                    applyDiff(diffStats, true);
+                }
+            }
+        };
+
+        Sim.prototype.localConfigGame = function (p, config) {
+            var field, l, len1, newMode, newSim, ref;
+            print("config game!", config);
+            if (this.state !== "waiting") {
+                print("Can't set config on game in progress");
+                return;
+            }
+            if (!this.validTypes[config.type]) {
+                print("Config type is not valid");
+                return;
+            }
+            if (this.serverType !== config.type) {
+                this.serverType = config.type;
+                this.say(p.name + " changed server type to " + config.type);
+
+                /*
+        for player in @players
+            continue if player.host
+            player.side = "spectators"
+            if player.ai
+                player.connected = false
+         */
+                if (typeof serverTick === "function") {
+                    serverTick();
+                }
+                newMode = modes[config.type] || Sim;
+                if (this.constructor.name !== newMode.name) {
+                    newSim = new newMode();
+                    ref = this.gameFields;
+                    for (l = 0, len1 = ref.length; l < len1; l++) {
+                        field = ref[l];
+                        newSim[field] = this[field];
+                    }
+                    window.sim = newSim;
+                    applyDiff(diffStats, true);
+                    if (typeof sim.init === "function") {
+                        sim.init();
+                    }
+                }
             }
         };
 
@@ -5809,18 +3074,25 @@ zjson - binary json sirelizer with some strange features
             }
         };
 
-        Sim.prototype.addAi = function (player, name, side, aiBuildBar) {
+        Sim.prototype.addAi = function (player, name, side, aiBuildBar, nocheck) {
             var l, len1, numAi, p, ref, total;
+            if (nocheck == null) {
+                nocheck = false;
+            }
             print("addAI", name, side);
             if (!this.local) {
                 if (this.noAIPlayers) {
                     return;
                 }
-                if (this.serverType === "1v1r") {
-                    return;
-                }
-                if (this.serverType === "1v1") {
-                    return;
+
+                /*
+        if @serverType == "1v1r"
+            return
+        if @serverType == "1v1"
+            return
+         */
+                if (nocheck) {
+                    return ais.useAiFleet(name, side, aiBuildBar);
                 }
                 if (this.numInTeam(side) >= this.playersPerTeam()) {
                     print("enough players in team");
@@ -5900,8 +3172,7 @@ zjson - binary json sirelizer with some strange features
                 print("Trying to start a game when a game is already in progress. State:", this.state);
                 return;
             }
-            if (this.numInTeam("alpha") !== this.playersPerTeam() || this.numInTeam("beta") !== this.playersPerTeam()) {
-                print("Trying to start a game when there are not enough players in teams.");
+            if (!this.canStart(true)) {
                 return;
             }
             this.say("Game is about to start!");
@@ -5912,13 +3183,13 @@ zjson - binary json sirelizer with some strange features
             if (sayStyff == null) {
                 sayStyff = false;
             }
-            if (this.numInTeam("alpha") !== this.playersPerTeam()) {
+            if (this.numInTeam("alpha") < this.playersPerTeam()) {
                 if (sayStyff) {
                     this.say("Team alpha does not have enough players.");
                 }
                 return false;
             }
-            if (this.numInTeam("beta") !== this.playersPerTeam()) {
+            if (this.numInTeam("beta") < this.playersPerTeam()) {
                 if (sayStyff) {
                     this.say("Team beta does not have enough players.");
                 }
@@ -5928,7 +3199,18 @@ zjson - binary json sirelizer with some strange features
         };
 
         Sim.prototype.validateBuildBar = function (player) {
-            var i, l, len1, ref, spec;
+            var i, l, len1, n, ref, spec;
+            if (!this.check) {
+                player.validBar = (function () {
+                    var l, results;
+                    results = [];
+                    for (n = l = 0; l < 10; n = ++l) {
+                        results.push(true);
+                    }
+                    return results;
+                })();
+                return;
+            }
             ref = player.buildBar;
             for (i = l = 0, len1 = ref.length; l < len1; i = ++l) {
                 spec = ref[i];
@@ -6077,14 +3359,24 @@ zjson - binary json sirelizer with some strange features
         };
 
         Sim.prototype.setRallyPoint = function (player, point) {
+            var _, ref, thing;
             if (!player) {
                 return;
+            }
+            ref = sim.things;
+            for (_ in ref) {
+                thing = ref[_];
+                if (thing.spawn === player.side && v2.distance(thing.pos, point) < thing.radius) {
+                    player.usingSpawn = thing;
+                    player.rallyPoint = [0, 0];
+                    return;
+                }
             }
             return player.rallyPoint = point;
         };
 
         Sim.prototype.buildUnit = function (pid, number, pos) {
-            var _, l, len1, player, ref, ref1, spec, totalUnits, u, unit, w;
+            var _, _where, l, len1, player, ref, ref1, spec, totalUnits, u, unit, w;
             player = this.players[pid];
             if (!player) {
                 return;
@@ -6100,7 +3392,7 @@ zjson - binary json sirelizer with some strange features
                     totalUnits += 1;
                 }
             }
-            if (totalUnits >= 100) {
+            if (totalUnits >= this.unitLimit) {
                 return;
             }
             spec = player.buildBar[number];
@@ -6123,6 +3415,11 @@ zjson - binary json sirelizer with some strange features
                     w = ref1[l];
                     w.rot = unit.rot;
                 }
+            }
+            if (player.rallyPoint != null) {
+                _where = [0, 0];
+                v2.sub(player.rallyPoint, unit.pos, _where);
+                unit.rot = v2.angle(_where);
             }
             return unit;
         };
@@ -6174,8 +3471,15 @@ zjson - binary json sirelizer with some strange features
             }
         };
 
-        Sim.prototype.findSpawnPoint = function (side) {
+        Sim.prototype.findSpawnPoint = function (side, player) {
             var _, ref, unit;
+            if ((player != null ? player.usingSpawn : void 0)) {
+                if (player.usingSpawn.side === player.side) {
+                    return player.usingSpawn;
+                } else {
+                    player.usingSpawn = null;
+                }
+            }
             ref = this.things;
             for (_ in ref) {
                 unit = ref[_];
@@ -6344,6 +3648,7 @@ zjson - binary json sirelizer with some strange features
             this.startingSim();
             this.checkAfkPlayers();
             this.whoIsHost();
+            window.NxN = this.NxN;
             this.timeIt("spacesRebuild", (function (_this) {
                 return function () {
                     return _this.spacesRebuild();
@@ -6458,14 +3763,18 @@ zjson - binary json sirelizer with some strange features
         };
 
         Sim.prototype.spacesRebuild = function () {
-            var _, ref, results, t;
+            var _, ref, ref1, ref2, results, t;
             this.unitSpaces = {
-                'alpha': new HSpace(500),
-                'beta': new HSpace(500)
+                'alpha': new HSpace(global.unitRes || 500),
+                'beta': new HSpace(global.unitRes || 500)
             };
             this.bulletSpaces = {
-                'alpha': new HSpace(100),
-                'beta': new HSpace(100)
+                'alpha': new HSpace(global.bulletRes || 100),
+                'beta': new HSpace(global.bulletRes || 100)
+            };
+            this.maxRadius = {
+                alpha: 0,
+                beta: 0
             };
             ref = this.things;
             results = [];
@@ -6475,10 +3784,17 @@ zjson - binary json sirelizer with some strange features
                     continue;
                 }
                 if (t.unit) {
-                    this.unitSpaces[t.side].insert(t);
+                    if ((ref1 = this.unitSpaces[t.side]) != null) {
+                        ref1.insert(t);
+                    }
+                    if (this.maxRadius[t.side] != null) {
+                        if (t.radius > this.maxRadius[t.side]) {
+                            this.maxRadius[t.side] = t.radius;
+                        }
+                    }
                 }
                 if (t.bullet) {
-                    results.push(this.bulletSpaces[t.side].insert(t));
+                    results.push((ref2 = this.bulletSpaces[t.side]) != null ? ref2.insert(t) : void 0);
                 } else {
                     results.push(void 0);
                 }
@@ -6649,7 +3965,7 @@ zjson - binary json sirelizer with some strange features
             return results;
         };
 
-        Sim.prototype.thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "side", "owner", "capping", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
+        Sim.prototype.thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "color", "sliceImage", "side", "owner", "capping", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
 
         Sim.prototype.playerFields = ["name", "side", "afk", "host", "money", "connected", "dead", "color", "mouse", "action", "buildQ", "validBar", "ai", "apm", "capps", "kills", "unitsBuilt", "moneyEarned", "rallyPoint"];
 
@@ -6827,11 +4143,15 @@ zjson - binary json sirelizer with some strange features
             }
             if (sim.step % 16 === 0) {
                 send = false;
-                ref13 = this.players;
-                for (z = 0, len8 = ref13.length; z < len8; z++) {
-                    player = ref13[z];
-                    if (player.name === "treeform" && player.connected) {
-                        send = true;
+                if (DEBUG) {
+                    send = true;
+                } else {
+                    ref13 = this.players;
+                    for (z = 0, len8 = ref13.length; z < len8; z++) {
+                        player = ref13[z];
+                        if ((player.name === "treeform") && player.connected) {
+                            send = true;
+                        }
                     }
                 }
                 if (send) {
@@ -6847,11 +4167,11 @@ zjson - binary json sirelizer with some strange features
                             }).call(this)).length,
                             sthings: sthings.length,
                             players: ((function () {
-                                var aa, len9, ref14, results;
+                                var i1, len9, ref14, results;
                                 ref14 = this.players;
                                 results = [];
-                                for (aa = 0, len9 = ref14.length; aa < len9; aa++) {
-                                    p = ref14[aa];
+                                for (i1 = 0, len9 = ref14.length; i1 < len9; i1++) {
+                                    p = ref14[i1];
                                     results.push(p);
                                 }
                                 return results;
@@ -6985,17 +4305,16 @@ zjson - binary json sirelizer with some strange features
     })();
 
 }).call(this);
-;
 
-//from src/things.js
-// Generated by CoffeeScript 1.10.0
 
-/*
-General Game Objects live here
- */
-
+//require('../src/survival.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
-    var Explosion, _color, _focus, _offset, _pos, _size, _vec, anitSideColor, randColor, sideColor,
+    var bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
         extend = function (child, parent) {
             for (var key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
@@ -7012,9 +4331,1461 @@ General Game Objects live here
         },
         hasProp = {}.hasOwnProperty;
 
-    randColor = function (a) {
-        return [Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), 255];
-    };
+    window.modes.Survival = (function (superClass) {
+        extend(Survival, superClass);
+
+        function Survival() {
+            this.victoryConditions = bind(this.victoryConditions, this);
+            return Survival.__super__.constructor.apply(this, arguments);
+        }
+
+        Survival.prototype.waveFreq = 30;
+
+        Survival.prototype.numComPoints = 12;
+
+        Survival.prototype.start = function () {
+            var key, p, ref, results;
+            Survival.__super__.start.call(this);
+            this.waveNum = 0;
+            ref = this.players;
+            results = [];
+            for (key in ref) {
+                p = ref[key];
+                if (p && p.connected) {
+                    if (p.side === 'beta') {
+                        p.money = 1;
+                        results.push(p.moneyRatio = 0);
+                    } else {
+                        results.push(void 0);
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        Survival.prototype.endOfGame = function () {
+            var id, key, object, p, ref, ref1, results;
+            Survival.__super__.endOfGame.call(this);
+            this.say("The survivors survived " + this.waveNum + " waves!");
+            ref = this.things;
+            for (id in ref) {
+                object = ref[id];
+                if (object.unit) {
+                    object.selfDestruct();
+                }
+            }
+            ref1 = this.players;
+            results = [];
+            for (key in ref1) {
+                p = ref1[key];
+                if (p && p.connected) {
+                    if (p.moneyRatio === 0) {
+                        results.push(p.moneyRatio = 1);
+                    } else {
+                        results.push(void 0);
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        Survival.prototype.canStart = function () {
+            return this.numInTeam("alpha") + this.numInTeam("beta") > 0;
+        };
+
+        Survival.prototype.simulate = function () {
+            var betaCount, i, len, p, ref, results;
+            Survival.__super__.simulate.call(this);
+            if (this.state === 'running') {
+                if ((this.step / 16) % this.waveFreq === 0 && this.step !== 0) {
+                    this.waveNum += 1;
+                    this.say("Spawning wave " + this.waveNum + "!");
+                    betaCount = this.players.filter(function (p) {
+                        return p.side === 'beta';
+                    }).length;
+                    ref = this.players;
+                    results = [];
+                    for (i = 0, len = ref.length; i < len; i++) {
+                        p = ref[i];
+                        if (p.side === "beta") {
+                            results.push(p.money = Math.round((2750 + Math.pow(1.1, this.waveNum) * 500) / betaCount));
+                        } else {
+                            results.push(void 0);
+                        }
+                    }
+                    return results;
+                }
+            }
+        };
+
+        Survival.prototype.victoryConditions = function () {
+            var capped, cappedArr, i, id, k, len, player, ref, ref1, stillThere, thing;
+            if (this.state !== "running") {
+                return;
+            }
+            capped = {};
+            ref = this.things;
+            for (id in ref) {
+                thing = ref[id];
+                if (thing.commandPoint) {
+                    capped[thing.side] = (capped[thing.side] || 0) + 1;
+                }
+            }
+            cappedArr = (function () {
+                var results;
+                results = [];
+                for (k in capped) {
+                    results.push(k);
+                }
+                return results;
+            })();
+            if (cappedArr.length === 0) {
+                return;
+            }
+            if (cappedArr.length === 1 && cappedArr[0] === "beta") {
+                this.winningSide = cappedArr[0];
+            }
+            if (this.winningSide) {
+                this.endOfGame();
+                return;
+            }
+            if (!this.local && !this.aiTestMode) {
+                stillThere = false;
+                ref1 = this.players;
+                for (i = 0, len = ref1.length; i < len; i++) {
+                    player = ref1[i];
+                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+                        stillThere = true;
+                    }
+                }
+                if (!stillThere) {
+                    this.say("Every one left. Ending game.");
+                    this.winningSide = false;
+                    this.endOfGame();
+                }
+            }
+        };
+
+        Survival.prototype.switchSide = function (player, side) {
+            if (!player) {
+                return;
+            }
+            if (player.kickTime > now() - 15000) {
+                return;
+            }
+            if (this.local && !sim.galaxyStar && !sim.challenge) {
+                player.side = side;
+                return;
+            }
+            if (this.state !== "waiting") {
+                return;
+            }
+            player.side = side;
+            if (side === "spectators") {
+                player.streek = 0;
+            }
+            return player.lastActiveTime = Date.now();
+        };
+
+        return Survival;
+
+    })(window.Sim);
+
+}).call(this);
+;
+
+
+//require('../src/ffa.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    window.modes.FFA = (function (superClass) {
+        extend(FFA, superClass);
+
+        function FFA() {
+            this.victoryConditions = bind(this.victoryConditions, this);
+            return FFA.__super__.constructor.apply(this, arguments);
+        }
+
+        FFA.prototype.defaultMoney = 80;
+
+        FFA.prototype.moneyInc = 100;
+
+        FFA.prototype.serverType = "FFA";
+
+        FFA.prototype.victoryGoal = 2000;
+
+        FFA.prototype.deathPenalty = 0.2;
+
+        FFA.prototype.numComPoints = 16;
+
+        FFA.prototype.mapScale = 1.2;
+
+        FFA.prototype.init = function () {
+            var i, len, p, ref, results;
+            ref = this.players;
+            results = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+                p = ref[i];
+                if (p.side === "beta") {
+                    results.push(p.side = "alpha");
+                }
+            }
+            return results;
+        };
+
+        FFA.prototype.start = function () {
+            var _, i, len, p, ref, results, spawns, t;
+            FFA.__super__.start.call(this);
+            ref = this.players;
+            results = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+                p = ref[i];
+                p.maxMoney = this.defaultMoney;
+                spawns = (function () {
+                    var ref1, results1;
+                    ref1 = this.things;
+                    results1 = [];
+                    for (_ in ref1) {
+                        t = ref1[_];
+                        if (t.spawn === p.side) {
+                            results1.push(t);
+                        }
+                    }
+                    return results1;
+                }).call(this);
+                if (spawns.length > 0) {
+                    results.push(p.usingSpawn = spawns[Math.floor(Math.random() * spawns.length)]);
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        FFA.prototype.spacesRebuild = function () {
+            var _, ref, results, t;
+            this.unitSpaces = {
+                'alpha': new HSpace(500),
+                'beta': new HSpace(500)
+            };
+            this.bulletSpaces = {
+                'alpha': new HSpace(100),
+                'beta': new HSpace(100)
+            };
+            this.maxRadius = 0;
+            ref = this.things;
+            results = [];
+            for (_ in ref) {
+                t = ref[_];
+                if (t.dead) {
+                    continue;
+                }
+                if (t.unit) {
+                    this.unitSpaces["alpha"].insert(t);
+                    this.unitSpaces["beta"].insert(t);
+                    if (t.radius > this.maxRadius) {
+                        this.maxRadius = t.radius;
+                    }
+                }
+                if (t.bullet) {
+                    this.bulletSpaces["alpha"].insert(t);
+                    results.push(this.bulletSpaces["beta"].insert(t));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        FFA.prototype.switchSide = function (player, side) {
+            if (!player) {
+                return;
+            }
+            if (player.kickTime > now() - 15000) {
+                return;
+            }
+            if (this.local && !sim.galaxyStar && !sim.challenge) {
+                player.side = side;
+                return;
+            }
+            if (side === "beta") {
+                side = "alpha";
+            }
+            if (this.state !== "waiting") {
+                return;
+            }
+            player.side = side;
+            if (side === "spectators") {
+                player.streek = 0;
+            }
+            return player.lastActiveTime = Date.now();
+        };
+
+        FFA.prototype.canStart = function (sayStyff) {
+            if (sayStyff == null) {
+                sayStyff = false;
+            }
+            if (this.numInTeam("alpha") >= 1) {
+                return true;
+            }
+            this.say("Not enough players");
+            return false;
+        };
+
+        FFA.prototype.surrender = function (player) {
+        };
+
+        FFA.prototype.victoryConditions = function () {
+            var i, j, len, len1, player, ref, ref1, stillThere;
+            if (this.state !== "running") {
+                return;
+            }
+            ref = this.players;
+            for (i = 0, len = ref.length; i < len; i++) {
+                player = ref[i];
+                if (player.connected && !player.afk && player.side !== "spectators" && player.money >= this.victoryGoal) {
+                    this.winningSide = player.name;
+                    this.endOfGame();
+                }
+            }
+            if (!this.local && !this.aiTestMode) {
+                stillThere = false;
+                ref1 = this.players;
+                for (j = 0, len1 = ref1.length; j < len1; j++) {
+                    player = ref1[j];
+                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+                        stillThere = true;
+                    }
+                }
+                if (!stillThere) {
+                    this.winningSide = false;
+                    this.endOfGame();
+                }
+            }
+        };
+
+        return FFA;
+
+    })(window.Sim);
+
+}).call(this);
+
+
+//require('../src/ctf.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    modes.CTF = (function (superClass) {
+        extend(CTF, superClass);
+
+        function CTF() {
+            this.victoryConditions = bind(this.victoryConditions, this);
+            return CTF.__super__.constructor.apply(this, arguments);
+        }
+
+        CTF.prototype.numFlags = 8;
+
+        CTF.prototype.numComPoints = 2;
+
+        CTF.prototype.mapScale = 1;
+
+        CTF.prototype.flagImage = "parts/decals/Symbol12.png";
+
+        CTF.prototype.canStart = function (sayStyff) {
+            var alpha, beta;
+            if (sayStyff == null) {
+                sayStyff = false;
+            }
+            alpha = this.numInTeam("alpha");
+            beta = this.numInTeam("beta");
+            if (alpha === 0 && beta === 0) {
+                if (sayStyff) {
+                    this.say("Not enough players.");
+                }
+                return false;
+            }
+            if (beta - alpha > 1) {
+                if (sayStyff) {
+                    this.say("Team alpha does not have enough players.");
+                }
+                return false;
+            } else if (alpha - beta > 1) {
+                if (sayStyff) {
+                    this.say("Team beta does not have enough players.");
+                }
+                return false;
+            }
+            return true;
+        };
+
+        CTF.prototype.victoryConditions = function () {
+            var capped, cappedArr, i, id, k, len, player, ref, ref1, stillThere, thing;
+            if (this.state !== "running") {
+                return;
+            }
+            capped = {};
+            ref = sim.things;
+            for (id in ref) {
+                thing = ref[id];
+                if (thing.flag) {
+                    capped[thing.side] = (capped[thing.side] || 0) + 1;
+                }
+            }
+            cappedArr = (function () {
+                var results;
+                results = [];
+                for (k in capped) {
+                    results.push(k);
+                }
+                return results;
+            })();
+            if (cappedArr.length === 0) {
+                return;
+            }
+            if (cappedArr.length === 1 && cappedArr[0] !== 'neutral') {
+                this.winningSide = cappedArr[0];
+            }
+            if (this.winningSide) {
+                this.endOfGame();
+                return;
+            }
+            if (!this.local && !this.aiTestMode) {
+                stillThere = false;
+                ref1 = this.players;
+                for (i = 0, len = ref1.length; i < len; i++) {
+                    player = ref1[i];
+                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+                        stillThere = true;
+                    }
+                }
+                if (!stillThere) {
+                    this.say("Every one left. Ending game.");
+                    this.winningSide = false;
+                    this.endOfGame();
+                    return;
+                }
+            }
+            if (this.step > 16 * 60 * 30) {
+                this.winningSide = false;
+                this.endOfGame();
+            }
+        };
+
+        CTF.prototype.switchSide = function (player, side) {
+            if (!player) {
+                return;
+            }
+            if (player.kickTime > now() - 15000) {
+                return;
+            }
+            if (this.local && !sim.galaxyStar && !sim.challenge) {
+                player.side = side;
+                return;
+            }
+            if (this.state !== "waiting") {
+                return;
+            }
+            player.side = side;
+            if (side === "spectators") {
+                player.streek = 0;
+            }
+            return player.lastActiveTime = Date.now();
+        };
+
+        return CTF;
+
+    })(Sim);
+
+}).call(this);
+
+
+//require('../src/ttt.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    window.modes.TicTacToe = (function (superClass) {
+        extend(TicTacToe, superClass);
+
+        function TicTacToe() {
+            return TicTacToe.__super__.constructor.apply(this, arguments);
+        }
+
+        TicTacToe.prototype.makeRocks = false;
+
+        TicTacToe.prototype.turn = "alpha";
+
+        TicTacToe.prototype.defaultMoney = 1;
+
+        TicTacToe.prototype.moneyRatio = 0;
+
+        TicTacToe.prototype.start = function () {
+            TicTacToe.__super__.start.call(this);
+            return this.turn = Math.random() < .5 ? "alpha" : "beta";
+        };
+
+        TicTacToe.prototype.playersPerTeam = function (side) {
+            return 1;
+        };
+
+        TicTacToe.prototype.playerSelected = function (player, selection) {
+            var id, ref, results, t;
+            if ((player != null ? player.side : void 0) !== this.turn) {
+                return;
+            }
+            player.selection = [];
+            if (this.state !== "running") {
+                return;
+            }
+            ref = this.things;
+            results = [];
+            for (id in ref) {
+                t = ref[id];
+                if (t.id === selection[0] && (t.ttt != null) && t.ttt !== "alpha" && t.ttt !== "beta") {
+                    t.ttt = player.side;
+                    this.turn = otherSide(this.turn);
+                    break;
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        TicTacToe.prototype.victoryConditions = function () {
+            var _, c, grid, i, j, k, l, len, len1, len2, len3, m, n, o, p, player, q, r, ref, ref1, ref2, s, spaces,
+                stillThere, t, u;
+            if (this.state !== "running") {
+                return;
+            }
+            grid = [[], [], []];
+            ref = this.things;
+            for (_ in ref) {
+                t = ref[_];
+                if (t.ttt != null) {
+                    grid[t.grid[0] + 1][t.grid[1] + 1] = t.ttt;
+                }
+            }
+            ref1 = ["alpha", "beta"];
+            for (k = 0, len = ref1.length; k < len; k++) {
+                t = ref1[k];
+                for (i = l = 0; l < 3; i = ++l) {
+                    for (j = m = 0; m < 3; j = ++m) {
+                        if (grid[i][j] !== t) {
+                            break;
+                        }
+                        if (j === 2) {
+                            this.winningSide = t;
+                        }
+                    }
+                    for (j = n = 0; n < 3; j = ++n) {
+                        if (grid[j][i] !== t) {
+                            break;
+                        }
+                        if (j === 2) {
+                            this.winningSide = t;
+                        }
+                    }
+                }
+                for (i = o = 0; o < 3; i = ++o) {
+                    if (grid[i][i] !== t) {
+                        break;
+                    }
+                    if (i === 2) {
+                        this.winningSide = t;
+                    }
+                }
+                for (i = p = 0; p < 3; i = ++p) {
+                    if (grid[i][2 - i] !== t) {
+                        break;
+                    }
+                    if (i === 2) {
+                        this.winningSide = t;
+                    }
+                }
+            }
+            if (this.winningSide) {
+                this.endOfGame();
+                return;
+            }
+            spaces = 9;
+            for (q = 0, len1 = grid.length; q < len1; q++) {
+                r = grid[q];
+                for (s = 0, len2 = r.length; s < len2; s++) {
+                    c = r[s];
+                    if (c === "alpha" || c === "beta") {
+                        spaces -= 1;
+                    }
+                }
+            }
+            if (spaces <= 0) {
+                this.endOfGame();
+            }
+            if (!this.local && !this.aiTestMode) {
+                stillThere = false;
+                ref2 = this.players;
+                for (u = 0, len3 = ref2.length; u < len3; u++) {
+                    player = ref2[u];
+                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+                        stillThere = true;
+                    }
+                }
+                if (!stillThere) {
+                    this.say("Every one left. Ending game.");
+                    this.winningSide = false;
+                    this.endOfGame();
+                }
+            } else if (this.step > 16 * 60 * 30) {
+                this.winningSide = false;
+                this.endOfGame();
+                return;
+            }
+        };
+
+        return TicTacToe;
+
+    })(window.Sim);
+
+}).call(this);
+
+
+//require('../src/nvn.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    window.modes.nvn = (function (superClass) {
+        extend(nvn, superClass);
+
+        function nvn() {
+            return nvn.__super__.constructor.apply(this, arguments);
+        }
+
+        nvn.prototype.switchSide = function (player, side) {
+            if (!player) {
+                return;
+            }
+            if (player.kickTime > now() - 15000) {
+                return;
+            }
+            if (this.local && !sim.galaxyStar && !sim.challenge) {
+                player.side = side;
+                return;
+            }
+            if (this.state !== "waiting") {
+                return;
+            }
+            player.side = side;
+            if (side === "spectators") {
+                player.streek = 0;
+            }
+            return player.lastActiveTime = Date.now();
+        };
+
+        nvn.prototype.canStart = function (sayStyff) {
+            if (sayStyff == null) {
+                sayStyff = false;
+            }
+            if (this.numInTeam("alpha") + this.numInTeam("beta") >= 1) {
+                return true;
+            }
+            this.say("Not enough players");
+            return false;
+        };
+
+        return nvn;
+
+    })(window.Sim);
+
+}).call(this);
+
+
+//require('../src/interpolator.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var diffVec,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    diffVec = v2.create();
+
+    window.Interpolator = (function (superClass) {
+        extend(Interpolator, superClass);
+
+        Interpolator.prototype.sound = true;
+
+        Interpolator.prototype.fast = false;
+
+        function Interpolator() {
+            this.think = bind(this.think, this);
+            this.step = 0;
+            this.firstUpdate = true;
+            this.things = {};
+            this.players = [];
+            this.particles = {};
+            this.fastParticles = {};
+            this.avgFrame = 9;
+            this.lastFrame = 0;
+            this.stepTime = now();
+            this.t = now();
+            this.avgDt = 1 / 60;
+            this.avgTime = 1000 / 16;
+            this.allMessages = [];
+            this.dataQ = [];
+            this.wait = 0;
+            this.prevWait = 2;
+            this.state = "waiting";
+            this.pref = {};
+            this.zJson = new window.ZJson(prot.commonWords);
+        }
+
+        Interpolator.prototype.gameStarted = function () {
+            if (!commander) {
+                return;
+            }
+            this.players = [];
+            this.things = {};
+            this.particles = {};
+            this.winningSide = null;
+            track("start");
+            if (!sim.galaxyStar && !sim.local) {
+                if (commander.side !== "spectators") {
+                    ui.go("battle");
+                }
+                if (ui.mode === "battleroom" || ui.mode === "quickscore") {
+                    ui.go("battle");
+                }
+            }
+            return commander.selection = [];
+        };
+
+        Interpolator.prototype.focusMap = function () {
+            var _, dist, maxDist, ref, thing;
+            maxDist = 0;
+            ref = sim.things;
+            for (_ in ref) {
+                thing = ref[_];
+                dist = v2.mag(thing.pos);
+                if (dist > maxDist) {
+                    maxDist = dist;
+                }
+            }
+            battleMode.focus = [0, 0];
+            return battleMode.zoom = maxDist / 1000;
+        };
+
+        Interpolator.prototype.gameEnded = function () {
+            actionMixer.reset();
+            if (!sim.local) {
+                if (commander.side !== "spectators") {
+                    ui.go("quickscore");
+                }
+                if (ui.mode === "battle") {
+                    ui.go("quickscore");
+                }
+            }
+            return this.uploadReplay();
+        };
+
+        Interpolator.prototype.drawThingsList = function () {
+            var _, particle, ref, ref1, thing, things;
+            things = [];
+            ref = this.things;
+            for (_ in ref) {
+                thing = ref[_];
+                things.push(thing);
+            }
+            ref1 = this.particles;
+            for (_ in ref1) {
+                particle = ref1[_];
+                things.push(particle);
+            }
+            return things;
+        };
+
+        Interpolator.prototype.draw = function () {
+            var ai, color, i, j, l, len, len1, len2, len3, m, o, p, particles, player, q, ref, ref1, ref2, thing,
+                things;
+            this.advance();
+            if (typeof sim !== "undefined" && sim !== null ? sim.ais : void 0) {
+                ref = sim.ais;
+                for (j = 0, len = ref.length; j < len; j++) {
+                    ai = ref[j];
+                    ai.draw();
+                }
+            }
+            things = this.drawThingsList();
+            things.sort(function (a, b) {
+                return a.z - b.z;
+            });
+            for (l = 0, len1 = things.length; l < len1; l++) {
+                thing = things[l];
+                thing.draw();
+            }
+            for (particles in this.fastParticles) {
+                particles.draw();
+            }
+            color = [0, 0, 0, 0];
+            ref1 = this.players;
+            for (o = 0, len2 = ref1.length; o < len2; o++) {
+                player = ref1[o];
+                if (!player) {
+                    continue;
+                }
+                if (player.name !== (typeof commander !== "undefined" && commander !== null ? commander.name : void 0) && player.side !== "spectators" && player.side !== "dead" && player.connected) {
+                    if (player.mouse[0] !== 0 && player.mouse[1] !== 0 && player._mouse) {
+                        m = [0, 0];
+                        color = [player.color[0], player.color[1], player.color[2], 255];
+                        v2.lerp(player._mouse, player.mouse, this.smoothFactor, m);
+                        player.mouseTrail.push(m);
+                        while (player.mouseTrail.length > 10) {
+                            player.mouseTrail.shift();
+                        }
+                        ref2 = player.mouseTrail;
+                        for (i = q = 0, len3 = ref2.length; q < len3; i = ++q) {
+                            p = ref2[i];
+                            color[3] = 255 / (10 - i + 1);
+                            baseAtlas.drawSprite("img/pip1.png", p, [1, 1], 0, color);
+                        }
+                        if (player.action) {
+                            baseAtlas.drawSprite("img/pip1.png", m, [2, 2], 0, player.color);
+                        }
+                    }
+                }
+                if (player.name === (typeof commander !== "undefined" && commander !== null ? commander.name : void 0)) {
+                    player.selection = commander.selection;
+                    player.draw();
+                }
+            }
+
+            /*  * uncomment this to debug
+      for _, t of intp.things
+          #baseAtlas.drawSprite("img/pip1.png", t._pos2,  [1,1], 0, [0,255,0,100])
+          #baseAtlas.drawSprite("img/pip1.png", t._pos, [1,1], 0, [255,0,0,100])
+          if t.unit
+              for p in t.testIntp
+                  baseAtlas.drawSprite("img/pip1.png", p, [.2,.2], 0, [255,0,0,100])
+              #for p in t.testStep
+               *    baseAtlas.drawSprite("img/pip1.png", p, [.4,.4], 0, [0,255,0,100])
+       */
+        };
+
+        Interpolator.prototype.advance = function () {
+            if (this.fast) {
+                return this.advanceSnap();
+            } else {
+                return this.advanceSmooth();
+            }
+        };
+
+        Interpolator.prototype.advanceSnap = function () {
+            var i, id, j, len, ref, ref1, thing, weapon;
+            this.t = now();
+            this.smoothFactor = 1;
+            ref = this.things;
+            for (id in ref) {
+                thing = ref[id];
+                v2.set(thing._pos, thing.pos);
+                thing.rot = thing._rot;
+                if (thing.weapons != null) {
+                    ref1 = thing.weapons;
+                    for (i = j = 0, len = ref1.length; j < len; i = ++j) {
+                        weapon = ref1[i];
+                        weapon.rot = weapon._rot;
+                    }
+                }
+            }
+            return null;
+        };
+
+        Interpolator.prototype.advanceSmooth = function () {
+            var a, angleDiff, difference, expectedLastStep, i, id, j, len, part, ref, ref1, ref2, thing, timeLastStep;
+            this.t = now();
+
+            /*  * uncomment this to debug
+       * instant
+      if @dataQ.length > 0
+          @process(@dataQ.pop())
+       */
+            if (this.dataQ.length > 0) {
+                timeLastStep = this.t - this.stepTime;
+                expectedLastStep = 1000 / 16;
+                difference = timeLastStep / expectedLastStep;
+                if (difference > 1 - this.dataQ.length * .1) {
+                    this.process(this.dataQ.pop());
+                }
+            }
+
+            /*  * uncomment this to debug
+       * high jitter
+      if @dataQ.length > 16
+          timeLastStep = @t - @stepTime
+          expectedLastStep = 1000/16
+          faster = 0
+          if @dataQ.length > 16
+              faster = (@dataQ.length-16)
+          console.log "difference", timeLastStep, expectedLastStep, @dataQ.length, faster
+          if timeLastStep > expectedLastStep - faster
+              @process(@dataQ.pop())
+       */
+            this.lastFrame += 1;
+            a = this.lastFrame / this.avgFrame;
+            this.smoothFactor = a;
+            if (a > 1) {
+                a = 1;
+            }
+            if (a < 0) {
+                a = 0;
+            }
+            if (this.smoothFactor > 10) {
+                this.smoothFactor = 10;
+            }
+            ref = this.things;
+            for (id in ref) {
+                thing = ref[id];
+                thing.pos[0] = thing._pos2[0] + (thing._pos[0] - thing._pos2[0]) * a;
+                thing.pos[1] = thing._pos2[1] + (thing._pos[1] - thing._pos2[1]) * a;
+                angleDiff = angleBetween(thing._rot2, thing._rot);
+                thing.rot = thing._rot2 + angleDiff * a;
+                if (thing.parts != null) {
+                    ref1 = thing.parts;
+                    for (i = j = 0, len = ref1.length; j < len; i = ++j) {
+                        part = ref1[i];
+                        angleDiff = angleBetween(part._rot2, part._rot);
+                        part.rot = part._rot2 + angleDiff * a;
+                    }
+                }
+            }
+            ref2 = this.particles;
+            for (id in ref2) {
+                thing = ref2[id];
+                thing.pos[0] = thing._pos2[0] + (thing._pos[0] - thing._pos2[0]) * a;
+                thing.pos[1] = thing._pos2[1] + (thing._pos[1] - thing._pos2[1]) * a;
+                angleDiff = angleBetween(thing._rot2, thing._rot);
+                thing.rot = thing._rot2 + angleDiff * a;
+            }
+            return null;
+        };
+
+        Interpolator.prototype.replay = "off";
+
+        Interpolator.prototype.recordReplay = function () {
+            this.replay = "recording";
+            return this.replayFrames = [];
+        };
+
+        Interpolator.prototype.uploadReplay = function () {
+            var data, frame;
+            if (this.replay === "recording") {
+                this.replay = "off";
+                data = JSON.stringify((function () {
+                    var j, len, ref, results;
+                    ref = this.replayFrames;
+                    results = [];
+                    for (j = 0, len = ref.length; j < len; j++) {
+                        frame = ref[j];
+                        results.push(dv2str(frame));
+                    }
+                    return results;
+                }).call(this));
+                localStorage.replay = data;
+            }
+        };
+
+        Interpolator.prototype.playReplay = function () {
+            var data, frame;
+            this.players = [];
+            this.things = {};
+            this.particles = {};
+            this.winningSide = null;
+            this.replay = "playing";
+            this.replayStep = 0;
+            data = localStorage.replay;
+            this.replayFrames = (function () {
+                var j, len, ref, results;
+                ref = JSON.parse(data);
+                results = [];
+                for (j = 0, len = ref.length; j < len; j++) {
+                    frame = ref[j];
+                    results.push(str2dv(frame));
+                }
+                return results;
+            })();
+            return this.local = false;
+        };
+
+        Interpolator.prototype.recv = function (data) {
+            this.dataQ.unshift(data);
+            while (this.dataQ.length > 32) {
+                this.process(this.dataQ.pop());
+            }
+            return stats.simAdd();
+        };
+
+        Interpolator.prototype.think = function () {
+        };
+
+        Interpolator.prototype.debugDraw = function () {
+            var j, l, ref, ref1, results, x;
+            for (x = j = 0, ref = this.prevWait; 0 <= ref ? j < ref : j > ref; x = 0 <= ref ? ++j : --j) {
+                baseAtlas.drawSprite("img/pip1.png", [20 + x * 40 - window.innerWidth, window.innerHeight - 120], [1, 1], 0, [0, 0, 0, 255]);
+            }
+            results = [];
+            for (x = l = 0, ref1 = this.dataQ.length; 0 <= ref1 ? l < ref1 : l > ref1; x = 0 <= ref1 ? ++l : --l) {
+                results.push(baseAtlas.drawSprite("img/pip1.png", [20 + x * 40 - window.innerWidth, window.innerHeight - 120], [1, 1], 0, [255, 255, 255, 255]));
+            }
+            return results;
+        };
+
+        Interpolator.prototype.process = function (data) {
+            var _, dt, id, j, k, kv, l, len, len1, len2, len3, len4, len5, len6, len7, len8, n, newObj, newThing,
+                number, o, p, part, player, q, r, ref, ref1, ref10, ref11, ref12, ref13, ref2, ref3, ref4, ref5, ref6,
+                ref7, ref8, ref9, s, selection, t, thing, u, unit, v, w, y, z;
+            if (this.replay === "recording") {
+                this.replayFrames.push(packet);
+            }
+            t = now();
+            dt = t - this.stepTime;
+            this.avgTime = this.avgTime * .9 + dt * .1;
+            this.stepTime = t;
+            this.avgFrame = this.avgFrame * .9 + this.lastFrame * .1;
+            this.lastFrame = 0;
+            if (intp.players.length === 0 && !data.fullUpdate && commander) {
+                print("waiting for full update");
+                return;
+            }
+            if (data.fullUpdate) {
+                intp.step = data.step;
+            } else if (data.step != null) {
+                if (intp.step + 1 === data.step) {
+                    intp.step += 1;
+                } else {
+                    print("Over step, what about full update?");
+                    return;
+                }
+            }
+            if (data.winningSide) {
+                intp.winningSide = data.winningSide;
+                onecup.refresh();
+            }
+            if (data.state) {
+                intp.state = data.state;
+                onecup.refresh();
+            }
+            if (intp.state === "starting") {
+                this.gameStarted();
+            }
+            if (intp.state === "ended") {
+                console.log("ended");
+                this.gameEnded();
+            }
+            if (data.serverType) {
+                intp.serverType = data.serverType;
+                onecup.refresh();
+            }
+            if (data.theme) {
+                intp.theme = data.theme;
+            }
+            if (intp.countDown === 5 * 16 && !sim.local) {
+                onecup.refresh();
+            }
+            if (data.countDown != null) {
+                intp.countDown = data.countDown;
+                if (intp.countDown % 16 === 0 && intp.state === "waiting") {
+                    onecup.refresh();
+                }
+            }
+            designMode.locked = intp.serverType === "1v1t" && intp.state === "running" && commander.side !== "spectators";
+            if (data.perf) {
+                intp.perf = data.perf;
+                if (control.perf) {
+                    onecup.refresh();
+                }
+            }
+            ref = intp.things;
+            for (_ in ref) {
+                thing = ref[_];
+                v2.add(thing._pos, thing.vel);
+                v2.set(thing.pos, thing._pos2);
+                thing._rot2 = thing.rot;
+                if (thing.parts != null) {
+                    ref1 = thing.parts;
+                    for (j = 0, len = ref1.length; j < len; j++) {
+                        part = ref1[j];
+                        part._rot2 = part.rot;
+                    }
+                }
+            }
+            ref2 = intp.players;
+            for (l = 0, len1 = ref2.length; l < len1; l++) {
+                player = ref2[l];
+                player._mouse = player.mouse;
+            }
+            if (data.things) {
+                ref3 = data.things;
+                for (o = 0, len2 = ref3.length; o < len2; o++) {
+                    t = ref3[o];
+                    thing = null;
+                    part = null;
+                    newObj = false;
+                    for (q = 0, len3 = t.length; q < len3; q++) {
+                        kv = t[q];
+                        k = kv[0], v = kv[1];
+                        switch (k) {
+                            case "thingId":
+                                thing = intp.things[v];
+                                if (!thing) {
+                                    thing = {
+                                        dummy: true
+                                    };
+                                    newObj = true;
+                                }
+                                thing.id = v;
+                                part = null;
+                                newObj = false;
+                                break;
+                            case "spec":
+                                if (thing.dummy) {
+                                    newThing = new types[thing.name](v);
+                                    newThing.id = thing.id;
+                                    newThing.name = thing.name;
+                                    intp.things[newThing.id] = newThing;
+                                    thing = newThing;
+                                    newObj = true;
+                                }
+                                break;
+                            case "pos":
+                                if (newObj || (thing._pos == null)) {
+                                    thing.pos = v2.create(v);
+                                    thing._pos = v2.create(thing.pos);
+                                    thing._pos2 = v2.create(thing.pos);
+                                } else {
+                                    v2.set(v, thing._pos);
+                                }
+                                break;
+                            case "rot":
+                                if (newObj) {
+                                    thing.rot = v;
+                                    thing._rot = thing.rot;
+                                    thing._rot2 = thing.rot;
+                                    if (thing.weapons) {
+                                        ref4 = thing.weapons;
+                                        for (r = 0, len4 = ref4.length; r < len4; r++) {
+                                            w = ref4[r];
+                                            w.rot = thing.rot;
+                                            w._rot = thing.rot;
+                                            w._rot2 = thing.rot;
+                                        }
+                                    }
+                                } else {
+                                    thing._rot = v;
+                                }
+                                break;
+                            case "dead":
+                                thing.dead = v;
+                                if (thing.dead) {
+                                    if (typeof thing.createDebree === "function") {
+                                        thing.createDebree();
+                                    }
+                                }
+                                break;
+                            case "partId":
+                                if (thing.parts) {
+                                    part = thing.parts[v];
+                                    newObj = false;
+                                } else {
+                                    part = {};
+                                }
+                                break;
+                            case "partWorking":
+                                part.working = v;
+                                break;
+                            case "partTargetId":
+                                part.targetId = v;
+                                break;
+                            case "orders":
+                                thing.orders = v;
+                                if (thing.preOrders) {
+                                    thing.preOrders = thing.preOrders.filter(function (order) {
+                                        return order.step + 16 * 5 < sim.step;
+                                    });
+                                }
+                                break;
+                            default:
+                                thing[k] = v;
+                        }
+                    }
+                }
+            }
+            if (data.players) {
+                ref5 = data.players;
+                for (s = 0, len5 = ref5.length; s < len5; s++) {
+                    p = ref5[s];
+                    player = null;
+                    for (u = 0, len6 = p.length; u < len6; u++) {
+                        kv = p[u];
+                        k = kv[0], v = kv[1];
+                        if (k === "playerNumber") {
+                            while (intp.players.length <= v) {
+                                intp.players.push(new Player());
+                            }
+                            player = intp.players[v];
+                            player.number = v;
+                        } else {
+                            player[k] = v;
+                        }
+                        if ((k === "buildQ" || k === "validBar") && commander.name === player.name) {
+                            onecup.refresh();
+                        }
+                    }
+                }
+            }
+            ref6 = intp.things;
+            for (_ in ref6) {
+                thing = ref6[_];
+                if (thing.targetId) {
+                    thing.target = intp.things[thing.targetId];
+                }
+                if (thing.originId) {
+                    thing.origin = intp.things[thing.originId];
+                }
+            }
+            ref7 = this.things;
+            for (id in ref7) {
+                thing = ref7[id];
+                if (typeof thing.clientTick === "function") {
+                    thing.clientTick();
+                }
+                if (thing.dead) {
+                    delete this.things[id];
+                }
+            }
+            ref8 = this.players;
+            for (number = y = 0, len7 = ref8.length; y < len7; number = ++y) {
+                player = ref8[number];
+                if ((typeof commander !== "undefined" && commander !== null) && (player != null ? player.ai : void 0) === false && commander.name === (player != null ? player.name : void 0)) {
+                    if (player.side) {
+                        commander.side = player.side;
+                    }
+                    if (player.money) {
+                        commander.money = player.money;
+                    }
+                    if (player.selection) {
+                        commander.selection = player.selection;
+                    }
+                    if (player.buildQ) {
+                        commander.buildQ = player.buildQ;
+                    }
+                    if (player.validBar) {
+                        commander.validBar = player.validBar;
+                    }
+                    if (player.rallyPoint) {
+                        commander.rallyPoint = player.rallyPoint;
+                    }
+                    commander.number = number;
+                    if (player.host != null) {
+                        commander.host = player.host;
+                    }
+                }
+                if (!player.name) {
+                    player.name = "no name";
+                }
+                if (!player.side) {
+                    player.side = "spectators";
+                }
+                if (!player.color) {
+                    player.color = [255, 0, 0, 255];
+                }
+            }
+            ref9 = this.particles;
+            for (id in ref9) {
+                thing = ref9[id];
+                if (thing.dead) {
+                    delete this.particles[id];
+                    continue;
+                }
+                if (!thing._pos) {
+                    thing._pos = v2.create(thing.pos);
+                }
+                if (!thing._pos2) {
+                    thing._pos2 = v2.create(thing.pos);
+                }
+                v2.set(thing.pos, thing._pos2);
+                thing._rot2 = thing.rot;
+                if (typeof thing.tick === "function") {
+                    thing.tick();
+                }
+                if (typeof thing.move === "function") {
+                    thing.move();
+                }
+                v2.set(thing.pos, thing._pos);
+                thing._rot = thing.rot;
+            }
+            if (this.state === "starting") {
+                this.focusMap();
+                this.state = "running";
+                onecup.refresh();
+            }
+            if (this.state === "ended") {
+                this.state = "waiting";
+                onecup.refresh();
+                if (this.winningSide === false) {
+                    playSound("sounds/drone/draw.wav");
+                } else if (this.winningSide === (typeof commander !== "undefined" && commander !== null ? commander.side : void 0)) {
+                    playSound("sounds/drone/victory.wav");
+                } else {
+                    playSound("sounds/drone/defeat.wav");
+                }
+                onecup.refresh();
+            }
+            if ((ref10 = onecup.lookup("#money-text")) != null) {
+                ref10.innerHTML = buildBar.moneyText();
+            }
+            if ((ref11 = onecup.lookup("#money-income")) != null) {
+                ref11.innerHTML = buildBar.moneyIncomeText();
+            }
+            if (typeof commander !== "undefined" && commander !== null ? commander.selection : void 0) {
+                selection = [];
+                ref12 = commander.selection;
+                for (n = z = 0, len8 = ref12.length; z < len8; n = ++z) {
+                    unit = ref12[n];
+                    thing = this.things[unit.id];
+                    if (thing) {
+                        selection.push(thing);
+                    }
+                }
+                commander.selection = selection;
+            }
+            if (localStorage.useAi === "true" && localStorage.aiGrid === "true") {
+                if (ui.mode === "battle" && (typeof commander !== "undefined" && commander !== null ? (ref13 = commander.selection) != null ? ref13.length : void 0 : void 0) > 0) {
+                    return onecup.refresh();
+                }
+            }
+        };
+
+        return Interpolator;
+
+    })(window.Sim);
+
+}).call(this);
+;
+
+
+//require('../src/things.js');
+// Generated by CoffeeScript 1.12.7
+
+/*
+General Game Objects live here
+ */
+
+(function () {
+    var Explosion, _color, _focus, _offset, _pos, _size, _vec, anitSideColor, sideColor,
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
 
     _pos = v2.create();
 
@@ -7088,7 +5859,6 @@ General Game Objects live here
 
         function Player(id1) {
             this.id = id1;
-            this.side = this.id;
             this.color = randColor(200);
             this.reset();
         }
@@ -7096,6 +5866,7 @@ General Game Objects live here
         Player.prototype.reset = function () {
             var n;
             this.money = sim.defaultMoney;
+            this.maxMoney = 2e308;
             this.mouse = [0, 0];
             this.rallyPoint = [0, 0];
             this.selection = [];
@@ -7114,19 +5885,34 @@ General Game Objects live here
             this.kills = 0;
             this.unitsBuilt = 0;
             this.moneyEarned = 0;
-            return this.mouseTrail = [];
+            this.mouseTrail = [];
+            return this.usingSpawn = null;
         };
 
         Player.prototype.earnMoney = function (amount) {
-            amount *= this.moneyRatio;
+            amount *= this.moneyRatio * sim.moneyRatio;
             this.money += amount;
             return this.moneyEarned += amount;
         };
 
         Player.prototype.tick = function () {
+            var _, toEarn, u;
+            this.gainsMoney = sim.serverType !== "FFA" || ((function () {
+                var ref, results;
+                ref = sim.things;
+                results = [];
+                for (_ in ref) {
+                    u = ref[_];
+                    if (u.unit && u.owner === this.number) {
+                        results.push(u);
+                    }
+                }
+                return results;
+            }).call(this)).length === 0;
             if (sim.step % 16 === 0) {
-                if (this.gainsMoney && sim.gainsMoney) {
-                    this.earnMoney(10);
+                toEarn = Math.min(this.maxMoney - this.money, 10);
+                if (toEarn > 0 && this.gainsMoney && sim.gainsMoney) {
+                    this.earnMoney(toEarn);
                 }
                 this.apm = this.actions / (sim.step / 16 / 60);
             }
@@ -7145,14 +5931,21 @@ General Game Objects live here
             waitTime = 16 * 2;
             if (sim.step > waitTime && sim.step % 16 === 0) {
                 build = false;
-                ref = this.buildQ;
-                for (i = j = 0, len = ref.length; j < len; i = ++j) {
-                    slot = ref[i];
-                    if (this.rqUnit(slot)) {
-                        this.buildQ[i] = null;
+                if (sim.serverType === "FFA") {
+                    if ((this.buildQ[0] != null) && this.rqUnit(this.buildQ[0])) {
+                        this.buildQ[0] = null;
                         build = true;
-                    } else {
-                        break;
+                    }
+                } else {
+                    ref = this.buildQ;
+                    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+                        slot = ref[i];
+                        if (this.rqUnit(slot)) {
+                            this.buildQ[i] = null;
+                            build = true;
+                        } else {
+                            break;
+                        }
                     }
                 }
                 if (build) {
@@ -7173,8 +5966,38 @@ General Game Objects live here
         };
 
         Player.prototype.rqUnit = function (slot) {
-            var spawn, unit;
-            spawn = sim.findSpawnPoint(this.side);
+            var _, pos, spawn, th, u, unit, units, upgraded;
+            if (sim.serverType === 'Survival' && this.side === 'beta') {
+                th = Math.random() * Math.PI * 2;
+                pos = v2.scale(v2.pointTo([], th), 2000 * sim.mapScale);
+                return sim.buildUnit(this.number, slot, pos);
+            }
+            if (sim.serverType === "FFA") {
+                units = (function () {
+                    var ref, results;
+                    ref = sim.things;
+                    results = [];
+                    for (_ in ref) {
+                        u = ref[_];
+                        if (u.unit && u.owner === this.number) {
+                            results.push(u);
+                        }
+                    }
+                    return results;
+                }).call(this);
+                if (units.length > 0) {
+                    upgraded = sim.buildUnit(this.number, slot, units[0].pos);
+                    if (upgraded != null) {
+                        upgraded.rot = units[0].rot;
+                        upgraded.orders = units[0].orders;
+                        units[0].dead = true;
+                        upgraded.cooldown = 16 * (upgraded.cost / 300 + 2);
+                        this.unitsBuilt += 1;
+                    }
+                    return upgraded;
+                }
+            }
+            spawn = sim.findSpawnPoint(this.side, this);
             if (spawn) {
                 unit = sim.buildUnit(this.number, slot, spawn.pos);
                 if (unit) {
@@ -7472,7 +6295,7 @@ General Game Objects live here
         };
 
         Bullet.prototype.scan = function () {
-            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + 500, (function (_this) {
+            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + sim.maxRadius[otherSide(this.side)], (function (_this) {
                 return function (unit) {
                     if (_this.collide(unit)) {
                         _this.hitUnit(unit);
@@ -7501,7 +6324,7 @@ General Game Objects live here
         };
 
         Bullet.prototype.hitUnit = function (thing) {
-            thing.applyDamage(this.damage);
+            thing.applyDamage(this.damage, this);
             if (this.energyDamage) {
                 thing.applyEnergyDamage(this.energyDamage);
             }
@@ -7513,14 +6336,36 @@ General Game Objects live here
             return thing.explode = false;
         };
 
-        Bullet.prototype._collide = function (thing) {
-            var distnace, speed;
-            distnace = v2.distance(this.pos, thing.pos);
-            speed = v2.mag(thing.vel) + v2.mag(this.vel);
-            return distnace < thing.radius;
+        Bullet.prototype.collide = function (thing) {
+            var dist;
+            if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
+                return false;
+            }
+            if (sim.serverType === "FFA") {
+                if (this.owner === thing.owner) {
+                    return false;
+                }
+            } else {
+                if (this.side === thing.side) {
+                    return false;
+                }
+            }
+            if (thing.unit) {
+                dist = closestDistance(thing.getBoundPoints(), [this.pos, v2.add(v2.sub(this.vel, thing.vel, []), this.pos)]);
+                this.t = 0;
+                return dist < this.radius;
+            }
+            return this.collideCircles(thing);
         };
 
-        Bullet.prototype.collide = function (thing) {
+        Bullet.prototype._collide = function (thing) {
+            var distance, speed;
+            distance = v2.distance(this.pos, thing.pos);
+            speed = v2.mag(thing.vel) + v2.mag(this.vel);
+            return distance < thing.radius;
+        };
+
+        Bullet.prototype.collideCircles = function (thing) {
             var c, distance, r, speed, t1, t2, ta, tb, tc, v;
             if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
                 return false;
@@ -7620,15 +6465,16 @@ General Game Objects live here
         };
 
         LaserBullet.prototype.draw = function () {
-            var d, rot, w;
-            if (this.target) {
-                v2.set(this.target.pos, this.targetPos);
-            }
+            var d, pos, rot, w;
             if (this.origin) {
                 w = this.origin.weapons[this.turretNum || 0];
                 if (w) {
                     v2.set(w.worldPos, this.pos);
                 }
+            }
+            if (this.target) {
+                pos = this.target.unit ? closestPointOnPolygon(this.pos, this.target.getBoundPoints()) : this.target.pos;
+                v2.set(pos, this.targetPos);
             }
             v2.sub(this.targetPos, this.pos, _offset);
             rot = v2.angle(_offset);
@@ -7700,6 +6546,8 @@ General Game Objects live here
 
         AoeBullet.prototype.explodeClass = "AoeExplosion";
 
+        AoeBullet.prototype.hitPos = [0, 0];
+
         AoeBullet.prototype.move = function () {
             if (this.dead) {
                 return;
@@ -7715,6 +6563,7 @@ General Game Objects live here
                 if (this.explode) {
                     exp = new types[this.explodeClass]();
                     exp.z = 1000;
+                    exp.owner = this.owner;
                     exp.pos = [this.hitPos[0], this.hitPos[1]];
                     exp.vel = [0, 0];
                     exp.rot = 0;
@@ -7802,7 +6651,7 @@ General Game Objects live here
                 this.dead = true;
                 return;
             }
-            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + 500, (function (_this) {
+            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + sim.maxRadius[otherSide(this.side)], (function (_this) {
                 return function (unit) {
                     if (_this.collide(unit)) {
                         _this.hitUnit(unit);
@@ -8031,14 +6880,17 @@ General Game Objects live here
         AoeExplosion.prototype.tick = function () {
             if (!this.damaged) {
                 this.damaged = true;
-                return sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.aoe + 500, (function (_this) {
+                return sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.aoe + sim.maxRadius[otherSide(this.side)], (function (_this) {
                     return function (unit) {
                         var distance, fallOff;
-                        distance = Math.max(v2.distance(_this.pos, unit.pos) - unit.radius, 0);
+                        if (unit.owner === _this.owner) {
+                            return false;
+                        }
+                        distance = Math.max(closestDistance(unit.getBoundPoints(), [_this.pos]), 0);
                         if (distance < _this.aoe) {
                             fallOff = 1 - distance / _this.aoe;
                             if (typeof unit.applyDamage === "function") {
-                                unit.applyDamage(_this.damage * fallOff);
+                                unit.applyDamage(_this.damage * fallOff, _this);
                             }
                             if (_this.energyDamage > 1) {
                                 if (typeof unit.applyEnergyDamage === "function") {
@@ -8204,6 +7056,8 @@ General Game Objects live here
 
         CommandPoint.prototype.maxCapp = 10;
 
+        CommandPoint.prototype.value = 1;
+
         function CommandPoint() {
             this.id = sim.nid();
             this.dead = false;
@@ -8218,8 +7072,12 @@ General Game Objects live here
         }
 
         CommandPoint.prototype.tick = function () {
-            var _, distnace, id, j, k, len, p, player, playerOnPoint, ref, ref1, results, sides, thing;
+            var _, distance, i, id, j, k, l, len, p, player, playerOnPoint, ref, ref1, ref2, results, sides, t, thing,
+                tooClose;
             if (sim.state !== "running") {
+                return;
+            }
+            if (sim.serverType === "CTF") {
                 return;
             }
             if (sim.step % 16 === 0) {
@@ -8240,8 +7098,8 @@ General Game Objects live here
                 for (id in ref1) {
                     thing = ref1[id];
                     if (thing.unit && thing.canCapture) {
-                        distnace = v2.distance(this.pos, thing.pos);
-                        if (distnace < this.radius) {
+                        distance = v2.distance(this.pos, thing.pos);
+                        if (distance < this.radius) {
                             sides[thing.side] = true;
                             player = sim.players[thing.owner];
                             if (player) {
@@ -8258,23 +7116,47 @@ General Game Objects live here
                     }
                     return results;
                 })();
-                if (sides.length === 1 && this.side !== sides[0]) {
-                    this.capping += 1;
+                if (sides.length === 1 && (this.side !== sides[0] || sim.serverType === "FFA")) {
+                    this.capping += 1 / this.value;
                     if (this.capping >= this.maxCapp) {
-                        this.side = sides[0];
+                        if (sim.serverType !== "FFA") {
+                            this.side = sides[0];
+                            this.bonus(this.side, 100);
+                        } else {
+                            for (i = j = 0; j < 50; i = ++j) {
+                                tooClose = false;
+                                this.pos = [(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000];
+                                ref2 = sim.things;
+                                for (_ in ref2) {
+                                    t = ref2[_];
+                                    if ((t.spawn || t.commandPoint) && v2.distance(t.pos, this.pos) < (t.radius + this.radius + 100)) {
+                                        tooClose = true;
+                                        break;
+                                    }
+                                }
+                                if (!tooClose) {
+                                    break;
+                                }
+                            }
+                        }
                         sim.captures += 1;
                         this.capping = 0;
-                        this.bonus(this.side, 100);
                         results = [];
-                        for (j = 0, len = playerOnPoint.length; j < len; j++) {
-                            p = playerOnPoint[j];
-                            results.push(p.capps += 1);
+                        for (l = 0, len = playerOnPoint.length; l < len; l++) {
+                            p = playerOnPoint[l];
+                            p.capps += 1;
+                            if (sim.serverType === "FFA") {
+                                p.earnMoney(Math.round(sim.moneyInc * this.value));
+                                results.push(p.maxMoney = Math.max(p.maxMoney, p.money));
+                            } else {
+                                results.push(void 0);
+                            }
                         }
                         return results;
                     }
                 } else {
                     if (this.capping > 0) {
-                        return this.capping -= 1;
+                        return this.capping -= 1 / this.value;
                     }
                 }
             }
@@ -8385,8 +7267,8 @@ General Game Objects live here
 ;
 
 
-//from src/unit.js
-// Generated by CoffeeScript 1.10.0
+//require('../src/unit.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
     var _color, _offset, _pipPos, _vel, _where, legacyParts,
         bind = function (fn, me) {
@@ -8394,7 +7276,8 @@ General Game Objects live here
                 return fn.apply(me, arguments);
             };
         },
-        extend = function (child, parent) {
+        slice = [].slice,
+        extend1 = function (child, parent) {
             for (var key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
             }
@@ -8467,6 +7350,10 @@ General Game Objects live here
 
         Unit.prototype.radius = 60;
 
+        Unit.prototype.boundPoints = null;
+
+        Unit.prototype.boundPointsLocal = [];
+
         Unit.prototype.fixed = false;
 
         Unit.prototype.maxSpeed = 100;
@@ -8479,9 +7366,9 @@ General Game Objects live here
 
         Unit.prototype.jump = 0;
 
-        Unit.prototype.maxJumpDistance = 500;
-
         Unit.prototype.limitBonus = 0;
+
+        Unit.prototype.maxJump = 500;
 
         Unit.prototype.cost = 100;
 
@@ -8524,15 +7411,19 @@ General Game Objects live here
             this.active = true;
             this.rot = 0;
             this.warpIn = 0;
+            this.cooldown = 0;
             this.testIntp = [];
             this.testStep = [];
             this.orders = [];
             this.preOrders = [];
+            this.closestEnemies = [];
+            this.closestFriends = [];
+            this.closestEnemyBullets = [];
         }
 
         Unit.prototype.fromSpec = function (spec) {
-            var data, i, j, l, len, len1, len2, len3, len4, len5, n, o, p, part, partNum, q, ref, ref1, ref2, ref3,
-                ref4, ref5, results, thrust, w, x;
+            var data, i, j, l, len, len1, len2, len3, len4, len5, n, o, p, part, partNum, q, reachRange, ref, ref1,
+                ref2, ref3, ref4, ref5, results, stasisRange, thrust, w, x;
             this.cost = 0;
             this.hp = 5;
             this.jumpDistance = 0;
@@ -8550,6 +7441,7 @@ General Game Objects live here
             this.radius = 20;
             this.weaponArc = 0;
             this.minArc = 0;
+            this.maxRange = 0;
             thrust = 0;
             data = fromShort(spec);
             this.name = data.name || "";
@@ -8589,6 +7481,17 @@ General Game Objects live here
                 if (part.arc && (this.minArc === 0 || this.minArc > part.arc)) {
                     this.minArc = part.arc;
                 }
+                if (p.type === "EnergyTransfer") {
+                    if (part.range > this.maxRange) {
+                        this.maxRange = part.range;
+                    }
+                }
+                if (p.type === "StasisField") {
+                    stasisRange = part.range + v2.distance(part.pos, this.center) + 100;
+                    if (stasisRange > this.maxRange) {
+                        this.maxRange = stasisRange;
+                    }
+                }
             }
             this.maxHP = this.hp;
             this.energy = this.storeEnergy;
@@ -8596,7 +7499,7 @@ General Game Objects live here
             this.maxSpeed = thrust / this.mass * 9;
             this.maxShield = this.shield;
             this.damageRatio = 1;
-            this.jumpDistance = this.jump = Math.min(1, 41 * this.jumpCount / this.mass) * this.maxJumpDistance;
+            this.jumpDistance = this.jump = Math.min(this.maxJump / 500, 41 * this.jumpCount / this.mass) * 500;
             this.computeCenter();
             ref1 = this.parts;
             for (l = 0, len1 = ref1.length; l < len1; l++) {
@@ -8606,6 +7509,7 @@ General Game Objects live here
                 }
             }
             this.computeRadius();
+            this.computeBoundary();
             this.weaponRange = 0;
             this.weaponDPS = 0;
             this.weaponDamage = 0;
@@ -8619,6 +7523,10 @@ General Game Objects live here
                 }
                 if (w.range > this.weaponRange) {
                     this.weaponRange = w.range;
+                }
+                reachRange = w.range + v2.distance(w.pos, this.center);
+                if (reachRange > this.maxRange) {
+                    this.maxRange = reachRange;
                 }
                 w.dps = w.damage / w.reloadTime;
                 this.weaponDamage += w.damage;
@@ -8707,9 +7615,10 @@ General Game Objects live here
         };
 
         Unit.prototype.computeRadius = function () {
-            var j, len, part, radius, ref, v;
+            var j, len, part, radius, ref, results, v;
             v = v2.create();
             ref = this.parts;
+            results = [];
             for (j = 0, len = ref.length; j < len; j++) {
                 part = ref[j];
                 if (!(!part.decal)) {
@@ -8719,15 +7628,133 @@ General Game Objects live here
                 v2.sub(v, this.center);
                 radius = v2.mag(v);
                 if (radius > this.radius) {
-                    this.radius = radius;
+                    results.push(this.radius = radius);
+                } else {
+                    results.push(void 0);
                 }
             }
-            if (this.radius > 500) {
-                return this.radius = 500;
-            }
+            return results;
         };
 
-        Unit.prototype.applyDamage = function (d) {
+        Unit.prototype.computeBoundary = function () {
+            var diffCross, extend, findPartPoints, left, max, min, points, right, split, u, v;
+            findPartPoints = (function (_this) {
+                return function () {
+                    var fn1, j, l, len, len1, p, part, partPoints, ref, rst;
+                    partPoints = function (part) {
+                        var size;
+                        if (part.dir % 2 === 0) {
+                            size = [part.size[0], part.size[1]];
+                        } else {
+                            size = [part.size[1], part.size[0]];
+                        }
+                        v2.scale(size, 10);
+                        return [v2.add(v2.create([-size[0], size[1]]), part.pos), v2.add(v2.create([size[0], size[1]]), part.pos), v2.add(v2.create([size[0], -size[1]]), part.pos), v2.add(v2.create([-size[0], -size[1]]), part.pos)];
+                    };
+                    rst = [];
+                    ref = _this.parts;
+                    for (j = 0, len = ref.length; j < len; j++) {
+                        part = ref[j];
+                        if (!part.decal) {
+                            rst.push.apply(rst, partPoints(part));
+                        }
+                    }
+                    fn1 = function (p) {
+                        return v2.sub(p, _this.center);
+                    };
+                    for (l = 0, len1 = rst.length; l < len1; l++) {
+                        p = rst[l];
+                        fn1(p);
+                    }
+                    return rst;
+                };
+            })(this);
+            diffCross = function (u, v, p) {
+                return v2.cross(v2.sub(p, u, [0, 0]), v2.sub(v, u, [0, 0]));
+            };
+            min = function (points, fn) {
+                return points.sort(function (a, b) {
+                    return fn(a) - fn(b);
+                })[0];
+            };
+            max = function (points, fn) {
+                return points.sort(function (a, b) {
+                    return fn(b) - fn(a);
+                })[0];
+            };
+            split = function (u, v, points) {
+                var p;
+                return (function () {
+                    var j, len, results;
+                    results = [];
+                    for (j = 0, len = points.length; j < len; j++) {
+                        p = points[j];
+                        if (diffCross(u, v, p) < 0) {
+                            results.push(p);
+                        }
+                    }
+                    return results;
+                })();
+            };
+            extend = function (u, v, points) {
+                var p1, p2, w;
+                if (!(points != null ? points.length : void 0)) {
+                    return [];
+                }
+                w = min(points, function (p) {
+                    return diffCross(u, v, p);
+                });
+                p1 = split(w, v, points);
+                p2 = split(u, w, points);
+                return slice.call(extend(w, v, p1)).concat([w], slice.call(extend(u, w, p2)));
+            };
+            points = findPartPoints();
+            u = min(points, function (p) {
+                return p[0];
+            });
+            v = max(points, function (p) {
+                return p[0];
+            });
+            left = split(u, v, points);
+            right = split(v, u, points);
+            return this.boundPointsLocal = [v].concat(slice.call(extend(u, v, left)), [u], slice.call(extend(v, u, right)));
+        };
+
+        Unit.prototype.computeBoundPoints = function () {
+            var p, toWorld;
+            sim.timeStart("computeBoundPoints");
+            toWorld = (function (_this) {
+                return function (from) {
+                    var p;
+                    p = v2.create(from);
+                    v2.rotate(p, _this.rot + Math.PI);
+                    return v2.add(p, _this.pos);
+                };
+            })(this);
+            this.boundPoints = (function () {
+                var j, len, ref, results;
+                ref = this.boundPointsLocal;
+                results = [];
+                for (j = 0, len = ref.length; j < len; j++) {
+                    p = ref[j];
+                    results.push(toWorld(p));
+                }
+                return results;
+            }).call(this);
+            return sim.timeEnd("computeBoundPoints");
+        };
+
+        Unit.prototype.getBoundPoints = function () {
+            if (this.boundPoints == null) {
+                this.computeBoundPoints();
+            }
+            return this.boundPoints;
+        };
+
+        Unit.prototype.applyDamage = function (d, damager) {
+            if (damager) {
+                this.lastDamager = damager;
+            }
             this.shield -= d;
             if (this.shield < 0) {
                 this.hp += this.shield;
@@ -8811,12 +7838,20 @@ General Game Objects live here
         };
 
         Unit.prototype.tick = function () {
-            var burnTick, cloakOn, cloakRange, dist, exp, j, l, len, len1, len2, n, part, ref, ref1, ref2, ref3, ref4,
-                speed, target;
+            var burnTick, cloakOn, cloakRange, exp, j, killer, l, len, len1, len2, n, p, part, penalty, ref, ref1, ref2,
+                ref3, ref4, speed, target;
             ref = this.parts;
             for (j = 0, len = ref.length; j < len; j++) {
                 part = ref[j];
                 part.computeWorldPos();
+            }
+            this.boundPoints = null;
+            if (this.cooldown > 0) {
+                this.cooldown -= 1;
+                this.energy = -this.genEnergy * 2;
+            } else if (this.cooldown <= 0) {
+                this.energy = this.storeEnergy;
+                this.cooldown = 0 / 0;
             }
             this.slowed = false;
             if (this.warpIn < 1) {
@@ -8839,13 +7874,55 @@ General Game Objects live here
                     this.cloakFade = (this.cloak - cloakOn) / cloakRange;
                 }
             }
+            this.closestEnemies = [];
+            this.closestFriends = [];
+            this.closestEnemyBullets = [];
+            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + sim.maxRadius[otherSide(this.side)] + 500, (function (_this) {
+                return function (u) {
+                    if (u.id !== _this.id) {
+                        _this.closestEnemies.push(u);
+                    }
+                    return false;
+                };
+            })(this));
+            this.closestEnemies.sort((function (_this) {
+                return function (a, b) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+            if ((ref1 = sim.unitSpaces[this.side]) != null) {
+                ref1.findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
+                    return function (u) {
+                        if (u.id !== _this.id) {
+                            _this.closestFriends.push(u);
+                        }
+                        return false;
+                    };
+                })(this));
+            }
+            this.closestFriends.sort((function (_this) {
+                return function (a, b) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
+                return function (b) {
+                    _this.closestEnemyBullets.push(b);
+                    return false;
+                };
+            })(this));
+            this.closestEnemyBullets.sort((function (_this) {
+                return function (a, b) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
             if (this.cloak > 0) {
-                ref1 = this.closestEnemy(), dist = ref1[0], target = ref1[1];
-                if (target && dist - target.radius - this.radius < 100) {
+                target = this.closestEnemy();
+                if ((target != null) && closestDistance(this.getBoundPoints(), target.getBoundPoints()) < 100) {
                     this.cloak = 0;
                 }
             }
-            if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && sim.things[this.orders[0].targetId].side !== this.side) {
+            if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && (sim.serverType === "FFA" && sim.things[this.orders[0].targetId].side !== this.side || sim.things[this.orders[0].targetId].owner !== this.owner)) {
                 this.target = sim.things[this.orders[0].targetId];
             }
             if (this.energy < -this.genEnergy * 16 * 3) {
@@ -8885,7 +7962,7 @@ General Game Objects live here
                     this.burn = 0;
                 }
             }
-            if (this.hp <= 0) {
+            if (isNaN(this.cooldown) && this.hp <= 0) {
                 exp = new types.ShipExplosion();
                 exp.z = 1000;
                 exp.pos = [this.pos[0], this.pos[1]];
@@ -8895,7 +7972,20 @@ General Game Objects live here
                 sim.things[exp.id] = exp;
                 this.dead = true;
                 if (this.building) {
-                    return this.building.dead = true;
+                    this.building.dead = true;
+                }
+                if (sim.serverType === "FFA") {
+                    p = sim.players[this.owner];
+                    penalty = Math.round(p.maxMoney * sim.deathPenalty);
+                    p.maxMoney = Math.max(p.maxMoney - penalty, sim.defaultMoney);
+                    p.money = Math.min(p.money, p.maxMoney);
+                    if (this.lastDamager) {
+                        killer = sim.players[this.lastDamager.owner];
+                        if (killer != null) {
+                            killer.earnMoney(Math.round(this.cost * .5));
+                            return killer.maxMoney = Math.max(killer.maxMoney, killer.money);
+                        }
+                    }
                 }
             }
         };
@@ -8947,9 +8037,12 @@ General Game Objects live here
         };
 
         Unit.prototype.moveTo = function (goto, noStop) {
-            var arriveIn, curspeed, force, j, len, part, ratio, ref, rot, stopSpeed, turnIn;
+            var arriveIn, c, curspeed, force, j, len, part, ratio, ref, rot, stopSpeed, turnIn;
             if (noStop == null) {
                 noStop = false;
+            }
+            if (goto == null) {
+                return;
             }
             v2.sub(goto, this.pos, _where);
             this.gotoDistance = v2.mag(_where);
@@ -8966,9 +8059,11 @@ General Game Objects live here
             this.stopDistance = 0;
             if (!noStop) {
                 stopSpeed = curspeed;
-                while (stopSpeed > 1) {
+                c = 25;
+                while (stopSpeed > 1 && c > 0) {
                     this.stopDistance += stopSpeed;
                     stopSpeed = stopSpeed * this.stopFriction;
+                    c -= 1;
                 }
             }
             if (turnIn < arriveIn * .2 && this.gotoDistance > this.stopDistance && this.energy > 0) {
@@ -8993,71 +8088,55 @@ General Game Objects live here
         };
 
         Unit.prototype.closestEnemy = function () {
-            var minDist, minUnit;
-            minDist = 0;
-            minUnit = null;
-            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.weaponRange + 1000, (function (_this) {
-                return function (u) {
-                    var dist;
-                    dist = v2.distance(_this.pos, u.pos);
-                    if (dist < minDist || minUnit === null) {
-                        minDist = dist;
-                        minUnit = u;
-                    }
-                    return false;
-                };
-            })(this));
-            return [minDist, minUnit];
+            var enemy, j, len, ref, u;
+            enemy = null;
+            ref = this.closestEnemies;
+            for (j = 0, len = ref.length; j < len; j++) {
+                u = ref[j];
+                if (u.owner !== this.owner) {
+                    enemy = u;
+                    break;
+                }
+            }
+            return enemy;
         };
 
         Unit.prototype.closestUncloaked = function (range) {
-            var minDist, minDistC, minUnit, minUnitC;
-            minDist = 0;
-            minUnit = null;
-            minDistC = 0;
-            minUnitC = null;
-            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.weaponRange + 1000, (function (_this) {
-                return function (u) {
-                    var dist;
-                    dist = v2.distance(_this.pos, u.pos);
-                    if (!u.cloaked()) {
-                        if (dist < minDist || minUnit === null) {
-                            minDist = dist;
-                            minUnit = u;
-                        }
+            var enemyC, j, len, ref, u;
+            enemyC = null;
+            ref = this.closestEnemies;
+            for (j = 0, len = ref.length; j < len; j++) {
+                u = ref[j];
+                if (u.owner !== this.owner) {
+                    if (u.cloaked() && !enemyC) {
+                        enemyC = u;
                     } else {
-                        if (dist < minDistC || minUnitC === null) {
-                            minDistC = dist;
-                            minUnitC = u;
-                        }
+                        return u;
                     }
-                    return false;
-                };
-            })(this));
-            if (minUnit !== null) {
-                return [minDist, minUnit];
-            } else {
-                return [minDistC, minUnitC];
+                }
             }
+            return enemyC;
         };
 
         Unit.prototype.idleAI = function () {
-            var dist, lookAt, ref, rot, target;
+            var dist, lookAt, rot, target;
             if (this.target) {
                 this.softTarget = this.target;
             } else if (sim.step % 16 === 0) {
                 this.softTarget = null;
-                ref = this.closestUncloaked(), dist = ref[0], target = ref[1];
-                if (dist < this.weaponRange * 3) {
+                target = this.closestUncloaked();
+                if (target && v2.distance(target.pos, this.pos) < this.weaponRange * 3) {
                     this.softTarget = target;
                 }
             }
             if (this.softTarget && this.minArc < 360) {
-                lookAt = this.softTarget.pos;
+                lookAt = this.softTarget.unit ? closestPointOnPolygon(this.pos, this.softTarget.getBoundPoints()) : this.softTarget.pos;
                 v2.sub(lookAt, this.pos, _where);
                 rot = v2.angle(_where);
-                dist = v2.mag(_where);
-                return this.rot = turnAngle(this.rot, rot, this.turnSpeed);
+                if (Math.abs(this.rot - rot) > .02) {
+                    dist = v2.mag(_where);
+                    return this.rot = turnAngle(this.rot, rot, this.turnSpeed);
+                }
             }
         };
 
@@ -9074,6 +8153,21 @@ General Game Objects live here
                 }
                 part.computeWorldPos();
             }
+
+            /*
+      drawLine = (from, to) ->
+          offset = v2.create()
+          v2.sub(to, from, offset)
+          rot = v2.angle(offset)
+          d = v2.mag(offset) / 380
+          v2.scale(offset, .5)
+          v2.add(offset, from)
+          baseAtlas.drawSpirte("img/laser01.png", offset, [.2, d], rot, [0, 255, 0, 255]);
+
+      for i in [0 ... @boundPoints.length]
+          j = (i + 1) % @boundPoints.length
+          drawLine(@boundPoints[i], @boundPoints[j])
+       */
             if (this.maxShield > 0) {
                 s = this.warpIn * 2 - 1;
                 if (s > 0) {
@@ -9384,7 +8478,7 @@ General Game Objects live here
         };
 
         Unit.prototype.runOrder = function (order) {
-            var dest, dist, pos, range, ref, target;
+            var canTarget, dest, dist, pos, range, ref, target;
             switch (order.type) {
                 case "Follow":
                     target = sim.things[order.targetId];
@@ -9392,14 +8486,15 @@ General Game Objects live here
                         this.target = null;
                         return false;
                     }
-                    if (target.side !== this.side) {
+                    canTarget = target.side !== this.side || sim.serverType === "FFA" && target.owner !== this.owner;
+                    if (canTarget) {
                         this.target = target;
                     }
                     if (!order.range) {
                         if (this.warhead) {
                             order.range = 0;
                         } else {
-                            if (target.side !== this.side && this.weapons.length > 0) {
+                            if (canTarget && this.weapons.length > 0) {
                                 order.range = this.weaponRange * .9;
                             } else {
                                 order.range = (this.radius + target.radius) * 1.5;
@@ -9407,13 +8502,13 @@ General Game Objects live here
                         }
                     }
                     range = order.range;
-                    if (target.side !== this.side && this.weapons.length > 0) {
+                    if (canTarget && this.weapons.length > 0) {
                         range = Math.max(0, 0.9 * this.mainWeapon.range * (this.mainWeapon.bulletSpeed - v2.mag(target.vel)) / this.mainWeapon.bulletSpeed);
                     }
-                    if (target.cloak > 0 && target.cloaked() && target.side !== this.side) {
+                    if (target.cloak > 0 && target.cloaked() && canTarget) {
                         range = Math.min(order.range, 50);
                     }
-                    return this.moveWithinRange(target.pos, range, order.noStop) || this.orders.length === 1 || target.side !== this.side || !(this.target = null);
+                    return this.moveWithinRange(target.pos, range, order.noStop) || this.orders.length === 1 || canTarget || !(this.target = null);
                 case "Move":
                     if (order.dest == null) {
                         return false;
@@ -9454,6 +8549,9 @@ General Game Objects live here
         };
 
         Unit.prototype.selfDestruct = function () {
+            if (sim.serverType === "FFA") {
+                this.cooldown = 16 * (this.cost / 300 + 2);
+            }
             return this.hp = 0;
         };
 
@@ -9481,12 +8579,12 @@ General Game Objects live here
                 }
                 return true;
             }
-            if (this.jump > this.jumpDistance && this.energy > 15 * this.mass && !this.holdPosition) {
+            if (this.jump > this.jumpDistance && this.energy > parts.JumpEngine.prototype.useEnergy * this.mass && !this.holdPosition) {
                 jumpDist = this.jumpDistance;
                 needDist = v2.distance(this.pos, pos) - Math.max(this.stopDistance, 100);
                 jumpDist = Math.min(jumpDist, needDist);
                 if (jumpDist < this.jumpDistance) {
-                    this.energy -= this.jumpCount * 250;
+                    this.energy -= parts.JumpEngine.prototype.useEnergy * this.mass;
                     this.cloak -= .25 * this.mass;
                     jumpVec = v2.create();
                     v2.sub(pos, this.pos, jumpVec);
@@ -9629,7 +8727,7 @@ General Game Objects live here
     _color = [0, 0, 0, 0];
 
     window.Engine = (function (superClass) {
-        extend(Engine, superClass);
+        extend1(Engine, superClass);
 
         Engine.prototype.trailSize = .1;
 
@@ -9659,7 +8757,7 @@ General Game Objects live here
     _vel = [0, 0];
 
     window.Turret = (function (superClass) {
-        extend(Turret, superClass);
+        extend1(Turret, superClass);
 
         Turret.prototype.tab = "weapons";
 
@@ -9772,13 +8870,19 @@ General Game Objects live here
             if (angle < -halfArc) {
                 this.rot = this.unit.rot - halfArc;
             }
-            if (this.unit.target !== null && this.canShoot(this.unit.target)) {
-                this.target = this.unit.target;
-                return this.fire();
-            } else if (this.target !== null && this.canShoot(this.target)) {
-                return this.fire();
-            } else {
-                return this.findTarget();
+            if (this.reload === 0 && this.unit.energy >= this.shotEnergy) {
+                if (this.unit.target !== null && this.canShoot(this.unit.target)) {
+                    this.target = this.unit.target;
+                    return this.fire();
+                } else if (this.target !== null && this.canShoot(this.target)) {
+                    return this.fire();
+                } else {
+                    return sim.timeIt("findTarget", (function (_this) {
+                        return function () {
+                            return _this.findTarget();
+                        };
+                    })(this));
+                }
             }
         };
 
@@ -9803,26 +8907,33 @@ General Game Objects live here
         };
 
         Turret.prototype.aim = function (thing) {
-            var c, check, current_time, d, do_pos, j, max_time, mdown, miss, mup, p, predicted_pos, th;
+            var aimPos, c, check, current_time, d, do_pos, j, max_time, mdown, miss, mup, p, predicted_pos, radius, th;
+            if (thing.unit) {
+                aimPos = closestPointOnPolygon(this.worldPos, thing.getBoundPoints());
+                radius = 0;
+            }
+            if (!aimPos) {
+                aimPos = thing.pos;
+                radius = thing.radius;
+            }
             if (this.instant) {
-                p = thing.pos;
+                p = aimPos;
                 predicted_pos = [p[0] - this.worldPos[0], p[1] - this.worldPos[1]];
                 th = v2.angle(predicted_pos);
-                return [th, v2.mag(predicted_pos) - thing.radius];
+                return [th, v2.mag(predicted_pos) - radius];
             }
             do_pos = (function (_this) {
                 return function (t) {
                     var v;
-                    p = thing.pos;
                     v = thing.vel;
-                    return [p[0] - _this.worldPos[0] + v[0] * t, p[1] - _this.worldPos[1] + v[1] * t];
+                    return [aimPos[0] - _this.worldPos[0] + v[0] * t, aimPos[1] - _this.worldPos[1] + v[1] * t];
                 };
             })(this);
             check = (function (_this) {
                 return function (t) {
                     var miss, predicted_range;
                     predicted_pos = do_pos(t);
-                    predicted_range = v2.mag(predicted_pos) - thing.radius;
+                    predicted_range = v2.mag(predicted_pos) - radius;
                     miss = Math.abs(predicted_range - _this.bulletSpeed * t);
                     return miss;
                 };
@@ -9852,7 +8963,7 @@ General Game Objects live here
             }
             predicted_pos = do_pos(current_time);
             th = v2.angle(predicted_pos);
-            return [th, v2.mag(predicted_pos) - thing.radius];
+            return [th, v2.mag(predicted_pos) - radius];
         };
 
         Turret.prototype.canShoot = function (other) {
@@ -9866,7 +8977,7 @@ General Game Objects live here
             if (this.unit.id === other.id) {
                 return false;
             }
-            if (this.unit.side === other.side) {
+            if (this.unit.side === other.side && (sim.serverType !== "FFA" || this.unit.owner === other.owner)) {
                 return false;
             }
             if (other.missile && other.explode === false) {
@@ -9911,34 +9022,37 @@ General Game Objects live here
         };
 
         Turret.prototype.findTarget = function () {
+            var j, l, len, len1, m, ref, ref1, results, u;
             if (this.unit.target && !this.hitsMissiles) {
                 this.target = this.unit.target;
                 return;
             }
             this.target = null;
             if (this.hitsMissiles) {
-                sim.bulletSpaces[otherSide(this.unit.side)].findInRange(this.worldPos, this.range + 20 + 100, (function (_this) {
-                    return function (m) {
-                        if (_this.canShoot(m)) {
-                            _this.target = m;
-                            return true;
-                        }
-                        return false;
-                    };
-                })(this));
+                ref = this.unit.closestEnemyBullets;
+                for (j = 0, len = ref.length; j < len; j++) {
+                    m = ref[j];
+                    if (this.canShoot(m)) {
+                        this.target = m;
+                        break;
+                    }
+                }
                 if (this.target) {
                     return;
                 }
             }
-            return sim.unitSpaces[otherSide(this.unit.side)].findInRange(this.worldPos, this.range + 500, (function (_this) {
-                return function (u) {
-                    if (_this.canShoot(u)) {
-                        _this.target = u;
-                        return true;
-                    }
-                    return false;
-                };
-            })(this));
+            ref1 = this.unit.closestEnemies;
+            results = [];
+            for (l = 0, len1 = ref1.length; l < len1; l++) {
+                u = ref1[l];
+                if (this.canShoot(u)) {
+                    this.target = u;
+                    break;
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
         };
 
         Turret.prototype.fire = function () {
@@ -9947,12 +9061,6 @@ General Game Objects live here
             this.rot = turnAngle(this.rot, rot, 1);
             angleLeft = angleBetween(this.rot, rot);
             if (Math.abs(angleLeft) > .01) {
-                return;
-            }
-            if (this.reload > 0) {
-                return;
-            }
-            if (this.unit.energy < this.shotEnergy) {
                 return;
             }
             this.reload = this.reloadTime;
@@ -9966,6 +9074,7 @@ General Game Objects live here
             particle = new this.bulletCls();
             sim.things[particle.id] = particle;
             particle.side = this.unit.side;
+            particle.owner = this.unit.owner;
             particle.life = 0;
             particle.dead = false;
             particle.z = this.unit.z + .001;
@@ -9996,7 +9105,7 @@ General Game Objects live here
                     exp.radius = .5;
                     sim.things[exp.id] = exp;
                 } else {
-                    this.target.applyDamage(particle.damage);
+                    this.target.applyDamage(particle.damage, this.unit);
                 }
             } else if (this.exactRange) {
                 particle.maxLife = Math.floor(distance / particle.speed);
@@ -10024,7 +9133,7 @@ General Game Objects live here
     legacyParts = [null, "Mount360", "Mount180", "Mount270", "Mount90", "Mount30", "HArmor2x2", "HArmor1x2", "HArmor1x1", "HArmor2x1", "HArmor1x1Angle", "UArmor1x1", "UArmor1x2", "UArmor2x1", "UArmor1x1Angle", "Reactor2x2", "Reactor1x2", "Reactor1x1", "Reactor2x1", "EnergyTransfer", "ShieldGen2x2", "ShieldGen2x1", "Battery1x2", "Battery1x1", "Battery2x1", "Battery2x2", "Engine01", "Engine02", "Engine03", "Engine04", "Engine05", "Engine06", "Engine07", "HArmor2x2Front1", "HArmor2x2Front2", "HArmor1x2Font1", "HArmor1x2Front2", "HArmor2x2Back1", "HArmor2x2Back2", "HArmor1x2Back1", "HArmor1x2Back2", "Wing1x2", "Wing2x2", "Wing2x1", "Wing1x1Notch", "Wing1x1Angle", "Wing1x1Round", "PDTurret", "HeavyPDTurret", "RingTurret", "TorpTurret", "MissileTurret", "ArtilleryTurret", "PlasmaTurret", "LightBeamTurret", "HeavyBeamTurret", "FlackTurret", "SniperGun", "EMPGun", "AOEWarhead", "TargetingMod", "DamageMod", "ReloaderMod", "BulletSpeedMod", "Ai1", "OverKillAi", "Ai3", "Ai4", "ShapedWarhead", "BombGun", "HArmor1x1AngleBack", "UArmor1x1AngleBack", "HArmor2x2Angle", "HArmor2x2AngleBack", "VArmor1x2SideBar", "VArmor1x2SideBarFilled", "VArmor1x2IBeam", "VArmor1x2Corner4", "VArmor1x2End", "VArmor1x1Corner1", "VArmor1x1Corner2", "VArmor1x1Corner3", "VArmor1x1Hook", "VArmor1x1CornerBack", "Mount360Micro", "AutoTurret", "TeslaTurret", "WavePullTurret", "ShieldGen1x1", "WavePushTurret", "CloakGenerator", "SymbolDecal1", "SymbolDecal2", "SymbolDecal3", "SymbolDecal4", "SymbolDecal5", "SymbolDecal6", "SymbolDecal7", "SymbolDecal8", "SymbolDecal9", "SymbolDecal10", "SymbolDecal11", "SymbolDecal12", "SymbolDecal13", "SymbolDecal14", "SymbolDecal15", "SymbolDecal16", "SymbolDecal17", "SymbolDecal18", "SymbolDecal19", "SymbolDecal20", "SymbolDecal21", "SymbolDecal22", "SymbolDecal23", "SymbolDecal24", null, null, null, null, null, "UArmor2x2", "UArmor1x2Notch1", "UArmor1x2Notch2", "UArmor1x1Notch1", "UArmor1x1Notch2", "UArmor1x1Spike", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "VArmor2x2", "VArmor1x2", "VArmor1x1", "VArmor1x1Angle", "VArmor2x2Angle", "VArmor2x2Curve", "VArmor1x1Curve", null, null, null, "HAarmor1x2Curved", "HArmor2x2Curved", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "Stripe1x1", "Stripe1x1Corner", "Stripe1x2", "Stripe2x1", "Stripe2x2", "Stripe2x2Corner", "Stripe2x2Round", "StripeDouble2x1", "StripeDouble2x2", null, null, null, null, null, null, null, null, null, null, null, "LetterA", "LetterB", "LetterC", "LetterD", "LetterE", "LetterF", "LetterG", "LetterH", "LetterI", "LetterJ", "LetterK", "LetterL", "LetterM", "LetterN", "LetterO", "LetterP", "LetterQ", "LetterR", "LetterS", "LetterT", "LetterU", "LetterV", "LetterW", "LetterX", "LetterY", "LetterZ", "LetterPound", "LetterDot", null, null, "Letter0", "Letter1", "Letter2", "Letter3", "Letter4", "Letter5", "Letter6", "Letter7", "Letter8", "Letter9", "DroneBody", "Mount10Range", "FlameTurret", "StasisField", "Faction2", "Faction3", "Faction4", "Faction5", "Faction6", "Faction7", "Faction1", null, null, null, null];
 
     window.fromShort = function (rawShort) {
-        var bin, e, error, i, j, ref, short, spec, type;
+        var bin, e, i, j, ref, short, spec, type;
         if (!rawShort) {
             return {
                 parts: []
@@ -10093,8 +9202,8 @@ General Game Objects live here
 ;
 
 
-//from src/parts.js
-// Generated by CoffeeScript 1.10.0
+//require('../src/parts.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
     var AiPart, Battery, Faction, HArmor, ModPart, ShadowArmor, UArmor, VArmor, VShadowArmor, Wing, _a, _b, _wave,
         extend = function (child, parent) {
@@ -12182,7 +11291,7 @@ General Game Objects live here
 
         Reactor1x1.prototype.genEnergy = 10;
 
-        Reactor1x1.prototype.storeEnergy = 1600;
+        Reactor1x1.prototype.storeEnergy = 2000;
 
         Reactor1x1.prototype.image = "Reactor1x1.png";
 
@@ -12315,29 +11424,27 @@ General Game Objects live here
         };
 
         EnergyTransfer.prototype.tick = function () {
-            var _, amount, distance, giveTo, i, len, ref, ref1, results, thing;
+            var amount, distance, giveTo, i, j, len, len1, ref, ref1, results, thing;
             if ((sim.step + this.unit.id) % 16 === 0 && this.unit.energy > 100) {
                 this.working = false;
                 giveTo = [];
-                ref = sim.things;
-                for (_ in ref) {
-                    thing = ref[_];
-                    if (thing.unit && thing.side === this.unit.side && thing.id !== this.unit.id) {
-                        if (thing.energy < thing.storeEnergy && thing.energy > -1) {
-                            if (thing.energyCaster && thing.energy / thing.storeEnergy > this.unit.energy / this.unit.storeEnergy) {
-                                continue;
-                            }
-                            distance = v2.distance(this.unit.pos, thing.pos);
-                            if (distance < this.range) {
-                                giveTo.push(thing);
-                            }
+                ref = this.unit.closestFriends;
+                for (i = 0, len = ref.length; i < len; i++) {
+                    thing = ref[i];
+                    if (thing.energy < thing.storeEnergy && thing.energy > -1) {
+                        if (thing.energyCaster && thing.energy / thing.storeEnergy > this.unit.energy / this.unit.storeEnergy) {
+                            continue;
+                        }
+                        distance = v2.distance(this.unit.pos, thing.pos);
+                        if (distance < this.range) {
+                            giveTo.push(thing);
                         }
                     }
                 }
                 ref1 = shuffle(giveTo);
                 results = [];
-                for (i = 0, len = ref1.length; i < len; i++) {
-                    thing = ref1[i];
+                for (j = 0, len1 = ref1.length; j < len1; j++) {
+                    thing = ref1[j];
                     amount = thing.storeEnergy - thing.energy;
                     if (amount > this.trasferEnergy * 16) {
                         amount = this.trasferEnergy * 16;
@@ -12400,29 +11507,35 @@ General Game Objects live here
         StasisField.prototype.working = false;
 
         StasisField.prototype.tick = function () {
+            var distance, i, len, other, ref, results, speed;
             this.unit.cloak = 0;
             this.working = false;
             this.stasisPos = [this.worldPos[0] + (Math.sin(this.unit.rot) * 100), this.worldPos[1] - (Math.cos(this.unit.rot) * 100)];
-            return sim.unitSpaces[otherSide(this.unit.side)].findInRange(this.stasisPos, this.range + 500, (function (_this) {
-                return function (other) {
-                    var distance, speed;
-                    if (other.slowed === true) {
-                        return false;
+            ref = this.unit.closestEnemies;
+            results = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+                other = ref[i];
+                if (other.slowed === true) {
+                    continue;
+                }
+                if (other.owner === this.unit.owner) {
+                    continue;
+                }
+                distance = closestDistance(other.getBoundPoints(), [this.stasisPos]);
+                if (distance < this.range) {
+                    other.jump = 0;
+                    other.cloak = 0;
+                    speed = v2.mag(other.vel);
+                    if (speed > this.maxSlow) {
+                        v2.scale(other.vel, 0.9);
                     }
-                    distance = v2.distance(_this.stasisPos, other.pos);
-                    if (distance < other.radius + _this.range) {
-                        other.jump = 0;
-                        other.cloak = 0;
-                        speed = v2.mag(other.vel);
-                        if (speed > _this.maxSlow) {
-                            v2.scale(other.vel, 0.9);
-                        }
-                        _this.working = true;
-                        other.slowed = true;
-                    }
-                    return false;
-                };
-            })(this));
+                    this.working = true;
+                    results.push(other.slowed = true);
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
         };
 
         StasisField.prototype.draw = function () {
@@ -12568,7 +11681,7 @@ General Game Objects live here
 
         ShieldGen1x1.prototype.cost = 15;
 
-        ShieldGen1x1.prototype.mass = 10;
+        ShieldGen1x1.prototype.mass = 8;
 
         ShieldGen1x1.prototype.genShield = 0.0625 * 1.5;
 
@@ -13186,11 +12299,13 @@ General Game Objects live here
 
         JumpEngine.prototype.jumpCount = 1;
 
+        JumpEngine.prototype.rechargeRate = 160;
+
         JumpEngine.prototype.thrust = 0;
 
         JumpEngine.prototype.turnSpeed = 0;
 
-        JumpEngine.prototype.useEnergy = 1;
+        JumpEngine.prototype.useEnergy = 15;
 
         JumpEngine.prototype.exhaust = false;
 
@@ -13207,8 +12322,8 @@ General Game Objects live here
         JumpEngine.prototype.tab = "engines";
 
         JumpEngine.prototype.tick = function () {
-            this.unit.jump += 160 / this.unit.mass;
-            return this.working = this.unit.jump > this.unit.jumpDistance && this.unit.energy > this.unit.jumpCount * 250;
+            this.unit.jump += this.rechargeRate / this.unit.mass;
+            return this.working = this.unit.jump > this.unit.jumpDistance && this.unit.energy > this.unit.mass * this.useEnergy;
         };
 
         JumpEngine.prototype.draw = function () {
@@ -13607,7 +12722,7 @@ General Game Objects live here
 
         RamBullet.prototype.hitUnit = function (unit) {
             var amount, dot, p;
-            unit.applyDamage(this.damage);
+            unit.applyDamage(this.damage, this);
             p = this.waveEffect * this.damage / unit.mass;
             v2.norm(this.vel, _wave);
             v2.scale(_wave, -this.direction);
@@ -13853,9 +12968,9 @@ General Game Objects live here
             ArtilleryBullet.__super__.draw.call(this);
             if (this.hitPos) {
                 dist = Math.min(v2.distance(this.pos, this.hitPos), 1000);
-                size = Math.pow(1000 - dist, 2) / (1000 * 1000) * (this.aoe / 120);
-                color = [255, 0, 0, 100];
-                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 240, this.aoe / 240], 0, color);
+                size = Math.pow(1.003, -dist) * this.aoe / 162;
+                color = [255, 0, 0, 80];
+                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 256, this.aoe / 256], 0, color);
                 baseAtlas.drawSprite("img/fire02.png", this.hitPos, [size * 2, size * 2], 0, color);
             }
         };
@@ -13885,7 +13000,7 @@ General Game Objects live here
 
         ArtilleryTurret.prototype.size = [2, 2];
 
-        ArtilleryTurret.prototype.reloadTime = 96;
+        ArtilleryTurret.prototype.reloadTime = 89;
 
         ArtilleryTurret.prototype.trackSpeed = 25;
 
@@ -13897,11 +13012,11 @@ General Game Objects live here
 
         ArtilleryTurret.prototype.minRange = 500;
 
-        ArtilleryTurret.prototype.shotEnergy = 5000;
+        ArtilleryTurret.prototype.shotEnergy = 4500;
 
         ArtilleryTurret.prototype.mass = 70;
 
-        ArtilleryTurret.prototype.bulletSpeed = 6.5;
+        ArtilleryTurret.prototype.bulletSpeed = 7;
 
         ArtilleryTurret.prototype.damage = 120;
 
@@ -13945,9 +13060,12 @@ General Game Objects live here
                 if (!this.target || this.target.dead || this.target.cloaked()) {
                     minDistance = 0;
                     minUnit = null;
-                    sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, 500, (function (_this) {
+                    sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, sim.maxRadius[otherSide(this.side)], (function (_this) {
                         return function (unit) {
                             var dist;
+                            if (unit.owner === _this.owner) {
+                                return false;
+                            }
                             dist = v2.distance(unit.pos, _this.pos);
                             if (minUnit === null || dist < minDistance) {
                                 if (!unit.cloaked()) {
@@ -14023,13 +13141,13 @@ General Game Objects live here
 
         SidewinderTurret.prototype.bulletCls = types.SidewinderBullet;
 
-        SidewinderTurret.prototype.range = 740;
+        SidewinderTurret.prototype.range = 780;
 
         SidewinderTurret.prototype.shotEnergy = 2000;
 
         SidewinderTurret.prototype.mass = 10;
 
-        SidewinderTurret.prototype.bulletSpeed = 16;
+        SidewinderTurret.prototype.bulletSpeed = 17;
 
         SidewinderTurret.prototype.damage = 35;
 
@@ -14064,6 +13182,7 @@ General Game Objects live here
             particle = new this.bulletCls();
             sim.things[particle.id] = particle;
             particle.side = this.unit.side;
+            particle.owner = this.unit.owner;
             particle.life = 0;
             particle.dead = false;
             particle.z = this.unit.z + .001;
@@ -14316,7 +13435,7 @@ General Game Objects live here
 
         HeavyBeamTurret.prototype.bulletCls = types.HeavyBeam;
 
-        HeavyBeamTurret.prototype.shotEnergy = 5200;
+        HeavyBeamTurret.prototype.shotEnergy = 5000;
 
         HeavyBeamTurret.prototype.instant = true;
 
@@ -14326,7 +13445,7 @@ General Game Objects live here
 
         HeavyBeamTurret.prototype.bulletSpeed = 2000;
 
-        HeavyBeamTurret.prototype.damage = 37;
+        HeavyBeamTurret.prototype.damage = 38;
 
         HeavyBeamTurret.prototype.maxLife = .5;
 
@@ -14446,12 +13565,12 @@ General Game Objects live here
             if (this.dead) {
                 return;
             }
-            return baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot + intp.t, this.color);
+            return baseAtlas.drawSpirte(this.image, this.pos, this.size, this.rot + intp.t, this.color);
         };
 
         SniperLaser.prototype.hitUnit = function (unit) {
             if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage);
+                unit.applyDamage(this.damage, this);
                 return this.hitOnce[unit.id] = true;
             }
         };
@@ -14832,6 +13951,7 @@ General Game Objects live here
                     exp.rot = 0;
                     exp.aoe = this.aoe;
                     exp.side = this.side;
+                    exp.owner = this.owner;
                     exp.damage = this.damage;
                     return sim.things[exp.id] = exp;
                 }
@@ -14839,7 +13959,7 @@ General Game Objects live here
         };
 
         Bomb.prototype.draw = function () {
-            var color, dist, maxDist, size;
+            var color, dist, size;
             this.trail.draw(this.pos, this);
             Bomb.__super__.draw.call(this);
             this.z = 1;
@@ -14848,11 +13968,10 @@ General Game Objects live here
                 playSound("sounds/weapons/wizzzz.wav");
             }
             if (this.hitPos) {
-                maxDist = 1000;
-                dist = Math.min(v2.distance(this.pos, this.hitPos), maxDist);
-                size = Math.pow(maxDist - dist, 2) / (maxDist * maxDist) * (this.aoe / 120);
-                color = [255, 0, 0, 100];
-                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 240, this.aoe / 240], 0, color);
+                dist = Math.min(v2.distance(this.pos, this.hitPos), 1000);
+                size = Math.pow(1.003, -dist) * this.aoe / 162;
+                color = [255, 0, 0, 80];
+                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 256, this.aoe / 256], 0, color);
                 baseAtlas.drawSprite("img/fire02.png", this.hitPos, [size * 2, size * 2], 0, color);
             }
         };
@@ -14966,12 +14085,14 @@ General Game Objects live here
 
         AutoTurret.prototype.volley = 5;
 
+        AutoTurret.prototype.volleyDelay = 2;
+
         AutoTurret.prototype.spread = [0, .1, -.1, .2, -.2];
 
         AutoTurret.prototype.tick = function () {
             AutoTurret.__super__.tick.call(this);
-            if (this.fired < 10) {
-                if (this.fired % 2 === 0) {
+            if (this.fired < this.volley * this.volleyDelay) {
+                if (this.fired % this.volleyDelay === 0) {
                     this.rot += this.spread[this.fired / 2];
                     this.makeRealBullet();
                 }
@@ -14990,6 +14111,7 @@ General Game Objects live here
             particle = new this.bulletCls();
             sim.things[particle.id] = particle;
             particle.side = this.unit.side;
+            particle.owner = this.unit.owner;
             particle.life = 0;
             particle.dead = false;
             particle.z = this.unit.z + .001;
@@ -15077,7 +14199,7 @@ General Game Objects live here
 
         Shotgun.prototype.tick = function () {
             Shotgun.__super__.tick.call(this);
-            if (this.fired < 9) {
+            if (this.fired < this.volley) {
                 if (this.fired % 1 === 0) {
                     this.rot += this.spread[this.fired / 1];
                     this.makeRealBullet();
@@ -15097,6 +14219,7 @@ General Game Objects live here
             particle = new this.bulletCls();
             sim.things[particle.id] = particle;
             particle.side = this.unit.side;
+            particle.owner = this.unit.owner;
             particle.life = 0;
             particle.dead = false;
             particle.z = this.unit.z + .001;
@@ -15188,10 +14311,6 @@ General Game Objects live here
     types.TeslaBolt = (function (superClass) {
         extend(TeslaBolt, superClass);
 
-        function TeslaBolt() {
-            return TeslaBolt.__super__.constructor.apply(this, arguments);
-        }
-
         TeslaBolt.prototype.image = "parts/zap1.png";
 
         TeslaBolt.prototype.sound = "sounds/weapons/tesla2.wav";
@@ -15201,6 +14320,13 @@ General Game Objects live here
         TeslaBolt.prototype.color = [179, 207, 255, 255];
 
         TeslaBolt.prototype.drawLength = 250;
+
+        function TeslaBolt() {
+            TeslaBolt.__super__.constructor.call(this);
+            if (this.image === "parts/zap1.png") {
+                this.image = "parts/zap" + (Math.floor(Math.random() * 4 + 1)) + ".png";
+            }
+        }
 
         return TeslaBolt;
 
@@ -15247,6 +14373,8 @@ General Game Objects live here
 
         TeslaTurret.prototype.maxLife = 1;
 
+        TeslaTurret.prototype.maxZap = 10;
+
         TeslaTurret.prototype.makeBullet = function (distance) {
             var i, id, len, ref, results, unit;
             this.unit.cloak = 0;
@@ -15257,7 +14385,7 @@ General Game Objects live here
             for (i = 0, len = ref.length; i < len; i++) {
                 id = ref[i];
                 unit = sim.things[id];
-                results.push(unit.applyDamage(this.damage / this.zapped.length));
+                results.push(unit.applyDamage(this.damage / this.zapped.length, this.unit));
             }
             return results;
         };
@@ -15266,31 +14394,36 @@ General Game Objects live here
             var closestUnit, minD, particle, range;
             this.zapped.push(unit.id);
             particle = new this.bulletCls();
-            particle.image = "parts/zap" + (Math.floor(Math.random() * 4 + 1)) + ".png";
             sim.things[particle.id] = particle;
             particle.side = this.unit.side;
+            particle.owner = this.unit.owner;
             particle.life = 0;
             particle.dead = false;
             particle.z = this.unit.z + .001;
             if (this.zapped.length === 1) {
                 particle.turretNum = this.turretNum;
                 particle.origin = this.unit;
-                unit.applyEnergyDamage(this.energyDamage);
+                if (typeof unit.applyEnergyDamage === "function") {
+                    unit.applyEnergyDamage(this.energyDamage);
+                }
             } else {
                 particle.sound = null;
             }
             particle.target = unit;
             v2.set(from, particle.pos);
             particle.targetPos = v2.create(particle.target.pos);
-            if (this.zapped.length === 10) {
+            if (this.zapped.length === this.maxZap) {
                 return;
             }
             range = this.bounceRange;
             minD = range;
             closestUnit = null;
-            sim.unitSpaces[otherSide(this.unit.side)].findInRange(unit.pos, range + 500, (function (_this) {
+            sim.unitSpaces[otherSide(this.unit.side)].findInRange(unit.pos, range + sim.maxRadius[otherSide(this.unit.side)], (function (_this) {
                 return function (other) {
                     var d, ref;
+                    if (other.owner === _this.unit.owner) {
+                        return false;
+                    }
                     if (other.cloakFade === 0 && (ref = other.id, indexOf.call(_this.zapped, ref) < 0)) {
                         d = v2.distance(unit.pos, other.pos) - other.radius;
                         if (d < 0) {
@@ -15304,6 +14437,27 @@ General Game Objects live here
                     return false;
                 };
             })(this));
+            if (this.hitsMissiles) {
+                sim.bulletSpaces[otherSide(this.unit.side)].findInRange(unit.pos, range, (function (_this) {
+                    return function (other) {
+                        var d, ref;
+                        if (other.owner === _this.unit.owner) {
+                            return false;
+                        }
+                        if (ref = other.id, indexOf.call(_this.zapped, ref) < 0) {
+                            d = v2.distance(unit.pos, other.pos) - other.radius;
+                            if (d < 0) {
+                                d = 0;
+                            }
+                            if (d < minD) {
+                                minD = d;
+                                closestUnit = other;
+                            }
+                        }
+                        return false;
+                    };
+                })(this));
+            }
             if (closestUnit) {
                 return this.zap(unit.pos, closestUnit);
             }
@@ -15366,7 +14520,7 @@ General Game Objects live here
         WavePullArch.prototype.hitUnit = function (unit) {
             var amount, dot, p;
             if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage);
+                unit.applyDamage(this.damage, this);
                 this.hitOnce[unit.id] = true;
             }
             p = this.waveEffect * this.damage;
@@ -15410,7 +14564,7 @@ General Game Objects live here
 
         WavePullTurret.prototype.bulletCls = types.WavePullArch;
 
-        WavePullTurret.prototype.range = 825;
+        WavePullTurret.prototype.range = 850;
 
         WavePullTurret.prototype.shotEnergy = 1200;
 
@@ -15462,9 +14616,9 @@ General Game Objects live here
 
         WavePushTurret.prototype.bulletCls = types.WavePushArch;
 
-        WavePushTurret.prototype.range = 750;
+        WavePushTurret.prototype.range = 775;
 
-        WavePushTurret.prototype.damage = 4;
+        WavePushTurret.prototype.damage = 5;
 
         WavePushTurret.prototype.multiHit = true;
 
@@ -15583,7 +14737,7 @@ General Game Objects live here
         FlameBullet.prototype.hitUnit = function (unit) {
             var maxBurn;
             if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage);
+                unit.applyDamage(this.damage, this);
                 maxBurn = (unit.hp + unit.shield) * 1.0;
                 if (unit.burn < maxBurn) {
                     unit.burn += this.burnAmount * this.damage;
@@ -15690,15 +14844,23 @@ General Game Objects live here
         };
 
         AOEWarhead.prototype.tick = function () {
+            var i, len, other, ref, results;
             if (this.unit.warheadTest !== sim.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = sim.step;
-                return sim.unitSpaces[otherSide(this.unit.side)].findInRange(this.unit.pos, this.unit.radius + this.aoe + 500, (function (_this) {
-                    return function (other) {
-                        if (v2.distance(other.pos, _this.unit.pos) < _this.unit.radius + other.radius + 50) {
-                            return _this.unit.hp = 0;
-                        }
-                    };
-                })(this));
+                ref = this.unit.closestEnemies;
+                results = [];
+                for (i = 0, len = ref.length; i < len; i++) {
+                    other = ref[i];
+                    if (other.owner === this.unit.owner) {
+                        continue;
+                    }
+                    if (closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
+                        results.push(this.unit.hp = 0);
+                    } else {
+                        results.push(void 0);
+                    }
+                }
+                return results;
             }
         };
 
@@ -15706,6 +14868,7 @@ General Game Objects live here
             var exp;
             exp = new types.AoeExplosion();
             exp.side = this.unit.side;
+            exp.owner = this.unit.owner;
             exp.z = 1000;
             exp.pos = v2.create(this.worldPos);
             exp.vel = [0, 0];
@@ -15759,15 +14922,23 @@ General Game Objects live here
         };
 
         EMPWarhead.prototype.tick = function () {
+            var i, len, other, ref, results;
             if (this.unit.warheadTest !== sim.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = sim.step;
-                return sim.unitSpaces[otherSide(this.unit.side)].findInRange(this.unit.pos, this.unit.radius + this.aoe + 500, (function (_this) {
-                    return function (other) {
-                        if (v2.distance(other.pos, _this.unit.pos) < _this.unit.radius + other.radius + 50) {
-                            return _this.unit.hp = 0;
-                        }
-                    };
-                })(this));
+                ref = this.unit.closestEnemies;
+                results = [];
+                for (i = 0, len = ref.length; i < len; i++) {
+                    other = ref[i];
+                    if (other.owner === this.unit.owner) {
+                        continue;
+                    }
+                    if (closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
+                        results.push(this.unit.hp = 0);
+                    } else {
+                        results.push(void 0);
+                    }
+                }
+                return results;
             }
         };
 
@@ -15835,15 +15006,23 @@ General Game Objects live here
         };
 
         FlameWarhead.prototype.tick = function () {
+            var i, len, other, ref, results;
             if (this.unit.warheadTest !== sim.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = sim.step;
-                return sim.unitSpaces[otherSide(this.unit.side)].findInRange(this.unit.pos, this.unit.radius + this.aoe + 500, (function (_this) {
-                    return function (other) {
-                        if (v2.distance(other.pos, _this.unit.pos) < _this.unit.radius + other.radius + 50) {
-                            return _this.unit.hp = 0;
-                        }
-                    };
-                })(this));
+                ref = this.unit.closestEnemies;
+                results = [];
+                for (i = 0, len = ref.length; i < len; i++) {
+                    other = ref[i];
+                    if (other.owner === this.unit.owner) {
+                        continue;
+                    }
+                    if (closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
+                        results.push(this.unit.hp = 0);
+                    } else {
+                        results.push(void 0);
+                    }
+                }
+                return results;
             }
         };
 
@@ -15851,6 +15030,7 @@ General Game Objects live here
             var exp;
             exp = new types.AoeExplosion();
             exp.side = this.unit.side;
+            exp.owner = this.unit.owner;
             exp.image = "parts/fireFlame" + (chooseInt(1, 4)) + ".png";
             exp.z = 1000;
             exp.pos = v2.create(this.worldPos);
@@ -15894,7 +15074,7 @@ General Game Objects live here
 
         ShapedWarhead.prototype.size = [2, 2];
 
-        ShapedWarhead.prototype.aoe = 100;
+        ShapedWarhead.prototype.aoe = 0;
 
         ShapedWarhead.prototype.damage = 50;
 
@@ -15924,35 +15104,27 @@ General Game Objects live here
         };
 
         ShapedWarhead.prototype.tick = function () {
+            var i, len, other, ref, results;
             if (this.unit.warheadTest !== sim.step) {
                 this.unit.warheadTest = sim.step;
-                return sim.unitSpaces[otherSide(this.unit.side)].findInRange(this.unit.pos, this.unit.radius + 500, (function (_this) {
-                    return function (other) {
-                        if ((other.maxHP + other.maxShield) * 2 < _this.unit.shapeDamage) {
-                            return;
-                        }
-                        if (v2.distance(other.pos, _this.unit.pos) > (other.radius + _this.unit.radius)) {
-                            return;
-                        }
-                        return _this.unit.hp = 0;
-                    };
-                })(this));
+                ref = this.unit.closestEnemies;
+                results = [];
+                for (i = 0, len = ref.length; i < len; i++) {
+                    other = ref[i];
+                    if (other.owner === this.unit.owner) {
+                        continue;
+                    }
+                    if ((other.maxHP + other.maxShield) * 2 < this.unit.shapeDamage) {
+                        continue;
+                    }
+                    if (closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) > 0) {
+                        continue;
+                    }
+                    this.unit.hp = 0;
+                    results.push(other.applyDamage(this.unit.shapeDamage, this.unit.owner));
+                }
+                return results;
             }
-        };
-
-        ShapedWarhead.prototype.postDeath = function () {
-            var exp;
-            exp = new types.AoeExplosion();
-            exp.side = this.unit.side;
-            exp.z = 1000;
-            exp.pos = v2.create(this.worldPos);
-            exp.vel = [0, 0];
-            exp.rot = 0;
-            exp.maxLife = this.life;
-            exp.damage = this.damage;
-            exp.aoe = this.aoe;
-            exp.radius = 2;
-            sim.things[exp.id] = exp;
         };
 
         return ShapedWarhead;
@@ -16240,9 +15412,9 @@ General Game Objects live here
 
         OverKillAi.prototype.desc = "Makes the adjacent turrets not shoot if it would kill an enemy twice in one shot.";
 
-        OverKillAi.prototype.cost = 5;
+        OverKillAi.prototype.cost = 1;
 
-        OverKillAi.prototype.hp = 5;
+        OverKillAi.prototype.hp = 4;
 
         OverKillAi.prototype.image = "OverKillAi.png";
 
@@ -17916,12 +17088,223 @@ General Game Objects live here
         return console.table(table);
     };
 
+    types.BattleCannonBullet = (function (superClass) {
+        extend(BattleCannonBullet, superClass);
+
+        function BattleCannonBullet() {
+            return BattleCannonBullet.__super__.constructor.apply(this, arguments);
+        }
+
+        BattleCannonBullet.prototype.image = "parts/battleCannonBullet";
+
+        BattleCannonBullet.prototype.sound = "sounds/weapons/torp2.wav";
+
+        BattleCannonBullet.prototype.size = [1, 1];
+
+        BattleCannonBullet.prototype.radius = 20;
+
+        BattleCannonBullet.prototype.trailTime = 500;
+
+        return BattleCannonBullet;
+
+    })(StraightMissile);
+
+    parts.BattleCannon = (function (superClass) {
+        extend(BattleCannon, superClass);
+
+        function BattleCannon() {
+            return BattleCannon.__super__.constructor.apply(this, arguments);
+        }
+
+        BattleCannon.prototype.name = "Battle Cannon";
+
+        BattleCannon.prototype.desc = "Glory to PDables!";
+
+        BattleCannon.prototype.cost = 5;
+
+        BattleCannon.prototype.mass = 50;
+
+        BattleCannon.prototype.hp = 10;
+
+        BattleCannon.prototype.image = "turBattleCannon.png";
+
+        BattleCannon.prototype.damage = 29 * 2;
+
+        BattleCannon.prototype.reloadTime = 80;
+
+        BattleCannon.prototype.shotEnergy = 3360;
+
+        BattleCannon.prototype.bulletSpeed = 21;
+
+        BattleCannon.prototype.size = [2, 2];
+
+        BattleCannon.prototype.range = 900;
+
+        BattleCannon.prototype.volley = 2;
+
+        BattleCannon.prototype.fired = 2;
+
+        BattleCannon.prototype.spread = [.01, -.01];
+
+        BattleCannon.prototype.disable = true;
+
+        BattleCannon.prototype.bulletCls = types.BattleCannonBullet;
+
+        BattleCannon.prototype.makeBullet = function (distance) {
+            this.unit.cloak = 0;
+            this.makeRealBullet(this.spread[0] + this.rot, 0);
+            return this.makeRealBullet(this.spread[1] + this.rot, 1);
+        };
+
+        BattleCannon.prototype.makeRealBullet = function (spread, pos) {
+            var particle, tempPos;
+            particle = new this.bulletCls();
+            sim.things[particle.id] = particle;
+            particle.side = this.unit.side;
+            particle.life = 0;
+            particle.dead = false;
+            particle.z = this.unit.z + .001;
+            particle.turretNum = this.turretNum;
+            particle.origin = this.unit;
+            particle.target = this.target;
+            particle.speed = this.bulletSpeed;
+            particle.damage = this.damage / 2;
+            particle.maxLife = this.range / particle.speed * 1.5;
+            tempPos = v2.create(this.worldPos);
+            if (pos === 0) {
+                tempPos[0] = 6 * Math.cos(spread) - 6 * Math.sin(spread) + tempPos[0];
+                tempPos[1] = 6 * Math.cos(spread) + 6 * Math.sin(spread) + tempPos[1];
+            } else {
+                tempPos[0] = -6 * Math.cos(spread) + 6 * Math.sin(spread) + tempPos[0];
+                tempPos[1] = -8 * Math.cos(spread) - 8 * Math.sin(spread) + tempPos[1];
+            }
+            v2.set(tempPos, particle.pos);
+            v2.pointTo(particle.vel, spread);
+            v2.scale(particle.vel, particle.speed);
+            return particle.rot = spread;
+        };
+
+        return BattleCannon;
+
+    })(Turret);
+
+    types.Flag = (function () {
+        function Flag() {
+        }
+
+        Flag.prototype.image = "parts/decals/Symbol12.png";
+
+        Flag.prototype.color = [245, 171, 53, 255];
+
+        Flag.prototype.size = [5, 5];
+
+        Flag.prototype.range = 100;
+
+        Flag.prototype.stopFriction = .8;
+
+        Flag.prototype.slow = .85;
+
+        return Flag;
+
+    })();
+
+    types.NeedleGunBullet = (function (superClass) {
+        extend(NeedleGunBullet, superClass);
+
+        function NeedleGunBullet() {
+            return NeedleGunBullet.__super__.constructor.apply(this, arguments);
+        }
+
+        NeedleGunBullet.prototype.image = "parts/needleGunBullet";
+
+        NeedleGunBullet.prototype.sound = "sounds/weapons/blaster1.wav";
+
+        NeedleGunBullet.prototype.size = [1, 1];
+
+        NeedleGunBullet.prototype.radius = 20;
+
+        NeedleGunBullet.prototype.trailTime = 500;
+
+        NeedleGunBullet.prototype.trailSize = 0.02;
+
+        return NeedleGunBullet;
+
+    })(Bullet);
+
+    parts.NeedleGun = (function (superClass) {
+        extend(NeedleGun, superClass);
+
+        function NeedleGun() {
+            return NeedleGun.__super__.constructor.apply(this, arguments);
+        }
+
+        NeedleGun.prototype.name = "Needle Gun";
+
+        NeedleGun.prototype.desc = "It shoots needles, what else do you expect?";
+
+        NeedleGun.prototype.cost = 5;
+
+        NeedleGun.prototype.mass = 15;
+
+        NeedleGun.prototype.hp = 10;
+
+        NeedleGun.prototype.image = "turNeedleGun.png";
+
+        NeedleGun.prototype.damage = 4;
+
+        NeedleGun.prototype.reloadTime = 5.12;
+
+        NeedleGun.prototype.shotEnergy = 380;
+
+        NeedleGun.prototype.bulletSpeed = 34;
+
+        NeedleGun.prototype.size = [2, 2];
+
+        NeedleGun.prototype.range = 700;
+
+        NeedleGun.prototype.fired = 1;
+
+        NeedleGun.prototype.bulletCls = types.NeedleGunBullet;
+
+        NeedleGun.prototype.disable = true;
+
+        NeedleGun.prototype.makeBullet = function () {
+            var particle;
+            this.unit.cloak = 0;
+            particle = new this.bulletCls();
+            sim.things[particle.id] = particle;
+            particle.side = this.unit.side;
+            particle.owner = this.unit.owner;
+            particle.life = 0;
+            particle.dead = false;
+            particle.z = this.unit.z + .001;
+            particle.turretNum = this.turretNum;
+            particle.origin = this.unit;
+            particle.weapon = this;
+            particle.target = this.target;
+            particle.speed = this.bulletSpeed;
+            particle.damage = this.damage;
+            particle.energyDamage = this.energyDamage;
+            particle.hitsMissiles = this.hitsMissiles;
+            particle.aoe = this.aoe;
+            particle.burnAmount = this.burnAmount;
+            v2.set(this.worldPos, particle.pos);
+            v2.pointTo(particle.vel, this.rot + Math.random() * .14 - .07);
+            v2.scale(particle.vel, particle.speed);
+            particle.rot = v2.angle(particle.vel);
+            return particle.maxLife = Math.floor(this.range / particle.speed * (1 + this.overshoot));
+        };
+
+        return NeedleGun;
+
+    })(Turret);
+
 }).call(this);
 ;
 
 
-//from src/ai.js
-// Generated by CoffeeScript 1.10.0
+//require('../src/ai.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
     var _, _aAvgPos, _angleVec, _apos, _avec, _avoidVec, _backPos, _goto, _leftVec, _lvec, _mid, _next, _rightVec,
         _rvec, _upos, _uvec, attack, attackFilter, attackMoves, backstab, capAI, capAndGuardCP, chargeAI, circle,
@@ -18164,7 +17547,7 @@ General Game Objects live here
 
     spreadCapCP = function (unit, rule) {
         var closestUnguarded, cp, guarded, ref, ref1, tallyCps, u;
-        if (unit.gardingCP && (unit.gardingCP.side !== unit.side || unit.gardingCP.capping > 0)) {
+        if (unit.gardingCP && (unit.gardingCP.side === otherSide(unit.side) || unit.gardingCP.capping > 0)) {
             goThere(unit, unit.gardingCP);
             return true;
         }
@@ -18172,7 +17555,7 @@ General Game Objects live here
         ref = sim.things;
         for (_ in ref) {
             cp = ref[_];
-            if (cp.commandPoint && (cp.side !== unit.side || cp.capping > 0)) {
+            if (cp.commandPoint && (cp.side === otherSide(unit.side) || cp.capping > 0)) {
                 guarded = 0;
                 ref1 = sim.things;
                 for (_ in ref1) {
@@ -18339,7 +17722,7 @@ General Game Objects live here
         if (!enemy.unit) {
             return false;
         }
-        if (enemy.side === unit.side) {
+        if (enemy.side !== otherSide(unit.side)) {
             return false;
         }
         if (enemy.cloakFade > 0) {
@@ -18458,7 +17841,7 @@ General Game Objects live here
         switch (rule[1].toLowerCase()) {
             case "capture":
                 cp = closest(unit.pos, (function (t) {
-                    return t.commandPoint && (t.side !== unit.side || t.capping > 0);
+                    return t.commandPoint && (t.side === otherSide(unit.side) || t.capping > 0);
                 }), rule[2]);
                 if (cp && goThere(unit, cp)) {
                     return true;
@@ -18514,7 +17897,7 @@ General Game Objects live here
                     return true;
                 case "flee enemies":
                     enemy = closest(unit.pos, (function (t) {
-                        return t.unit && t.side !== unit.side;
+                        return t.unit && t.side === otherSide(unit.side);
                     }), 3000);
                     if (attackMoves(enemy, unit, "flee", 3000)) {
                         return true;
@@ -18565,7 +17948,7 @@ General Game Objects live here
         switch (rule[1].toLowerCase()) {
             case "enemy spawn":
                 spawn = closest(unit.pos, (function (t) {
-                    return t.spawn && t.side !== unit.side;
+                    return t.spawn && t.side === otherSide(unit.side);
                 }));
                 if (spawn) {
                     pos = spawn.pos;
@@ -18581,11 +17964,13 @@ General Game Objects live here
                 break;
             case "enemy home point":
                 spawn = closest(unit.pos, (function (t) {
-                    return t.spawn && t.side !== unit.side;
+                    return t.spawn && t.side === otherSide(unit.side);
                 }));
-                cp = closest(spawn.pos, (function (t) {
-                    return t.commandPoint;
-                }));
+                if (spawn) {
+                    cp = closest(spawn.pos, (function (t) {
+                        return t.commandPoint;
+                    }));
+                }
                 if (cp) {
                     pos = cp.pos;
                 }
@@ -18594,16 +17979,18 @@ General Game Objects live here
                 spawn = closest(unit.pos, (function (t) {
                     return t.spawn && t.side === unit.side;
                 }));
-                cp = closest(spawn.pos, (function (t) {
-                    return t.commandPoint;
-                }));
+                if (spawn) {
+                    cp = closest(spawn.pos, (function (t) {
+                        return t.commandPoint;
+                    }));
+                }
                 if (cp) {
                     pos = cp.pos;
                 }
                 break;
             case "enemy army middle":
                 pos = thingsMiddle(function (t) {
-                    return t.unit && t.side !== unit.side;
+                    return t.unit && t.side === otherSide(unit.side);
                 });
                 break;
             case "friendly army middle":
@@ -18727,7 +18114,7 @@ General Game Objects live here
                 ref = sim.things;
                 for (_ in ref) {
                     u = ref[_];
-                    if (u.unit && u.side !== player.side) {
+                    if (u.unit && u.side === otherSide(player.side)) {
                         ref1 = u.parts;
                         for (l = 0, len1 = ref1.length; l < len1; l++) {
                             part = ref1[l];
@@ -18742,7 +18129,7 @@ General Game Objects live here
                 ref2 = sim.things;
                 for (_ in ref2) {
                     u = ref2[_];
-                    if (u.unit && u.side !== player.side) {
+                    if (u.unit && u.side === otherSide(player.side)) {
                         if (u.maxHP < 100 && u.maxSpeed * 16 > 200) {
                             need += .25;
                         }
@@ -18753,7 +18140,7 @@ General Game Objects live here
                 ref3 = sim.things;
                 for (_ in ref3) {
                     u = ref3[_];
-                    if (u.unit && u.side !== player.side) {
+                    if (u.unit && u.side === otherSide(player.side)) {
                         if (u.cloaked()) {
                             need += 1;
                         }
@@ -18863,6 +18250,9 @@ General Game Objects live here
         if (sim.serverType === "1v1t") {
             return;
         }
+        if (!sim.enableAi) {
+            return;
+        }
         countsTotal = 0;
         enemysFielded = {};
         countsFielded = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -18873,7 +18263,7 @@ General Game Objects live here
                 countsFielded[u.number] += 1;
                 countsTotal += 1;
             }
-            if (u.unit && u.owner !== player.number && u.side !== player.side) {
+            if (u.unit && u.owner !== player.number && u.side === otherSide(player.side)) {
                 type = ais.classifyShip(u);
                 enemysFielded[type] = (enemysFielded[type] || 0) + 1;
             }
@@ -19094,7 +18484,7 @@ General Game Objects live here
             case "when shields down to #%, flee":
                 if (unit.shield / unit.maxShield < rule[1] / 100) {
                     enemy = closest(unit.pos, (function (t) {
-                        return t.unit && t.side !== unit.side;
+                        return t.unit && t.side === otherSide(unit.side);
                     }));
                     if (enemy) {
                         goAway(unit, enemy, enemy.weaponRange * 1.5);
@@ -19459,7 +18849,7 @@ General Game Objects live here
     };
 
     ais["export"] = function (aiName) {
-        var aiArray, error, i, l, n, name, ref, spec;
+        var aiArray, i, l, n, name, ref, spec;
         ref = commander.fleet.ais;
         for (i in ref) {
             name = ref[i];
@@ -19496,7 +18886,7 @@ General Game Objects live here
 ;
 
 
-//from src/aidata.js
+//require('../src/aidata.js');
 ais.all = {};
 ais.all.AlphaStriker = [{
     "parts": [{"pos": [20, -40], "type": "DamageMod", "dir": 0}, {
@@ -24982,92 +24372,100 @@ ais.all.FireShower = [{
     "aiRules": [["Stay in #m range of slot # units", 350, 10], ["Avoid over #damage shots", 45], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Flee", "More expensive", 800, 1850], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Flee", "Stronger", "More expensive", 1850], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Flee", "More DPS", "---", 1850], ["Stay in #m range of slot # units", -500, 10], ["Field # at priority #", 1, 2], ["Goto @locationTypes", "Friendly Spawn"]]
 }, {
     "parts": [{"pos": [-80, 20], "type": "TargetingMod", "dir": 0}, {
-        "pos": [80, 20],
-        "type": "TargetingMod",
+        "pos": [150, 90],
+        "type": "HArmor1x1Angle",
         "dir": 0
-    }, {"pos": [-120, 40], "type": "Mount10Range", "dir": 0}, {
-        "pos": [-160, 20],
-        "type": "TargetingMod",
-        "dir": 0
-    }, {"pos": [120, 40], "type": "Mount10Range", "dir": 0}, {
-        "pos": [160, 60],
-        "type": "TargetingMod",
-        "dir": 0
-    }, {"pos": [160, 20], "type": "TargetingMod", "dir": 0}, {
-        "pos": [40, 40],
+    }, {"pos": [80, 20], "type": "TargetingMod", "dir": 0}, {
+        "pos": [-120, 40],
         "type": "Mount10Range",
         "dir": 0
-    }, {"pos": [0, 20], "type": "TargetingMod", "dir": 0}, {
-        "pos": [0, 90],
-        "type": "Reactor2x1",
+    }, {"pos": [-160, 20], "type": "TargetingMod", "dir": 0}, {
+        "pos": [120, 40],
+        "type": "Mount10Range",
         "dir": 0
-    }, {"pos": [-80, 100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [80, 100],
+    }, {"pos": [160, 60], "type": "TargetingMod", "dir": 0}, {
+        "pos": [160, 20],
+        "type": "TargetingMod",
+        "dir": 0
+    }, {"pos": [40, 40], "type": "Mount10Range", "dir": 0}, {
+        "pos": [0, 20],
+        "type": "TargetingMod",
+        "dir": 0
+    }, {"pos": [0, 90], "type": "Reactor2x1", "dir": 0}, {
+        "pos": [-80, 100],
         "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [80, -20], "type": "Reactor2x2", "dir": 0}, {
-        "pos": [-80, -20],
+    }, {"pos": [80, 100], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [80, -20],
         "type": "Reactor2x2",
         "dir": 0
-    }, {"pos": [40, -100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-40, -100],
+    }, {"pos": [-80, -20], "type": "Reactor2x2", "dir": 0}, {
+        "pos": [40, -100],
         "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [40, 130], "type": "HArmor2x1", "dir": 0}, {
-        "pos": [-40, 130],
+    }, {"pos": [-40, -100], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [40, 130],
         "type": "HArmor2x1",
         "dir": 0
-    }, {"pos": [80, 130], "type": "HArmor2x1", "dir": 0}, {
-        "pos": [-120, -60],
+    }, {"pos": [-40, 130], "type": "HArmor2x1", "dir": 0}, {
+        "pos": [80, 130],
+        "type": "HArmor2x1",
+        "dir": 0
+    }, {"pos": [-120, -60], "type": "HArmor2x2AngleBack", "dir": 0}, {
+        "pos": [-120, -20],
+        "type": "HArmor2x2",
+        "dir": 0
+    }, {"pos": [-80, 130], "type": "HArmor2x1", "dir": 0}, {
+        "pos": [-80, -60],
+        "type": "HArmor2x2",
+        "dir": 0
+    }, {"pos": [120, -20], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [80, -60],
+        "type": "HArmor2x2",
+        "dir": 0
+    }, {"pos": [-110, 130], "type": "HArmor1x1Angle", "dir": 0}, {
+        "pos": [110, 130],
+        "type": "HArmor1x1Angle",
+        "dir": 0
+    }, {"pos": [-170, -20], "type": "Wing2x1", "dir": 1}, {
+        "pos": [120, -60],
         "type": "HArmor2x2AngleBack",
         "dir": 0
-    }, {"pos": [-120, -20], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-80, 130],
-        "type": "HArmor2x1",
-        "dir": 0
-    }, {"pos": [-80, -60], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [120, -20],
-        "type": "HArmor2x2",
-        "dir": 0
-    }, {"pos": [80, -60], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-170, -20],
-        "type": "Wing2x1",
-        "dir": 1
-    }, {"pos": [120, -60], "type": "HArmor2x2AngleBack", "dir": 0}, {
-        "pos": [150, -30],
+    }, {"pos": [150, -30], "type": "Engine02", "dir": 0}, {
+        "pos": [-150, -30],
         "type": "Engine02",
         "dir": 0
-    }, {"pos": [-150, -30], "type": "Engine02", "dir": 0}, {
-        "pos": [170, -20],
-        "type": "Wing2x1",
-        "dir": 3
-    }, {"pos": [-100, -100], "type": "HArmor2x2AngleBack", "dir": 0}, {
-        "pos": [80, -140],
+    }, {"pos": [170, -20], "type": "Wing2x1", "dir": 3}, {
+        "pos": [-100, -100],
         "type": "HArmor2x2AngleBack",
         "dir": 0
-    }, {"pos": [100, -100], "type": "HArmor2x2AngleBack", "dir": 0}, {
-        "pos": [40, -140],
+    }, {"pos": [80, -140], "type": "HArmor2x2AngleBack", "dir": 0}, {
+        "pos": [100, -100],
+        "type": "HArmor2x2AngleBack",
+        "dir": 0
+    }, {"pos": [40, -140], "type": "HArmor2x2", "dir": 0}, {
+        "pos": [-40, -140],
         "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [-40, -140], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-80, -140],
-        "type": "HArmor2x2AngleBack",
-        "dir": 0
-    }, {"pos": [120, 100], "type": "HArmor2x2Angle", "dir": 0}, {
-        "pos": [-120, 100],
+    }, {"pos": [-80, -140], "type": "HArmor2x2AngleBack", "dir": 0}, {
+        "pos": [120, 100],
         "type": "HArmor2x2Angle",
         "dir": 0
-    }, {"pos": [-40, 100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [-70, -100],
-        "type": "HArmor1x2",
+    }, {"pos": [-120, 100], "type": "HArmor2x2Angle", "dir": 0}, {
+        "pos": [-40, 100],
+        "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [40, 100], "type": "HArmor2x2", "dir": 0}, {
-        "pos": [70, -100],
-        "type": "HArmor1x2",
+    }, {"pos": [-70, -100], "type": "HArmor1x2", "dir": 0}, {
+        "pos": [40, 100],
+        "type": "HArmor2x2",
         "dir": 0
-    }, {"pos": [40, -40], "type": "Mount10Range", "dir": 0}, {
-        "pos": [-40, 40],
+    }, {"pos": [70, -100], "type": "HArmor1x2", "dir": 0}, {
+        "pos": [40, -40],
         "type": "Mount10Range",
+        "dir": 0
+    }, {"pos": [-40, 40], "type": "Mount10Range", "dir": 0}, {
+        "pos": [-150, 90],
+        "type": "HArmor1x1Angle",
         "dir": 0
     }, {"pos": [-160, 60], "type": "TargetingMod", "dir": 0}, {
         "pos": [0, -140],
@@ -25099,9 +24497,9 @@ ais.all.FireShower = [{
         "dir": 0
     }, {"pos": [0, -170], "type": "HArmor2x1", "dir": 0}, {
         "pos": [-30, -170],
-        "type": "HArmor1x1Angle",
-        "dir": 1
-    }, {"pos": [30, -170], "type": "HArmor1x1Angle", "dir": 3}, {
+        "type": "HArmor1x1AngleBack",
+        "dir": 0
+    }, {"pos": [30, -170], "type": "HArmor1x1AngleBack", "dir": 0}, {
         "pos": [-120, -60],
         "type": "SymbolDecal3",
         "dir": 3
@@ -25145,23 +24543,23 @@ ais.all.FireShower = [{
         "pos": [0, -140],
         "type": "SymbolDecal3",
         "dir": 0
-    }, {"pos": [-40, -40], "type": "WavePushTurret", "dir": 0}, {
-        "pos": [40, -40],
+    }, {"pos": [40, -40], "type": "WavePushTurret", "dir": 0}, {
+        "pos": [-40, -40],
         "type": "WavePushTurret",
         "dir": 0
     }, {"pos": [0, -100], "type": "WavePushTurret", "dir": 0}, {
-        "pos": [-120, 40],
+        "pos": [120, 40],
         "type": "TeslaTurret",
         "dir": 0
-    }, {"pos": [120, 40], "type": "TeslaTurret", "dir": 0}, {
+    }, {"pos": [-120, 40], "type": "TeslaTurret", "dir": 0}, {
         "pos": [0, 120],
         "type": "PDTurret",
         "dir": 0
     }, {"pos": [0, -20], "type": "HeavyPDTurret", "dir": 0}, {
-        "pos": [-40, 40],
+        "pos": [40, 40],
         "type": "PlasmaTurret",
         "dir": 0
-    }, {"pos": [40, 40], "type": "PlasmaTurret", "dir": 0}],
+    }, {"pos": [-40, 40], "type": "PlasmaTurret", "dir": 0}],
     "name": "",
     "aiRules": [["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More DPS", 60, 1300], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 400, 1900], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More DPS", 35, 1800], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 800, 4000], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More DPS", 10, 1260], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 650, 5000], ["@capTypes Command Points within #m", "Protect", 1800], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Attack", "Not Cloaked", "---", 1650], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Attack", "More expensive", 800, 10000], ["@capTypes Command Points within #m", "Capture", 10000], ["Field # at priority #", 1, 1]]
 }];
@@ -37344,17 +36742,18 @@ ais.all.nulitor = [{
 }];
 ;
 
-//from src/grid.js
-// Generated by CoffeeScript 1.10.0
+
+//require('../src/grid.js');
+// Generated by CoffeeScript 1.12.7
 (function () {
-    var NxN, SIZE, offset, partSize,
+    var offset, partSize,
         modulo = function (a, b) {
             return (+a % (b = +b) + b) % b;
         };
 
-    NxN = 24;
+    window.NxN = 24;
 
-    SIZE = 20;
+    window.SIZE = 20;
 
     window.validSpec = function (player, spec) {
         var issue;
@@ -37363,7 +36762,7 @@ ais.all.nulitor = [{
     };
 
     window.hasIssue = function (player, spec) {
-        var badParts, check, e, error, grid, hasPart, j, len, part, ref, ref1, size, unit, x, y;
+        var badParts, check, e, grid, hasPart, j, len, part, ref, ref1, size, unit, x, y;
         try {
             unit = new types.Unit(spec);
             if (unit.parts.length === 0) {
@@ -37372,9 +36771,11 @@ ais.all.nulitor = [{
             if (unit.cost > sim.costLimit + unit.limitBonus) {
                 return "Ship too big, cost can't be over $" + (sim.costLimit + unit.limitBonus) + ".";
             }
-            if (unit.parts.length > 800) {
-                return "Too many parts";
-            }
+
+            /*
+      if unit.parts.length > 800
+          return "Too many parts"
+       */
             if (unit.name.length > 50) {
                 return "Name too long";
             }
@@ -37735,3 +37136,1651 @@ ais.all.nulitor = [{
 }).call(this);
 ;
 
+
+//require('../src/collision.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var closestPointOnLine, closestPointToOrigin, furthestPoint, support;
+
+    furthestPoint = function (points, d) {
+        var k, len, maxProduct, p, product, rst;
+        maxProduct = -2e308;
+        rst = null;
+        for (k = 0, len = points.length; k < len; k++) {
+            p = points[k];
+            product = v2.dot(d, p);
+            if (product > maxProduct) {
+                rst = p;
+                maxProduct = product;
+            }
+        }
+        return rst;
+    };
+
+    closestPointOnLine = function (a, b, p) {
+        var ab, ap, d, l, t;
+        ap = v2.sub(p, a, []);
+        ab = v2.sub(b, a, []);
+        d = v2.dot(ab, ab);
+        if (d === 0) {
+            return a;
+        }
+        l = v2.dot(ap, ab);
+        t = l / d;
+        t = Math.min(Math.max(t, 0), 1);
+        return v2.add(v2.scale(ab, t), a);
+    };
+
+    closestPointToOrigin = function (a, b) {
+        return closestPointOnLine(a, b, [0, 0]);
+    };
+
+    support = function (points1, points2, d) {
+        return v2.sub(furthestPoint(points1, d), furthestPoint(points2, v2.neg(d, [])), []);
+    };
+
+    window.closestDistance = function (points1, points2) {
+        var _p, a, b, c, d, da, db, p;
+        d = v2.create(X);
+        a = support(points1, points2, d);
+        v2.neg(d);
+        b = support(points1, points2, d);
+        while (true) {
+            p = closestPointToOrigin(a, b);
+            if (p[0] === 0 && p[1] === 0) {
+                return 0;
+            }
+            if ((typeof _p !== "undefined" && _p !== null) && v2.dot(p, p) >= v2.dot(_p, _p)) {
+                da = v2.dot(a, d);
+                db = v2.dot(b, d);
+                return v2.mag(_p) * Math.sign(da * db);
+            }
+            d = v2.neg(p, []);
+            c = support(points1, points2, d);
+            if (v2.dot(a, a) < v2.dot(b, b)) {
+                b = c;
+            } else {
+                a = c;
+            }
+            _p = p;
+        }
+        return 0;
+    };
+
+    window.closestPointOnPolygon = function (point, points) {
+        var closest, dist, i, j, k, minDist, p, ref;
+        if (points.length === 1) {
+            return points[0];
+        }
+        minDist = 2e308;
+        closest = null;
+        for (i = k = 0, ref = points.length; 0 <= ref ? k < ref : k > ref; i = 0 <= ref ? ++k : --k) {
+            j = (i + 1) % points.length;
+            p = closestPointOnLine(points[i], points[j], point);
+            dist = v2.distanceSq(p, point);
+            if (dist < minDist) {
+                closest = p;
+                minDist = dist;
+            }
+        }
+        return closest;
+    };
+
+}).call(this);
+;
+
+
+//require('../src/colors.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var hex, j, len, ref;
+
+    window.colors = {};
+
+    colors.nice = [];
+
+    colors.niceHex = ["D24D57", "F22613", "D91E18", "96281B", "EF4836", "D64541", "C0392B", "CF000F", "E74C3C", "DB0A5B", "F64747", "F1A9A0", "D2527F", "E08283", "F62459", "E26A6A", "DCC6E0", "663399", "674172", "AEA8D3", "913D88", "9A12B3", "BF55EC", "BE90D4", "8E44AD", "9B59B6", "446CB3", "E4F1FE", "4183D7", "59ABE3", "81CFE0", "52B3D9", "C5EFF7", "22A7F0", "3498DB", "2C3E50", "19B5FE", "336E7B", "22313F", "6BB9F0", "1E8BC3", "3A539B", "34495E", "67809F", "2574A9", "1F3A93", "89C4F4", "4B77BE", "5C97BF", "4ECDC4", "A2DED0", "87D37C", "90C695", "26A65B", "03C9A9", "68C3A3", "65C6BB", "1BBC9B", "1BA39C", "66CC99", "BADA55", "36D7B7", "C8F7C5", "86E2D5", "2ECC71", "16a085", "3FC380", "019875", "03A678", "4DAF7C", "2ABB9B", "00B16A", "1E824C", "049372", "26C281", "F5D76E", "F7CA18", "F4D03F", "e9d460", "FDE3A7", "F89406", "EB9532", "E87E04", "F4B350", "F2784B", "EB974E", "F5AB35", "D35400", "F39C12", "F9690E", "F9BF3B", "F27935", "E67E22", "ececec", "6C7A89", "D2D7D3", "EEEEEE", "BDC3C7", "ECF0F1", "95A5A6", "DADFE1", "ABB7B7", "F2F1EF", "BFBFBF"];
+
+    colors.validate = function (a) {
+        var b, i, j, ref;
+        b = [0, 0, 0, 0];
+        for (i = j = 0; j < 4; i = ++j) {
+            if (Number.isInteger(a[i]) && (0 <= (ref = a[i]) && ref < 256)) {
+                b[i] = Math.floor(a[i]);
+            }
+        }
+        return b;
+    };
+
+    colors.brightness = function (c) {
+        return (c[0] + c[1] + c[2]) / 3;
+    };
+
+    colors.copy = function (c) {
+        return [c[0], c[1], c[2], c[3]];
+    };
+
+    colors.blackOrWhite = function (c) {
+        if ((c[0] + c[1] + c[2]) / 3 > 128) {
+            return [0, 0, 0, 255];
+        } else {
+            return [255, 255, 255, 255];
+        }
+    };
+
+    colors.hsl2rgb = function (c) {
+        var a, b, g, h, hue2rgb, l, p, q, r, s;
+        h = c[0], s = c[1], l = c[2], a = c[3];
+        if (s === 0) {
+            r = g = b = l;
+        } else {
+            hue2rgb = function (p, q, t) {
+                if (t < 0) {
+                    t += 1;
+                }
+                if (t > 1) {
+                    t -= 1;
+                }
+                if (t < 1 / 6) {
+                    return p + (q - p) * 6 * t;
+                }
+                if (t < 1 / 2) {
+                    return q;
+                }
+                if (t < 2 / 3) {
+                    return p + (q - p) * (2 / 3 - t) * 6;
+                }
+                return p;
+            };
+            q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), a];
+    };
+
+    colors.rgb2hsl = function (c) {
+        var a, b, d, g, h, l, max, min, r, s;
+        r = c[0], g = c[1], b = c[2], a = c[3];
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        max = Math.max(r, g, b);
+        min = Math.min(r, g, b);
+        l = (max + min) / 2;
+        if (max === min) {
+            h = s = 0;
+        } else {
+            d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+            }
+            h /= 6;
+        }
+        return [h, s, l, a];
+    };
+
+    colors.fromHex = function (c) {
+        var a, b, g, r;
+        r = parseInt(c.slice(0, 2), 16);
+        g = parseInt(c.slice(2, 4), 16);
+        b = parseInt(c.slice(4, 6), 16);
+        a = 255;
+        return colors.validate([r, g, b, a]);
+    };
+
+    colors.toHex = function (c) {
+        var chr;
+        chr = function (i) {
+            if (!i) {
+                return "00";
+            }
+            i = i.toString(16);
+            if (i.length === 1) {
+                i = "0" + i;
+            }
+            return i;
+        };
+        return chr(c[0]) + chr(c[1]) + chr(c[2]);
+    };
+
+    colors.cssRgba = function (c) {
+        return "rgba(" + (c[0] || 0) + "," + (c[1] || 0) + "," + (c[2] || 0) + "," + (c[3] || 255) + ")";
+    };
+
+    ref = colors.niceHex;
+    for (j = 0, len = ref.length; j < len; j++) {
+        hex = ref[j];
+        colors.nice.push(colors.fromHex(hex));
+    }
+
+}).call(this);
+;
+
+
+//require('../src/utils.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var stats,
+        slice = [].slice,
+        hasProp = {}.hasOwnProperty;
+
+    window.print = function () {
+        var args;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        return console.log.apply(console, args);
+    };
+
+    window.choose = function (list) {
+        return list[Math.floor(Math.random() * list.length)];
+    };
+
+    window.chooseInt = function (a, b) {
+        return Math.floor(a + Math.random() * (b - a));
+    };
+
+    window.json = {
+        dumps: JSON.stringify,
+        loads: JSON.parse
+    };
+
+    window.deepCopy = function (src) {
+        var i, j, key, len, ret, thing;
+        if (Array.isArray(src)) {
+            ret = [];
+            for (i = j = 0, len = src.length; j < len; i = ++j) {
+                thing = src[i];
+                ret[i] = deepCopy(thing);
+            }
+            return ret;
+        }
+        if (typeof src === 'object') {
+            ret = {};
+            for (key in src) {
+                if (!hasProp.call(src, key)) continue;
+                ret[key] = deepCopy(src[key]);
+            }
+            return ret;
+        }
+        return src;
+    };
+
+    window.deepEq = function (a, b) {
+        return JSON.stringify(a) === JSON.stringify(b);
+    };
+
+    window.formatTime = function (t) {
+        var minutes, seconds;
+        t = Math.floor(t);
+        seconds = t % 60;
+        minutes = Math.floor(t / 60);
+        if (seconds < 10) {
+            seconds = "0" + seconds;
+        }
+        return minutes + ":" + seconds;
+    };
+
+    window.track = function (name, kargs) {
+        var xhr;
+        if (!kargs) {
+            kargs = {};
+        }
+        console.log("track:", name, JSON.stringify(kargs));
+        if (window.location && window.location.href.indexOf("gamedev.html") !== -1) {
+            return;
+        }
+        xhr = new XMLHttpRequest();
+        xhr.open("POST", "https://andrelytics.com/track");
+        kargs.name = "game_" + name;
+        kargs.api_key = "pub_H4TvK8mxcRPextxxIHOhtstH7YRCAHM2";
+        kargs.user_iden = typeof commander !== "undefined" && commander !== null ? commander.id : void 0;
+        kargs.user_name = typeof commander !== "undefined" && commander !== null ? commander.name : void 0;
+        kargs.version = window.VERSION + "." + MINOR_VERSION;
+        return xhr.send(JSON.stringify(kargs));
+    };
+
+    window.after = function (ms, fn) {
+        return setTimeout(fn, ms);
+    };
+
+    window.doAfter = function (ms, fn) {
+        return setTimeout(fn, ms);
+    };
+
+    window.now = function () {
+        var n, ref, s;
+        if (typeof process !== "undefined" && process !== null) {
+            ref = process.hrtime(), s = ref[0], n = ref[1];
+            return (s * 1000000 + n / 1000) / 1000;
+        } else {
+            return performance.now();
+        }
+    };
+
+    window.ab2str = function (buf) {
+        var bufView, i, j, ref, str;
+        str = "";
+        bufView = new Uint8Array(buf);
+        for (i = j = 0, ref = bufView.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+            str += String.fromCharCode(bufView[i]);
+        }
+        return str;
+    };
+
+    window.str2ab = function (str) {
+        var buf, bufView, i, j, ref;
+        buf = new ArrayBuffer(str.length);
+        bufView = new Uint8Array(buf);
+        for (i = j = 0, ref = str.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        return buf;
+    };
+
+    window.dv2str = function (dv) {
+        var i, j, ref, str;
+        str = "";
+        for (i = j = 0, ref = dv.byteLength; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+            str += String.fromCharCode(dv.getUint8(i));
+        }
+        return str;
+    };
+
+    window.str2dv = function (str) {
+        return new DataView(str2ab(str));
+    };
+
+    window.strBuff = function (buf) {
+        var j, len, n, str, u8;
+        str = "";
+        u8 = new Uint8Array(buf);
+        for (j = 0, len = u8.length; j < len; j++) {
+            n = u8[j];
+            str += n + " ";
+        }
+        return str;
+    };
+
+    window.randColor = function (a) {
+        return [Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), 255];
+    };
+
+    window.stats = stats = {
+        fps: {},
+        net: {},
+        sim: {}
+    };
+
+    stats.fpsAdd = function (n) {
+        if (n == null) {
+            n = 1;
+        }
+        return stats.add(stats.fps, n);
+    };
+
+    stats.netAdd = function (n) {
+        if (n == null) {
+            n = 1;
+        }
+        return stats.add(stats.net, n);
+    };
+
+    stats.simAdd = function (n) {
+        if (n == null) {
+            n = 1;
+        }
+        return stats.add(stats.sim, n);
+    };
+
+    stats.add = function (frames, n) {
+        var sec;
+        sec = Math.floor(Date.now() / 1000);
+        if (frames[sec] != null) {
+            return frames[sec] += n;
+        } else {
+            return frames[sec] = n;
+        }
+    };
+
+    stats.draw = function () {
+        if (!control.perf) {
+            return;
+        }
+        stats.drawFrames(stats.fps, 10, 60, 160);
+        stats.drawFrames(stats.sim, 1, 16, 320);
+        return stats.drawFrames(stats.net, 1024 * 10, 1024, 720);
+    };
+
+    stats.drawFrames = function (frames, div, max, yadj) {
+        var color, j, nFrames, results, sec, sx, sy, x, y;
+        sec = Math.floor(Date.now() / 1000);
+        results = [];
+        for (x = j = 0; j < 31; x = ++j) {
+            sx = -x * 16 + window.innerWidth - 20;
+            sy = window.innerHeight - yadj;
+            nFrames = frames[sec - 30 + x] || 0;
+            color = [255, 255, 255, 100];
+            results.push((function () {
+                var k, ref, results1;
+                results1 = [];
+                for (y = k = 0, ref = Math.ceil(nFrames / div); 0 <= ref ? k < ref : k > ref; y = 0 <= ref ? ++k : --k) {
+                    results1.push(baseAtlas.drawSprite("parts/sel1x1.png", [sx, sy - y * 16], [.5, .5], 0, color));
+                }
+                return results1;
+            })());
+        }
+        return results;
+    };
+
+    window.sha1 = function (msg) {
+        fcc = String.fromCharCode;
+
+        function rotl(n, s) {
+            return n << s | n >>> 32 - s;
+        };
+
+        function tohex(i) {
+            for (var h = "", s = 28; ; s -= 4) {
+                h += (i >>> s & 0xf).toString(16);
+                if (!s) return h;
+            }
+        };
+        var H0 = 0x67452301, H1 = 0xEFCDAB89, H2 = 0x98BADCFE, H3 = 0x10325476, H4 = 0xC3D2E1F0, M = 0x0ffffffff;
+        var i, t, W = new Array(80), ml = msg.length, wa = new Array();
+        msg += fcc(0x80);
+        while (msg.length % 4) msg += fcc(0);
+        for (i = 0; i < msg.length; i += 4) wa.push(msg.charCodeAt(i) << 24 | msg.charCodeAt(i + 1) << 16 | msg.charCodeAt(i + 2) << 8 | msg.charCodeAt(i + 3));
+        while (wa.length % 16 != 14) wa.push(0);
+        wa.push(ml >>> 29), wa.push((ml << 3) & M);
+        for (var bo = 0; bo < wa.length; bo += 16) {
+            for (i = 0; i < 16; i++) W[i] = wa[bo + i];
+            for (i = 16; i <= 79; i++) W[i] = rotl(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
+            var A = H0, B = H1, C = H2, D = H3, E = H4;
+            for (i = 0; i <= 19; i++) t = (rotl(A, 5) + (B & C | ~B & D) + E + W[i] + 0x5A827999) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
+            for (i = 20; i <= 39; i++) t = (rotl(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ED9EBA1) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
+            for (i = 40; i <= 59; i++) t = (rotl(A, 5) + (B & C | B & D | C & D) + E + W[i] + 0x8F1BBCDC) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
+            for (i = 60; i <= 79; i++) t = (rotl(A, 5) + (B ^ C ^ D) + E + W[i] + 0xCA62C1D6) & M, E = D, D = C, C = rotl(B, 30), B = A, A = t;
+            H0 = H0 + A & M;
+            H1 = H1 + B & M;
+            H2 = H2 + C & M;
+            H3 = H3 + D & M;
+            H4 = H4 + E & M;
+        }
+        return tohex(H0) + tohex(H1) + tohex(H2) + tohex(H3) + tohex(H4);
+    };
+
+    Array.prototype.last = function () {
+        return this[this.length - 1];
+    };
+
+}).call(this);
+;
+
+
+//require('../src/zjson.js');
+// Generated by CoffeeScript 1.12.7
+
+/*
+zjson - binary json sirelizer with some strange features
+
+* It does hte basic json to bin and bin to json
+* You can Diffs and send thouse instead
+* You can add a Strings table
+    list wich both ends need to agree on
+    usuly used for keys that are present in every msg
+ */
+
+(function () {
+    var COLLECT_STATS, MAX16, MAX32, MAX8, toHex;
+
+    Number.prototype.isInt = function (n) {
+        return n !== "" && !isNaN(n) && Math.round(n) === n;
+    };
+
+    Number.prototype.isFloat = function (n) {
+        return n !== "" && !isNaN(n) && Math.round(n) !== n;
+    };
+
+    MAX8 = 256;
+
+    MAX16 = 256 * 256;
+
+    MAX32 = 256 * 256 * 256 * 256;
+
+    COLLECT_STATS = true;
+
+    window.commonZJsonStrings = {};
+
+    window.commonZJsonStringsGet = function () {
+        var k, list;
+        list = [];
+        for (k in commonZJsonStrings) {
+            if (commonZJsonStrings[k] > 2) {
+                list.push(k);
+            }
+        }
+        return console.log(list.sort().join("\n"));
+    };
+
+    window.commonZJsonBytePattrns = {};
+
+    window.commonZJsonBytePattrnsGet = function () {
+        var e, j, k, len, list, ref, results, v;
+        list = [];
+        for (k in commonZJsonBytePattrns) {
+            v = commonZJsonBytePattrns[k];
+            list.push([k, v]);
+        }
+        list = list.sort(function (a, b) {
+            return b[1] - a[1];
+        });
+        ref = list.slice(0, 256);
+        results = [];
+        for (j = 0, len = ref.length; j < len; j++) {
+            e = ref[j];
+            results.push(console.log(e[0], e[1]));
+        }
+        return results;
+    };
+
+    window.ZJson = (function () {
+        ZJson.prototype.JSON_MARK = 90;
+
+        ZJson.prototype.JSON_DIFF_MARK = 91;
+
+        ZJson.prototype.OBJECT_MARK8 = 0x10;
+
+        ZJson.prototype.OBJECT_MARK16 = 0x11;
+
+        ZJson.prototype.ARRAY_MARK8 = 0x20;
+
+        ZJson.prototype.ARRAY_MARK16 = 0x21;
+
+        ZJson.prototype.ARRAY0_MARK = 0x22;
+
+        ZJson.prototype.ARRAY1_MARK = 0x23;
+
+        ZJson.prototype.ARRAY2_MARK = 0x24;
+
+        ZJson.prototype.ARRAY3_MARK = 0x25;
+
+        ZJson.prototype.ARRAY4_MARK = 0x26;
+
+        ZJson.prototype.STRING_MARK8 = 0x30;
+
+        ZJson.prototype.STRING_MARK16 = 0x31;
+
+        ZJson.prototype.STRING_TABLE_MARK = 0x32;
+
+        ZJson.prototype.NUMBER_MARK8 = 0x40;
+
+        ZJson.prototype.NUMBER_MARK16 = 0x41;
+
+        ZJson.prototype.NUMBER_MARK32 = 0x42;
+
+        ZJson.prototype.NUMBER_MARK32F = 0x43;
+
+        ZJson.prototype.BOOL_TRUE_MARK = 0x50;
+
+        ZJson.prototype.BOOL_FALSE_MARK = 0x51;
+
+        ZJson.prototype.NULL_MARK = 0x52;
+
+        ZJson.prototype.UNDEFINED_MARK = 0x53;
+
+        function ZJson(strTable) {
+            var i, j, len, str;
+            if (strTable == null) {
+                strTable = null;
+            }
+            this.buffSize = 1024 * 1024;
+            this.buffer = new ArrayBuffer(this.buffSize);
+            this.dv = new DataView(this.buffer);
+            this.str2num = new Map();
+            this.num2str = new Map();
+            if (strTable) {
+                for (i = j = 0, len = strTable.length; j < len; i = ++j) {
+                    str = strTable[i];
+                    this.str2num.set(str, i);
+                    this.num2str.set(i, str);
+                }
+                if (i > MAX16) {
+                    throw "Too many strings in the string table";
+                }
+            }
+        }
+
+        ZJson.prototype.dumpDv = function (json) {
+            var buf, dv, end, i, j, ref;
+            this.i = 0;
+            this.dumpNode(json);
+            end = "END";
+            this.dv.setUint8(this.i, end.charCodeAt(0));
+            this.i += 1;
+            this.dv.setUint8(this.i, end.charCodeAt(1));
+            this.i += 1;
+            this.dv.setUint8(this.i, end.charCodeAt(2));
+            this.i += 1;
+            buf = new ArrayBuffer(this.i);
+            dv = new DataView(buf);
+            for (i = j = 0, ref = this.i; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                dv.setUint8(i, this.dv.getUint8(i));
+            }
+            return dv;
+        };
+
+        ZJson.prototype.dumpNode = function (json) {
+            var e, i, j, k, l, len, length, num, ref, results, results1, results2, v;
+            if (json === null) {
+                this.dv.setUint8(this.i, this.NULL_MARK);
+                this.i += 1;
+                return;
+            }
+            if (json === void 0) {
+                this.dv.setUint8(this.i, this.UNDEFINED_MARK);
+                this.i += 1;
+                return;
+            }
+            switch (typeof json) {
+                case "object":
+                    if (json.length != null) {
+                        length = json.length;
+                        if (length === 0) {
+                            this.dv.setUint8(this.i, this.ARRAY0_MARK);
+                            this.i += 1;
+                        } else if (length === 1) {
+                            this.dv.setUint8(this.i, this.ARRAY1_MARK);
+                            this.i += 1;
+                        } else if (length === 2) {
+                            this.dv.setUint8(this.i, this.ARRAY2_MARK);
+                            this.i += 1;
+                        } else if (length === 3) {
+                            this.dv.setUint8(this.i, this.ARRAY3_MARK);
+                            this.i += 1;
+                        } else if (length === 4) {
+                            this.dv.setUint8(this.i, this.ARRAY4_MARK);
+                            this.i += 1;
+                        } else if (length < MAX8) {
+                            this.dv.setUint8(this.i, this.ARRAY_MARK8);
+                            this.i += 1;
+                            this.dv.setUint8(this.i, length);
+                            this.i += 1;
+                        } else if (length < MAX16) {
+                            this.dv.setUint8(this.i, this.ARRAY_MARK16);
+                            this.i += 1;
+                            this.dv.setUint16(this.i, length);
+                            this.i += 2;
+                        } else {
+                            throw "Array size of " + length + " not supproted";
+                        }
+                        results = [];
+                        for (j = 0, len = json.length; j < len; j++) {
+                            e = json[j];
+                            results.push(this.dumpNode(e));
+                        }
+                        return results;
+                    } else {
+                        length = 0;
+                        for (k in json) {
+                            v = json[k];
+                            length += 1;
+                        }
+                        if (length < MAX8) {
+                            this.dv.setUint8(this.i, this.OBJECT_MARK8);
+                            this.i += 1;
+                            this.dv.setUint8(this.i, length);
+                            this.i += 1;
+                        } else if (length < MAX16) {
+                            this.dv.setUint8(this.i, this.OBJECT_MARK16);
+                            this.i += 1;
+                            this.dv.setUint16(this.i, length);
+                            this.i += 2;
+                        } else {
+                            throw "Object size of " + length + " not supproted";
+                        }
+                        results1 = [];
+                        for (k in json) {
+                            v = json[k];
+                            this.dumpNode(k);
+                            results1.push(this.dumpNode(v));
+                        }
+                        return results1;
+                    }
+                    break;
+                case "number":
+                    if (Math.round(json) === json && json > 0 && json < 256 * 256 * 256 * 256) {
+                        if (json < MAX8) {
+                            this.dv.setUint8(this.i, this.NUMBER_MARK8);
+                            this.i += 1;
+                            this.dv.setUint8(this.i, json);
+                            return this.i += 1;
+                        } else if (json < MAX16) {
+                            this.dv.setUint8(this.i, this.NUMBER_MARK16);
+                            this.i += 1;
+                            this.dv.setUint16(this.i, json);
+                            return this.i += 2;
+                        } else if (json < MAX32) {
+                            this.dv.setUint8(this.i, this.NUMBER_MARK32);
+                            this.i += 1;
+                            this.dv.setUint32(this.i, json);
+                            return this.i += 4;
+                        } else {
+                            throw "Invalid number integer " + json + " not supported";
+                        }
+                    } else {
+                        this.dv.setUint8(this.i, this.NUMBER_MARK32F);
+                        this.i += 1;
+                        this.dv.setFloat32(this.i, json);
+                        return this.i += 4;
+                    }
+                    break;
+                case "string":
+                    num = this.str2num.get(json);
+                    if (num != null) {
+                        this.dv.setUint8(this.i, this.STRING_TABLE_MARK);
+                        this.i += 1;
+                        this.dv.setUint16(this.i, num);
+                        return this.i += 2;
+                    } else {
+                        if (COLLECT_STATS) {
+                            commonZJsonStrings[json] = (commonZJsonStrings[json] || 0) + 1;
+                        }
+                        length = json.length;
+                        if (length < MAX8) {
+                            this.dv.setUint8(this.i, this.STRING_MARK8);
+                            this.i += 1;
+                            this.dv.setUint8(this.i, json.length);
+                            this.i += 1;
+                        } else if (length < MAX16) {
+                            this.dv.setUint8(this.i, this.STRING_MARK16);
+                            this.i += 1;
+                            this.dv.setUint16(this.i, json.length);
+                            this.i += 2;
+                        } else {
+                            throw "String size of " + length + " not supproted";
+                        }
+                        results2 = [];
+                        for (i = l = 0, ref = length; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
+                            this.dv.setUint8(this.i, json.charCodeAt(i));
+                            results2.push(this.i += 1);
+                        }
+                        return results2;
+                    }
+                    break;
+                case "boolean":
+                    if (json === true) {
+                        this.dv.setUint8(this.i, this.BOOL_TRUE_MARK);
+                        return this.i += 1;
+                    } else {
+                        this.dv.setUint8(this.i, this.BOOL_FALSE_MARK);
+                        return this.i += 1;
+                    }
+                    break;
+                default:
+                    throw "Type " + (typeof json) + " not supported";
+            }
+        };
+
+        ZJson.prototype.loadDv = function (dv) {
+            var json;
+            this.i = 0;
+            json = this.loadNode(dv);
+
+            /*
+      if COLLECT_STATS
+           * look at common byte patterns
+          bp = commonZJsonBytePattrns
+          for i in [0...dv.byteLength]
+              for pattern in [1...4]
+                  if i + pattern < dv.byteLength
+                      arr = []
+                      for n in [0...pattern]
+                          arr.push(dv.getUint8(i + n))
+                      key = arr.join(",")
+                      bp[key] = (bp[key] or 0) + 1
+       */
+            return json;
+        };
+
+        ZJson.prototype.loadNode = function (dv) {
+            var count, e, i, j, json, k, l, length, m, mark, num, ref, ref1, ref2, v;
+            mark = dv.getUint8(this.i);
+            this.i += 1;
+            switch (mark) {
+                case 0:
+                    throw "Zero mark error";
+                    break;
+                case this.ARRAY_MARK8:
+                case this.ARRAY_MARK16:
+                case this.ARRAY0_MARK:
+                case this.ARRAY1_MARK:
+                case this.ARRAY2_MARK:
+                case this.ARRAY3_MARK:
+                case this.ARRAY4_MARK:
+                    if (mark === this.ARRAY0_MARK) {
+                        length = 0;
+                    } else if (mark === this.ARRAY1_MARK) {
+                        length = 1;
+                    } else if (mark === this.ARRAY2_MARK) {
+                        length = 2;
+                    } else if (mark === this.ARRAY3_MARK) {
+                        length = 3;
+                    } else if (mark === this.ARRAY4_MARK) {
+                        length = 4;
+                    } else if (mark === this.ARRAY_MARK8) {
+                        length = dv.getUint8(this.i);
+                        this.i += 1;
+                    } else if (mark === this.ARRAY_MARK16) {
+                        length = dv.getUint16(this.i);
+                        this.i += 2;
+                    } else {
+                        throw "Arrays mark error" + mark;
+                    }
+                    json = [];
+                    for (count = j = 0, ref = length; 0 <= ref ? j < ref : j > ref; count = 0 <= ref ? ++j : --j) {
+                        e = this.loadNode(dv);
+                        json.push(e);
+                    }
+                    return json;
+                case this.OBJECT_MARK8:
+                case this.OBJECT_MARK16:
+                    if (mark === this.OBJECT_MARK8) {
+                        length = dv.getUint8(this.i);
+                        this.i += 1;
+                    } else if (mark === this.OBJECT_MARK16) {
+                        length = dv.getUint16(this.i);
+                        this.i += 2;
+                    } else {
+                        throw "Objext mark error";
+                    }
+                    json = {};
+                    for (count = l = 0, ref1 = length; 0 <= ref1 ? l < ref1 : l > ref1; count = 0 <= ref1 ? ++l : --l) {
+                        k = this.loadNode(dv);
+                        v = this.loadNode(dv);
+                        json[k] = v;
+                    }
+                    return json;
+                case this.STRING_TABLE_MARK:
+                    num = dv.getUint16(this.i);
+                    this.i += 2;
+                    return this.num2str.get(num);
+                case this.STRING_MARK8:
+                case this.STRING_MARK16:
+                    if (mark === this.STRING_MARK8) {
+                        length = dv.getUint8(this.i);
+                        this.i += 1;
+                    } else if (mark === this.STRING_MARK16) {
+                        length = dv.getUint16(this.i);
+                        this.i += 2;
+                    } else {
+                        throw "String mark error";
+                    }
+                    json = "";
+                    for (i = m = 0, ref2 = length; 0 <= ref2 ? m < ref2 : m > ref2; i = 0 <= ref2 ? ++m : --m) {
+                        json += String.fromCharCode(dv.getUint8(this.i));
+                        this.i += 1;
+                    }
+                    return json;
+                case this.NUMBER_MARK8:
+                    json = dv.getUint8(this.i);
+                    this.i += 1;
+                    return json;
+                case this.NUMBER_MARK16:
+                    json = dv.getUint16(this.i);
+                    this.i += 2;
+                    return json;
+                case this.NUMBER_MARK32:
+                    json = dv.getUint32(this.i);
+                    this.i += 4;
+                    return json;
+                case this.NUMBER_MARK32F:
+                    json = dv.getFloat32(this.i);
+                    this.i += 4;
+                    return json;
+                case this.BOOL_TRUE_MARK:
+                    return true;
+                case this.BOOL_FALSE_MARK:
+                    return false;
+                case this.NULL_MARK:
+                    return null;
+                case this.UNDEFINED_MARK:
+                    return void 0;
+                default:
+                    throw "Mark " + mark + " unkown";
+            }
+        };
+
+        return ZJson;
+
+    })();
+
+    toHex = function (number, n) {
+        var hex;
+        if (n == null) {
+            n = 4;
+        }
+        hex = number.toString(16);
+        while (hex.length < n) {
+            hex = "0" + hex;
+        }
+        return hex;
+    };
+
+    window.hexDisplay = function (dv) {
+        var address, ascii, byte, bytes, i, j, r, results;
+        i = 0;
+        results = [];
+        while (i < dv.byteLength) {
+            address = toHex(i, 4);
+            bytes = [];
+            ascii = [];
+            for (r = j = 0; j < 16; r = ++j) {
+                if (i >= dv.byteLength) {
+                    bytes.push("  ");
+                    ascii.push(" ");
+                } else {
+                    byte = dv.getUint8(i);
+                    bytes.push(toHex(byte, 2));
+                    if ((20 < byte && byte < 128)) {
+                        ascii.push(String.fromCharCode(byte));
+                    } else {
+                        ascii.push(".");
+                    }
+                }
+                i += 1;
+            }
+            results.push(console.log(address + "   " + bytes.join(" ") + "   " + ascii.join("")));
+        }
+        return results;
+    };
+
+}).call(this);
+;
+
+//require('./commands.js');
+// Generated by CoffeeScript 1.12.7
+(function () {
+    var allowedSim, checkHost, checkRunning, defStats, helpMessage, parseStat,
+        indexOf = [].indexOf || function (item) {
+            for (var i = 0, l = this.length; i < l; i++) {
+                if (i in this && this[i] === item) return i;
+            }
+            return -1;
+        };
+
+    defStats = {
+        parts: {},
+        types: {}
+    };
+
+    window.diffStats = {
+        sim: {}
+    };
+
+    allowedSim = ["mapScale", "numComPoints", "defaultMoney", "costLimit", "makeRocks", "awaitRestart", "tickTime", "moneyRatio", "unitLimit", "victoryGoal", "NxN", "enableAi", "check", "numFlags"];
+
+    window.processCommand = function (player, cmds) {
+        var _, aiBuildBar, debug, hostP, i, j, k, l, len, len1, n, name, p, picked, ref, ref1, ref2, ref3, ref4, repick,
+            results, results1, side, t, total, type, u, v;
+        switch (cmds[0].toLowerCase()) {
+            case "mode":
+                if (cmds.length < 2) {
+                    server.say(helpMessage(cmds[0]));
+                    break;
+                }
+                if (!checkHost(player)) {
+                    break;
+                }
+                if (checkRunning()) {
+                    break;
+                }
+                type = (function () {
+                    switch (cmds[1]) {
+                        case "surv":
+                        case "Surv":
+                        case "survival":
+                            return "Survival";
+                        case "ffa":
+                            return "FFA";
+                        case "ctf":
+                            return "CTF";
+                        case "ttt":
+                        case "TTT":
+                            return "TicTacToe";
+                        default:
+                            return cmds[1];
+                    }
+                })();
+                if (sim.validTypes[type] != null) {
+                    return sim.configGame(player, {
+                        type: type
+                    });
+                } else {
+                    return server.say("unknown mode " + type);
+                }
+                break;
+            case "start":
+                if (checkRunning()) {
+                    break;
+                }
+                if (!checkHost(player)) {
+                    break;
+                }
+                return sim.startGame(player);
+            case "join":
+                if (cmds.length < 2) {
+                    server.say(helpMessage(cmds[0]));
+                    break;
+                }
+                if (checkRunning()) {
+                    break;
+                }
+                if ((ref = cmds[1]) === "alpha" || ref === "beta" || ref === "spectators") {
+                    return sim.switchSide(player, cmds[1]);
+                } else {
+                    return server.say("unknown team");
+                }
+                break;
+            case "repick":
+                player.repick = true;
+                total = 0;
+                repick = 0;
+                ref1 = sim.players;
+                for (j = 0, len = ref1.length; j < len; j++) {
+                    p = ref1[j];
+                    if (!p.connected || p.afk || p.ai) {
+                        continue;
+                    }
+                    total += 1;
+                    if (p.repick) {
+                        repick += 1;
+                    }
+                }
+                if (sim.players.filter(function (p) {
+                    return p.connected && !p.afk && (p.side === "alpha" || p.side === "beta");
+                }).length < 2) {
+                    server.say("not enough players in the game");
+                    break;
+                }
+                if (repick > total / 2) {
+                    picked = false;
+                    hostP = {};
+                    ref2 = sim.players;
+                    for (l = 0, len1 = ref2.length; l < len1; l++) {
+                        p = ref2[l];
+                        p.repick = false;
+                        if (p.host) {
+                            hostP = p;
+                        }
+                    }
+                    while (!picked) {
+                        p = sim.players[Math.floor(Math.random() * sim.players.length)];
+                        if (p.host) {
+                            continue;
+                        }
+                        if ((p.side === "alpha" || p.side === "beta") && !(p.ai || p.afk) && p.connected) {
+                            p.host = true;
+                            picked = true;
+                        }
+                    }
+                    hostP.host = false;
+                    return server.say("host repicked");
+                } else {
+                    return server.say((Math.floor(total / 2) + 1 - repick) + " more votes needed");
+                }
+                break;
+            case "addai":
+                if (cmds.length < 3) {
+                    server.say(helpMessage(cmds[0]));
+                    break;
+                }
+                if (checkRunning()) {
+                    break;
+                }
+                if (!(player.side === "alpha" || player.side === "beta")) {
+                    server.say("you need to be on a team");
+                    break;
+                }
+                name = cmds[1];
+                side = cmds[2].toLowerCase();
+                if (side !== "alpha" && side !== "beta") {
+                    server.say("unknown team");
+                    break;
+                }
+                aiBuildBar = ais.all[name];
+                if (!aiBuildBar) {
+                    server.say("Cannot find " + name + ", using your current fleet");
+                    aiBuildBar = player.buildBar;
+                }
+                if (aiBuildBar) {
+                    sim.addAi(player, name, side, aiBuildBar, true);
+                    return server.say("added " + name + " to " + side);
+                }
+                break;
+            case "set":
+                if (!checkHost(player)) {
+                    break;
+                }
+                if (cmds.length < 4) {
+                    server.say(helpMessage(cmds[0]));
+                    break;
+                }
+                return changeStat(cmds[1], cmds[2], cmds[3]);
+            case "changes":
+                server.say("List of changes:");
+                results = [];
+                for (n in diffStats) {
+                    p = diffStats[n];
+                    results.push((function () {
+                        var results1;
+                        results1 = [];
+                        for (k in p) {
+                            v = p[k];
+                            results1.push(server.say(n + "." + k + " = " + (typeof v === "function" ? v.name : v)));
+                        }
+                        return results1;
+                    })());
+                }
+                return results;
+                break;
+            case "reset":
+                if (!checkHost(player)) {
+                    break;
+                }
+                resetStats();
+                return server.say("reset to default stats");
+            case "export":
+                sim.things = sim.things || {};
+                ref3 = sim.things;
+                for (_ in ref3) {
+                    t = ref3[_];
+                    if (t.owner === -1) {
+                        t.hp = 0;
+                    }
+                }
+                u = genStatUnit(diffStats);
+                u.pos = [0, 0];
+                u.rot = Math.PI;
+                u.owner = -1;
+                u.color = [255, 255, 0, 255];
+                u.canCapture = false;
+                sim.things[u.id] = u;
+                return server.say("stat changes exported, copy the unit with copy script to save it");
+            case "import":
+                if (!checkHost(player)) {
+                    break;
+                }
+                if (cmds.length < 2) {
+                    server.say(helpMessage(cmds[0]));
+                    break;
+                }
+                resetStats();
+                i = parseInt(cmds[1]);
+                server.say("loading stats from " + player.name + "'s slot: " + i);
+                window.diffStats = statFromSpec(player.buildBar[i - 1]);
+                return applyDiff(diffStats);
+            case "firework":
+                if (player.name !== "R26" && player.name !== "R11010") {
+                    server.say("only R26 can do that");
+                    break;
+                }
+                ref4 = sim.things;
+                results1 = [];
+                for (_ in ref4) {
+                    t = ref4[_];
+                    results1.push(t.hp = 0);
+                }
+                return results1;
+                break;
+            case "debug":
+                if (cmds.length > 1) {
+                    debug = (function () {
+                        switch (cmds[1].toLowerCase()) {
+                            case "true":
+                            case "on":
+                            case "yes":
+                                return true;
+                            default:
+                                return false;
+                        }
+                    })();
+                } else {
+                    debug = !DEBUG;
+                }
+                window.DEBUG = debug;
+                return server.say("debug is now " + (debug ? "on" : "off"));
+            case "end":
+                if (!checkHost(player)) {
+                    break;
+                }
+                return sim.endOfGame();
+            case "restart":
+                if (!checkHost(player)) {
+                    break;
+                }
+                server.say("Restarting server");
+                return process.exit();
+            case "help":
+                return server.say(helpMessage(cmds[1]));
+            default:
+                return server.say(helpMessage());
+        }
+    };
+
+    checkHost = function (p) {
+        if (p != null ? p.host : void 0) {
+            return true;
+        }
+        if ((p != null ? p.name : void 0) === "R26" || (p != null ? p.name : void 0) === "R11010") {
+            return true;
+        }
+        server.say("only host can do that");
+        return false;
+    };
+
+    checkRunning = function (p) {
+        if (sim.state !== "running") {
+            return false;
+        }
+        server.say("game already started");
+        return true;
+    };
+
+    helpMessage = function (cmd) {
+        var t;
+        switch (cmd) {
+            case "mode":
+                return "!mode <mode> - switch gamemode. available modes: " + ((function () {
+                    var results;
+                    results = [];
+                    for (t in sim.validTypes) {
+                        results.push(t);
+                    }
+                    return results;
+                })());
+            case "start":
+                return "!start - start the game";
+            case "join":
+                return "!join <side> - join a team";
+            case "addai":
+                return "!addai <name> <side> - add ai <name> to <side> team, use your current fleet if not found";
+            case "repick":
+                return "!repick - vote to repick the host";
+            case "set":
+                return "!set <part> <field> <value> - set a stat of a part";
+            case "changes":
+                return "!changes - list all the changes";
+            case "reset":
+                return "!reset - reset stats to defaule";
+            case "export":
+                return "!export - generate a ship that contains current stats";
+            case "import":
+                return "!import <slot> - import stats from unit in slot <slot>";
+            case "end":
+                return "!end - end the game";
+            case "restart":
+                return "!restart - restart the server";
+            default:
+                return "available commands: mode start join addai repick set changes reset export import end restart help. more info: https://pastebin.com/PGUaUSYt";
+        }
+    };
+
+    parseStat = function (t, str) {
+        var v, value;
+        if (typeof stat === t) {
+            value = str;
+        } else {
+            value = (function () {
+                var j, len, ref, results;
+                switch (t) {
+                    case "number":
+                        return Number(str);
+                    case "boolean":
+                        return str.toLowerCase() === "true";
+                    case "string":
+                        return str;
+                    case "object":
+                        if (/(\d*.\d*,)*(\d*.\d*)/.test(str)) {
+                            ref = str.split(",");
+                            results = [];
+                            for (j = 0, len = ref.length; j < len; j++) {
+                                v = ref[j];
+                                results.push(Number(v));
+                            }
+                            return results;
+                        } else {
+                            if (!quiet) {
+                                server.say("uannot parse " + str + " to " + t);
+                            }
+                            return null;
+                        }
+                        break;
+                    case "function":
+                        return types[str] || null;
+                    default:
+                        return null;
+                }
+            })();
+        }
+        return value;
+    };
+
+    window.genStatUnit = function (stats) {
+        return new types.Unit({
+            parts: [
+                {
+                    type: "HArmor2x2",
+                    pos: [0, 0],
+                    dir: 0
+                }, {
+                    type: "Battery1x1",
+                    pos: [-10, -30],
+                    dir: 0
+                }, {
+                    type: "Engine04",
+                    pos: [10, -40],
+                    dir: 0
+                }
+            ],
+            aiRules: [
+                [
+                    "Code Block", JSON.stringify(stats, function (k, v) {
+                    var name;
+                    if (v === 2e308) {
+                        return "Infinity";
+                    } else if (typeof v === "function") {
+                        name = v.name;
+                        if (types.hasOwnProperty(name)) {
+                            return name;
+                        }
+                    }
+                    return v;
+                })
+                ]
+            ]
+        });
+    };
+
+    window.statFromSpec = function (spec) {
+        var e, json, ref, ref1;
+        if (spec == null) {
+            return {
+                sim: {}
+            };
+        }
+        json = (ref = spec.aiRules) != null ? (ref1 = ref[0]) != null ? ref1[1] : void 0 : void 0;
+        try {
+            return JSON.parse(json, function (k, v) {
+                if (v === "Infinity") {
+                    return 2e308;
+                } else if (types.hasOwnProperty(v)) {
+                    return types[v];
+                }
+                return v;
+            });
+        } catch (error) {
+            e = error;
+        }
+        return {
+            sim: {}
+        };
+    };
+
+    window.applyDiff = function (diff, quiet) {
+        var k, n, p, results, v;
+        if (quiet == null) {
+            quiet = false;
+        }
+        results = [];
+        for (n in diffStats) {
+            p = diffStats[n];
+            results.push((function () {
+                var results1;
+                results1 = [];
+                for (k in p) {
+                    v = p[k];
+                    results1.push(changeStat(n, k, v, quiet));
+                }
+                return results1;
+            })());
+        }
+        return results;
+    };
+
+    window.changeStat = function (type, field, stat, quiet) {
+        var ns, part, ref, ref1, ref2, ref3, stats, t, universalButNo, value;
+        if (quiet == null) {
+            quiet = false;
+        }
+        if (!((type != null) && (field != null) && (stat != null))) {
+            return;
+        }
+        if (type.toLowerCase() === "sim") {
+            if (sim[field] == null) {
+                if (field === "awaitRestart") {
+                    sim.awaitRestart = false;
+                } else {
+                    if (!quiet) {
+                        server.say("unknown field " + field);
+                    }
+                    return;
+                }
+            }
+            if (indexOf.call(allowedSim, field) < 0) {
+                if (!quiet) {
+                    server.say("cannot change sim." + field);
+                }
+                return;
+            }
+            if (stat === "default") {
+                sim[field] = sim.constructor.prototype[field];
+                delete diffStats.sim[field];
+                if (!quiet) {
+                    server.say("sim." + field + " is now " + sim[field]);
+                }
+                return;
+            }
+            t = typeof sim[field];
+            value = parseStat(t, stat);
+            if ((value == null) || (t === "number" && isNaN(value))) {
+                if (!quiet) {
+                    server.say("invalid value " + stat);
+                }
+                return;
+            }
+            if (value != null) {
+                sim[field] = value;
+                diffStats.sim[field] = value;
+                if (!quiet) {
+                    server.say("sim." + field + " is now " + value);
+                }
+            }
+            return;
+        }
+        part = {};
+        if (parts[type]) {
+            part = parts[type];
+            ns = "parts";
+        } else if (types[type]) {
+            part = types[type];
+            ns = "types";
+        } else {
+            if (!quiet) {
+                server.say("cannot find " + type);
+            }
+            return;
+        }
+        if (!part) {
+            if (!quiet) {
+                server.say("unknown part " + type);
+            }
+            return;
+        }
+        universalButNo = {
+            disable: false,
+            hitsMissiles: false,
+            missile: false
+        };
+        if (part.prototype[field] == null) {
+            if (field in universalButNo) {
+                part.prototype[field] = universalButNo[field];
+            } else {
+                if (!quiet) {
+                    server.say("unknown field " + field);
+                }
+                return;
+            }
+        }
+        if (stat === "default") {
+            if (ns === "parts") {
+                if ((ref = defStats.parts[type]) != null ? ref[field] : void 0) {
+                    parts[type].prototype[field] = defStats.parts[type][field];
+                }
+                value = parts[type].prototype[field];
+            } else if (ns === "types") {
+                if ((ref1 = defStats.types[type]) != null ? ref1[field] : void 0) {
+                    types[type].prototype[field] = defStats.types[type][field];
+                }
+                value = types[type].prototype[field];
+            }
+            if (sim.state === "running" && !quiet) {
+                server.say("game is running, some units may keep the old stat");
+            }
+            if (!quiet) {
+                server.say(type + "." + field + " is now " + (typeof value === "function" ? value.name : value));
+            }
+            if ((ref2 = diffStats[type]) != null) {
+                delete ref2[field];
+            }
+            if (Object.keys(diffStats[type] || {}).length <= 0) {
+                delete diffStats[type];
+            }
+            return;
+        }
+        t = typeof part.prototype[field];
+        value = parseStat(t, stat);
+        if ((value == null) || (t === "number" && isNaN(value))) {
+            if (!quiet) {
+                server.say("cannot parse " + stat + " to " + t);
+            }
+            return;
+        }
+        if (value != null) {
+            if (!((ref3 = defStats[ns][type]) != null ? ref3[field] : void 0)) {
+                stat = defStats[ns][type] || {};
+                stat[field] = part.prototype[field];
+                defStats[ns][type] = stat;
+            }
+            part.prototype[field] = value;
+            stats = diffStats[type] || {};
+            stats[field] = value;
+            diffStats[type] = stats;
+            if (sim.state === "running" && !quiet) {
+                server.say("game is running, some units may keep the old stat");
+            }
+            if (!quiet) {
+                return server.say(type + "." + field + " is now " + (t === "function" ? value.name : value));
+            }
+        }
+    };
+
+    window.resetStats = function () {
+        var k, ref, ref1, ref2, stat, type, v;
+        ref = defStats.parts;
+        for (type in ref) {
+            stat = ref[type];
+            for (k in stat) {
+                v = stat[k];
+                parts[type].prototype[k] = v;
+            }
+        }
+        ref1 = defStats.types;
+        for (type in ref1) {
+            stat = ref1[type];
+            for (k in stat) {
+                v = stat[k];
+                types[type].prototype[k] = v;
+            }
+        }
+        ref2 = diffStats.sim;
+        for (k in ref2) {
+            v = ref2[k];
+            sim[k] = sim.constructor.prototype[k];
+        }
+        return window.diffStats = {
+            sim: {}
+        };
+    };
+
+    window.runText = function (text, color) {
+        var j, muha, results, x, y;
+        if (!sim.things) {
+            return;
+        }
+        text = text.replace(/[^a-zA-Z0-9#.]/g, " ").slice(0, 25);
+        muha = function (x, y, color) {
+            var filename, j, len, letter, mu, ref, results;
+            ref = text.toUpperCase();
+            results = [];
+            for (j = 0, len = ref.length; j < len; j++) {
+                letter = ref[j];
+                if (letter === " ") {
+                    x += 400;
+                    continue;
+                }
+                mu = new types.Rock;
+                filename = (function () {
+                    switch (letter) {
+                        case "#":
+                            return "letterPound.png";
+                        case ".":
+                            return "letterDot.png";
+                        default:
+                            return "letter" + letter + ".png";
+                    }
+                })();
+                mu.image = "parts/decals/" + filename;
+                mu.color = color;
+                mu.z = 10;
+                mu["static"] = false;
+                mu.size = [10, 10];
+                mu.vel = [-350, 0];
+                mu.pos = [x, y];
+                mu.tick = function () {
+                    if (this.pos[0] < -10000) {
+                        return this.dead = true;
+                    }
+                };
+                mu.move = function () {
+                    return v2.add(this.pos, this.vel);
+                };
+                sim.things[mu.id] = mu;
+                results.push(x += 400);
+            }
+            return results;
+        };
+        results = [];
+        for (x = j = 0; j < 4000; x = j += 4000) {
+            results.push((function () {
+                var l, results1;
+                results1 = [];
+                for (y = l = -5000; l < 5000; y = l += 500) {
+                    results1.push(muha(Math.random() * 10000 + 6000, y, color || [Math.random() * 255, Math.random() * 255, Math.random() * 255, 255]));
+                }
+                return results1;
+            })());
+        }
+        return results;
+    };
+
+}).call(this);

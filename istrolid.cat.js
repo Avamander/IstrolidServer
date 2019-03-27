@@ -1,3 +1,1472 @@
+//from lib/fingerprint2.min.js
+window.Fingerprint2 = function () {
+    "use strict";
+    // This will only be polyfilled for IE8 and older
+    // Taken from Mozilla MDC
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function (searchElement, fromIndex) {
+            var k;
+            if (this == null) {
+                throw new TypeError("'this' is null or undefined");
+            }
+            var O = Object(this);
+            var len = O.length >>> 0;
+            if (len === 0) {
+                return -1;
+            }
+            var n = +fromIndex || 0;
+            if (Math.abs(n) === Infinity) {
+                n = 0;
+            }
+            if (n >= len) {
+                return -1;
+            }
+            k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+            while (k < len) {
+                if (k in O && O[k] === searchElement) {
+                    return k;
+                }
+                k++;
+            }
+            return -1;
+        };
+    }
+    var Fingerprint2 = function (options) {
+
+        if (!(this instanceof Fingerprint2)) {
+            return new Fingerprint2(options);
+        }
+
+        var defaultOptions = {
+            swfContainerId: "fingerprintjs2",
+            swfPath: "flash/compiled/FontList.swf",
+            detectScreenOrientation: true,
+            sortPluginsFor: [/palemoon/i],
+            userDefinedFonts: []
+        };
+        this.options = this.extend(options, defaultOptions);
+        this.nativeForEach = Array.prototype.forEach;
+        this.nativeMap = Array.prototype.map;
+    };
+    Fingerprint2.prototype = {
+        extend: function (source, target) {
+            if (source == null) {
+                return target;
+            }
+            for (var k in source) {
+                if (source[k] != null && target[k] !== source[k]) {
+                    target[k] = source[k];
+                }
+            }
+            return target;
+        },
+        log: function (msg) {
+            if (window.console) {
+                console.log(msg);
+            }
+        },
+        get: function (done) {
+            var keys = [];
+            keys = this.userAgentKey(keys);
+            keys = this.languageKey(keys);
+            keys = this.colorDepthKey(keys);
+            keys = this.pixelRatioKey(keys);
+            keys = this.screenResolutionKey(keys);
+            keys = this.availableScreenResolutionKey(keys);
+            keys = this.timezoneOffsetKey(keys);
+            keys = this.sessionStorageKey(keys);
+            keys = this.localStorageKey(keys);
+            keys = this.indexedDbKey(keys);
+            keys = this.addBehaviorKey(keys);
+            keys = this.openDatabaseKey(keys);
+            keys = this.cpuClassKey(keys);
+            keys = this.platformKey(keys);
+            keys = this.doNotTrackKey(keys);
+            keys = this.pluginsKey(keys);
+            keys = this.canvasKey(keys);
+            keys = this.webglKey(keys);
+            keys = this.adBlockKey(keys);
+            keys = this.hasLiedLanguagesKey(keys);
+            keys = this.hasLiedResolutionKey(keys);
+            keys = this.hasLiedOsKey(keys);
+            keys = this.hasLiedBrowserKey(keys);
+            keys = this.touchSupportKey(keys);
+            var that = this;
+            this.fontsKey(keys, function (newKeys) {
+                var values = [];
+                that.each(newKeys, function (pair) {
+                    var value = pair.value;
+                    if (typeof pair.value.join !== "undefined") {
+                        value = pair.value.join(";");
+                    }
+                    values.push(value);
+                });
+                var murmur = that.x64hash128(values.join("~~~"), 31);
+                return done(murmur, newKeys);
+            });
+        },
+        userAgentKey: function (keys) {
+            if (!this.options.excludeUserAgent) {
+                keys.push({key: "user_agent", value: this.getUserAgent()});
+            }
+            return keys;
+        },
+        // for tests
+        getUserAgent: function () {
+            return navigator.userAgent;
+        },
+        languageKey: function (keys) {
+            if (!this.options.excludeLanguage) {
+                // IE 9,10 on Windows 10 does not have the `navigator.language` property any longer
+                keys.push({
+                    key: "language",
+                    value: navigator.language || navigator.userLanguage || navigator.browserLanguage || navigator.systemLanguage || ""
+                });
+            }
+            return keys;
+        },
+        colorDepthKey: function (keys) {
+            if (!this.options.excludeColorDepth) {
+                keys.push({key: "color_depth", value: screen.colorDepth || -1});
+            }
+            return keys;
+        },
+        pixelRatioKey: function (keys) {
+            if (!this.options.excludePixelRatio) {
+                keys.push({key: "pixel_ratio", value: this.getPixelRatio()});
+            }
+            return keys;
+        },
+        getPixelRatio: function () {
+            return window.devicePixelRatio || "";
+        },
+        screenResolutionKey: function (keys) {
+            if (!this.options.excludeScreenResolution) {
+                return this.getScreenResolution(keys);
+            }
+            return keys;
+        },
+        getScreenResolution: function (keys) {
+            var resolution;
+            if (this.options.detectScreenOrientation) {
+                resolution = (screen.height > screen.width) ? [screen.height, screen.width] : [screen.width, screen.height];
+            } else {
+                resolution = [screen.width, screen.height];
+            }
+            if (typeof resolution !== "undefined") { // headless browsers
+                keys.push({key: "resolution", value: resolution});
+            }
+            return keys;
+        },
+        availableScreenResolutionKey: function (keys) {
+            if (!this.options.excludeAvailableScreenResolution) {
+                return this.getAvailableScreenResolution(keys);
+            }
+            return keys;
+        },
+        getAvailableScreenResolution: function (keys) {
+            var available;
+            if (screen.availWidth && screen.availHeight) {
+                if (this.options.detectScreenOrientation) {
+                    available = (screen.availHeight > screen.availWidth) ? [screen.availHeight, screen.availWidth] : [screen.availWidth, screen.availHeight];
+                } else {
+                    available = [screen.availHeight, screen.availWidth];
+                }
+            }
+            if (typeof available !== "undefined") { // headless browsers
+                keys.push({key: "available_resolution", value: available});
+            }
+            return keys;
+        },
+        timezoneOffsetKey: function (keys) {
+            if (!this.options.excludeTimezoneOffset) {
+                keys.push({key: "timezone_offset", value: new Date().getTimezoneOffset()});
+            }
+            return keys;
+        },
+        sessionStorageKey: function (keys) {
+            if (!this.options.excludeSessionStorage && this.hasSessionStorage()) {
+                keys.push({key: "session_storage", value: 1});
+            }
+            return keys;
+        },
+        localStorageKey: function (keys) {
+            if (!this.options.excludeSessionStorage && this.hasLocalStorage()) {
+                keys.push({key: "local_storage", value: 1});
+            }
+            return keys;
+        },
+        indexedDbKey: function (keys) {
+            if (!this.options.excludeIndexedDB && this.hasIndexedDB()) {
+                keys.push({key: "indexed_db", value: 1});
+            }
+            return keys;
+        },
+        addBehaviorKey: function (keys) {
+            //body might not be defined at this point or removed programmatically
+            if (document.body && !this.options.excludeAddBehavior && document.body.addBehavior) {
+                keys.push({key: "add_behavior", value: 1});
+            }
+            return keys;
+        },
+        openDatabaseKey: function (keys) {
+            if (!this.options.excludeOpenDatabase && window.openDatabase) {
+                keys.push({key: "open_database", value: 1});
+            }
+            return keys;
+        },
+        cpuClassKey: function (keys) {
+            if (!this.options.excludeCpuClass) {
+                keys.push({key: "cpu_class", value: this.getNavigatorCpuClass()});
+            }
+            return keys;
+        },
+        platformKey: function (keys) {
+            if (!this.options.excludePlatform) {
+                keys.push({key: "navigator_platform", value: this.getNavigatorPlatform()});
+            }
+            return keys;
+        },
+        doNotTrackKey: function (keys) {
+            if (!this.options.excludeDoNotTrack) {
+                keys.push({key: "do_not_track", value: this.getDoNotTrack()});
+            }
+            return keys;
+        },
+        canvasKey: function (keys) {
+            if (!this.options.excludeCanvas && this.isCanvasSupported()) {
+                keys.push({key: "canvas", value: this.getCanvasFp()});
+            }
+            return keys;
+        },
+        webglKey: function (keys) {
+            if (this.options.excludeWebGL) {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("Skipping WebGL fingerprinting per excludeWebGL configuration option");
+                }
+                return keys;
+            }
+            if (!this.isWebGlSupported()) {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("Skipping WebGL fingerprinting because it is not supported in this browser");
+                }
+                return keys;
+            }
+            keys.push({key: "webgl", value: this.getWebglFp()});
+            return keys;
+        },
+        adBlockKey: function (keys) {
+            if (!this.options.excludeAdBlock) {
+                keys.push({key: "adblock", value: this.getAdBlock()});
+            }
+            return keys;
+        },
+        hasLiedLanguagesKey: function (keys) {
+            if (!this.options.excludeHasLiedLanguages) {
+                keys.push({key: "has_lied_languages", value: this.getHasLiedLanguages()});
+            }
+            return keys;
+        },
+        hasLiedResolutionKey: function (keys) {
+            if (!this.options.excludeHasLiedResolution) {
+                keys.push({key: "has_lied_resolution", value: this.getHasLiedResolution()});
+            }
+            return keys;
+        },
+        hasLiedOsKey: function (keys) {
+            if (!this.options.excludeHasLiedOs) {
+                keys.push({key: "has_lied_os", value: this.getHasLiedOs()});
+            }
+            return keys;
+        },
+        hasLiedBrowserKey: function (keys) {
+            if (!this.options.excludeHasLiedBrowser) {
+                keys.push({key: "has_lied_browser", value: this.getHasLiedBrowser()});
+            }
+            return keys;
+        },
+        fontsKey: function (keys, done) {
+            if (this.options.excludeJsFonts) {
+                return this.flashFontsKey(keys, done);
+            }
+            return this.jsFontsKey(keys, done);
+        },
+        // flash fonts (will increase fingerprinting time 20X to ~ 130-150ms)
+        flashFontsKey: function (keys, done) {
+            if (this.options.excludeFlashFonts) {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("Skipping flash fonts detection per excludeFlashFonts configuration option");
+                }
+                return done(keys);
+            }
+            // we do flash if swfobject is loaded
+            if (!this.hasSwfObjectLoaded()) {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("Swfobject is not detected, Flash fonts enumeration is skipped");
+                }
+                return done(keys);
+            }
+            if (!this.hasMinFlashInstalled()) {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("Flash is not installed, skipping Flash fonts enumeration");
+                }
+                return done(keys);
+            }
+            if (typeof this.options.swfPath === "undefined") {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("To use Flash fonts detection, you must pass a valid swfPath option, skipping Flash fonts enumeration");
+                }
+                return done(keys);
+            }
+            this.loadSwfAndDetectFonts(function (fonts) {
+                keys.push({key: "swf_fonts", value: fonts.join(";")});
+                done(keys);
+            });
+        },
+        // kudos to http://www.lalit.org/lab/javascript-css-font-detect/
+        jsFontsKey: function (keys, done) {
+            var that = this;
+            // doing js fonts detection in a pseudo-async fashion
+            return setTimeout(function () {
+
+                // a font will be compared against all the three default fonts.
+                // and if it doesn't match all 3 then that font is not available.
+                var baseFonts = ["monospace", "sans-serif", "serif"];
+
+                var fontList = [
+                    "Andale Mono", "Arial", "Arial Black", "Arial Hebrew", "Arial MT", "Arial Narrow", "Arial Rounded MT Bold", "Arial Unicode MS",
+                    "Bitstream Vera Sans Mono", "Book Antiqua", "Bookman Old Style",
+                    "Calibri", "Cambria", "Cambria Math", "Century", "Century Gothic", "Century Schoolbook", "Comic Sans", "Comic Sans MS", "Consolas", "Courier", "Courier New",
+                    "Garamond", "Geneva", "Georgia",
+                    "Helvetica", "Helvetica Neue",
+                    "Impact",
+                    "Lucida Bright", "Lucida Calligraphy", "Lucida Console", "Lucida Fax", "LUCIDA GRANDE", "Lucida Handwriting", "Lucida Sans", "Lucida Sans Typewriter", "Lucida Sans Unicode",
+                    "Microsoft Sans Serif", "Monaco", "Monotype Corsiva", "MS Gothic", "MS Outlook", "MS PGothic", "MS Reference Sans Serif", "MS Sans Serif", "MS Serif", "MYRIAD", "MYRIAD PRO",
+                    "Palatino", "Palatino Linotype",
+                    "Segoe Print", "Segoe Script", "Segoe UI", "Segoe UI Light", "Segoe UI Semibold", "Segoe UI Symbol",
+                    "Tahoma", "Times", "Times New Roman", "Times New Roman PS", "Trebuchet MS",
+                    "Verdana", "Wingdings", "Wingdings 2", "Wingdings 3"
+                ];
+                var extendedFontList = [
+                    "Abadi MT Condensed Light", "Academy Engraved LET", "ADOBE CASLON PRO", "Adobe Garamond", "ADOBE GARAMOND PRO", "Agency FB", "Aharoni", "Albertus Extra Bold", "Albertus Medium", "Algerian", "Amazone BT", "American Typewriter",
+                    "American Typewriter Condensed", "AmerType Md BT", "Andalus", "Angsana New", "AngsanaUPC", "Antique Olive", "Aparajita", "Apple Chancery", "Apple Color Emoji", "Apple SD Gothic Neo", "Arabic Typesetting", "ARCHER",
+                    "ARNO PRO", "Arrus BT", "Aurora Cn BT", "AvantGarde Bk BT", "AvantGarde Md BT", "AVENIR", "Ayuthaya", "Bandy", "Bangla Sangam MN", "Bank Gothic", "BankGothic Md BT", "Baskerville",
+                    "Baskerville Old Face", "Batang", "BatangChe", "Bauer Bodoni", "Bauhaus 93", "Bazooka", "Bell MT", "Bembo", "Benguiat Bk BT", "Berlin Sans FB", "Berlin Sans FB Demi", "Bernard MT Condensed", "BernhardFashion BT", "BernhardMod BT", "Big Caslon", "BinnerD",
+                    "Blackadder ITC", "BlairMdITC TT", "Bodoni 72", "Bodoni 72 Oldstyle", "Bodoni 72 Smallcaps", "Bodoni MT", "Bodoni MT Black", "Bodoni MT Condensed", "Bodoni MT Poster Compressed",
+                    "Bookshelf Symbol 7", "Boulder", "Bradley Hand", "Bradley Hand ITC", "Bremen Bd BT", "Britannic Bold", "Broadway", "Browallia New", "BrowalliaUPC", "Brush Script MT", "Californian FB", "Calisto MT", "Calligrapher", "Candara",
+                    "CaslonOpnface BT", "Castellar", "Centaur", "Cezanne", "CG Omega", "CG Times", "Chalkboard", "Chalkboard SE", "Chalkduster", "Charlesworth", "Charter Bd BT", "Charter BT", "Chaucer",
+                    "ChelthmITC Bk BT", "Chiller", "Clarendon", "Clarendon Condensed", "CloisterBlack BT", "Cochin", "Colonna MT", "Constantia", "Cooper Black", "Copperplate", "Copperplate Gothic", "Copperplate Gothic Bold",
+                    "Copperplate Gothic Light", "CopperplGoth Bd BT", "Corbel", "Cordia New", "CordiaUPC", "Cornerstone", "Coronet", "Cuckoo", "Curlz MT", "DaunPenh", "Dauphin", "David", "DB LCD Temp", "DELICIOUS", "Denmark",
+                    "DFKai-SB", "Didot", "DilleniaUPC", "DIN", "DokChampa", "Dotum", "DotumChe", "Ebrima", "Edwardian Script ITC", "Elephant", "English 111 Vivace BT", "Engravers MT", "EngraversGothic BT", "Eras Bold ITC", "Eras Demi ITC", "Eras Light ITC", "Eras Medium ITC",
+                    "EucrosiaUPC", "Euphemia", "Euphemia UCAS", "EUROSTILE", "Exotc350 Bd BT", "FangSong", "Felix Titling", "Fixedsys", "FONTIN", "Footlight MT Light", "Forte",
+                    "FrankRuehl", "Fransiscan", "Freefrm721 Blk BT", "FreesiaUPC", "Freestyle Script", "French Script MT", "FrnkGothITC Bk BT", "Fruitger", "FRUTIGER",
+                    "Futura", "Futura Bk BT", "Futura Lt BT", "Futura Md BT", "Futura ZBlk BT", "FuturaBlack BT", "Gabriola", "Galliard BT", "Gautami", "Geeza Pro", "Geometr231 BT", "Geometr231 Hv BT", "Geometr231 Lt BT", "GeoSlab 703 Lt BT",
+                    "GeoSlab 703 XBd BT", "Gigi", "Gill Sans", "Gill Sans MT", "Gill Sans MT Condensed", "Gill Sans MT Ext Condensed Bold", "Gill Sans Ultra Bold", "Gill Sans Ultra Bold Condensed", "Gisha", "Gloucester MT Extra Condensed", "GOTHAM", "GOTHAM BOLD",
+                    "Goudy Old Style", "Goudy Stout", "GoudyHandtooled BT", "GoudyOLSt BT", "Gujarati Sangam MN", "Gulim", "GulimChe", "Gungsuh", "GungsuhChe", "Gurmukhi MN", "Haettenschweiler", "Harlow Solid Italic", "Harrington", "Heather", "Heiti SC", "Heiti TC", "HELV",
+                    "Herald", "High Tower Text", "Hiragino Kaku Gothic ProN", "Hiragino Mincho ProN", "Hoefler Text", "Humanst 521 Cn BT", "Humanst521 BT", "Humanst521 Lt BT", "Imprint MT Shadow", "Incised901 Bd BT", "Incised901 BT",
+                    "Incised901 Lt BT", "INCONSOLATA", "Informal Roman", "Informal011 BT", "INTERSTATE", "IrisUPC", "Iskoola Pota", "JasmineUPC", "Jazz LET", "Jenson", "Jester", "Jokerman", "Juice ITC", "Kabel Bk BT", "Kabel Ult BT", "Kailasa", "KaiTi", "Kalinga", "Kannada Sangam MN",
+                    "Kartika", "Kaufmann Bd BT", "Kaufmann BT", "Khmer UI", "KodchiangUPC", "Kokila", "Korinna BT", "Kristen ITC", "Krungthep", "Kunstler Script", "Lao UI", "Latha", "Leelawadee", "Letter Gothic", "Levenim MT", "LilyUPC", "Lithograph", "Lithograph Light", "Long Island",
+                    "Lydian BT", "Magneto", "Maiandra GD", "Malayalam Sangam MN", "Malgun Gothic",
+                    "Mangal", "Marigold", "Marion", "Marker Felt", "Market", "Marlett", "Matisse ITC", "Matura MT Script Capitals", "Meiryo", "Meiryo UI", "Microsoft Himalaya", "Microsoft JhengHei", "Microsoft New Tai Lue", "Microsoft PhagsPa", "Microsoft Tai Le",
+                    "Microsoft Uighur", "Microsoft YaHei", "Microsoft Yi Baiti", "MingLiU", "MingLiU_HKSCS", "MingLiU_HKSCS-ExtB", "MingLiU-ExtB", "Minion", "Minion Pro", "Miriam", "Miriam Fixed", "Mistral", "Modern", "Modern No. 20", "Mona Lisa Solid ITC TT", "Mongolian Baiti",
+                    "MONO", "MoolBoran", "Mrs Eaves", "MS LineDraw", "MS Mincho", "MS PMincho", "MS Reference Specialty", "MS UI Gothic", "MT Extra", "MUSEO", "MV Boli",
+                    "Nadeem", "Narkisim", "NEVIS", "News Gothic", "News GothicMT", "NewsGoth BT", "Niagara Engraved", "Niagara Solid", "Noteworthy", "NSimSun", "Nyala", "OCR A Extended", "Old Century", "Old English Text MT", "Onyx", "Onyx BT", "OPTIMA", "Oriya Sangam MN",
+                    "OSAKA", "OzHandicraft BT", "Palace Script MT", "Papyrus", "Parchment", "Party LET", "Pegasus", "Perpetua", "Perpetua Titling MT", "PetitaBold", "Pickwick", "Plantagenet Cherokee", "Playbill", "PMingLiU", "PMingLiU-ExtB",
+                    "Poor Richard", "Poster", "PosterBodoni BT", "PRINCETOWN LET", "Pristina", "PTBarnum BT", "Pythagoras", "Raavi", "Rage Italic", "Ravie", "Ribbon131 Bd BT", "Rockwell", "Rockwell Condensed", "Rockwell Extra Bold", "Rod", "Roman", "Sakkal Majalla",
+                    "Santa Fe LET", "Savoye LET", "Sceptre", "Script", "Script MT Bold", "SCRIPTINA", "Serifa", "Serifa BT", "Serifa Th BT", "ShelleyVolante BT", "Sherwood",
+                    "Shonar Bangla", "Showcard Gothic", "Shruti", "Signboard", "SILKSCREEN", "SimHei", "Simplified Arabic", "Simplified Arabic Fixed", "SimSun", "SimSun-ExtB", "Sinhala Sangam MN", "Sketch Rockwell", "Skia", "Small Fonts", "Snap ITC", "Snell Roundhand", "Socket",
+                    "Souvenir Lt BT", "Staccato222 BT", "Steamer", "Stencil", "Storybook", "Styllo", "Subway", "Swis721 BlkEx BT", "Swiss911 XCm BT", "Sylfaen", "Synchro LET", "System", "Tamil Sangam MN", "Technical", "Teletype", "Telugu Sangam MN", "Tempus Sans ITC",
+                    "Terminal", "Thonburi", "Traditional Arabic", "Trajan", "TRAJAN PRO", "Tristan", "Tubular", "Tunga", "Tw Cen MT", "Tw Cen MT Condensed", "Tw Cen MT Condensed Extra Bold",
+                    "TypoUpright BT", "Unicorn", "Univers", "Univers CE 55 Medium", "Univers Condensed", "Utsaah", "Vagabond", "Vani", "Vijaya", "Viner Hand ITC", "VisualUI", "Vivaldi", "Vladimir Script", "Vrinda", "Westminster", "WHITNEY", "Wide Latin",
+                    "ZapfEllipt BT", "ZapfHumnst BT", "ZapfHumnst Dm BT", "Zapfino", "Zurich BlkEx BT", "Zurich Ex BT", "ZWAdobeF"];
+
+                if (that.options.extendedJsFonts) {
+                    fontList = fontList.concat(extendedFontList);
+                }
+
+                fontList = fontList.concat(that.options.userDefinedFonts);
+
+                //we use m or w because these two characters take up the maximum width.
+                // And we use a LLi so that the same matching fonts can get separated
+                var testString = "mmmmmmmmmmlli";
+
+                //we test using 72px font size, we may use any size. I guess larger the better.
+                var testSize = "72px";
+
+                var h = document.getElementsByTagName("body")[0];
+
+                // div to load spans for the base fonts
+                var baseFontsDiv = document.createElement("div");
+
+                // div to load spans for the fonts to detect
+                var fontsDiv = document.createElement("div");
+
+                var defaultWidth = {};
+                var defaultHeight = {};
+
+                // creates a span where the fonts will be loaded
+                var createSpan = function () {
+                    var s = document.createElement("span");
+                    /*
+             * We need this css as in some weird browser this
+             * span elements shows up for a microSec which creates a
+             * bad user experience
+             */
+                    s.style.position = "absolute";
+                    s.style.left = "-9999px";
+                    s.style.fontSize = testSize;
+                    s.style.lineHeight = "normal";
+                    s.innerHTML = testString;
+                    return s;
+                };
+
+                // creates a span and load the font to detect and a base font for fallback
+                var createSpanWithFonts = function (fontToDetect, baseFont) {
+                    var s = createSpan();
+                    s.style.fontFamily = "'" + fontToDetect + "'," + baseFont;
+                    return s;
+                };
+
+                // creates spans for the base fonts and adds them to baseFontsDiv
+                var initializeBaseFontsSpans = function () {
+                    var spans = [];
+                    for (var index = 0, length = baseFonts.length; index < length; index++) {
+                        var s = createSpan();
+                        s.style.fontFamily = baseFonts[index];
+                        baseFontsDiv.appendChild(s);
+                        spans.push(s);
+                    }
+                    return spans;
+                };
+
+                // creates spans for the fonts to detect and adds them to fontsDiv
+                var initializeFontsSpans = function () {
+                    var spans = {};
+                    for (var i = 0, l = fontList.length; i < l; i++) {
+                        var fontSpans = [];
+                        for (var j = 0, numDefaultFonts = baseFonts.length; j < numDefaultFonts; j++) {
+                            var s = createSpanWithFonts(fontList[i], baseFonts[j]);
+                            fontsDiv.appendChild(s);
+                            fontSpans.push(s);
+                        }
+                        spans[fontList[i]] = fontSpans; // Stores {fontName : [spans for that font]}
+                    }
+                    return spans;
+                };
+
+                // checks if a font is available
+                var isFontAvailable = function (fontSpans) {
+                    var detected = false;
+                    for (var i = 0; i < baseFonts.length; i++) {
+                        detected = (fontSpans[i].offsetWidth !== defaultWidth[baseFonts[i]] || fontSpans[i].offsetHeight !== defaultHeight[baseFonts[i]]);
+                        if (detected) {
+                            return detected;
+                        }
+                    }
+                    return detected;
+                };
+
+                // create spans for base fonts
+                var baseFontsSpans = initializeBaseFontsSpans();
+
+                // add the spans to the DOM
+                h.appendChild(baseFontsDiv);
+
+                // get the default width for the three base fonts
+                for (var index = 0, length = baseFonts.length; index < length; index++) {
+                    defaultWidth[baseFonts[index]] = baseFontsSpans[index].offsetWidth; // width for the default font
+                    defaultHeight[baseFonts[index]] = baseFontsSpans[index].offsetHeight; // height for the default font
+                }
+
+                // create spans for fonts to detect
+                var fontsSpans = initializeFontsSpans();
+
+                // add all the spans to the DOM
+                h.appendChild(fontsDiv);
+
+                // check available fonts
+                var available = [];
+                for (var i = 0, l = fontList.length; i < l; i++) {
+                    if (isFontAvailable(fontsSpans[fontList[i]])) {
+                        available.push(fontList[i]);
+                    }
+                }
+
+                // remove spans from DOM
+                h.removeChild(fontsDiv);
+                h.removeChild(baseFontsDiv);
+
+                keys.push({key: "js_fonts", value: available});
+                done(keys);
+            }, 1);
+        },
+        pluginsKey: function (keys) {
+            if (!this.options.excludePlugins) {
+                if (this.isIE()) {
+                    if (!this.options.excludeIEPlugins) {
+                        keys.push({key: "ie_plugins", value: this.getIEPlugins()});
+                    }
+                } else {
+                    keys.push({key: "regular_plugins", value: this.getRegularPlugins()});
+                }
+            }
+            return keys;
+        },
+        getRegularPlugins: function () {
+            var plugins = [];
+            for (var i = 0, l = navigator.plugins.length; i < l; i++) {
+                plugins.push(navigator.plugins[i]);
+            }
+            // sorting plugins only for those user agents, that we know randomize the plugins
+            // every time we try to enumerate them
+            if (this.pluginsShouldBeSorted()) {
+                plugins = plugins.sort(function (a, b) {
+                    if (a.name > b.name) {
+                        return 1;
+                    }
+                    if (a.name < b.name) {
+                        return -1;
+                    }
+                    return 0;
+                });
+            }
+            return this.map(plugins, function (p) {
+                var mimeTypes = this.map(p, function (mt) {
+                    return [mt.type, mt.suffixes].join("~");
+                }).join(",");
+                return [p.name, p.description, mimeTypes].join("::");
+            }, this);
+        },
+        getIEPlugins: function () {
+            var result = [];
+            if ((Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(window, "ActiveXObject")) || ("ActiveXObject" in window)) {
+                var names = [
+                    "AcroPDF.PDF", // Adobe PDF reader 7+
+                    "Adodb.Stream",
+                    "AgControl.AgControl", // Silverlight
+                    "DevalVRXCtrl.DevalVRXCtrl.1",
+                    "MacromediaFlashPaper.MacromediaFlashPaper",
+                    "Msxml2.DOMDocument",
+                    "Msxml2.XMLHTTP",
+                    "PDF.PdfCtrl", // Adobe PDF reader 6 and earlier, brrr
+                    "QuickTime.QuickTime", // QuickTime
+                    "QuickTimeCheckObject.QuickTimeCheck.1",
+                    "RealPlayer",
+                    "RealPlayer.RealPlayer(tm) ActiveX Control (32-bit)",
+                    "RealVideo.RealVideo(tm) ActiveX Control (32-bit)",
+                    "Scripting.Dictionary",
+                    "SWCtl.SWCtl", // ShockWave player
+                    "Shell.UIHelper",
+                    "ShockwaveFlash.ShockwaveFlash", //flash plugin
+                    "Skype.Detection",
+                    "TDCCtl.TDCCtl",
+                    "WMPlayer.OCX", // Windows media player
+                    "rmocx.RealPlayer G2 Control",
+                    "rmocx.RealPlayer G2 Control.1"
+                ];
+                // starting to detect plugins in IE
+                result = this.map(names, function (name) {
+                    try {
+                        new ActiveXObject(name); // eslint-disable-no-new
+                        return name;
+                    } catch (e) {
+                        return null;
+                    }
+                });
+            }
+            if (navigator.plugins) {
+                result = result.concat(this.getRegularPlugins());
+            }
+            return result;
+        },
+        pluginsShouldBeSorted: function () {
+            var should = false;
+            for (var i = 0, l = this.options.sortPluginsFor.length; i < l; i++) {
+                var re = this.options.sortPluginsFor[i];
+                if (navigator.userAgent.match(re)) {
+                    should = true;
+                    break;
+                }
+            }
+            return should;
+        },
+        touchSupportKey: function (keys) {
+            if (!this.options.excludeTouchSupport) {
+                keys.push({key: "touch_support", value: this.getTouchSupport()});
+            }
+            return keys;
+        },
+        hasSessionStorage: function () {
+            try {
+                return !!window.sessionStorage;
+            } catch (e) {
+                return true; // SecurityError when referencing it means it exists
+            }
+        },
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=781447
+        hasLocalStorage: function () {
+            try {
+                return !!window.localStorage;
+            } catch (e) {
+                return true; // SecurityError when referencing it means it exists
+            }
+        },
+        hasIndexedDB: function () {
+            return !!window.indexedDB;
+        },
+        getNavigatorCpuClass: function () {
+            if (navigator.cpuClass) {
+                return navigator.cpuClass;
+            } else {
+                return "unknown";
+            }
+        },
+        getNavigatorPlatform: function () {
+            if (navigator.platform) {
+                return navigator.platform;
+            } else {
+                return "unknown";
+            }
+        },
+        getDoNotTrack: function () {
+            if (navigator.doNotTrack) {
+                return navigator.doNotTrack;
+            } else if (navigator.msDoNotTrack) {
+                return navigator.msDoNotTrack;
+            } else if (window.doNotTrack) {
+                return window.doNotTrack;
+            } else {
+                return "unknown";
+            }
+        },
+        // This is a crude and primitive touch screen detection.
+        // It's not possible to currently reliably detect the  availability of a touch screen
+        // with a JS, without actually subscribing to a touch event.
+        // http://www.stucox.com/blog/you-cant-detect-a-touchscreen/
+        // https://github.com/Modernizr/Modernizr/issues/548
+        // method returns an array of 3 values:
+        // maxTouchPoints, the success or failure of creating a TouchEvent,
+        // and the availability of the 'ontouchstart' property
+        getTouchSupport: function () {
+            var maxTouchPoints = 0;
+            var touchEvent = false;
+            if (typeof navigator.maxTouchPoints !== "undefined") {
+                maxTouchPoints = navigator.maxTouchPoints;
+            } else if (typeof navigator.msMaxTouchPoints !== "undefined") {
+                maxTouchPoints = navigator.msMaxTouchPoints;
+            }
+            try {
+                document.createEvent("TouchEvent");
+                touchEvent = true;
+            } catch (_) { /* squelch */
+            }
+            var touchStart = "ontouchstart" in window;
+            return [maxTouchPoints, touchEvent, touchStart];
+        },
+        // https://www.browserleaks.com/canvas#how-does-it-work
+        getCanvasFp: function () {
+            var result = [];
+            // Very simple now, need to make it more complex (geo shapes etc)
+            var canvas = document.createElement("canvas");
+            canvas.width = 2000;
+            canvas.height = 200;
+            canvas.style.display = "inline";
+            var ctx = canvas.getContext("2d");
+            // detect browser support of canvas winding
+            // http://blogs.adobe.com/webplatform/2013/01/30/winding-rules-in-canvas/
+            // https://github.com/Modernizr/Modernizr/blob/master/feature-detects/canvas/winding.js
+            ctx.rect(0, 0, 10, 10);
+            ctx.rect(2, 2, 6, 6);
+            result.push("canvas winding:" + ((ctx.isPointInPath(5, 5, "evenodd") === false) ? "yes" : "no"));
+
+            ctx.textBaseline = "alphabetic";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = "#069";
+            // https://github.com/Valve/fingerprintjs2/issues/66
+            if (this.options.dontUseFakeFontInCanvas) {
+                ctx.font = "11pt Arial";
+            } else {
+                ctx.font = "11pt no-real-font-123";
+            }
+            ctx.fillText("Cwm fjordbank glyphs vext quiz, \ud83d\ude03", 2, 15);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.2)";
+            ctx.font = "18pt Arial";
+            ctx.fillText("Cwm fjordbank glyphs vext quiz, \ud83d\ude03", 4, 45);
+
+            // canvas blending
+            // http://blogs.adobe.com/webplatform/2013/01/28/blending-features-in-canvas/
+            // http://jsfiddle.net/NDYV8/16/
+            ctx.globalCompositeOperation = "multiply";
+            ctx.fillStyle = "rgb(255,0,255)";
+            ctx.beginPath();
+            ctx.arc(50, 50, 50, 0, Math.PI * 2, true);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "rgb(0,255,255)";
+            ctx.beginPath();
+            ctx.arc(100, 50, 50, 0, Math.PI * 2, true);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "rgb(255,255,0)";
+            ctx.beginPath();
+            ctx.arc(75, 100, 50, 0, Math.PI * 2, true);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "rgb(255,0,255)";
+            // canvas winding
+            // http://blogs.adobe.com/webplatform/2013/01/30/winding-rules-in-canvas/
+            // http://jsfiddle.net/NDYV8/19/
+            ctx.arc(75, 75, 75, 0, Math.PI * 2, true);
+            ctx.arc(75, 75, 25, 0, Math.PI * 2, true);
+            ctx.fill("evenodd");
+
+            result.push("canvas fp:" + canvas.toDataURL());
+            return result.join("~");
+        },
+
+        getWebglFp: function () {
+            var gl;
+            var fa2s = function (fa) {
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.enable(gl.DEPTH_TEST);
+                gl.depthFunc(gl.LEQUAL);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                return "[" + fa[0] + ", " + fa[1] + "]";
+            };
+            var maxAnisotropy = function (gl) {
+                var anisotropy,
+                    ext = gl.getExtension("EXT_texture_filter_anisotropic") || gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic") || gl.getExtension("MOZ_EXT_texture_filter_anisotropic");
+                return ext ? (anisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT), 0 === anisotropy && (anisotropy = 2), anisotropy) : null;
+            };
+            gl = this.getWebglCanvas();
+            if (!gl) {
+                return null;
+            }
+            // WebGL fingerprinting is a combination of techniques, found in MaxMind antifraud script & Augur fingerprinting.
+            // First it draws a gradient object with shaders and convers the image to the Base64 string.
+            // Then it enumerates all WebGL extensions & capabilities and appends them to the Base64 string, resulting in a huge WebGL string, potentially very unique on each device
+            // Since iOS supports webgl starting from version 8.1 and 8.1 runs on several graphics chips, the results may be different across ios devices, but we need to verify it.
+            var result = [];
+            var vShaderTemplate = "attribute vec2 attrVertex;varying vec2 varyinTexCoordinate;uniform vec2 uniformOffset;void main(){varyinTexCoordinate=attrVertex+uniformOffset;gl_Position=vec4(attrVertex,0,1);}";
+            var fShaderTemplate = "precision mediump float;varying vec2 varyinTexCoordinate;void main() {gl_FragColor=vec4(varyinTexCoordinate,0,1);}";
+            var vertexPosBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+            var vertices = new Float32Array([-.2, -.9, 0, .4, -.26, 0, 0, .732134444, 0]);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            vertexPosBuffer.itemSize = 3;
+            vertexPosBuffer.numItems = 3;
+            var program = gl.createProgram(), vshader = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vshader, vShaderTemplate);
+            gl.compileShader(vshader);
+            var fshader = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fshader, fShaderTemplate);
+            gl.compileShader(fshader);
+            gl.attachShader(program, vshader);
+            gl.attachShader(program, fshader);
+            gl.linkProgram(program);
+            gl.useProgram(program);
+            program.vertexPosAttrib = gl.getAttribLocation(program, "attrVertex");
+            program.offsetUniform = gl.getUniformLocation(program, "uniformOffset");
+            gl.enableVertexAttribArray(program.vertexPosArray);
+            gl.vertexAttribPointer(program.vertexPosAttrib, vertexPosBuffer.itemSize, gl.FLOAT, !1, 0, 0);
+            gl.uniform2f(program.offsetUniform, 1, 1);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPosBuffer.numItems);
+            if (gl.canvas != null) {
+                result.push(gl.canvas.toDataURL());
+            }
+            result.push("extensions:" + gl.getSupportedExtensions().join(";"));
+            result.push("webgl aliased line width range:" + fa2s(gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE)));
+            result.push("webgl aliased point size range:" + fa2s(gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)));
+            result.push("webgl alpha bits:" + gl.getParameter(gl.ALPHA_BITS));
+            result.push("webgl antialiasing:" + (gl.getContextAttributes().antialias ? "yes" : "no"));
+            result.push("webgl blue bits:" + gl.getParameter(gl.BLUE_BITS));
+            result.push("webgl depth bits:" + gl.getParameter(gl.DEPTH_BITS));
+            result.push("webgl green bits:" + gl.getParameter(gl.GREEN_BITS));
+            result.push("webgl max anisotropy:" + maxAnisotropy(gl));
+            result.push("webgl max combined texture image units:" + gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+            result.push("webgl max cube map texture size:" + gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE));
+            result.push("webgl max fragment uniform vectors:" + gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS));
+            result.push("webgl max render buffer size:" + gl.getParameter(gl.MAX_RENDERBUFFER_SIZE));
+            result.push("webgl max texture image units:" + gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS));
+            result.push("webgl max texture size:" + gl.getParameter(gl.MAX_TEXTURE_SIZE));
+            result.push("webgl max varying vectors:" + gl.getParameter(gl.MAX_VARYING_VECTORS));
+            result.push("webgl max vertex attribs:" + gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+            result.push("webgl max vertex texture image units:" + gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS));
+            result.push("webgl max vertex uniform vectors:" + gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS));
+            result.push("webgl max viewport dims:" + fa2s(gl.getParameter(gl.MAX_VIEWPORT_DIMS)));
+            result.push("webgl red bits:" + gl.getParameter(gl.RED_BITS));
+            result.push("webgl renderer:" + gl.getParameter(gl.RENDERER));
+            result.push("webgl shading language version:" + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+            result.push("webgl stencil bits:" + gl.getParameter(gl.STENCIL_BITS));
+            result.push("webgl vendor:" + gl.getParameter(gl.VENDOR));
+            result.push("webgl version:" + gl.getParameter(gl.VERSION));
+
+            if (!gl.getShaderPrecisionFormat) {
+                if (typeof NODEBUG === "undefined") {
+                    this.log("WebGL fingerprinting is incomplete, because your browser does not support getShaderPrecisionFormat");
+                }
+                return result.join("~");
+            }
+
+            result.push("webgl vertex shader high float precision:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT).precision);
+            result.push("webgl vertex shader high float precision rangeMin:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT).rangeMin);
+            result.push("webgl vertex shader high float precision rangeMax:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT).rangeMax);
+            result.push("webgl vertex shader medium float precision:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_FLOAT).precision);
+            result.push("webgl vertex shader medium float precision rangeMin:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_FLOAT).rangeMin);
+            result.push("webgl vertex shader medium float precision rangeMax:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_FLOAT).rangeMax);
+            result.push("webgl vertex shader low float precision:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_FLOAT).precision);
+            result.push("webgl vertex shader low float precision rangeMin:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_FLOAT).rangeMin);
+            result.push("webgl vertex shader low float precision rangeMax:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_FLOAT).rangeMax);
+            result.push("webgl fragment shader high float precision:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).precision);
+            result.push("webgl fragment shader high float precision rangeMin:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).rangeMin);
+            result.push("webgl fragment shader high float precision rangeMax:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).rangeMax);
+            result.push("webgl fragment shader medium float precision:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT).precision);
+            result.push("webgl fragment shader medium float precision rangeMin:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT).rangeMin);
+            result.push("webgl fragment shader medium float precision rangeMax:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT).rangeMax);
+            result.push("webgl fragment shader low float precision:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_FLOAT).precision);
+            result.push("webgl fragment shader low float precision rangeMin:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_FLOAT).rangeMin);
+            result.push("webgl fragment shader low float precision rangeMax:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_FLOAT).rangeMax);
+            result.push("webgl vertex shader high int precision:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_INT).precision);
+            result.push("webgl vertex shader high int precision rangeMin:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_INT).rangeMin);
+            result.push("webgl vertex shader high int precision rangeMax:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_INT).rangeMax);
+            result.push("webgl vertex shader medium int precision:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_INT).precision);
+            result.push("webgl vertex shader medium int precision rangeMin:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_INT).rangeMin);
+            result.push("webgl vertex shader medium int precision rangeMax:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_INT).rangeMax);
+            result.push("webgl vertex shader low int precision:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_INT).precision);
+            result.push("webgl vertex shader low int precision rangeMin:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_INT).rangeMin);
+            result.push("webgl vertex shader low int precision rangeMax:" + gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.LOW_INT).rangeMax);
+            result.push("webgl fragment shader high int precision:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_INT).precision);
+            result.push("webgl fragment shader high int precision rangeMin:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_INT).rangeMin);
+            result.push("webgl fragment shader high int precision rangeMax:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_INT).rangeMax);
+            result.push("webgl fragment shader medium int precision:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_INT).precision);
+            result.push("webgl fragment shader medium int precision rangeMin:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_INT).rangeMin);
+            result.push("webgl fragment shader medium int precision rangeMax:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_INT).rangeMax);
+            result.push("webgl fragment shader low int precision:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_INT).precision);
+            result.push("webgl fragment shader low int precision rangeMin:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_INT).rangeMin);
+            result.push("webgl fragment shader low int precision rangeMax:" + gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.LOW_INT).rangeMax);
+            return result.join("~");
+        },
+        getAdBlock: function () {
+            var ads = document.createElement("div");
+            ads.innerHTML = "&nbsp;";
+            ads.className = "adsbox";
+            var result = false;
+            try {
+                // body may not exist, that's why we need try/catch
+                document.body.appendChild(ads);
+                result = document.getElementsByClassName("adsbox")[0].offsetHeight === 0;
+                document.body.removeChild(ads);
+            } catch (e) {
+                result = false;
+            }
+            return result;
+        },
+        getHasLiedLanguages: function () {
+            //We check if navigator.language is equal to the first language of navigator.languages
+            if (typeof navigator.languages !== "undefined") {
+                try {
+                    var firstLanguages = navigator.languages[0].substr(0, 2);
+                    if (firstLanguages !== navigator.language.substr(0, 2)) {
+                        return true;
+                    }
+                } catch (err) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        getHasLiedResolution: function () {
+            if (screen.width < screen.availWidth) {
+                return true;
+            }
+            if (screen.height < screen.availHeight) {
+                return true;
+            }
+            return false;
+        },
+        getHasLiedOs: function () {
+            var userAgent = navigator.userAgent.toLowerCase();
+            var oscpu = navigator.oscpu;
+            var platform = navigator.platform.toLowerCase();
+            var os;
+            //We extract the OS from the user agent (respect the order of the if else if statement)
+            if (userAgent.indexOf("windows phone") >= 0) {
+                os = "Windows Phone";
+            } else if (userAgent.indexOf("win") >= 0) {
+                os = "Windows";
+            } else if (userAgent.indexOf("android") >= 0) {
+                os = "Android";
+            } else if (userAgent.indexOf("linux") >= 0) {
+                os = "Linux";
+            } else if (userAgent.indexOf("iphone") >= 0 || userAgent.indexOf("ipad") >= 0) {
+                os = "iOS";
+            } else if (userAgent.indexOf("mac") >= 0) {
+                os = "Mac";
+            } else {
+                os = "Other";
+            }
+            // We detect if the person uses a mobile device
+            var mobileDevice;
+            if (("ontouchstart" in window) ||
+                (navigator.maxTouchPoints > 0) ||
+                (navigator.msMaxTouchPoints > 0)) {
+                mobileDevice = true;
+            } else {
+                mobileDevice = false;
+            }
+
+            if (mobileDevice && os !== "Windows Phone" && os !== "Android" && os !== "iOS" && os !== "Other") {
+                return true;
+            }
+
+            // We compare oscpu with the OS extracted from the UA
+            if (typeof oscpu !== "undefined") {
+                oscpu = oscpu.toLowerCase();
+                if (oscpu.indexOf("win") >= 0 && os !== "Windows" && os !== "Windows Phone") {
+                    return true;
+                } else if (oscpu.indexOf("linux") >= 0 && os !== "Linux" && os !== "Android") {
+                    return true;
+                } else if (oscpu.indexOf("mac") >= 0 && os !== "Mac" && os !== "iOS") {
+                    return true;
+                } else if (oscpu.indexOf("win") === 0 && oscpu.indexOf("linux") === 0 && oscpu.indexOf("mac") >= 0 && os !== "other") {
+                    return true;
+                }
+            }
+
+            //We compare platform with the OS extracted from the UA
+            if (platform.indexOf("win") >= 0 && os !== "Windows" && os !== "Windows Phone") {
+                return true;
+            } else if ((platform.indexOf("linux") >= 0 || platform.indexOf("android") >= 0 || platform.indexOf("pike") >= 0) && os !== "Linux" && os !== "Android") {
+                return true;
+            } else if ((platform.indexOf("mac") >= 0 || platform.indexOf("ipad") >= 0 || platform.indexOf("ipod") >= 0 || platform.indexOf("iphone") >= 0) && os !== "Mac" && os !== "iOS") {
+                return true;
+            } else if (platform.indexOf("win") === 0 && platform.indexOf("linux") === 0 && platform.indexOf("mac") >= 0 && os !== "other") {
+                return true;
+            }
+
+            if (typeof navigator.plugins === "undefined" && os !== "Windows" && os !== "Windows Phone") {
+                //We are are in the case where the person uses ie, therefore we can infer that it's windows
+                return true;
+            }
+
+            return false;
+        },
+        getHasLiedBrowser: function () {
+            var userAgent = navigator.userAgent.toLowerCase();
+            var productSub = navigator.productSub;
+
+            //we extract the browser from the user agent (respect the order of the tests)
+            var browser;
+            if (userAgent.indexOf("firefox") >= 0) {
+                browser = "Firefox";
+            } else if (userAgent.indexOf("opera") >= 0 || userAgent.indexOf("opr") >= 0) {
+                browser = "Opera";
+            } else if (userAgent.indexOf("chrome") >= 0) {
+                browser = "Chrome";
+            } else if (userAgent.indexOf("safari") >= 0) {
+                browser = "Safari";
+            } else if (userAgent.indexOf("trident") >= 0) {
+                browser = "Internet Explorer";
+            } else {
+                browser = "Other";
+            }
+
+            if ((browser === "Chrome" || browser === "Safari" || browser === "Opera") && productSub !== "20030107") {
+                return true;
+            }
+
+            var tempRes = eval.toString().length;
+            if (tempRes === 37 && browser !== "Safari" && browser !== "Firefox" && browser !== "Other") {
+                return true;
+            } else if (tempRes === 39 && browser !== "Internet Explorer" && browser !== "Other") {
+                return true;
+            } else if (tempRes === 33 && browser !== "Chrome" && browser !== "Opera" && browser !== "Other") {
+                return true;
+            }
+
+            //We create an error to see how it is handled
+            var errFirefox;
+            try {
+                throw "a";
+            } catch (err) {
+                try {
+                    err.toSource();
+                    errFirefox = true;
+                } catch (errOfErr) {
+                    errFirefox = false;
+                }
+            }
+            if (errFirefox && browser !== "Firefox" && browser !== "Other") {
+                return true;
+            }
+            return false;
+        },
+        isCanvasSupported: function () {
+            var elem = document.createElement("canvas");
+            return !!(elem.getContext && elem.getContext("2d"));
+        },
+        isWebGlSupported: function () {
+            // code taken from Modernizr
+            if (!this.isCanvasSupported()) {
+                return false;
+            }
+
+            var canvas = document.createElement("canvas"),
+                glContext;
+
+            try {
+                glContext = canvas.getContext && (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"));
+            } catch (e) {
+                glContext = false;
+            }
+
+            return !!window.WebGLRenderingContext && !!glContext;
+        },
+        isIE: function () {
+            if (navigator.appName === "Microsoft Internet Explorer") {
+                return true;
+            } else if (navigator.appName === "Netscape" && /Trident/.test(navigator.userAgent)) { // IE 11
+                return true;
+            }
+            return false;
+        },
+        hasSwfObjectLoaded: function () {
+            return typeof window.swfobject !== "undefined";
+        },
+        hasMinFlashInstalled: function () {
+            return swfobject.hasFlashPlayerVersion("9.0.0");
+        },
+        addFlashDivNode: function () {
+            var node = document.createElement("div");
+            node.setAttribute("id", this.options.swfContainerId);
+            document.body.appendChild(node);
+        },
+        loadSwfAndDetectFonts: function (done) {
+            var hiddenCallback = "___fp_swf_loaded";
+            window[hiddenCallback] = function (fonts) {
+                done(fonts);
+            };
+            var id = this.options.swfContainerId;
+            this.addFlashDivNode();
+            var flashvars = {onReady: hiddenCallback};
+            var flashparams = {allowScriptAccess: "always", menu: "false"};
+            swfobject.embedSWF(this.options.swfPath, id, "1", "1", "9.0.0", false, flashvars, flashparams, {});
+        },
+        getWebglCanvas: function () {
+            var canvas = document.createElement("canvas");
+            var gl = null;
+            try {
+                gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+            } catch (e) { /* squelch */
+            }
+            if (!gl) {
+                gl = null;
+            }
+            return gl;
+        },
+        each: function (obj, iterator, context) {
+            if (obj === null) {
+                return;
+            }
+            if (this.nativeForEach && obj.forEach === this.nativeForEach) {
+                obj.forEach(iterator, context);
+            } else if (obj.length === +obj.length) {
+                for (var i = 0, l = obj.length; i < l; i++) {
+                    if (iterator.call(context, obj[i], i, obj) === {}) {
+                        return;
+                    }
+                }
+            } else {
+                for (var key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        if (iterator.call(context, obj[key], key, obj) === {}) {
+                            return;
+                        }
+                    }
+                }
+            }
+        },
+
+        map: function (obj, iterator, context) {
+            var results = [];
+            // Not using strict equality so that this acts as a
+            // shortcut to checking for `null` and `undefined`.
+            if (obj == null) {
+                return results;
+            }
+            if (this.nativeMap && obj.map === this.nativeMap) {
+                return obj.map(iterator, context);
+            }
+            this.each(obj, function (value, index, list) {
+                results[results.length] = iterator.call(context, value, index, list);
+            });
+            return results;
+        },
+
+        /// MurmurHash3 related functions
+
+        //
+        // Given two 64bit ints (as an array of two 32bit ints) returns the two
+        // added together as a 64bit int (as an array of two 32bit ints).
+        //
+        x64Add: function (m, n) {
+            m = [m[0] >>> 16, m[0] & 0xffff, m[1] >>> 16, m[1] & 0xffff];
+            n = [n[0] >>> 16, n[0] & 0xffff, n[1] >>> 16, n[1] & 0xffff];
+            var o = [0, 0, 0, 0];
+            o[3] += m[3] + n[3];
+            o[2] += o[3] >>> 16;
+            o[3] &= 0xffff;
+            o[2] += m[2] + n[2];
+            o[1] += o[2] >>> 16;
+            o[2] &= 0xffff;
+            o[1] += m[1] + n[1];
+            o[0] += o[1] >>> 16;
+            o[1] &= 0xffff;
+            o[0] += m[0] + n[0];
+            o[0] &= 0xffff;
+            return [(o[0] << 16) | o[1], (o[2] << 16) | o[3]];
+        },
+
+        //
+        // Given two 64bit ints (as an array of two 32bit ints) returns the two
+        // multiplied together as a 64bit int (as an array of two 32bit ints).
+        //
+        x64Multiply: function (m, n) {
+            m = [m[0] >>> 16, m[0] & 0xffff, m[1] >>> 16, m[1] & 0xffff];
+            n = [n[0] >>> 16, n[0] & 0xffff, n[1] >>> 16, n[1] & 0xffff];
+            var o = [0, 0, 0, 0];
+            o[3] += m[3] * n[3];
+            o[2] += o[3] >>> 16;
+            o[3] &= 0xffff;
+            o[2] += m[2] * n[3];
+            o[1] += o[2] >>> 16;
+            o[2] &= 0xffff;
+            o[2] += m[3] * n[2];
+            o[1] += o[2] >>> 16;
+            o[2] &= 0xffff;
+            o[1] += m[1] * n[3];
+            o[0] += o[1] >>> 16;
+            o[1] &= 0xffff;
+            o[1] += m[2] * n[2];
+            o[0] += o[1] >>> 16;
+            o[1] &= 0xffff;
+            o[1] += m[3] * n[1];
+            o[0] += o[1] >>> 16;
+            o[1] &= 0xffff;
+            o[0] += (m[0] * n[3]) + (m[1] * n[2]) + (m[2] * n[1]) + (m[3] * n[0]);
+            o[0] &= 0xffff;
+            return [(o[0] << 16) | o[1], (o[2] << 16) | o[3]];
+        },
+        //
+        // Given a 64bit int (as an array of two 32bit ints) and an int
+        // representing a number of bit positions, returns the 64bit int (as an
+        // array of two 32bit ints) rotated left by that number of positions.
+        //
+        x64Rotl: function (m, n) {
+            n %= 64;
+            if (n === 32) {
+                return [m[1], m[0]];
+            } else if (n < 32) {
+                return [(m[0] << n) | (m[1] >>> (32 - n)), (m[1] << n) | (m[0] >>> (32 - n))];
+            } else {
+                n -= 32;
+                return [(m[1] << n) | (m[0] >>> (32 - n)), (m[0] << n) | (m[1] >>> (32 - n))];
+            }
+        },
+        //
+        // Given a 64bit int (as an array of two 32bit ints) and an int
+        // representing a number of bit positions, returns the 64bit int (as an
+        // array of two 32bit ints) shifted left by that number of positions.
+        //
+        x64LeftShift: function (m, n) {
+            n %= 64;
+            if (n === 0) {
+                return m;
+            } else if (n < 32) {
+                return [(m[0] << n) | (m[1] >>> (32 - n)), m[1] << n];
+            } else {
+                return [m[1] << (n - 32), 0];
+            }
+        },
+        //
+        // Given two 64bit ints (as an array of two 32bit ints) returns the two
+        // xored together as a 64bit int (as an array of two 32bit ints).
+        //
+        x64Xor: function (m, n) {
+            return [m[0] ^ n[0], m[1] ^ n[1]];
+        },
+        //
+        // Given a block, returns murmurHash3's final x64 mix of that block.
+        // (`[0, h[0] >>> 1]` is a 33 bit unsigned right shift. This is the
+        // only place where we need to right shift 64bit ints.)
+        //
+        x64Fmix: function (h) {
+            h = this.x64Xor(h, [0, h[0] >>> 1]);
+            h = this.x64Multiply(h, [0xff51afd7, 0xed558ccd]);
+            h = this.x64Xor(h, [0, h[0] >>> 1]);
+            h = this.x64Multiply(h, [0xc4ceb9fe, 0x1a85ec53]);
+            h = this.x64Xor(h, [0, h[0] >>> 1]);
+            return h;
+        },
+
+        //
+        // Given a string and an optional seed as an int, returns a 128 bit
+        // hash using the x64 flavor of MurmurHash3, as an unsigned hex.
+        //
+        x64hash128: function (key, seed) {
+            key = key || "";
+            seed = seed || 0;
+            var remainder = key.length % 16;
+            var bytes = key.length - remainder;
+            var h1 = [0, seed];
+            var h2 = [0, seed];
+            var k1 = [0, 0];
+            var k2 = [0, 0];
+            var c1 = [0x87c37b91, 0x114253d5];
+            var c2 = [0x4cf5ad43, 0x2745937f];
+            for (var i = 0; i < bytes; i = i + 16) {
+                k1 = [((key.charCodeAt(i + 4) & 0xff)) | ((key.charCodeAt(i + 5) & 0xff) << 8) | ((key.charCodeAt(i + 6) & 0xff) << 16) | ((key.charCodeAt(i + 7) & 0xff) << 24), ((key.charCodeAt(i) & 0xff)) | ((key.charCodeAt(i + 1) & 0xff) << 8) | ((key.charCodeAt(i + 2) & 0xff) << 16) | ((key.charCodeAt(i + 3) & 0xff) << 24)];
+                k2 = [((key.charCodeAt(i + 12) & 0xff)) | ((key.charCodeAt(i + 13) & 0xff) << 8) | ((key.charCodeAt(i + 14) & 0xff) << 16) | ((key.charCodeAt(i + 15) & 0xff) << 24), ((key.charCodeAt(i + 8) & 0xff)) | ((key.charCodeAt(i + 9) & 0xff) << 8) | ((key.charCodeAt(i + 10) & 0xff) << 16) | ((key.charCodeAt(i + 11) & 0xff) << 24)];
+                k1 = this.x64Multiply(k1, c1);
+                k1 = this.x64Rotl(k1, 31);
+                k1 = this.x64Multiply(k1, c2);
+                h1 = this.x64Xor(h1, k1);
+                h1 = this.x64Rotl(h1, 27);
+                h1 = this.x64Add(h1, h2);
+                h1 = this.x64Add(this.x64Multiply(h1, [0, 5]), [0, 0x52dce729]);
+                k2 = this.x64Multiply(k2, c2);
+                k2 = this.x64Rotl(k2, 33);
+                k2 = this.x64Multiply(k2, c1);
+                h2 = this.x64Xor(h2, k2);
+                h2 = this.x64Rotl(h2, 31);
+                h2 = this.x64Add(h2, h1);
+                h2 = this.x64Add(this.x64Multiply(h2, [0, 5]), [0, 0x38495ab5]);
+            }
+            k1 = [0, 0];
+            k2 = [0, 0];
+            switch (remainder) {
+                case 15:
+                    k2 = this.x64Xor(k2, this.x64LeftShift([0, key.charCodeAt(i + 14)], 48));
+                case 14:
+                    k2 = this.x64Xor(k2, this.x64LeftShift([0, key.charCodeAt(i + 13)], 40));
+                case 13:
+                    k2 = this.x64Xor(k2, this.x64LeftShift([0, key.charCodeAt(i + 12)], 32));
+                case 12:
+                    k2 = this.x64Xor(k2, this.x64LeftShift([0, key.charCodeAt(i + 11)], 24));
+                case 11:
+                    k2 = this.x64Xor(k2, this.x64LeftShift([0, key.charCodeAt(i + 10)], 16));
+                case 10:
+                    k2 = this.x64Xor(k2, this.x64LeftShift([0, key.charCodeAt(i + 9)], 8));
+                case 9:
+                    k2 = this.x64Xor(k2, [0, key.charCodeAt(i + 8)]);
+                    k2 = this.x64Multiply(k2, c2);
+                    k2 = this.x64Rotl(k2, 33);
+                    k2 = this.x64Multiply(k2, c1);
+                    h2 = this.x64Xor(h2, k2);
+                case 8:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 7)], 56));
+                case 7:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 6)], 48));
+                case 6:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 5)], 40));
+                case 5:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 4)], 32));
+                case 4:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 3)], 24));
+                case 3:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 2)], 16));
+                case 2:
+                    k1 = this.x64Xor(k1, this.x64LeftShift([0, key.charCodeAt(i + 1)], 8));
+                case 1:
+                    k1 = this.x64Xor(k1, [0, key.charCodeAt(i)]);
+                    k1 = this.x64Multiply(k1, c1);
+                    k1 = this.x64Rotl(k1, 31);
+                    k1 = this.x64Multiply(k1, c2);
+                    h1 = this.x64Xor(h1, k1);
+            }
+            h1 = this.x64Xor(h1, [0, key.length]);
+            h2 = this.x64Xor(h2, [0, key.length]);
+            h1 = this.x64Add(h1, h2);
+            h2 = this.x64Add(h2, h1);
+            h1 = this.x64Fmix(h1);
+            h2 = this.x64Fmix(h2);
+            h1 = this.x64Add(h1, h2);
+            h2 = this.x64Add(h2, h1);
+            return ("00000000" + (h1[0] >>> 0).toString(16)).slice(-8) + ("00000000" + (h1[1] >>> 0).toString(16)).slice(-8) + ("00000000" + (h2[0] >>> 0).toString(16)).slice(-8) + ("00000000" + (h2[1] >>> 0).toString(16)).slice(-8);
+        }
+    };
+    Fingerprint2.VERSION = "1.4.2";
+    return Fingerprint2;
+}();
+;
+
+
+//from lib/lz-string.min.js
+var LZString = {
+    _f: String.fromCharCode,
+    _keyStrBase64: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+    _keyStrUriSafe: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",
+    _getBaseValue: function (r, e) {
+        if (LZString._baseReverseDic || (LZString._baseReverseDic = {}), !LZString._baseReverseDic[r]) {
+            LZString._baseReverseDic[r] = {};
+            for (var n = 0; n < r.length; n++) LZString._baseReverseDic[r][r[n]] = n
+        }
+        return LZString._baseReverseDic[r][e]
+    },
+    compressToBase64: function (r) {
+        if (null == r) return "";
+        var e = LZString._compress(r, 6, function (r) {
+            return LZString._keyStrBase64.charAt(r)
+        });
+        switch (e.length % 4) {
+            default:
+            case 0:
+                return e;
+            case 1:
+                return e + "===";
+            case 2:
+                return e + "==";
+            case 3:
+                return e + "="
+        }
+    },
+    decompressFromBase64: function (r) {
+        return null == r ? "" : "" == r ? null : LZString._decompress(r.length, 32, function (e) {
+            return LZString._getBaseValue(LZString._keyStrBase64, r.charAt(e))
+        })
+    },
+    compressToUTF16: function (r) {
+        return null == r ? "" : LZString._compress(r, 15, function (r) {
+            return String.fromCharCode(r + 32)
+        }) + " "
+    },
+    decompressFromUTF16: function (r) {
+        return null == r ? "" : "" == r ? null : LZString._decompress(r.length, 16384, function (e) {
+            return r.charCodeAt(e) - 32
+        })
+    },
+    compressToUint8Array: function (r) {
+        for (var e = LZString.compress(r), n = new Uint8Array(2 * e.length), o = 0, t = e.length; t > o; o++) {
+            var i = e.charCodeAt(o);
+            n[2 * o] = i >>> 8, n[2 * o + 1] = i % 256
+        }
+        return n
+    },
+    decompressFromUint8Array: function (r) {
+        if (null === r || void 0 === r) return LZString.decompress(r);
+        for (var e = new Array(r.length / 2), n = 0, o = e.length; o > n; n++) e[n] = 256 * r[2 * n] + r[2 * n + 1];
+        var t = [];
+        return e.forEach(function (r) {
+            t.push(String.fromCharCode(r))
+        }), LZString.decompress(t.join(""))
+    },
+    compressToEncodedURIComponent: function (r) {
+        return null == r ? "" : LZString._compress(r, 6, function (r) {
+            return LZString._keyStrUriSafe.charAt(r)
+        })
+    },
+    decompressFromEncodedURIComponent: function (r) {
+        return null == r ? "" : "" == r ? null : (r = r.replace(/ /g, "+"), LZString._decompress(r.length, 32, function (e) {
+            return LZString._getBaseValue(LZString._keyStrUriSafe, r.charAt(e))
+        }))
+    },
+    compress: function (r) {
+        return LZString._compress(r, 16, function (r) {
+            return String.fromCharCode(r)
+        })
+    },
+    _compress: function (r, e, n) {
+        if (null == r) return "";
+        {
+            var o, t, i, s = {}, a = {}, p = "", u = "", c = "", l = 2, f = 3, h = 2, g = [], d = 0, S = 0;
+            LZString._f
+        }
+        for (i = 0; i < r.length; i += 1) if (p = r[i], Object.prototype.hasOwnProperty.call(s, p) || (s[p] = f++, a[p] = !0), u = c + p, Object.prototype.hasOwnProperty.call(s, u)) c = u; else {
+            if (Object.prototype.hasOwnProperty.call(a, c)) {
+                if (c.charCodeAt(0) < 256) {
+                    for (o = 0; h > o; o++) d <<= 1, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++;
+                    for (t = c.charCodeAt(0), o = 0; 8 > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1
+                } else {
+                    for (t = 1, o = 0; h > o; o++) d = d << 1 | t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t = 0;
+                    for (t = c.charCodeAt(0), o = 0; 16 > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1
+                }
+                l--, 0 == l && (l = Math.pow(2, h), h++), delete a[c]
+            } else for (t = s[c], o = 0; h > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1;
+            l--, 0 == l && (l = Math.pow(2, h), h++), s[u] = f++, c = String(p)
+        }
+        if ("" !== c) {
+            if (Object.prototype.hasOwnProperty.call(a, c)) {
+                if (c.charCodeAt(0) < 256) {
+                    for (o = 0; h > o; o++) d <<= 1, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++;
+                    for (t = c.charCodeAt(0), o = 0; 8 > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1
+                } else {
+                    for (t = 1, o = 0; h > o; o++) d = d << 1 | t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t = 0;
+                    for (t = c.charCodeAt(0), o = 0; 16 > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1
+                }
+                l--, 0 == l && (l = Math.pow(2, h), h++), delete a[c]
+            } else for (t = s[c], o = 0; h > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1;
+            l--, 0 == l && (l = Math.pow(2, h), h++)
+        }
+        for (t = 2, o = 0; h > o; o++) d = d << 1 | 1 & t, S == e - 1 ? (S = 0, g.push(n(d)), d = 0) : S++, t >>= 1;
+        for (; ;) {
+            if (d <<= 1, S == e - 1) {
+                g.push(n(d));
+                break
+            }
+            S++
+        }
+        return g.join("")
+    },
+    decompress: function (r) {
+        return null == r ? "" : "" == r ? null : LZString._decompress(r.length, 32768, function (e) {
+            return r.charCodeAt(e)
+        })
+    },
+    _decompress: function (r, e, n) {
+        var o, t, i, s, a, p, u, c, l = [], f = 4, h = 4, g = 3, d = "", S = [], m = LZString._f,
+            v = {val: n(0), position: e, index: 1};
+        for (t = 0; 3 > t; t += 1) l[t] = t;
+        for (s = 0, p = Math.pow(2, 2), u = 1; u != p;) a = v.val & v.position, v.position >>= 1, 0 == v.position && (v.position = e, v.val = n(v.index++)), s |= (a > 0 ? 1 : 0) * u, u <<= 1;
+        switch (o = s) {
+            case 0:
+                for (s = 0, p = Math.pow(2, 8), u = 1; u != p;) a = v.val & v.position, v.position >>= 1, 0 == v.position && (v.position = e, v.val = n(v.index++)), s |= (a > 0 ? 1 : 0) * u, u <<= 1;
+                c = m(s);
+                break;
+            case 1:
+                for (s = 0, p = Math.pow(2, 16), u = 1; u != p;) a = v.val & v.position, v.position >>= 1, 0 == v.position && (v.position = e, v.val = n(v.index++)), s |= (a > 0 ? 1 : 0) * u, u <<= 1;
+                c = m(s);
+                break;
+            case 2:
+                return ""
+        }
+        for (l[3] = c, i = c, S.push(c); ;) {
+            if (v.index > r) return "";
+            for (s = 0, p = Math.pow(2, g), u = 1; u != p;) a = v.val & v.position, v.position >>= 1, 0 == v.position && (v.position = e, v.val = n(v.index++)), s |= (a > 0 ? 1 : 0) * u, u <<= 1;
+            switch (c = s) {
+                case 0:
+                    for (s = 0, p = Math.pow(2, 8), u = 1; u != p;) a = v.val & v.position, v.position >>= 1, 0 == v.position && (v.position = e, v.val = n(v.index++)), s |= (a > 0 ? 1 : 0) * u, u <<= 1;
+                    l[h++] = m(s), c = h - 1, f--;
+                    break;
+                case 1:
+                    for (s = 0, p = Math.pow(2, 16), u = 1; u != p;) a = v.val & v.position, v.position >>= 1, 0 == v.position && (v.position = e, v.val = n(v.index++)), s |= (a > 0 ? 1 : 0) * u, u <<= 1;
+                    l[h++] = m(s), c = h - 1, f--;
+                    break;
+                case 2:
+                    return S.join("")
+            }
+            if (0 == f && (f = Math.pow(2, g), g++), l[c]) d = l[c]; else {
+                if (c !== h) return null;
+                d = i + i[0]
+            }
+            S.push(d), l[h++] = i + d[0], f--, i = d, 0 == f && (f = Math.pow(2, g), g++)
+        }
+    }
+};
+"undefined" != typeof module && null != module && (module.exports = LZString);
+;
+
+
 //from lib/detect.min.js
 (function (e) {
     Array.prototype.map || (Array.prototype.map = function (e, r) {
@@ -4509,6 +5978,10 @@ zjson - binary json sirelizer with some strange features
         return str;
     };
 
+    window.randColor = function (a) {
+        return [Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), 255];
+    };
+
     window.stats = stats = {
         fps: {},
         net: {},
@@ -4642,6 +6115,2490 @@ zjson - binary json sirelizer with some strange features
         } catch (undefined) {
         }
         return data;
+    };
+
+}).call(this);
+;
+
+
+//from src/onecup.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var CSS_PROPS, HTML_TAGS, IE, JS_EVENT, check_selectors, css, css_chain, css_def, css_rule_chain, current_rule,
+        current_tag, dom_build, dom_scan, dont_refresh_flag, dont_refresh_this_time, fn1, full_refresh, i, inserted, j,
+        js_event, l, len, len1, len2, levels, m, make_css, make_event, make_selectors, make_tag, needs_refresh_flag, o,
+        old_oml, parse_selectors, parse_url, redraw, render, requestAnimationFrame, setup_new_window, tag, tag_add,
+        tag_build, tag_chain, tag_remove, tag_replace, tag_scan, tags, visibilitychange,
+        slice = [].slice;
+
+    window.onecup = {};
+
+    HTML_TAGS = "a\naudio\nb\nblockquote\nbr\nbutton\ncanvas\ncode\ndiv\nem\nembed\nform\nh1\nh2\nh3\nh4\nh5\nh6\nheader\nhr\ni\niframe\nimg\ninput\nlabel\nli\nobject\nol\noption\np\npre\nscript\nselect\nsmall\nsource\nspan\nstrong\nsub\nsup\ntable\ntbody\ntd\ntextarea\ntfoot\nth\nthead\ntime\ntr\nu\nul\nvideo".split(/\s/);
+
+    CSS_PROPS = "align_items\nanimation\nanimation_direction\nbackground\nbackground_attachment\nbackground_color\nbackground_image\nbackground_size\nbackground_position\nbackground_position_x\nbackground_position_y\nbackground_repeat\nborder\nborder_bottom\nborder_bottom_color\nborder_bottom_style\nborder_bottom_width\nborder_collapse\nborder_color\nborder_image\nborder_left\nborder_left_color\nborder_left_style\nborder_left_width\nborder_radius\nborder_right\nborder_right_color\nborder_right_style\nborder_right_width\nborder_spacing\nborder_style\nborder_top\nborder_top_color\nborder_top_style\nborder_top_width\nborder_width\nbottom\nbox_shadow\nclear\nclip\ncolor\ncursor\ndirection\ndisplay\nfilter\nflex\nflex_direction\nflex_wrap\nfloat\nfont\nfont_family\nfont_size\nfont_size_adjust\nfont_stretch\nfont_style\nfont_variant\nfont_weight\nheight\njustify_content\nleft\nline_break\nline_height\nlist_style\nlist_style_image\nlist_style_position\nlist_style_type\nmargin\nmargin_bottom\nmargin_left\nmargin_right\nmargin_top\nmarker_offset\nmax_height\nmax_width\nmin_height\nmin_width\nopacity\noutline\noverflow\noverflow_x\noverflow_y\npadding\npadding_bottom\npadding_left\npadding_right\npadding_top\npointer_events\nposition\nresize\nright\ntable_layout\ntext_align\ntext_align_last\ntext_decoration\ntext_indent\ntext_justify\ntext_overflow\ntext_shadow\ntext_transform\ntext_autospace\ntext_kashida_space\ntext_underline_position\ntop\ntransform\ntransition\nuser_select\nvertical_align\nvisibility\nwhite_space\nwidth\nword_break\nword_spacing\nword_wrap\nz_index\nzoom".split(/\s/);
+
+    JS_EVENT = "onblur\nonchange\noncontextmenu\nonfocus\noninput\nonselect\nonsubmit\nonkeydown\nonkeypress\nonkeyup\nonclick\nondblclick\nondrag\nondragend\nondragenter\nondragleave\nondragover\nondragstart\nondrop\nonmouseenter\nonmousedown\nonmousemove\nonmouseout\nonmouseover\nonmouseup\nonload\nonscroll\nonwheel".split(/\s/);
+
+    IE = navigator.msMaxTouchPoints;
+
+    if (Array.isArray == null) {
+        Array.isArray = function (obj) {
+            return Object.prototype.toString.call(obj) === '[object Array]';
+        };
+    }
+
+    onecup.new_page = function () {
+    };
+
+    current_tag = null;
+
+    tag_chain = [];
+
+    css_chain = "";
+
+    css_rule_chain = [];
+
+    current_rule = null;
+
+    levels = [];
+
+    tags = [];
+
+    old_oml = null;
+
+    full_refresh = true;
+
+    dont_refresh_flag = false;
+
+    render = function () {
+        var finished_tags;
+        finished_tags = tags;
+        tags = [];
+        return finished_tags;
+    };
+
+    check_selectors = function (args) {
+        var first_arg;
+        first_arg = args[0];
+        if (typeof first_arg === 'string') {
+            if ("#" === first_arg[0] || "." === first_arg[0]) {
+                return parse_selectors(args.shift());
+            }
+        }
+        return {};
+    };
+
+    parse_selectors = function (arg) {
+        var attributes, classes, i, j, len, ref;
+        attributes = {};
+        classes = [];
+        ref = arg.split('.');
+        for (j = 0, len = ref.length; j < len; j++) {
+            i = ref[j];
+            if (i.length === 0) {
+                continue;
+            } else if ("#" === i[0]) {
+                if (attributes.id) {
+                    throw Error("mulitple ids " + arg);
+                }
+                attributes.id = i.slice(1);
+            } else {
+                classes.push(i);
+            }
+        }
+        if (classes.length > 0) {
+            attributes["class"] = classes.join(" ");
+        }
+        return attributes;
+    };
+
+    make_selectors = function (attrs) {
+        var selector;
+        selector = "";
+        if (attrs.id) {
+            selector += "#" + attrs.id;
+        }
+        if (attrs["class"]) {
+            selector += "." + attrs["class"].split(" ").join(".");
+        }
+        return selector;
+    };
+
+    css_def = function (css) {
+        var k, lines, v;
+        if (typeof css !== 'object') {
+            return css;
+        }
+        lines = [];
+        for (k in css) {
+            v = css[k];
+            if (typeof v === 'number') {
+                v = v + "px";
+            }
+            lines.push(k + ":" + v);
+        }
+        return lines.join(";");
+    };
+
+    make_tag = function (tag_name) {
+        return function () {
+            var arg, args, attributes, css_chain_prev, inner_fn, inner_tags, j, k, len, newv, this_tag, v;
+            args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+            attributes = check_selectors(args);
+            if (typeof args[args.length - 1] === 'function') {
+                inner_fn = args.pop();
+            }
+            for (j = 0, len = args.length; j < len; j++) {
+                arg = args[j];
+                if (typeof arg === 'object') {
+                    for (k in arg) {
+                        v = arg[k];
+                        if (typeof v === 'function') {
+                            newv = onecup.event_fn(v);
+                        } else if (typeof v === 'undefined') {
+                            continue;
+                        } else if (k === "style") {
+                            newv = v;
+                        } else {
+                            newv = v;
+                        }
+                        attributes[k] = newv;
+                    }
+                } else {
+                    throw Error("invalid tag argument " + (JSON.stringify(arg)) + " of type " + (typeof arg) + " for <" + tag_name + ">");
+                }
+            }
+            this_tag = {
+                tag: tag_name,
+                attrs: attributes,
+                listeners: {},
+                children: null
+            };
+            levels.push(tags);
+            tags = inner_tags = [];
+            current_tag = this_tag;
+            tag_chain.push(current_tag);
+            css_chain_prev = css_chain;
+            css_chain = css_chain + make_selectors(current_tag.attrs);
+            if (typeof inner_fn === "function") {
+                inner_fn();
+            }
+            tags = levels.pop(tags);
+            this_tag.children = inner_tags;
+            if (this_tag.attrs.style != null) {
+                this_tag.attrs.style = css_def(this_tag.attrs.style);
+            }
+            tag_chain.pop();
+            css_chain = css_chain_prev;
+            current_tag = tag_chain[tag_chain.length - 1];
+            return tags.push(this_tag);
+        };
+    };
+
+    make_css = function (css_name) {
+        var css_real_name;
+        css_real_name = css_name.replace("_", "-").replace("_", "-");
+        return function () {
+            var args;
+            args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+            if (current_rule) {
+                current_rule[css_real_name] = args[0];
+                return;
+            }
+            if (current_tag.attrs.style == null) {
+                current_tag.attrs.style = {};
+            }
+            return current_tag.attrs.style[css_real_name] = args[0];
+        };
+    };
+
+    window._handler = {};
+
+    onecup.listeners = [];
+
+    fn1 = function (i) {
+        return onecup.listeners[i] = function () {
+            onecup.track_error.apply(onecup, [window._handler[i]].concat(slice.call(arguments)));
+            return onecup.refresh();
+        };
+    };
+    for (i = j = 0; j < 5000; i = ++j) {
+        fn1(i);
+    }
+
+    onecup.fn_count = 0;
+
+    onecup.event_fn = function (fn) {
+        var count;
+        window._handler[onecup.fn_count] = fn;
+        count = onecup.fn_count;
+        onecup.fn_count += 1;
+        return count;
+    };
+
+    make_event = function (js_name) {
+        return function () {
+            var args;
+            args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+            return current_tag.listeners[js_name.slice(2)] = onecup.event_fn(args[0]);
+        };
+    };
+
+    for (l = 0, len = HTML_TAGS.length; l < len; l++) {
+        tag = HTML_TAGS[l];
+        onecup[tag] = make_tag(tag);
+    }
+
+    for (m = 0, len1 = CSS_PROPS.length; m < len1; m++) {
+        css = CSS_PROPS[m];
+        onecup[css] = make_css(css);
+    }
+
+    for (o = 0, len2 = JS_EVENT.length; o < len2; o++) {
+        js_event = JS_EVENT[o];
+        onecup[js_event] = make_event(js_event);
+    }
+
+    onecup.text = function () {
+        var args;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        return tags.push({
+            special: "text",
+            text: args.join("")
+        });
+    };
+
+    onecup.raw = function () {
+        var args;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        return tags.push({
+            special: "raw",
+            text: args.join("")
+        });
+    };
+
+    onecup.nbsp = function (n) {
+        var p, ref, results;
+        if (n == null) {
+            n = 1;
+        }
+        results = [];
+        for (i = p = 0, ref = n; 0 <= ref ? p < ref : p > ref; i = 0 <= ref ? ++p : --p) {
+            results.push(onecup.raw("&nbsp;"));
+        }
+        return results;
+    };
+
+    onecup.raw_img = onecup.img;
+
+    onecup.img = function () {
+        var a, args, kargs, len3, p, src;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        for (p = 0, len3 = args.length; p < len3; p++) {
+            a = args[p];
+            if (a.src != null) {
+                kargs = a;
+                break;
+            }
+        }
+        if (!kargs) {
+            console.error("Image without source", args);
+            return;
+        }
+        src = kargs.src;
+        if (window.devicePixelRatio !== 1 && src.indexOf(".png") !== -1 && src.slice(0, 4) !== "http") {
+            kargs.src = src.replace(".png", "@2x.png");
+        }
+        if (window.devicePixelRatio !== 1 && src.indexOf(".jpg") !== -1 && src.slice(0, 4) !== "http") {
+            kargs.src = src.replace(".jpg", "@2x.jpg");
+        }
+        return onecup.raw_img.apply(onecup, args);
+    };
+
+    inserted = {};
+
+    onecup.css = function () {
+        var args, css_chain_prev, fn, rule_body, rule_css, rule_selector;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        if (args.length === 2) {
+            rule_selector = args[0], fn = args[1];
+        } else {
+            rule_selector = "";
+            fn = args[0];
+        }
+        css_chain_prev = css_chain;
+        if (rule_selector[0] === ":") {
+            css_chain = css_chain + rule_selector;
+        } else if (rule_selector[0] === "&") {
+            css_chain = css_chain + rule_selector.slice(1);
+        } else {
+            css_chain = css_chain + " " + rule_selector;
+        }
+        css_rule_chain.push(current_rule);
+        current_rule = {};
+        fn();
+        rule_body = css_def(current_rule);
+        current_rule = null;
+        if (rule_body) {
+            rule_css = css_chain + " {" + rule_body + "}";
+            if (inserted[rule_css] !== true) {
+                inserted[rule_css] = true;
+                document.styleSheets[0].insertRule(rule_css, 0);
+            }
+        }
+        css_chain = css_chain_prev;
+        return current_rule = css_rule_chain.pop();
+    };
+
+    onecup["import"] = function () {
+        var all, k;
+        all = [];
+        for (k in onecup) {
+            if (k !== "import") {
+                all.push(k + " = onecup." + k);
+            }
+        }
+        return "var " + all.join(", ") + ";";
+    };
+
+    onecup.importCoffee = function (scope) {
+        var all, k;
+        all = (function () {
+            var results;
+            results = [];
+            for (k in onecup) {
+                if (k !== "import" && k !== "importCoffee") {
+                    results.push(k);
+                }
+            }
+            return results;
+        })();
+        return "{" + all.join(", ") + "} = onecup";
+    };
+
+    redraw = function (time) {
+        var e, error, error1, fn, len3, new_oml, p, ref, results;
+        onecup.fn_count = 0;
+        onecup.params = parse_url();
+        onecup.post_render_fns = [];
+        if (!onecup.body) {
+            try {
+                onecup.body = document.getElementById('onecup');
+                if (!onecup.body && document.body) {
+                    onecup.body = document.body.innerHTML += "<div id='onecup'></div>";
+                } else {
+                    onecup.after(0, onecup.refresh);
+                    return;
+                }
+            } catch (error) {
+                e = error;
+                onecup.after(0, onecup.refresh);
+            }
+        }
+        if (window.error_body != null) {
+            try {
+                if (typeof window.body === "function") {
+                    window.body();
+                }
+            } catch (error1) {
+                e = error1;
+                tags = [];
+                if (typeof window.error_body === "function") {
+                    window.error_body(e);
+                }
+            }
+        } else {
+            if (typeof window.body === "function") {
+                window.body();
+            }
+        }
+        new_oml = render();
+        if (!full_refresh && old_oml) {
+            dom_scan(onecup.body, new_oml, old_oml);
+        } else {
+            onecup.body.innerHTML = '';
+            dom_build(onecup.body, new_oml);
+            full_refresh = false;
+        }
+        old_oml = new_oml;
+        ref = onecup.post_render_fns;
+        results = [];
+        for (p = 0, len3 = ref.length; p < len3; p++) {
+            fn = ref[p];
+            results.push(fn());
+        }
+        return results;
+    };
+
+    onecup.post_render = function (fn) {
+        return onecup.post_render_fns.push(fn);
+    };
+
+    dom_build = function (parent, oml) {
+        var elm, len3, p;
+        for (p = 0, len3 = oml.length; p < len3; p++) {
+            elm = oml[p];
+            tag_build(elm);
+            tag_add(parent, elm);
+        }
+    };
+
+    tag_add = function (parent, elm) {
+        var dom, len3, p, ref, results;
+        if (!(parent != null ? parent.appendChild : void 0)) {
+            return;
+        }
+        elm.parentNode = parent;
+        if (elm.dom != null) {
+            parent.appendChild(elm.dom);
+        }
+        if (elm.doms != null) {
+            ref = elm.doms;
+            results = [];
+            for (p = 0, len3 = ref.length; p < len3; p++) {
+                dom = ref[p];
+                results.push(parent.appendChild(dom));
+            }
+            return results;
+        }
+    };
+
+    tag_build = function (elm) {
+        var child, dom, k, len3, p, ref, ref1, ref2, v;
+        if (elm.special === "raw") {
+            dom = document.createElement("span");
+            dom.innerHTML = elm.text;
+            elm.doms = [];
+            ref = dom.childNodes;
+            for (p = 0, len3 = ref.length; p < len3; p++) {
+                child = ref[p];
+                elm.doms.push(child);
+            }
+            if (elm.doms.length === 0) {
+                elm.doms.push(document.createTextNode(""));
+            }
+        } else if (elm.special === "text") {
+            dom = document.createTextNode(elm.text);
+            elm.dom = dom;
+        } else {
+            dom = document.createElement(elm.tag);
+            elm.dom = dom;
+            ref1 = elm.attrs;
+            for (k in ref1) {
+                v = ref1[k];
+                if (Array.isArray(v)) {
+                    v = v.join(" ");
+                }
+                if (k === "selected") {
+                    if (v === true) {
+                        dom.setAttribute(k, v);
+                    }
+                } else {
+                    dom.setAttribute(k, v);
+                }
+            }
+            ref2 = elm.listeners;
+            for (k in ref2) {
+                v = ref2[k];
+                dom.addEventListener(k, onecup.listeners[v]);
+            }
+            if (elm.children) {
+                dom_build(dom, elm.children);
+            }
+        }
+    };
+
+    dom_scan = function (parent, as, bs) {
+        var elm, p, q, r, ref, ref1, ref2, ref3, ref4, scan_length;
+        if ((as == null) && (bs == null)) {
+            return;
+        } else if (as == null) {
+            parent.innerHTML = '';
+        } else if (bs == null) {
+            dom_build(parent, as);
+        } else {
+            if (as.length < bs.length) {
+                for (i = p = ref = as.length, ref1 = bs.length; ref <= ref1 ? p < ref1 : p > ref1; i = ref <= ref1 ? ++p : --p) {
+                    tag_remove(bs[i]);
+                }
+                scan_length = as.length;
+            } else {
+                scan_length = bs.length;
+            }
+            for (i = q = 0, ref2 = scan_length; 0 <= ref2 ? q < ref2 : q > ref2; i = 0 <= ref2 ? ++q : --q) {
+                tag_scan(as[i], bs[i]);
+            }
+            if (as.length > bs.length) {
+                for (i = r = ref3 = bs.length, ref4 = as.length; ref3 <= ref4 ? r < ref4 : r > ref4; i = ref3 <= ref4 ? ++r : --r) {
+                    elm = as[i];
+                    tag_build(elm);
+                    tag_add(parent, elm);
+                }
+            }
+        }
+    };
+
+    tag_scan = function (a, b) {
+        var dom, k, ref, ref1, ref2, ref3, v;
+        if (b == null) {
+            throw "no tag b";
+        } else if ((a.special != null) || (b.special != null)) {
+            if (a.special !== b.special || a.text !== b.text) {
+                tag_build(a);
+                tag_replace(a, b);
+            } else {
+                if (b.dom != null) {
+                    a.dom = b.dom;
+                } else if (b.doms != null) {
+                    a.doms = b.doms;
+                } else {
+                    throw "b has no doms";
+                }
+            }
+        } else if (a.tag !== b.tag) {
+            tag_build(a);
+            tag_replace(a, b);
+        } else if (a.attrs.id !== b.attrs.id) {
+            tag_build(a);
+            tag_replace(a, b);
+        } else {
+            dom = a.dom = b.dom;
+            ref = a.attrs;
+            for (k in ref) {
+                v = ref[k];
+                if (v !== b.attrs[k]) {
+                    if (k === 'value' && document.activeElement !== dom) {
+                        dom.value = v;
+                    } else if (k === 'style' && IE) {
+                        dom.removeAttribute(k);
+                        dom.setAttribute(k, v);
+                    } else if (k === 'src') {
+                        dom.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs%3D";
+                        dom.src = v;
+                    } else {
+                        dom.setAttribute(k, v);
+                    }
+                }
+            }
+            ref1 = b.attrs;
+            for (k in ref1) {
+                v = ref1[k];
+                if (a.attrs[k] == null) {
+                    dom.removeAttribute(k);
+                }
+            }
+            ref2 = a.listeners;
+            for (k in ref2) {
+                v = ref2[k];
+                if (b.listeners[k] == null) {
+                    dom.addEventListener(k, onecup.listeners[v]);
+                } else if (v !== b.listeners[k]) {
+                    dom.removeEventListener(k, onecup.listeners[b.listeners[k]]);
+                    dom.addEventListener(k, onecup.listeners[v]);
+                }
+            }
+            ref3 = b.listeners;
+            for (k in ref3) {
+                v = ref3[k];
+                if (a.listeners[k] == null) {
+                    dom.removeEventListener(k, onecup.listeners[v]);
+                }
+            }
+            dom_scan(dom, a.children, b.children);
+        }
+    };
+
+    tag_replace = function (a, b) {
+        var b_dom, dom, len3, p, parent, ref;
+        if (b.dom != null) {
+            b_dom = b.dom;
+        } else if (b.doms != null) {
+            b_dom = b.doms[0];
+        } else {
+            throw "element b not created";
+        }
+        parent = b_dom.parentNode;
+        if (parent == null) {
+            parent = b.parentNode;
+            tag_add(parent, a);
+            return;
+        }
+        if (a.dom != null) {
+            parent.insertBefore(a.dom, b_dom);
+            a.parentNode = parent;
+        } else if (a.doms != null) {
+            ref = a.doms;
+            for (p = 0, len3 = ref.length; p < len3; p++) {
+                dom = ref[p];
+                parent.insertBefore(dom, b_dom);
+            }
+            a.parentNode = parent;
+        } else {
+            throw "element a not created yet";
+        }
+        return tag_remove(b);
+    };
+
+    tag_remove = function (b) {
+        var dom, len3, p, parent, ref;
+        if (b.dom != null) {
+            parent = b.dom.parentNode;
+            if (parent) {
+                parent.removeChild(b.dom);
+            }
+        } else if (b.doms != null) {
+            parent = b.doms[0].parentNode;
+            ref = b.doms;
+            for (p = 0, len3 = ref.length; p < len3; p++) {
+                dom = ref[p];
+                parent.removeChild(dom);
+            }
+        }
+    };
+
+    parse_url = function () {
+        var params;
+        if (window.location == null) {
+            return {};
+        }
+        params = window.location.search.slice(1);
+        return onecup.parse_query_string(params);
+    };
+
+    onecup.parse_query_string = function (params) {
+        var args, k, len3, p, pair, ref, ref1, v;
+        args = {};
+        ref = params.split("&");
+        for (p = 0, len3 = ref.length; p < len3; p++) {
+            pair = ref[p];
+            if (!pair) {
+                continue;
+            }
+            ref1 = pair.split("="), k = ref1[0], v = ref1[1];
+            if (v) {
+                args[k] = unescape(decodeURI(v.replace(/\+/g, " ")));
+            }
+        }
+        return args;
+    };
+
+    onecup.mk_url = function (base, params) {
+        var key, part, parts, url, value;
+        url = base;
+        parts = (function () {
+            var results;
+            results = [];
+            for (key in params) {
+                value = params[key];
+                part = "";
+                part += key;
+                part += "=";
+                part += encodeURIComponent(value);
+                results.push(part);
+            }
+            return results;
+        })();
+        if (parts.length > 0 && url[url.length - 1] !== "?") {
+            url += "?";
+        }
+        return url + parts.join("&");
+    };
+
+    onecup.lookup = function (selector) {
+        var selectorType;
+        selectorType = 'querySelectorAll';
+        if (selector.indexOf('#') === 0) {
+            selectorType = 'getElementById';
+            selector = selector.substr(1, selector.length);
+        }
+        return document[selectorType](selector);
+    };
+
+    setup_new_window = function () {
+        onecup.new_page();
+        return onecup.refresh();
+    };
+
+    onecup.newTab = function (url) {
+        if ((typeof electron !== "undefined" && electron !== null) && url.substr(0, 4) === "http") {
+            electron.shell.openExternal(url);
+            return;
+        }
+        return window.open(url);
+    };
+
+    onecup.goto = window.goto = function (url) {
+        var ref;
+        if ((typeof electron !== "undefined" && electron !== null) && url.substr(0, 4) === "http") {
+            electron.shell.openExternal(url);
+            return;
+        }
+        if (typeof track === "function") {
+            track("goto", {
+                url: url
+            });
+        }
+        if (url.substr(0, 4) === "http" || url.substr(0, 7) === "mailto:") {
+            window.location = url;
+            return;
+        }
+        if (window.self !== window.top) {
+            window.open(url);
+            return;
+        }
+        if (((ref = window.history) != null ? ref.pushState : void 0) != null) {
+            window.history.pushState("", url, url);
+        } else {
+            if (window.location.pathname === "/" && url.slice(0, 2) === "/#") {
+                window.location.hash = url.slice(2);
+            } else {
+                window.location = url;
+            }
+        }
+        return setup_new_window();
+    };
+
+    window.onpopstate = function (event) {
+        onecup.scroll_top();
+        return setup_new_window();
+    };
+
+    onecup.scroll_top = function () {
+        var error;
+        try {
+            return window.scrollTo(0, 0);
+        } catch (error) {
+            return typeof track === "function" ? track("scroll_error") : void 0;
+        }
+    };
+
+    window.current_view = null;
+
+    window.last_view_params = null;
+
+    window.with_view = function (view_name, params) {
+        var ref;
+        if (view_name !== window.current_view) {
+            if ((ref = window.last_view_params) != null) {
+                if (typeof ref.exit === "function") {
+                    ref.exit();
+                }
+            }
+            if (params != null) {
+                if (typeof params.enter === "function") {
+                    params.enter();
+                }
+            }
+            window.current_view = view_name;
+            onecup.refresh();
+        }
+        return window.last_view_params = params;
+    };
+
+    onecup.on_click = function (event) {
+        var href, target;
+        if (event.ctrlKey || event.metaKey || event.altKey || event.button === 1) {
+            return;
+        }
+        target = event.target;
+        href = typeof target.getAttribute === "function" ? target.getAttribute("href") : void 0;
+        while (!href) {
+            target = target.parentNode;
+            if (!target || !target.getAttribute) {
+                return;
+            }
+            href = typeof target.getAttribute === "function" ? target.getAttribute("href") : void 0;
+        }
+        if (typeof target.onclick === "function") {
+            target.onclick();
+        }
+        if ((typeof electron !== "undefined" && electron !== null) && href.substr(0, 4) === "http") {
+            electron.shell.openExternal(href);
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        if (href.substr(0, 4) !== "http" && !target.getAttribute("target")) {
+            goto(href);
+            onecup.refresh();
+            event.preventDefault();
+        } else {
+            if (target.target == null) {
+                if (typeof track === "function") {
+                    track("exit", {
+                        url: href
+                    });
+                }
+                window.location = href;
+            } else {
+                if (typeof track === "function") {
+                    track("new_window", {
+                        url: href
+                    });
+                }
+            }
+        }
+        event.stopPropagation();
+    };
+
+    window.addEventListener("click", onecup.on_click, true);
+
+    onecup.on_submit = function (event) {
+        event.preventDefault();
+        return event.stopPropagation();
+    };
+
+    window.addEventListener("submit", onecup.on_submit, true);
+
+    requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || function (callback) {
+        return window.setTimeout(callback, 17);
+    };
+
+    onecup.after = function (ms, fn) {
+        var wrap_fn;
+        wrap_fn = function () {
+            fn();
+            return onecup.refresh();
+        };
+        return setTimeout(wrap_fn, ms);
+    };
+
+    onecup.later = function (ms, fn) {
+        var wrap_fn;
+        wrap_fn = function () {
+            fn();
+            return onecup.refresh();
+        };
+        return setTimeout(wrap_fn, ms);
+    };
+
+    needs_refresh_flag = false;
+
+    dont_refresh_this_time = false;
+
+    onecup.refresh = function () {
+        var tick;
+        if (dont_refresh_this_time) {
+            dont_refresh_this_time = false;
+            return;
+        }
+        if (needs_refresh_flag === false) {
+            needs_refresh_flag = true;
+            tick = function () {
+                needs_refresh_flag = false;
+                return onecup.track_error(redraw);
+            };
+            return requestAnimationFrame(tick, 0);
+        }
+    };
+
+    onecup.no_refresh = function () {
+        return dont_refresh_this_time = true;
+    };
+
+    onecup.track_error = function () {
+        var args, e, error, fn;
+        fn = arguments[0], args = 2 <= arguments.length ? slice.call(arguments, 1) : [];
+        if (typeof track !== "undefined" && track !== null) {
+            try {
+                return fn.apply(null, args);
+            } catch (error) {
+                e = error;
+                track('error', {
+                    stack: e.stack,
+                    message: "" + e
+                });
+                throw e;
+            }
+        } else {
+            return fn.apply(null, args);
+        }
+    };
+
+    window.onresize = function () {
+        return onecup.refresh();
+    };
+
+    visibilitychange = function () {
+        return onecup.refresh();
+    };
+
+    document.addEventListener("visibilitychange", visibilitychange, false);
+
+    onecup.params = parse_url();
+
+    onecup.after(0, onecup.refresh);
+
+    onecup.preloaded = {};
+
+    onecup.preload = function (src) {
+        var image;
+        if (window.devicePixelRatio !== 1 && src.indexOf(".png") !== -1 && src.slice(0, 4) !== "http") {
+            src = src.replace(".png", "@2x.png");
+        }
+        if (!onecup.preloaded[src]) {
+            image = new Image();
+            image.src = src;
+            return onecup.preloaded[src] = image;
+        }
+    };
+
+    onecup.getCache = {};
+
+    onecup.get = function (url) {
+        var page, xhr;
+        if (!onecup.getCache[url]) {
+            page = {
+                loaded: false
+            };
+            xhr = new XMLHttpRequest();
+            xhr.addEventListener("load", function (e) {
+                page.status = xhr.status;
+                page.loaded = e;
+                page.json = JSON.parse(xhr.responseText);
+                return onecup.refresh();
+            });
+            xhr.addEventListener("error", function (e) {
+                page.error = e;
+                return onecup.refresh();
+            });
+            xhr.addEventListener("abort", function (e) {
+                page.abort = e;
+                return onecup.refresh();
+            });
+            xhr.open("GET", url);
+            xhr.send();
+            page.xhr = xhr;
+            onecup.getCache[url] = page;
+        }
+        return onecup.getCache[url];
+    };
+
+}).call(this);
+;
+
+
+//from src/steam.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var e, error, error1, path;
+
+    eval(onecup["import"]());
+
+    window.steam = {};
+
+    window.greenworks = null;
+
+    steam.loadDLC = function () {
+        if (steam.ok) {
+            if (greenworks.isSubscribedApp(472490)) {
+                account.DLCs['Paint Job'] = true;
+                account.DLCbonus = true;
+            }
+            if (greenworks.isSubscribedApp(614180)) {
+                account.DLCs['Curves and Shadows'] = true;
+                return account.DLCbonus = true;
+            }
+        }
+    };
+
+    if ((typeof require !== "undefined" && require !== null) && ("" + process.argv).indexOf("no-steam") === -1) {
+        print("loading green works");
+        if (process.platform === 'darwin') {
+            if (process.arch === 'x64') {
+                path = process.execPath.replace("/Contents/Frameworks/Electron Helper.app/Contents/MacOS/Electron Helper", "");
+                path += "/Contents/MacOS/lib/greenworks-osx64";
+                try {
+                    window.greenworks = require(path);
+                } catch (error) {
+                    e = error;
+                    print("failed to load green works from", path, e);
+                    path = process.cwd() + '/lib/greenworks-osx64';
+                    try {
+                        window.greenworks = require();
+                    } catch (error1) {
+                        e = error1;
+                        print("failed to load green works from", path, e);
+                    }
+                }
+            }
+        } else if (process.platform === 'win32') {
+            if (process.arch === 'x64') {
+                window.greenworks = require(process.cwd() + '/lib/greenworks-win64');
+            } else if (process.arch === 'ia32') {
+                window.greenworks = require(process.cwd() + '/lib/greenworks-win32');
+            }
+        } else if (process.platform === 'linux') {
+            if (process.arch === 'x64') {
+                window.greenworks = require(process.cwd() + '/lib/greenworks-linux64');
+            }
+        }
+        if (greenworks) {
+            if (greenworks.initAPI()) {
+                steam.ok = true;
+                steam.profile = greenworks.getSteamId();
+                steam.name = steam.profile.screenName;
+                steam.id = steam.profile.steamId;
+            } else {
+                alert("Steam failed to initialize, steam features like DLC will be disabled.", "Steam API error");
+                print("Could not init steam");
+            }
+        }
+    }
+
+}).call(this);
+;
+
+
+//from src/account.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var afterTimeout, isValidEmail, isValidName, spacer;
+
+    eval(onecup["import"]());
+
+    window.account = {};
+
+    afterTimeout = function (ms, fn) {
+        return setTimeout(fn, ms);
+    };
+
+    account.signedIn = false;
+
+    account.wating = false;
+
+    account.error = false;
+
+    account.autoSigningIn = false;
+
+    account.name = typeof steam !== "undefined" && steam !== null ? steam.name : void 0;
+
+    account.load = function () {
+        var c, ref;
+        c = db.load("commander");
+        if (c) {
+            account.name = c.name;
+            account.color = c.color;
+            account.email = c.email;
+            account.token = c.token;
+        } else {
+            account.color = choose(colors.nice);
+        }
+        if (onecup.params.token && onecup.params.email) {
+            account.token = onecup.params.token;
+            account.email = onecup.params.email;
+            account.passworedReset = true;
+            if (onecup.params.token) {
+                if (typeof history !== "undefined" && history !== null) {
+                    history.pushState({}, "game", location.pathname);
+                }
+            }
+        }
+        if (typeof require !== "undefined" && require !== null) {
+            account.loadDLC();
+        }
+        if (((ref = window.location) != null ? ref.href.indexOf("gamedev.html") : void 0) !== -1) {
+            account.DLCs['Curves and Shadows'] = true;
+            account.DLCs['Paint Job'] = true;
+            return account.DLCbonus = true;
+        }
+    };
+
+    account.connectedToRoot = function () {
+        return new Fingerprint2().get(function (result, components) {
+            account.fingerprint = result;
+            if (account.token && account.email) {
+                account.autoSigningIn = true;
+                account.signin();
+                return account.authTab = "Sign In";
+            }
+        });
+    };
+
+    account.fix = function () {
+        var buildBar, fk, fv, i, j, l, len, m, n, o, part, ref, ref1, ref2, ref3, results, ship, specParts, unit;
+        if (!commander.buildBar) {
+            commander.buildBar = ["", "", "", "", "", "", "", "", "", ""];
+        }
+        if (!Array.isArray(commander.buildBar) || commander.buildBar.length !== 10) {
+            buildBar = ["", "", "", "", "", "", "", "", "", ""];
+            if ((typeof commander.buildBar) === "object") {
+                for (i = j = 0; j < 10; i = ++j) {
+                    ship = commander.buildBar[i];
+                    if (ship) {
+                        buildBar[i] = ship;
+                    }
+                }
+            }
+            commander.buildBar = buildBar;
+        }
+        if ((ref = commander.aiRules) != null ? ref.length = 10 : void 0) {
+            for (i = l = 0; l < 10; i = ++l) {
+                if (((ref1 = commander.aiRules[i]) != null ? ref1.length : void 0) > 0 && commander.buildBar[i]) {
+                    unit = new types.Unit(commander.buildBar[i]);
+                    if (unit.aiRules.length > 0) {
+                        break;
+                    }
+                    specParts = [];
+                    ref2 = unit.parts;
+                    for (m = 0, len = ref2.length; m < len; m++) {
+                        part = ref2[m];
+                        specParts.push({
+                            pos: [part.pos[0], part.pos[1]],
+                            type: part.constructor.name,
+                            dir: part.dir
+                        });
+                    }
+                    console.log(i + ": add AI rules to build bar", commander.aiRules[i], commander.buildBar[i]);
+                    commander.buildBar[i] = toShort({
+                        parts: specParts,
+                        name: unit.name,
+                        aiRules: commander.aiRules[i]
+                    });
+                }
+                commander.aiRules[i] = [];
+            }
+        }
+        if (!commander.galaxy) {
+            commander.galaxy = {};
+        }
+        if (!commander.settings) {
+            commander.settings = {};
+        }
+        if (commander.settings["Follow Units"]) {
+            commander.settings["Focus Fire/Follow"] = commander.settings["Follow Units"];
+            delete commander.settings["Follow Units"];
+        }
+        if (!commander.buildQ) {
+            commander.buildQ = [];
+        }
+        if (!commander.selection) {
+            commander.selection = [];
+        }
+        if (!commander.validBar) {
+            commander.validBar = [true, true, true, true, true, true, true, true, true, true];
+        }
+        if (!commander.fleet) {
+            commander.fleet = {};
+        }
+        if (!commander.fleet.ais) {
+            commander.fleet.ais = {};
+        }
+        if (!commander.fleet.selection) {
+            commander.fleet.selection = 0;
+        }
+        for (i = n = 0; n < 10; i = ++n) {
+            if (!commander.fleet["0," + i] && commander.buildBar[i]) {
+                commander.fleet["0," + i] = commander.buildBar[i];
+            }
+        }
+        if (!commander.friends) {
+            commander.friends = {};
+        }
+        if (!commander.mutes) {
+            commander.mutes = {};
+        }
+        if (!commander.id) {
+            commander.id = rid();
+        }
+        account.lastRootSave = deepCopy(account.simpleCommander());
+        for (i = o = 0; o < 10; i = ++o) {
+            account.lastRootSaveBuildBar[i] = commander.buildBar[i];
+        }
+        ref3 = commander.fleet;
+        results = [];
+        for (fk in ref3) {
+            fv = ref3[fk];
+            results.push(account.lastRootSaveFleet[fk] = JSON.stringify(fv));
+        }
+        return results;
+    };
+
+    account.simpleCommander = function () {
+        return {
+            email: commander.email,
+            token: commander.token,
+            id: commander.id,
+            name: commander.name,
+            color: commander.color,
+            faction: commander.faction,
+            friends: commander.friends,
+            version: window.VERSION + "." + window.MINOR_VERSION,
+            buildBar: commander.buildBar,
+            fleet: commander.fleet,
+            aiRules: commander.aiRules,
+            galaxyDifficulty: commander.galaxyDifficulty,
+            galaxy: commander.galaxy,
+            challenges: commander.challenges,
+            settings: commander.settings,
+            mutes: commander.mutes,
+            friends: commander.friends
+        };
+    };
+
+    account.save = function () {
+        var i, j, key;
+        for (i = j = 0; j < 10; i = ++j) {
+            key = (commander.fleet.selection || 0) + "," + i;
+            commander.buildBar[i] = commander.fleet[key] || "";
+        }
+        if ((typeof commander !== "undefined" && commander !== null ? commander.side : void 0) !== "spectators") {
+            if (typeof network !== "undefined" && network !== null) {
+                network.sendPlayer();
+            }
+        }
+        commander.ts = Date.now();
+        return db.save("commander", account.simpleCommander());
+    };
+
+    account.lastRootSave = {};
+
+    account.lastRootSaveBuildBar = {};
+
+    account.lastRootSaveFleet = {};
+
+    account.rootSave = function () {
+        if (typeof electron !== "undefined" && electron !== null) {
+            if (account.rootSaveTimeout) {
+                clearTimeout(account.rootSaveTimeout);
+            }
+            return account.rootSaveTimeout = setTimeout(account.rootRealSave, 30 * 1000);
+        } else {
+            if (account.rootSaveTimeout) {
+                clearTimeout(account.rootSaveTimeout);
+            }
+            return account.rootSaveTimeout = setTimeout(account.rootRealSave, 5 * 1000);
+        }
+    };
+
+    account.rootRealSave = function () {
+        var buildBar, fk, fleet, fv, i, j, jsonSpec, k, playerDiff, ref, thisRootSave, update, v;
+        console.log("account.rootSave -------------");
+        thisRootSave = account.simpleCommander();
+        playerDiff = {};
+        update = false;
+        for (k in thisRootSave) {
+            v = thisRootSave[k];
+            if (k === "buildBar") {
+                buildBar = {};
+                for (i = j = 0; j < 10; i = ++j) {
+                    if (thisRootSave.buildBar[i] !== account.lastRootSaveBuildBar[i]) {
+                        account.lastRootSaveBuildBar[i] = thisRootSave.buildBar[i];
+                        buildBar[i] = thisRootSave.buildBar[i];
+                    }
+                }
+                playerDiff.buildBar = buildBar;
+            } else if (k === "fleet") {
+                fleet = {};
+                ref = thisRootSave.fleet;
+                for (fk in ref) {
+                    fv = ref[fk];
+                    jsonSpec = JSON.stringify(fv);
+                    if (jsonSpec !== account.lastRootSaveFleet[fk]) {
+                        account.lastRootSaveFleet[fk] = jsonSpec;
+                        fleet[fk] = fv;
+                        update = true;
+                    }
+                }
+                if (update) {
+                    playerDiff.fleet = fleet;
+                }
+            } else {
+                if (JSON.stringify(v) === account.lastRootSave[k]) {
+                    delete thisRootSave[k];
+                } else {
+                    account.lastRootSave[k] = JSON.stringify(v);
+                    playerDiff[k] = v;
+                    update = true;
+                }
+            }
+        }
+        if (!update) {
+            return;
+        }
+        return rootNet.send("savePlayer", playerDiff);
+    };
+
+    account.closeAndSave = function (e) {
+        account.savingToServer = true;
+        account.rootRealSave();
+        return rootNet.send("ping", "windowClose");
+    };
+
+    window.onbeforeunload = function (e) {
+        if (account.signedIn === false || rootNet.websocket.readyState !== WebSocket.OPEN) {
+            return;
+        }
+        if (account.needsToClose) {
+            return;
+        }
+        if (typeof electron !== "undefined" && electron !== null) {
+            account.closeAndSave(e);
+            account.needsToClose = true;
+            return e.returnValue = false;
+        }
+    };
+
+    account.signin = function () {
+        account.waiting = true;
+        account.error = "";
+        if (!account.token && account.password) {
+            account.token = account.hashPass(account.password);
+        }
+        return rootNet.send("authSignIn", {
+            email: account.email,
+            token: account.token,
+            fingerprint: account.fingerprint,
+            steamid: typeof steam !== "undefined" && steam !== null ? steam.id : void 0
+        });
+    };
+
+    account.authError = function (message) {
+        console.log("account.authError", message);
+        account.error = message;
+        account.waiting = false;
+        account.autoSigningIn = false;
+        return account.signedIn = false;
+    };
+
+    account.signinReply = function (rootPlayer) {
+        account.waiting = false;
+        account.error = false;
+        account.autoSigningIn = false;
+        if (commander) {
+            console.log("is a reconnect, keep local commander");
+            account.fix();
+            account.save();
+            account.rootSave();
+        } else {
+            console.log("logging in, grab command from root");
+            window.commander = rootPlayer;
+            account.fix();
+            account.save();
+        }
+        account.name = commander.name;
+        account.color = commander.color;
+        account.email = commander.email;
+        account.token = commander.token;
+        account.signedIn = true;
+        if (typeof network !== "undefined" && network !== null) {
+            network.sendPlayer();
+        }
+        galaxyMode.load();
+        if (typeof rootNet !== "undefined" && rootNet !== null) {
+            rootNet.sendMode();
+        }
+        if (account.passworedReset) {
+            console.log("go to password reset");
+            ui.mode = "reset";
+            return account.passworedReset = false;
+        }
+    };
+
+    account.merge = function (a, b) {
+        var aHas, aNeeds, aNeedsList, bship, j, k, l, len, len1, m, n, ref, ref1, ref2, ref3, ref4, ref5, ship, star, x,
+            xy, y;
+        console.log("saving players to player backup");
+        try {
+            db.save("commander.A", a);
+        } catch (undefined) {
+        }
+        try {
+            db.save("commander.B", b);
+        } catch (undefined) {
+        }
+        if (!a.buildBar) {
+            a.buildBar = ["", "", "", "", "", "", "", "", "", ""];
+        }
+        if (!b.buildBar) {
+            b.buildBar = ["", "", "", "", "", "", "", "", "", ""];
+        }
+        if (!a.fleet) {
+            a.fleet = {};
+        }
+        if (!b.fleet) {
+            b.fleet = {};
+        }
+        aHas = {};
+        ref = a.buildBar;
+        for (j = 0, len = ref.length; j < len; j++) {
+            ship = ref[j];
+            if (ship) {
+                aHas[ship] = true;
+            }
+        }
+        ref1 = a.fleet;
+        for (xy in ref1) {
+            ship = ref1[xy];
+            if (ship) {
+                aHas[ship] = true;
+            }
+        }
+        aNeeds = {};
+        ref2 = b.buildBar;
+        for (l = 0, len1 = ref2.length; l < len1; l++) {
+            bship = ref2[l];
+            if (bship && !aHas[bship]) {
+                aNeeds[bship] = true;
+            }
+        }
+        ref3 = b.fleet;
+        for (xy in ref3) {
+            bship = ref3[xy];
+            if (bship && !aHas[bship]) {
+                aNeeds[bship] = true;
+            }
+        }
+        aNeedsList = (function () {
+            var results;
+            results = [];
+            for (bship in aNeeds) {
+                results.push(bship);
+            }
+            return results;
+        })();
+        console.log("merging players extra " + aNeedsList.length + " ships found");
+        for (x = m = 1; m < 100; x = ++m) {
+            if (aNeedsList.length === 0) {
+                break;
+            }
+            for (y = n = 0; n <= 10; y = ++n) {
+                if (aNeedsList.length === 0) {
+                    break;
+                }
+                if (!a.fleet[x + "," + y]) {
+                    a.fleet[x + "," + y] = aNeedsList.pop();
+                }
+            }
+        }
+        if (!a.galaxy) {
+            a.galaxy = {};
+        }
+        if ((ref4 = b.galaxy) != null ? ref4.starsWon : void 0) {
+            ref5 = b.galaxy.starsWon;
+            for (k in ref5) {
+                star = ref5[k];
+                if (a.galaxy[k] == null) {
+                    console.log("add star", k);
+                    a.galaxy[k] = star;
+                }
+            }
+        }
+        return a;
+    };
+
+    account.register = function () {
+        account.waiting = true;
+        account.error = "";
+        console.log("register", [account.name, account.email, account.password]);
+        if (!isValidName(account.name)) {
+            account.error = "Please use ASCII letters and numbers for name";
+            return;
+        }
+        if (!isValidEmail(account.email)) {
+            account.error = "Invalid Email";
+            return;
+        }
+        if (!account.password) {
+            account.error = "Enter a password";
+            return;
+        }
+        account.token = account.hashPass(account.password);
+        return rootNet.send("authRegister", {
+            name: account.name,
+            color: account.color,
+            email: account.email,
+            token: account.token,
+            fingerprint: account.fingerprint
+        });
+    };
+
+    account.forogtPasswordEmallMeLink = function () {
+        if (!isValidEmail(account.email)) {
+            account.error = "Invalid Email";
+            return;
+        }
+        return rootNet.send("authEmailLink", account.email.toLowerCase());
+    };
+
+    account.changePassword = function () {
+        var tokenNew, tokenOld;
+        account.waiting = false;
+        account.error = "";
+        tokenOld = account.hashPass(account.oldPassword);
+        tokenNew = account.hashPass(account.newPassword);
+        if (onecup.params.token) {
+            tokenOld = onecup.params.token;
+        }
+        console.log("change pass", account.oldPassword, account.newPassword);
+        rootNet.send("authChangePassword", tokenOld, tokenNew);
+        commander.token = tokenNew;
+        return account.save();
+    };
+
+    account.hashPass = function (pass) {
+        return sha1("fhs2:" + account.email + ":" + pass);
+    };
+
+    account.DLCs = {};
+
+    account.loadDLC = function () {
+        return typeof steam !== "undefined" && steam !== null ? steam.loadDLC() : void 0;
+    };
+
+    account.hasDLC = function (dlcName) {
+        if (!dlcName) {
+            return true;
+        }
+        return account.DLCs[dlcName];
+    };
+
+    account.hasDLCBonus = function () {
+        return account.DLCbonus;
+    };
+
+    css(".bigtab", function () {
+        display("inline-block");
+        width(200);
+        font_size(30);
+        line_height(45);
+        padding("10px 20px");
+        margin("10px 20px 0px 20px");
+        border_radius("5px 5px 0px 0px");
+        background_color("rgba(255,255,255,.2)");
+        return css(":hover", function () {
+            return background_color("rgba(0,0,0,.5)");
+        });
+    });
+
+    isValidEmail = function (email) {
+        var re;
+        re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(email);
+    };
+
+    isValidName = function (name) {
+        var re;
+        re = /^[A-Za-z0-9]+$/;
+        return re.test(name);
+    };
+
+    account.authTab = "Sign In";
+
+    account.signinOrRegisterMenu = function () {
+        return ui.menuFrame("#signinorregister", function () {
+            padding_top(280);
+            padding_bottom(280);
+            if (!rootNet) {
+                div(function () {
+                    padding(20);
+                    background_color("rgba(0,255,0,.25)");
+                    text_align("center");
+                    return text("starting to connect to server");
+                });
+                return;
+            }
+            if (rootNet.websocket.readyState === WebSocket.CONNECTING) {
+                div(function () {
+                    padding(20);
+                    background_color("rgba(0,255,0,.25)");
+                    text_align("center");
+                    return text("connecting to server");
+                });
+                return;
+            }
+            if (rootNet.websocket.readyState === WebSocket.CLOSED) {
+                div(".hover-red", function () {
+                    padding(20);
+                    text_align("center");
+                    text("Failed to connect to main server. ");
+                    text("Click here to retry.");
+                    return onclick(function () {
+                        return rootNet.connect();
+                    });
+                });
+                return;
+            }
+            if (account.autoSigningIn) {
+                div(function () {
+                    padding(20);
+                    background_color("rgba(0,255,0,.25)");
+                    text_align("center");
+                    return text("Signing in...");
+                });
+                return;
+            }
+            div(function () {
+                var tab;
+                text_align("center");
+                height(75);
+                tab = function (name, fn) {
+                    return div(".bigtab", function () {
+                        if (account.authTab === name) {
+                            background_color("rgba(0,0,0,.25)");
+                        }
+                        onclick(function () {
+                            return account.authTab = name;
+                        });
+                        return text(name);
+                    });
+                };
+                tab("Register");
+                return tab("Sign In");
+            });
+            return div(function () {
+                padding_top(20);
+                padding_bottom(100);
+                background_color("rgba(0,0,0,.25)");
+                if (account.error) {
+                    div(function () {
+                        padding(20);
+                        font_size(20);
+                        background_color("rgba(255,0,0,.2)");
+                        return text(account.error);
+                    });
+                }
+                if (account.authTab === "Sign In") {
+                    account.loginFields(account.signin);
+                    button(".button", function () {
+                        display("block");
+                        margin_top(10);
+                        text_align("left");
+                        padding(20);
+                        font_size(30);
+                        color("white");
+                        width("100%");
+                        border("none");
+                        text_align("center");
+                        if (account.waiting) {
+                            text("...");
+                            return opacity(".5");
+                        } else {
+                            text("Sign In");
+                            return onclick(function () {
+                                account.forgotPasswordSent = false;
+                                return account.signin();
+                            });
+                        }
+                    });
+                    div(function () {
+                        return height(100);
+                    });
+                    button(".button", function () {
+                        display("block");
+                        margin_top(10);
+                        text_align("left");
+                        padding(20);
+                        font_size(30);
+                        color("white");
+                        width("100%");
+                        border("none");
+                        text_align("center");
+                        if (account.forgotPasswordSent === true) {
+                            return text("Sent Forgot password email.");
+                        } else {
+                            text("Forgot password. Email me a new one.");
+                            return onclick(function () {
+                                account.forgotPasswordSent = true;
+                                return account.forogtPasswordEmallMeLink();
+                            });
+                        }
+                    });
+                }
+                if (account.authTab === "Register") {
+                    account.colorNameField();
+                    account.loginFields(account.register);
+                    return button(".button", function () {
+                        display("block");
+                        margin_top(10);
+                        text_align("left");
+                        padding(20);
+                        font_size(30);
+                        color("white");
+                        width("100%");
+                        border("none");
+                        text_align("center");
+                        text("Register");
+                        return onclick(function () {
+                            return account.register();
+                        });
+                    });
+                }
+            });
+        });
+    };
+
+    account.loginFields = function (onEnter) {
+        input("#email.full", {
+            type: "text",
+            value: account.email,
+            placeholder: "Email"
+        }, function () {
+            return oninput(function (e) {
+                return account.email = e.target.value.toLowerCase();
+            });
+        });
+        return input("#password.full", {
+            type: "password",
+            value: account.password,
+            placeholder: "Password"
+        }, function () {
+            oninput(function (e) {
+                account.password = e.target.value;
+                return account.token = null;
+            });
+            return onkeydown(function (e) {
+                if (e.which === 13) {
+                    return onEnter();
+                }
+            });
+        });
+    };
+
+    account.factionField = function () {
+        return input("#email.full", {
+            type: "text",
+            value: commander.faction || "",
+            placeholder: "faction"
+        }, function () {
+            oninput(function (e) {
+                var faction;
+                faction = e.target.value.toUpperCase().slice(0, 4);
+                faction = faction.replace(/[^A-Za-z0-9]/g, "");
+                e.target.value = faction;
+                return commander.faction = faction;
+            });
+            return onblur(function (e) {
+                return account.rootSave();
+            });
+        });
+    };
+
+    account.colorOpen = false;
+
+    account.colorNameField = function (op) {
+        div(function () {
+            margin("10px 0px");
+            position("relative");
+            background_color("rgba(0,0,0,.3)");
+            height(75);
+            input({
+                type: "text",
+                value: account.name,
+                placeholder: "Nick Name",
+                maxlength: 16,
+                disabled: op != null ? op.disabled : void 0
+            }, function () {
+                position("absolute");
+                top(0);
+                left(0);
+                padding("20px 20px 20px 80px");
+                font_size(30);
+                color("white");
+                width("100%");
+                background_color("transparent");
+                border("none");
+                onblur(function (e) {
+                    e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, "");
+                    return account.name = e.target.value;
+                });
+                return oninput(function (e) {
+                    e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, "");
+                    return account.name = e.target.value;
+                });
+            });
+            return div(function () {
+                position("absolute");
+                top(0);
+                left(0);
+                width(55);
+                height(55);
+                margin(10);
+                border_radius(15);
+                border("2px solid white");
+                box_shadow("0 0 7px rgba(255,255,255,.5), inset 0 0 3px 2px rgba(0,0,0,.5)");
+                background_color(colors.cssRgba(account.color));
+                return onclick(function () {
+                    return account.colorOpen = !account.colorOpen;
+                });
+            });
+        });
+        if (account.colorOpen) {
+            div(function () {
+                var c, j, len, ref, results;
+                padding("0px 20px");
+                text_align("center");
+                ref = colors.nice;
+                results = [];
+                for (j = 0, len = ref.length; j < len; j++) {
+                    c = ref[j];
+                    results.push((function (c) {
+                        return div(function () {
+                            display("inline-block");
+                            width(32);
+                            height(32);
+                            margin(5);
+                            border_radius(8);
+                            if (account.color === c) {
+                                border("2px solid white");
+                                box_shadow("0 0 7px rgba(255,255,255,.5), inset 0 0 3px 2px rgba(0,0,0,.5)");
+                            } else {
+                                box_shadow("0 0 3px 2px rgba(0,0,0,.5), inset 0 0 7px rgba(255,255,255,.5)");
+                            }
+                            background_color(colors.cssRgba(c));
+                            return onclick(function () {
+                                account.color = c;
+                                account.changedColor();
+                                return account.colorOpen = false;
+                            });
+                        });
+                    })(c));
+                }
+                return results;
+            });
+            return input("#color", {
+                type: "text",
+                value: colors.toHex(account.color),
+                placeholder: "Color"
+            }, function () {
+                display("block");
+                margin("10px 0px");
+                padding(20);
+                font_size(30);
+                color("white");
+                width("100%");
+                background_color("rgba(0,0,0,.3)");
+                border("none");
+                onkeypress(function (e) {
+                    if (e.which === 13) {
+                        e.target.blur();
+                        return account.colorOpen = false;
+                    }
+                });
+                return onchange(function (e) {
+                    account.color = colors.fromHex(e.target.value);
+                    return account.changedColor();
+                });
+            });
+        }
+    };
+
+    account.changedColor = function () {
+        if (account.signedIn) {
+            commander.color = account.color;
+            account.save();
+            return account.rootSave();
+        }
+    };
+
+    spacer = function () {
+        return div(function () {
+            return height(60);
+        });
+    };
+
+    account.changePasswordToggle = false;
+
+    account.profileMenu = function () {
+        account.colorNameField({
+            disabled: true
+        });
+        account.factionField();
+        spacer();
+        button(".red", function () {
+            text("Change Password");
+            return onclick(function () {
+                return account.changePasswordToggle = !account.changePasswordToggle;
+            });
+        });
+        div(function () {
+            if (account.error) {
+                padding(20);
+                font_size(30);
+                background_color("rgba(255,0,0,.2)");
+                return text(account.error);
+            }
+        });
+        if (account.changePasswordToggle) {
+            input(".full", {
+                type: "password",
+                value: account.oldPassword,
+                placeholder: "Current Password"
+            }, function () {
+                return onchange(function (e) {
+                    return account.oldPassword = e.target.value;
+                });
+            });
+            input(".full", {
+                type: "password",
+                value: account.newPassword,
+                placeholder: "New Password"
+            }, function () {
+                return onchange(function (e) {
+                    return account.newPassword = e.target.value;
+                });
+            });
+            button(".red", function () {
+                text("Change");
+                return onclick(function () {
+                    account.changePassword();
+                    return account.changePasswordToggle = false;
+                });
+            });
+        }
+        spacer();
+        return button(".red", function () {
+            text("Sign out");
+            return onclick(function () {
+                localStorage.clear();
+                return location.reload();
+            });
+        });
+    };
+
+    account.checkEmail = function () {
+        return ui.inScreen("menu", "Email", function () {
+            overflow("hidden");
+            return div(function () {
+                padding(20);
+                return text("Email with a link has been sent to you. Please click that link.");
+            });
+        });
+    };
+
+    account.settingsResetPassword = function () {
+        return ui.inScreen("menu", "Change Password", function () {
+            padding_bottom(100);
+            overflow_y("scroll");
+            input(".full", {
+                type: "password",
+                value: account.newPassword,
+                placeholder: "New Password"
+            }, function () {
+                return onchange(function (e) {
+                    return account.newPassword = e.target.value;
+                });
+            });
+            return button(".red", function () {
+                text("Change");
+                return onclick(function () {
+                    account.changePassword();
+                    return ui.mode = "menu";
+                });
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/engine.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var canvas, dpr, gl, resizeViewport;
+
+    gl = void 0;
+
+    canvas = void 0;
+
+    dpr = 1;
+
+    if (window.devicePixelRatio === 2) {
+        dpr = 2;
+    }
+
+    window.Atlas = (function () {
+        function Atlas(params) {
+            this.curSprite = 0;
+            this.maxSpritesInBatch = 1024 * 2;
+            this.spriteMap = {};
+            this.drawMargin = 4;
+            this.atlasMargin = 2;
+            this.vertsBuf = null;
+            this.uvsBuf = null;
+            this.indexsBuf = null;
+            this.uvs = new Float32Array(2 * 4 * this.maxSpritesInBatch);
+            this.verts = new Float32Array(2 * 4 * this.maxSpritesInBatch);
+            this.colors = new Uint8Array(4 * 4 * this.maxSpritesInBatch);
+            this.indexs = new Uint16Array(2 * 3 * this.maxSpritesInBatch);
+            this.initShader();
+            this.initTexture();
+            this.initBuffers();
+            this.initOffscreenBuffer();
+            this.viewPort = new Float32Array(4);
+            this.frame = 0;
+            this.ready = false;
+        }
+
+        Atlas.prototype.preloadList = function () {
+            var key, results;
+            results = [];
+            for (key in this.spriteMap) {
+                results.push(key);
+            }
+            return results;
+        };
+
+        Atlas.prototype.initShader = function () {
+            var compileShader, linkShader, simpleFragment, simpleVertex;
+            compileShader = function (type, src) {
+                var shader;
+                shader = gl.createShader(type);
+                gl.shaderSource(shader, src);
+                gl.compileShader(shader);
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.log(gl.getShaderInfoLog(shader));
+                    return null;
+                }
+                return shader;
+            };
+            linkShader = function (fragmentSrc, vertexSrc) {
+                var shader;
+                shader = gl.createProgram();
+                gl.attachShader(shader, compileShader(gl.FRAGMENT_SHADER, fragmentSrc));
+                gl.attachShader(shader, compileShader(gl.VERTEX_SHADER, vertexSrc));
+                gl.linkProgram(shader);
+                if (!gl.getProgramParameter(shader, gl.LINK_STATUS)) {
+                    console.log("could not link shader");
+                    return null;
+                }
+                return shader;
+            };
+            simpleFragment = "precision mediump float;\n\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nuniform sampler2D uSampler;\n\nvoid main(void) {\n    vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));\n    vec4 finalColor = textureColor * vColor;\n    gl_FragColor = finalColor;\n}";
+            simpleVertex = "attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\nattribute vec4 aColor;\n\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\n\nvoid main(void) {\n    gl_Position = vec4(aVertexPosition, 0.0, 1.0);\n    vColor = aColor;\n    vTextureCoord = aTextureCoord;\n}";
+            this.shader = linkShader(simpleFragment, simpleVertex);
+            gl.useProgram(this.shader);
+            this.shader.vertAttr = gl.getAttribLocation(this.shader, "aVertexPosition");
+            gl.enableVertexAttribArray(this.shader.vertAttr);
+            this.shader.uvsAttr = gl.getAttribLocation(this.shader, "aTextureCoord");
+            gl.enableVertexAttribArray(this.shader.uvsAttr);
+            this.shader.colorsAttr = gl.getAttribLocation(this.shader, "aColor");
+            gl.enableVertexAttribArray(this.shader.colorsAttr);
+            return this.shader.samplerUniform = gl.getUniformLocation(this.shader, "uSampler");
+        };
+
+        Atlas.prototype.initTexture = function () {
+            var anisotropic, handleLoadedTexture, loadTexture, max_anisotropy;
+            this.canvas = document.createElement('canvas');
+            this.canvas.className = "atlas";
+            this.originalTextureSize = 1024 * 4;
+            this.textureSize = Math.min(this.originalTextureSize, gl.getParameter(gl.MAX_TEXTURE_SIZE));
+            this.canvas.width = this.textureSize;
+            this.canvas.height = this.textureSize;
+            this.heights = new Uint16Array(this.canvas.width);
+            this.texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.canvas);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            anisotropic = gl.getExtension("EXT_texture_filter_anisotropic");
+            if (anisotropic) {
+                max_anisotropy = gl.getParameter(anisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+                gl.texParameterf(gl.TEXTURE_2D, anisotropic.TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy);
+            }
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            handleLoadedTexture = function (texture) {
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+                gl.generateMipmap(gl.TEXTURE_2D);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+                return texture.loaded = true;
+            };
+            return loadTexture = function (src) {
+                var texture;
+                texture = gl.createTexture();
+                texture.image = new Image();
+                texture.image.onload = function () {
+                    return handleLoadedTexture(texture);
+                };
+                texture.image.src = src;
+                return texture;
+            };
+        };
+
+        Atlas.prototype.initBuffers = function () {
+            var a, i, j, ref, x, y;
+            for (i = j = 0, ref = this.maxSpritesInBatch; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                a = 0;
+                x = 0;
+                y = 0;
+                this.verts[i * 8 + 0] = x - a;
+                this.verts[i * 8 + 1] = y - a;
+                this.verts[i * 8 + 2] = x + a;
+                this.verts[i * 8 + 3] = y - a;
+                this.verts[i * 8 + 4] = x + a;
+                this.verts[i * 8 + 5] = y + a;
+                this.verts[i * 8 + 6] = x - a;
+                this.verts[i * 8 + 7] = y + a;
+                this.uvs[i * 8 + 0] = 0;
+                this.uvs[i * 8 + 1] = 0;
+                this.uvs[i * 8 + 2] = 1;
+                this.uvs[i * 8 + 3] = 0;
+                this.uvs[i * 8 + 4] = 1;
+                this.uvs[i * 8 + 5] = 1;
+                this.uvs[i * 8 + 6] = 0;
+                this.uvs[i * 8 + 7] = 1;
+                this.colors[i * 16 + 0] = 255;
+                this.colors[i * 16 + 1] = 255;
+                this.colors[i * 16 + 2] = 255;
+                this.colors[i * 16 + 3] = 255;
+                this.colors[i * 16 + 4] = 255;
+                this.colors[i * 16 + 5] = 255;
+                this.colors[i * 16 + 6] = 255;
+                this.colors[i * 16 + 7] = 255;
+                this.colors[i * 16 + 8] = 255;
+                this.colors[i * 16 + 9] = 255;
+                this.colors[i * 16 + 10] = 255;
+                this.colors[i * 16 + 11] = 255;
+                this.colors[i * 16 + 12] = 255;
+                this.colors[i * 16 + 13] = 255;
+                this.colors[i * 16 + 14] = 255;
+                this.colors[i * 16 + 15] = 255;
+                this.indexs[i * 6 + 0] = i * 4 + 0;
+                this.indexs[i * 6 + 1] = i * 4 + 1;
+                this.indexs[i * 6 + 2] = i * 4 + 2;
+                this.indexs[i * 6 + 3] = i * 4 + 0;
+                this.indexs[i * 6 + 4] = i * 4 + 2;
+                this.indexs[i * 6 + 5] = i * 4 + 3;
+            }
+            this.vertsBuf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertsBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, this.verts, gl.DYNAMIC_DRAW);
+            this.uvsBuf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.uvsBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, this.uvs, gl.DYNAMIC_DRAW);
+            this.colorsBuf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.DYNAMIC_DRAW);
+            this.indexsBuf = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexsBuf);
+            return gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexs, gl.STATIC_DRAW);
+        };
+
+        Atlas.prototype.initOffscreenBuffer = function () {
+            this.rtt = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.rtt);
+            this.rtt.width = 64 * dpr;
+            this.rtt.height = 64 * dpr;
+            this.rttTexture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.rttTexture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.rtt.width, this.rtt.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            this.renderbuffer = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderbuffer);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.rtt.width, this.rtt.height);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.rttTexture, 0);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderbuffer);
+            this.pixels = new Uint8Array(4 * this.rtt.width * this.rtt.height);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+            return gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        };
+
+        Atlas.prototype.startFrame = function () {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            return this.frame += 1;
+        };
+
+        Atlas.prototype.startOffscreenFrame = function () {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.rtt);
+            gl.viewport(0, 0, this.rtt.width, this.rtt.height);
+            gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            return gl.clear(gl.COLOR_BUFFER_BIT);
+        };
+
+        Atlas.prototype.endOffscreenFrame = function () {
+            var ctx, i, j, pixelsOut, ref, rttcanvas;
+            gl.readPixels(0, 0, this.rtt.width, this.rtt.height, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels);
+            rttcanvas = document.createElement("canvas");
+            rttcanvas.width = this.rtt.width;
+            rttcanvas.height = this.rtt.height;
+            ctx = rttcanvas.getContext('2d');
+            pixelsOut = ctx.getImageData(0, 0, this.rtt.width, this.rtt.height);
+            if (!(pixelsOut != null ? pixelsOut.data : void 0)) {
+                return "";
+            }
+            for (i = j = 0, ref = this.pixels.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                pixelsOut.data[i] = this.pixels[i];
+            }
+            ctx.putImageData(pixelsOut, 0, 0, 0, 0, this.rtt.width, this.rtt.height);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            return rttcanvas.toDataURL();
+        };
+
+        Atlas.prototype.loadAtlas = function (atlas) {
+            var xhr;
+            xhr = new XMLHttpRequest();
+            xhr.open("GET", atlas.src, true);
+            xhr.responseType = "arraybuffer";
+            xhr.onprogress = (function (_this) {
+                return function (e) {
+                    _this.progress = e.loaded / e.total;
+                    return onecup.refresh();
+                };
+            })(this);
+            xhr.onload = (function (_this) {
+                return function (e) {
+                    var encodedData, j, len, ref, s, stringData;
+                    _this.atlasImage = new Image();
+                    _this.atlasImage.onload = function (e) {
+                        var data;
+                        gl.bindTexture(gl.TEXTURE_2D, _this.texture);
+                        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                        if (_this.textureSize !== _this.atlasImage.width) {
+                            console.log("scaling image down");
+                            data = _this.scaleImage(_this.atlasImage, _this.textureSize);
+                        } else {
+                            data = _this.atlasImage;
+                        }
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data);
+                        gl.generateMipmap(gl.TEXTURE_2D);
+                        _this.spriteMap = atlas.mappings;
+                        _this.ready = true;
+                        return onecup.refresh();
+                    };
+                    _this.atlasImage.onerror = function (e) {
+                        console.log("Could not load atlas image", e);
+                        return _this.error = true;
+                    };
+                    stringData = "";
+                    ref = new Uint8Array(xhr.response);
+                    for (j = 0, len = ref.length; j < len; j++) {
+                        s = ref[j];
+                        stringData += String.fromCharCode(s);
+                    }
+                    encodedData = window.btoa(stringData);
+                    return _this.atlasImage.src = "data:image/png;base64," + encodedData;
+                };
+            })(this);
+            return xhr.send();
+        };
+
+        Atlas.prototype.scaleImage = function (image, size) {
+            var ctx;
+            canvas = document.createElement("canvas");
+            canvas.width = size;
+            canvas.height = size;
+            ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0, size, size);
+            return canvas;
+        };
+
+        Atlas.prototype.beginSprites = function (pos, zoom, viewPort) {
+            if (pos == null) {
+                pos = [0, 0];
+            }
+            if (zoom == null) {
+                zoom = 1;
+            }
+            if (!viewPort) {
+                this.viewPort[0] = pos[0];
+                this.viewPort[1] = pos[1];
+                this.viewPort[2] = gl.viewportWidth;
+                this.viewPort[3] = gl.viewportHeight;
+            } else {
+                this.viewPort[0] = viewPort[0];
+                this.viewPort[1] = viewPort[1];
+                this.viewPort[2] = viewPort[2];
+                this.viewPort[3] = viewPort[3];
+            }
+            this.viewPort[2] *= zoom / dpr;
+            return this.viewPort[3] *= zoom / dpr;
+        };
+
+        Atlas.prototype.drawSprite = function (src, pos, size, rot, color, z) {
+            var cos, h, i, j, m, mapping, n, sin, sx, sy, w, x, y, zf;
+            if (color == null) {
+                color = [255, 255, 255, 255];
+            }
+            if (z == null) {
+                z = 0;
+            }
+            if (!this.ready) {
+                return;
+            }
+            if (this.curSprite >= this.maxSpritesInBatch) {
+                this.finishSprites();
+            }
+            mapping = this.spriteMap[src];
+            if (!mapping) {
+                console.error("not in mapping", src);
+                return;
+            }
+            i = this.curSprite;
+            m = this.drawMargin / this.originalTextureSize;
+            this.uvs[i * 8 + 0] = mapping.uv[0] - m;
+            this.uvs[i * 8 + 1] = mapping.uv[1] + m;
+            this.uvs[i * 8 + 2] = mapping.uv[2] + m;
+            this.uvs[i * 8 + 3] = mapping.uv[1] + m;
+            this.uvs[i * 8 + 4] = mapping.uv[2] + m;
+            this.uvs[i * 8 + 5] = mapping.uv[3] - m;
+            this.uvs[i * 8 + 6] = mapping.uv[0] - m;
+            this.uvs[i * 8 + 7] = mapping.uv[3] - m;
+            this.colors[i * 16 + 0] = color[0];
+            this.colors[i * 16 + 1] = color[1];
+            this.colors[i * 16 + 2] = color[2];
+            this.colors[i * 16 + 3] = color[3];
+            this.colors[i * 16 + 4] = color[0];
+            this.colors[i * 16 + 5] = color[1];
+            this.colors[i * 16 + 6] = color[2];
+            this.colors[i * 16 + 7] = color[3];
+            this.colors[i * 16 + 8] = color[0];
+            this.colors[i * 16 + 9] = color[1];
+            this.colors[i * 16 + 10] = color[2];
+            this.colors[i * 16 + 11] = color[3];
+            this.colors[i * 16 + 12] = color[0];
+            this.colors[i * 16 + 13] = color[1];
+            this.colors[i * 16 + 14] = color[2];
+            this.colors[i * 16 + 15] = color[3];
+            w = (mapping.uv[2] - mapping.uv[0]) * this.originalTextureSize;
+            h = (mapping.uv[1] - mapping.uv[3]) * this.originalTextureSize;
+            sx = (w + this.drawMargin * 2) * size[0] / 2;
+            sy = (h + this.drawMargin * 2) * size[1] / 2;
+            cos = Math.cos(rot);
+            sin = Math.sin(rot);
+            this.verts[i * 8 + 0] = pos[0] + (-sx * cos + sy * sin);
+            this.verts[i * 8 + 1] = pos[1] + (-sx * sin - sy * cos);
+            this.verts[i * 8 + 2] = pos[0] + (+sx * cos + sy * sin);
+            this.verts[i * 8 + 3] = pos[1] + (+sx * sin - sy * cos);
+            this.verts[i * 8 + 4] = pos[0] + (+sx * cos - sy * sin);
+            this.verts[i * 8 + 5] = pos[1] + (+sx * sin + sy * cos);
+            this.verts[i * 8 + 6] = pos[0] + (-sx * cos - sy * sin);
+            this.verts[i * 8 + 7] = pos[1] + (-sx * sin + sy * cos);
+            for (n = j = 0; j < 4; n = ++j) {
+                zf = Math.pow(1.001, -z);
+                x = this.verts[i * 8 + n * 2 + 0];
+                this.verts[i * 8 + n * 2 + 0] = (x + this.viewPort[0]) / this.viewPort[2] / zf;
+                y = this.verts[i * 8 + n * 2 + 1];
+                this.verts[i * 8 + n * 2 + 1] = (y + this.viewPort[1]) / this.viewPort[3] / zf;
+            }
+            return this.curSprite += 1;
+        };
+
+        Atlas.prototype.finishSprites = function (blend) {
+            if (blend == null) {
+                blend = false;
+            }
+            if (blend) {
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            } else {
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            }
+            gl.useProgram(this.shader);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vertsBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, this.verts, gl.DYNAMIC_DRAW);
+            gl.vertexAttribPointer(this.shader.vertAttr, 2, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.uvsBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, this.uvs, gl.DYNAMIC_DRAW);
+            gl.vertexAttribPointer(this.shader.uvsAttr, 2, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.colorsBuf);
+            gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.DYNAMIC_DRAW);
+            gl.vertexAttribPointer(this.shader.colorsAttr, 4, gl.UNSIGNED_BYTE, true, 0, 0);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.uniform1i(this.shader.samplerUniform, 0);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexsBuf);
+            gl.drawElements(gl.TRIANGLES, this.curSprite * 6, gl.UNSIGNED_SHORT, 0);
+            return this.curSprite = 0;
+        };
+
+        return Atlas;
+
+    })();
+
+    window.initGL = function () {
+        var contextError;
+        canvas = document.getElementById("webGL");
+        contextError = function (e) {
+            ui.error = "webGL";
+            track("webgl_context_error", {
+                message: e.statusMessage
+            });
+            return ui.contextErrrorMessage = e.statusMessage;
+        };
+        canvas.addEventListener("webglcontextcreationerror", contextError, false);
+        canvas.addEventListener("webglcontextlost", contextError, false);
+        window.gl = gl = canvas.getContext("webgl", {
+            failIfMajorPerformanceCaveat: true
+        });
+        if (!gl) {
+            console.log("failed to init GL");
+            return false;
+        }
+        resizeViewport();
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.BLEND);
+        return true;
+    };
+
+    window.onresize = function () {
+        resizeViewport();
+        return onecup.refresh();
+    };
+
+    resizeViewport = function () {
+        if (!canvas) {
+            return;
+        }
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
+        if (gl != null) {
+            gl.viewportWidth = canvas.width;
+            return gl.viewportHeight = canvas.height;
+        }
+    };
+
+    window.togglePointerLock = function () {
+        canvas = document.getElementById("webGL");
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
+        return canvas.requestPointerLock();
+    };
+
+    window.isFullScreen = function () {
+        return document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+    };
+
+    window.toggleFullScreen = function () {
+        console.log("toggle full screen");
+        if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+            enterFullScreen();
+        } else {
+            exitFullScreen();
+        }
+    };
+
+    window.enterFullScreen = function () {
+        if (document.documentElement.requestFullscreen) {
+            return document.documentElement.requestFullscreen();
+        } else if (document.documentElement.msRequestFullscreen) {
+            return document.documentElement.msRequestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+            return document.documentElement.mozRequestFullScreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            return document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+        }
+    };
+
+    window.exitFullScreen = function () {
+        if (document.exitFullscreen) {
+            return document.exitFullscreen();
+        } else if (document.msExitFullscreen) {
+            return document.msExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            return document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+            return document.webkitExitFullscreen();
+        }
     };
 
 }).call(this);
@@ -4784,6 +8741,208 @@ zjson - binary json sirelizer with some strange features
 
 }).call(this);
 ;
+
+
+//from src/sound.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var ctx, e, error, maxSounds, r, soundCache;
+
+    if (window.AudioContext == null) {
+        window.AudioContext = window.webkitAudioContext;
+    }
+
+    try {
+        ctx = new AudioContext();
+    } catch (error) {
+        e = error;
+        console.log('Web Audio API is not supported in this browser');
+    }
+
+    window.mainVolume = ctx.createGain();
+
+    mainVolume.connect(ctx.destination);
+
+    ctx.destination.isConnected = true;
+
+    soundCache = {};
+
+    r = function () {
+        return (Math.random() - .5) * Math.random();
+    };
+
+    window.loadSound = function (url, cb) {
+        var request, sound;
+        sound = {};
+        sound.source = ctx.createBufferSource();
+        sound.volume = ctx.createGain();
+        sound.source.connect(sound.volume);
+        sound.volume.connect(mainVolume);
+        if (soundCache[url]) {
+            sound.buffer = soundCache[url];
+            sound.source.buffer = sound.buffer;
+            return cb(sound);
+        } else {
+            request = new XMLHttpRequest();
+            request.open("GET", url, true);
+            request.responseType = "arraybuffer";
+            request.onload = function (e) {
+                var onFailure, onSuccess;
+                onSuccess = function (buffer) {
+                    soundCache[url] = buffer;
+                    sound.buffer = soundCache[url];
+                    sound.source.buffer = sound.buffer;
+                    return cb(sound);
+                };
+                onFailure = function () {
+                    return console.log("failed to load", url);
+                };
+                return ctx.decodeAudioData(this.response, onSuccess, onFailure);
+            };
+            return request.send();
+        }
+    };
+
+    maxSounds = {};
+
+    window.playSound = function (url, volume) {
+        if (volume == null) {
+            volume = 1;
+        }
+        if (maxSounds[url] >= 16) {
+            return;
+        }
+        maxSounds[url] = (maxSounds[url] || 0) + 1;
+        return loadSound(url, function (sound) {
+            var rate;
+            sound.volume.gain.value = volume * 0.15 + r() * settings.soundValue("FX Volume");
+            rate = 1 + r();
+            sound.source.playbackRate.value = rate;
+            sound.source.start(ctx.currentTime);
+            return after(sound.source.buffer.duration * rate * 1000, function () {
+                return maxSounds[url] -= 1;
+            });
+        });
+    };
+
+    window.playSoundUI = function (url, volume, rate) {
+        if (volume == null) {
+            volume = 1;
+        }
+        if (rate == null) {
+            rate = 1;
+        }
+        return loadSound(url, function (sound) {
+            sound.source.playbackRate.value = rate;
+            sound.volume.gain.value = volume * settings.soundValue("FX Volume");
+            return sound.source.start(ctx.currentTime);
+        });
+    };
+
+    window.ActionMixer = (function () {
+        function ActionMixer() {
+            this.action = 0;
+            this.reset();
+        }
+
+        ActionMixer.prototype.reset = function () {
+            var actionSound, i, j, ref;
+            actionSound = choose(["Glimpse.wav", "Another 80s Arp.wav", "Kevlar.wav", "Kevlar.wav", "Slow Burn.wav", "Producer Alchemy - 13 Stones Drums - 96 BPM.mp3", "Producer Alchemy Demo - Stones Drums.mp3", "Producer Alchemy Pizz.Paddy - 09.mp3"]);
+            if ((ref = this.battleSound) != null) {
+                ref.source.stop();
+            }
+            loadSound("sounds/loops/action/" + actionSound, (function (_this) {
+                return function (sound) {
+                    _this.battleSound = sound;
+                    _this.battleSound.volume.gain.value = 0;
+                    _this.battleSound.source.loop = true;
+                    return _this.battleSound.source.start();
+                };
+            })(this));
+            this.ambientChoices = [];
+            for (i = j = 0; j < 3; i = ++j) {
+                this.ambientChoices.push(choose(['Magnetic Field Amber.ogg', 'Magnetic Field Amethyst.ogg', 'Magnetic Field Aquamarine.ogg', 'Magnetic Field Auburn.ogg', 'Magnetic Field Azure.ogg', 'Magnetic Field Beige.ogg', 'Magnetic Field Black.ogg', 'Magnetic Field Blonde.ogg', 'Magnetic Field Blue.ogg', 'Magnetic Field Bronze.ogg', 'Magnetic Field Brown.ogg', 'Magnetic Field Carmine.ogg', 'Magnetic Field Cerise.ogg', 'Magnetic Field Copper.ogg', 'Magnetic Field Coral.ogg', 'Magnetic Field Cyan.ogg', 'Magnetic Field Ebony.ogg', 'Magnetic Field Emerald.ogg', 'Magnetic Field Gold.ogg', 'Magnetic Field Green.ogg', 'Magnetic Field Grey.ogg', 'Magnetic Field Indigo.ogg', 'Magnetic Field Ivory.ogg', 'Magnetic Field Jade.ogg', 'Magnetic Field Lilac.ogg', 'Magnetic Field Magenta.ogg', 'Magnetic Field Magnolia.ogg', 'Magnetic Field Mauve.ogg', 'Magnetic Field Mustard.ogg', 'Magnetic Field Ochre.ogg', 'Magnetic Field Olive.ogg', 'Magnetic Field Onyx.ogg', 'Magnetic Field Orange.ogg', 'Magnetic Field Pink.ogg', 'Magnetic Field Purple.ogg', 'Magnetic Field Red.ogg', 'Magnetic Field Rose.ogg', 'Magnetic Field Russet.ogg', 'Magnetic Field Sapphire.ogg', 'Magnetic Field Scarlet.ogg', 'Magnetic Field Silver.ogg', 'Magnetic Field Turquoise.ogg', 'Magnetic Field Ultramarine.ogg', 'Magnetic Field Vermilion.ogg', 'Magnetic Field Violet.ogg', 'Magnetic Field White.ogg', 'Magnetic Field Yellow.ogg']));
+            }
+            return this.playAmbient();
+        };
+
+        ActionMixer.prototype.playAmbient = function () {
+            if (this.ambientPlayLast > Date.now()) {
+                return;
+            }
+            this.ambient = choose(this.ambientChoices);
+            this.ambientPlayLast = Date.now() + 10000;
+            return loadSound("sounds/fields/" + this.ambient, (function (_this) {
+                return function (sound) {
+                    var rate;
+                    _this.ambientSound = sound;
+                    rate = 1 + r() * 2;
+                    _this.ambientPlayLast = Date.now() + 35000 * rate * .8;
+                    sound.source.playbackRate.value = rate;
+                    _this.ambientSound.volume.gain.value = settings.soundValue("Ambient Volume") * .25;
+                    return _this.ambientSound.source.start();
+                };
+            })(this));
+        };
+
+        ActionMixer.prototype.playTrack = function (name) {
+            if (this.trackName === name) {
+                return;
+            }
+            this.trackName = name;
+            console.log("play track", this.trackName);
+            return loadSound(this.trackName, (function (_this) {
+                return function (sound) {
+                    console.log("playing track", _this.trackName);
+                    _this.trackSound = sound;
+                    _this.trackSound.volume.gain.value = 0;
+                    _this.trackSound.source.loop = true;
+                    return _this.trackSound.source.start();
+                };
+            })(this));
+        };
+
+        ActionMixer.prototype.tick = function () {
+            var v;
+            this.action = this.action * .995;
+            if (this.battleSound) {
+                v = 0;
+                if (this.action) {
+                    v = 1 - Math.exp(-this.action);
+                }
+                this.battleSound.volume.gain.value = v * settings.soundValue("Music Volume") * .75;
+            }
+            if (this.trackSound) {
+                v = 1;
+                this.trackSound.volume.gain.value = v * settings.soundValue("Music Volume") * .75;
+            }
+            if (Math.random() < .001) {
+                this.playAmbient();
+            }
+            if (this.ambientSound) {
+                this.ambientSound.volume.gain.value = settings.soundValue("Ambient Volume");
+            }
+            mainVolume.gain.value = settings.soundValue("Master Volume");
+            if (localStorage.mute === "true") {
+                if (ctx.destination.isConnected) {
+                    ctx.destination.isConnected = false;
+                    return mainVolume.disconnect(ctx.destination);
+                }
+            } else {
+                if (!ctx.destination.isConnected) {
+                    ctx.destination.isConnected = true;
+                    return mainVolume.connect(ctx.destination);
+                }
+            }
+        };
+
+        return ActionMixer;
+
+    })();
+
+}).call(this);
+;
+
 
 //from src/maps.js
 // Generated by CoffeeScript 1.10.0
@@ -5403,7 +9562,7 @@ zjson - binary json sirelizer with some strange features
 
     window.VERSION = 49;
 
-    window.MINOR_VERSION = 1;
+    window.MINOR_VERSION = 2;
 
     _pos = v2.create();
 
@@ -5560,7 +9719,7 @@ zjson - binary json sirelizer with some strange features
             this.winningSide = null;
             this.lastId = 0;
             this.counting = 0;
-            this.generateMap(this.mapScale, this.numComPoints);
+            this.generateMap();
             if (this.players == null) {
                 this.players = {};
             } else {
@@ -6987,15 +11146,16 @@ zjson - binary json sirelizer with some strange features
 }).call(this);
 ;
 
-//from src/things.js
+
+//from src/interpolator.js
 // Generated by CoffeeScript 1.10.0
-
-/*
-General Game Objects live here
- */
-
 (function () {
-    var Explosion, _color, _focus, _offset, _pos, _size, _vec, anitSideColor, randColor, sideColor,
+    var diffVec,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
         extend = function (child, parent) {
             for (var key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
@@ -7012,9 +11172,694 @@ General Game Objects live here
         },
         hasProp = {}.hasOwnProperty;
 
-    randColor = function (a) {
-        return [Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), Math.floor(a + (255 - a) * Math.random()), 255];
-    };
+    diffVec = v2.create();
+
+    window.Interpolator = (function (superClass) {
+        extend(Interpolator, superClass);
+
+        Interpolator.prototype.sound = true;
+
+        Interpolator.prototype.fast = false;
+
+        function Interpolator() {
+            this.think = bind(this.think, this);
+            this.step = 0;
+            this.firstUpdate = true;
+            this.things = {};
+            this.players = [];
+            this.particles = {};
+            this.fastParticles = {};
+            this.avgFrame = 9;
+            this.lastFrame = 0;
+            this.stepTime = now();
+            this.t = now();
+            this.avgDt = 1 / 60;
+            this.avgTime = 1000 / 16;
+            this.allMessages = [];
+            this.dataQ = [];
+            this.wait = 0;
+            this.prevWait = 2;
+            this.state = "waiting";
+            this.pref = {};
+            this.zJson = new window.ZJson(prot.commonWords);
+        }
+
+        Interpolator.prototype.gameStarted = function () {
+            if (!commander) {
+                return;
+            }
+            this.players = [];
+            this.things = {};
+            this.particles = {};
+            this.winningSide = null;
+            track("start");
+            if (!sim.galaxyStar && !sim.local) {
+                if (commander.side !== "spectators") {
+                    ui.go("battle");
+                }
+                if (ui.mode === "battleroom" || ui.mode === "quickscore") {
+                    ui.go("battle");
+                }
+            }
+            return commander.selection = [];
+        };
+
+        Interpolator.prototype.focusMap = function () {
+            var _, dist, maxDist, ref, thing;
+            maxDist = 0;
+            ref = sim.things;
+            for (_ in ref) {
+                thing = ref[_];
+                dist = v2.mag(thing.pos);
+                if (dist > maxDist) {
+                    maxDist = dist;
+                }
+            }
+            battleMode.focus = [0, 0];
+            return battleMode.zoom = maxDist / 1000;
+        };
+
+        Interpolator.prototype.gameEnded = function () {
+            actionMixer.reset();
+            if (!sim.local) {
+                if (commander.side !== "spectators") {
+                    ui.go("quickscore");
+                }
+                if (ui.mode === "battle") {
+                    ui.go("quickscore");
+                }
+            }
+            return this.uploadReplay();
+        };
+
+        Interpolator.prototype.drawThingsList = function () {
+            var _, particle, ref, ref1, thing, things;
+            things = [];
+            ref = this.things;
+            for (_ in ref) {
+                thing = ref[_];
+                things.push(thing);
+            }
+            ref1 = this.particles;
+            for (_ in ref1) {
+                particle = ref1[_];
+                things.push(particle);
+            }
+            return things;
+        };
+
+        Interpolator.prototype.draw = function () {
+            var ai, color, i, j, l, len, len1, len2, len3, m, o, p, particles, player, q, ref, ref1, ref2, thing,
+                things;
+            this.advance();
+            if (typeof sim !== "undefined" && sim !== null ? sim.ais : void 0) {
+                ref = sim.ais;
+                for (j = 0, len = ref.length; j < len; j++) {
+                    ai = ref[j];
+                    ai.draw();
+                }
+            }
+            things = this.drawThingsList();
+            things.sort(function (a, b) {
+                return a.z - b.z;
+            });
+            for (l = 0, len1 = things.length; l < len1; l++) {
+                thing = things[l];
+                thing.draw();
+            }
+            for (particles in this.fastParticles) {
+                particles.draw();
+            }
+            color = [0, 0, 0, 0];
+            ref1 = this.players;
+            for (o = 0, len2 = ref1.length; o < len2; o++) {
+                player = ref1[o];
+                if (!player) {
+                    continue;
+                }
+                if (player.name !== (typeof commander !== "undefined" && commander !== null ? commander.name : void 0) && player.side !== "spectators" && player.side !== "dead" && player.connected) {
+                    if (player.mouse[0] !== 0 && player.mouse[1] !== 0 && player._mouse) {
+                        m = [0, 0];
+                        color = [player.color[0], player.color[1], player.color[2], 255];
+                        v2.lerp(player._mouse, player.mouse, this.smoothFactor, m);
+                        player.mouseTrail.push(m);
+                        while (player.mouseTrail.length > 10) {
+                            player.mouseTrail.shift();
+                        }
+                        ref2 = player.mouseTrail;
+                        for (i = q = 0, len3 = ref2.length; q < len3; i = ++q) {
+                            p = ref2[i];
+                            color[3] = 255 / (10 - i + 1);
+                            baseAtlas.drawSprite("img/pip1.png", p, [1, 1], 0, color);
+                        }
+                        if (player.action) {
+                            baseAtlas.drawSprite("img/pip1.png", m, [2, 2], 0, player.color);
+                        }
+                    }
+                }
+                if (player.name === (typeof commander !== "undefined" && commander !== null ? commander.name : void 0)) {
+                    player.selection = commander.selection;
+                    player.draw();
+                }
+            }
+
+            /*  * uncomment this to debug
+      for _, t of intp.things
+          #baseAtlas.drawSprite("img/pip1.png", t._pos2,  [1,1], 0, [0,255,0,100])
+          #baseAtlas.drawSprite("img/pip1.png", t._pos, [1,1], 0, [255,0,0,100])
+          if t.unit
+              for p in t.testIntp
+                  baseAtlas.drawSprite("img/pip1.png", p, [.2,.2], 0, [255,0,0,100])
+              #for p in t.testStep
+               *    baseAtlas.drawSprite("img/pip1.png", p, [.4,.4], 0, [0,255,0,100])
+       */
+        };
+
+        Interpolator.prototype.advance = function () {
+            if (this.fast) {
+                return this.advanceSnap();
+            } else {
+                return this.advanceSmooth();
+            }
+        };
+
+        Interpolator.prototype.advanceSnap = function () {
+            var i, id, j, len, ref, ref1, thing, weapon;
+            this.t = now();
+            this.smoothFactor = 1;
+            ref = this.things;
+            for (id in ref) {
+                thing = ref[id];
+                v2.set(thing._pos, thing.pos);
+                thing.rot = thing._rot;
+                if (thing.weapons != null) {
+                    ref1 = thing.weapons;
+                    for (i = j = 0, len = ref1.length; j < len; i = ++j) {
+                        weapon = ref1[i];
+                        weapon.rot = weapon._rot;
+                    }
+                }
+            }
+            return null;
+        };
+
+        Interpolator.prototype.advanceSmooth = function () {
+            var a, angleDiff, difference, expectedLastStep, i, id, j, len, part, ref, ref1, ref2, thing, timeLastStep;
+            this.t = now();
+
+            /*  * uncomment this to debug
+       * instant
+      if @dataQ.length > 0
+          @process(@dataQ.pop())
+       */
+            if (this.dataQ.length > 0) {
+                timeLastStep = this.t - this.stepTime;
+                expectedLastStep = 1000 / 16;
+                difference = timeLastStep / expectedLastStep;
+                if (difference > 1 - this.dataQ.length * .1) {
+                    this.process(this.dataQ.pop());
+                }
+            }
+
+            /*  * uncomment this to debug
+       * high jitter
+      if @dataQ.length > 16
+          timeLastStep = @t - @stepTime
+          expectedLastStep = 1000/16
+          faster = 0
+          if @dataQ.length > 16
+              faster = (@dataQ.length-16)
+          console.log "difference", timeLastStep, expectedLastStep, @dataQ.length, faster
+          if timeLastStep > expectedLastStep - faster
+              @process(@dataQ.pop())
+       */
+            this.lastFrame += 1;
+            a = this.lastFrame / this.avgFrame;
+            this.smoothFactor = a;
+            if (a > 1) {
+                a = 1;
+            }
+            if (a < 0) {
+                a = 0;
+            }
+            if (this.smoothFactor > 10) {
+                this.smoothFactor = 10;
+            }
+            ref = this.things;
+            for (id in ref) {
+                thing = ref[id];
+                thing.pos[0] = thing._pos2[0] + (thing._pos[0] - thing._pos2[0]) * a;
+                thing.pos[1] = thing._pos2[1] + (thing._pos[1] - thing._pos2[1]) * a;
+                angleDiff = angleBetween(thing._rot2, thing._rot);
+                thing.rot = thing._rot2 + angleDiff * a;
+                if (thing.parts != null) {
+                    ref1 = thing.parts;
+                    for (i = j = 0, len = ref1.length; j < len; i = ++j) {
+                        part = ref1[i];
+                        angleDiff = angleBetween(part._rot2, part._rot);
+                        part.rot = part._rot2 + angleDiff * a;
+                    }
+                }
+            }
+            ref2 = this.particles;
+            for (id in ref2) {
+                thing = ref2[id];
+                thing.pos[0] = thing._pos2[0] + (thing._pos[0] - thing._pos2[0]) * a;
+                thing.pos[1] = thing._pos2[1] + (thing._pos[1] - thing._pos2[1]) * a;
+                angleDiff = angleBetween(thing._rot2, thing._rot);
+                thing.rot = thing._rot2 + angleDiff * a;
+            }
+            return null;
+        };
+
+        Interpolator.prototype.replay = "off";
+
+        Interpolator.prototype.recordReplay = function () {
+            this.replay = "recording";
+            return this.replayFrames = [];
+        };
+
+        Interpolator.prototype.uploadReplay = function () {
+            var data, frame;
+            if (this.replay === "recording") {
+                this.replay = "off";
+                data = JSON.stringify((function () {
+                    var j, len, ref, results;
+                    ref = this.replayFrames;
+                    results = [];
+                    for (j = 0, len = ref.length; j < len; j++) {
+                        frame = ref[j];
+                        results.push(dv2str(frame));
+                    }
+                    return results;
+                }).call(this));
+                localStorage.replay = data;
+            }
+        };
+
+        Interpolator.prototype.playReplay = function () {
+            var data, frame;
+            this.players = [];
+            this.things = {};
+            this.particles = {};
+            this.winningSide = null;
+            this.replay = "playing";
+            this.replayStep = 0;
+            data = localStorage.replay;
+            this.replayFrames = (function () {
+                var j, len, ref, results;
+                ref = JSON.parse(data);
+                results = [];
+                for (j = 0, len = ref.length; j < len; j++) {
+                    frame = ref[j];
+                    results.push(str2dv(frame));
+                }
+                return results;
+            })();
+            return this.local = false;
+        };
+
+        Interpolator.prototype.recv = function (data) {
+            this.dataQ.unshift(data);
+            while (this.dataQ.length > 32) {
+                this.process(this.dataQ.pop());
+            }
+            return stats.simAdd();
+        };
+
+        Interpolator.prototype.think = function () {
+        };
+
+        Interpolator.prototype.debugDraw = function () {
+            var j, l, ref, ref1, results, x;
+            for (x = j = 0, ref = this.prevWait; 0 <= ref ? j < ref : j > ref; x = 0 <= ref ? ++j : --j) {
+                baseAtlas.drawSprite("img/pip1.png", [20 + x * 40 - window.innerWidth, window.innerHeight - 120], [1, 1], 0, [0, 0, 0, 255]);
+            }
+            results = [];
+            for (x = l = 0, ref1 = this.dataQ.length; 0 <= ref1 ? l < ref1 : l > ref1; x = 0 <= ref1 ? ++l : --l) {
+                results.push(baseAtlas.drawSprite("img/pip1.png", [20 + x * 40 - window.innerWidth, window.innerHeight - 120], [1, 1], 0, [255, 255, 255, 255]));
+            }
+            return results;
+        };
+
+        Interpolator.prototype.process = function (data) {
+            var _, dt, id, j, k, kv, l, len, len1, len2, len3, len4, len5, len6, len7, len8, n, newObj, newThing,
+                number, o, p, part, player, q, r, ref, ref1, ref10, ref11, ref12, ref13, ref2, ref3, ref4, ref5, ref6,
+                ref7, ref8, ref9, s, selection, t, thing, u, unit, v, w, y, z;
+            if (this.replay === "recording") {
+                this.replayFrames.push(packet);
+            }
+            t = now();
+            dt = t - this.stepTime;
+            this.avgTime = this.avgTime * .9 + dt * .1;
+            this.stepTime = t;
+            this.avgFrame = this.avgFrame * .9 + this.lastFrame * .1;
+            this.lastFrame = 0;
+            if (intp.players.length === 0 && !data.fullUpdate && commander) {
+                print("waiting for full update");
+                return;
+            }
+            if (data.fullUpdate) {
+                intp.step = data.step;
+            } else if (data.step != null) {
+                if (intp.step + 1 === data.step) {
+                    intp.step += 1;
+                } else {
+                    print("Over step, what about full update?");
+                    return;
+                }
+            }
+            if (data.winningSide) {
+                intp.winningSide = data.winningSide;
+                onecup.refresh();
+            }
+            if (data.state) {
+                intp.state = data.state;
+                onecup.refresh();
+            }
+            if (intp.state === "starting") {
+                this.gameStarted();
+            }
+            if (intp.state === "ended") {
+                console.log("ended");
+                this.gameEnded();
+            }
+            if (data.serverType) {
+                intp.serverType = data.serverType;
+                onecup.refresh();
+            }
+            if (data.theme) {
+                intp.theme = data.theme;
+            }
+            if (intp.countDown === 5 * 16 && !sim.local) {
+                onecup.refresh();
+            }
+            if (data.countDown != null) {
+                intp.countDown = data.countDown;
+                if (intp.countDown % 16 === 0 && intp.state === "waiting") {
+                    onecup.refresh();
+                }
+            }
+            designMode.locked = intp.serverType === "1v1t" && intp.state === "running" && commander.side !== "spectators";
+            if (data.perf) {
+                intp.perf = data.perf;
+                if (control.perf) {
+                    onecup.refresh();
+                }
+            }
+            ref = intp.things;
+            for (_ in ref) {
+                thing = ref[_];
+                v2.add(thing._pos, thing.vel);
+                v2.set(thing.pos, thing._pos2);
+                thing._rot2 = thing.rot;
+                if (thing.parts != null) {
+                    ref1 = thing.parts;
+                    for (j = 0, len = ref1.length; j < len; j++) {
+                        part = ref1[j];
+                        part._rot2 = part.rot;
+                    }
+                }
+            }
+            ref2 = intp.players;
+            for (l = 0, len1 = ref2.length; l < len1; l++) {
+                player = ref2[l];
+                player._mouse = player.mouse;
+            }
+            if (data.things) {
+                ref3 = data.things;
+                for (o = 0, len2 = ref3.length; o < len2; o++) {
+                    t = ref3[o];
+                    thing = null;
+                    part = null;
+                    newObj = false;
+                    for (q = 0, len3 = t.length; q < len3; q++) {
+                        kv = t[q];
+                        k = kv[0], v = kv[1];
+                        switch (k) {
+                            case "thingId":
+                                thing = intp.things[v];
+                                if (!thing) {
+                                    thing = {
+                                        dummy: true
+                                    };
+                                    newObj = true;
+                                }
+                                thing.id = v;
+                                part = null;
+                                newObj = false;
+                                break;
+                            case "spec":
+                                if (thing.dummy) {
+                                    newThing = new types[thing.name](v);
+                                    newThing.id = thing.id;
+                                    newThing.name = thing.name;
+                                    intp.things[newThing.id] = newThing;
+                                    thing = newThing;
+                                    newObj = true;
+                                }
+                                break;
+                            case "pos":
+                                if (newObj || (thing._pos == null)) {
+                                    thing.pos = v2.create(v);
+                                    thing._pos = v2.create(thing.pos);
+                                    thing._pos2 = v2.create(thing.pos);
+                                } else {
+                                    v2.set(v, thing._pos);
+                                }
+                                break;
+                            case "rot":
+                                if (newObj) {
+                                    thing.rot = v;
+                                    thing._rot = thing.rot;
+                                    thing._rot2 = thing.rot;
+                                    if (thing.weapons) {
+                                        ref4 = thing.weapons;
+                                        for (r = 0, len4 = ref4.length; r < len4; r++) {
+                                            w = ref4[r];
+                                            w.rot = thing.rot;
+                                            w._rot = thing.rot;
+                                            w._rot2 = thing.rot;
+                                        }
+                                    }
+                                } else {
+                                    thing._rot = v;
+                                }
+                                break;
+                            case "dead":
+                                thing.dead = v;
+                                if (thing.dead) {
+                                    if (typeof thing.createDebree === "function") {
+                                        thing.createDebree();
+                                    }
+                                }
+                                break;
+                            case "partId":
+                                if (thing.parts) {
+                                    part = thing.parts[v];
+                                    newObj = false;
+                                } else {
+                                    part = {};
+                                }
+                                break;
+                            case "partWorking":
+                                part.working = v;
+                                break;
+                            case "partTargetId":
+                                part.targetId = v;
+                                break;
+                            case "orders":
+                                thing.orders = v;
+                                if (thing.preOrders) {
+                                    thing.preOrders = thing.preOrders.filter(function (order) {
+                                        return order.step + 16 * 5 < sim.step;
+                                    });
+                                }
+                                break;
+                            default:
+                                thing[k] = v;
+                        }
+                    }
+                }
+            }
+            if (data.players) {
+                ref5 = data.players;
+                for (s = 0, len5 = ref5.length; s < len5; s++) {
+                    p = ref5[s];
+                    player = null;
+                    for (u = 0, len6 = p.length; u < len6; u++) {
+                        kv = p[u];
+                        k = kv[0], v = kv[1];
+                        if (k === "playerNumber") {
+                            while (intp.players.length <= v) {
+                                intp.players.push(new Player());
+                            }
+                            player = intp.players[v];
+                            player.number = v;
+                        } else {
+                            player[k] = v;
+                        }
+                        if ((k === "buildQ" || k === "validBar") && commander.name === player.name) {
+                            onecup.refresh();
+                        }
+                    }
+                }
+            }
+            ref6 = intp.things;
+            for (_ in ref6) {
+                thing = ref6[_];
+                if (thing.targetId) {
+                    thing.target = intp.things[thing.targetId];
+                }
+                if (thing.originId) {
+                    thing.origin = intp.things[thing.originId];
+                }
+            }
+            ref7 = this.things;
+            for (id in ref7) {
+                thing = ref7[id];
+                if (typeof thing.clientTick === "function") {
+                    thing.clientTick();
+                }
+                if (thing.dead) {
+                    delete this.things[id];
+                }
+            }
+            ref8 = this.players;
+            for (number = y = 0, len7 = ref8.length; y < len7; number = ++y) {
+                player = ref8[number];
+                if ((typeof commander !== "undefined" && commander !== null) && (player != null ? player.ai : void 0) === false && commander.name === (player != null ? player.name : void 0)) {
+                    if (player.side) {
+                        commander.side = player.side;
+                    }
+                    if (player.money) {
+                        commander.money = player.money;
+                    }
+                    if (player.selection) {
+                        commander.selection = player.selection;
+                    }
+                    if (player.buildQ) {
+                        commander.buildQ = player.buildQ;
+                    }
+                    if (player.validBar) {
+                        commander.validBar = player.validBar;
+                    }
+                    if (player.rallyPoint) {
+                        commander.rallyPoint = player.rallyPoint;
+                    }
+                    commander.number = number;
+                    if (player.host != null) {
+                        commander.host = player.host;
+                    }
+                }
+                if (!player.name) {
+                    player.name = "no name";
+                }
+                if (!player.side) {
+                    player.side = "spectators";
+                }
+                if (!player.color) {
+                    player.color = [255, 0, 0, 255];
+                }
+            }
+            ref9 = this.particles;
+            for (id in ref9) {
+                thing = ref9[id];
+                if (thing.dead) {
+                    delete this.particles[id];
+                    continue;
+                }
+                if (!thing._pos) {
+                    thing._pos = v2.create(thing.pos);
+                }
+                if (!thing._pos2) {
+                    thing._pos2 = v2.create(thing.pos);
+                }
+                v2.set(thing.pos, thing._pos2);
+                thing._rot2 = thing.rot;
+                if (typeof thing.tick === "function") {
+                    thing.tick();
+                }
+                if (typeof thing.move === "function") {
+                    thing.move();
+                }
+                v2.set(thing.pos, thing._pos);
+                thing._rot = thing.rot;
+            }
+            if (this.state === "starting") {
+                this.focusMap();
+                this.state = "running";
+                onecup.refresh();
+            }
+            if (this.state === "ended") {
+                this.state = "waiting";
+                onecup.refresh();
+                if (this.winningSide === false) {
+                    playSound("sounds/drone/draw.wav");
+                } else if (this.winningSide === (typeof commander !== "undefined" && commander !== null ? commander.side : void 0)) {
+                    playSound("sounds/drone/victory.wav");
+                } else {
+                    playSound("sounds/drone/defeat.wav");
+                }
+                onecup.refresh();
+            }
+            if ((ref10 = onecup.lookup("#money-text")) != null) {
+                ref10.innerHTML = buildBar.moneyText();
+            }
+            if ((ref11 = onecup.lookup("#money-income")) != null) {
+                ref11.innerHTML = buildBar.moneyIncomeText();
+            }
+            if (typeof commander !== "undefined" && commander !== null ? commander.selection : void 0) {
+                selection = [];
+                ref12 = commander.selection;
+                for (n = z = 0, len8 = ref12.length; z < len8; n = ++z) {
+                    unit = ref12[n];
+                    thing = this.things[unit.id];
+                    if (thing) {
+                        selection.push(thing);
+                    }
+                }
+                commander.selection = selection;
+            }
+            if (localStorage.useAi === "true" && localStorage.aiGrid === "true") {
+                if (ui.mode === "battle" && (typeof commander !== "undefined" && commander !== null ? (ref13 = commander.selection) != null ? ref13.length : void 0 : void 0) > 0) {
+                    return onecup.refresh();
+                }
+            }
+        };
+
+        return Interpolator;
+
+    })(window.Sim);
+
+}).call(this);
+;
+
+
+//from src/things.js
+// Generated by CoffeeScript 1.10.0
+
+/*
+General Game Objects live here
+ */
+
+(function () {
+    var Explosion, _color, _focus, _offset, _pos, _size, _vec, anitSideColor, sideColor,
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
 
     _pos = v2.create();
 
@@ -7514,10 +12359,10 @@ General Game Objects live here
         };
 
         Bullet.prototype._collide = function (thing) {
-            var distnace, speed;
-            distnace = v2.distance(this.pos, thing.pos);
+            var distance, speed;
+            distance = v2.distance(this.pos, thing.pos);
             speed = v2.mag(thing.vel) + v2.mag(this.vel);
-            return distnace < thing.radius;
+            return distance < thing.radius;
         };
 
         Bullet.prototype.collide = function (thing) {
@@ -8218,7 +13063,7 @@ General Game Objects live here
         }
 
         CommandPoint.prototype.tick = function () {
-            var _, distnace, id, j, k, len, p, player, playerOnPoint, ref, ref1, results, sides, thing;
+            var _, distance, id, j, k, len, p, player, playerOnPoint, ref, ref1, results, sides, thing;
             if (sim.state !== "running") {
                 return;
             }
@@ -8240,8 +13085,8 @@ General Game Objects live here
                 for (id in ref1) {
                     thing = ref1[id];
                     if (thing.unit && thing.canCapture) {
-                        distnace = v2.distance(this.pos, thing.pos);
-                        if (distnace < this.radius) {
+                        distance = v2.distance(this.pos, thing.pos);
+                        if (distance < this.radius) {
                             sides[thing.side] = true;
                             player = sim.players[thing.owner];
                             if (player) {
@@ -8479,8 +13324,6 @@ General Game Objects live here
 
         Unit.prototype.jump = 0;
 
-        Unit.prototype.maxJumpDistance = 500;
-
         Unit.prototype.limitBonus = 0;
 
         Unit.prototype.cost = 100;
@@ -8596,7 +13439,7 @@ General Game Objects live here
             this.maxSpeed = thrust / this.mass * 9;
             this.maxShield = this.shield;
             this.damageRatio = 1;
-            this.jumpDistance = this.jump = Math.min(1, 41 * this.jumpCount / this.mass) * this.maxJumpDistance;
+            this.jumpDistance = this.jump = Math.min(1, 41 * this.jumpCount / this.mass) * 500;
             this.computeCenter();
             ref1 = this.parts;
             for (l = 0, len1 = ref1.length; l < len1; l++) {
@@ -9481,12 +14324,12 @@ General Game Objects live here
                 }
                 return true;
             }
-            if (this.jump > this.jumpDistance && this.energy > 15 * this.mass && !this.holdPosition) {
+            if (this.jump > this.jumpDistance && this.energy > parts.JumpEngine.prototype.useEnergy * this.mass && !this.holdPosition) {
                 jumpDist = this.jumpDistance;
                 needDist = v2.distance(this.pos, pos) - Math.max(this.stopDistance, 100);
                 jumpDist = Math.min(jumpDist, needDist);
                 if (jumpDist < this.jumpDistance) {
-                    this.energy -= this.jumpCount * 250;
+                    this.energy -= parts.JumpEngine.prototype.useEnergy * this.mass;
                     this.cloak -= .25 * this.mass;
                     jumpVec = v2.create();
                     v2.sub(pos, this.pos, jumpVec);
@@ -12182,7 +17025,7 @@ General Game Objects live here
 
         Reactor1x1.prototype.genEnergy = 10;
 
-        Reactor1x1.prototype.storeEnergy = 1600;
+        Reactor1x1.prototype.storeEnergy = 2000;
 
         Reactor1x1.prototype.image = "Reactor1x1.png";
 
@@ -12568,7 +17411,7 @@ General Game Objects live here
 
         ShieldGen1x1.prototype.cost = 15;
 
-        ShieldGen1x1.prototype.mass = 10;
+        ShieldGen1x1.prototype.mass = 8;
 
         ShieldGen1x1.prototype.genShield = 0.0625 * 1.5;
 
@@ -13190,7 +18033,7 @@ General Game Objects live here
 
         JumpEngine.prototype.turnSpeed = 0;
 
-        JumpEngine.prototype.useEnergy = 1;
+        JumpEngine.prototype.useEnergy = 15;
 
         JumpEngine.prototype.exhaust = false;
 
@@ -13208,7 +18051,7 @@ General Game Objects live here
 
         JumpEngine.prototype.tick = function () {
             this.unit.jump += 160 / this.unit.mass;
-            return this.working = this.unit.jump > this.unit.jumpDistance && this.unit.energy > this.unit.jumpCount * 250;
+            return this.working = this.unit.jump > this.unit.jumpDistance && this.unit.energy > this.unit.mass * this.useEnergy;
         };
 
         JumpEngine.prototype.draw = function () {
@@ -13853,9 +18696,9 @@ General Game Objects live here
             ArtilleryBullet.__super__.draw.call(this);
             if (this.hitPos) {
                 dist = Math.min(v2.distance(this.pos, this.hitPos), 1000);
-                size = Math.pow(1000 - dist, 2) / (1000 * 1000) * (this.aoe / 120);
-                color = [255, 0, 0, 100];
-                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 240, this.aoe / 240], 0, color);
+                size = Math.pow(1.003, -dist) * this.aoe / 162;
+                color = [255, 0, 0, 80];
+                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 256, this.aoe / 256], 0, color);
                 baseAtlas.drawSprite("img/fire02.png", this.hitPos, [size * 2, size * 2], 0, color);
             }
         };
@@ -13885,7 +18728,7 @@ General Game Objects live here
 
         ArtilleryTurret.prototype.size = [2, 2];
 
-        ArtilleryTurret.prototype.reloadTime = 96;
+        ArtilleryTurret.prototype.reloadTime = 89;
 
         ArtilleryTurret.prototype.trackSpeed = 25;
 
@@ -13897,11 +18740,11 @@ General Game Objects live here
 
         ArtilleryTurret.prototype.minRange = 500;
 
-        ArtilleryTurret.prototype.shotEnergy = 5000;
+        ArtilleryTurret.prototype.shotEnergy = 4500;
 
         ArtilleryTurret.prototype.mass = 70;
 
-        ArtilleryTurret.prototype.bulletSpeed = 6.5;
+        ArtilleryTurret.prototype.bulletSpeed = 7;
 
         ArtilleryTurret.prototype.damage = 120;
 
@@ -14023,13 +18866,13 @@ General Game Objects live here
 
         SidewinderTurret.prototype.bulletCls = types.SidewinderBullet;
 
-        SidewinderTurret.prototype.range = 740;
+        SidewinderTurret.prototype.range = 780;
 
         SidewinderTurret.prototype.shotEnergy = 2000;
 
         SidewinderTurret.prototype.mass = 10;
 
-        SidewinderTurret.prototype.bulletSpeed = 16;
+        SidewinderTurret.prototype.bulletSpeed = 17;
 
         SidewinderTurret.prototype.damage = 35;
 
@@ -14316,7 +19159,7 @@ General Game Objects live here
 
         HeavyBeamTurret.prototype.bulletCls = types.HeavyBeam;
 
-        HeavyBeamTurret.prototype.shotEnergy = 5200;
+        HeavyBeamTurret.prototype.shotEnergy = 5000;
 
         HeavyBeamTurret.prototype.instant = true;
 
@@ -14326,7 +19169,7 @@ General Game Objects live here
 
         HeavyBeamTurret.prototype.bulletSpeed = 2000;
 
-        HeavyBeamTurret.prototype.damage = 37;
+        HeavyBeamTurret.prototype.damage = 38;
 
         HeavyBeamTurret.prototype.maxLife = .5;
 
@@ -14839,7 +19682,7 @@ General Game Objects live here
         };
 
         Bomb.prototype.draw = function () {
-            var color, dist, maxDist, size;
+            var color, dist, size;
             this.trail.draw(this.pos, this);
             Bomb.__super__.draw.call(this);
             this.z = 1;
@@ -14848,11 +19691,10 @@ General Game Objects live here
                 playSound("sounds/weapons/wizzzz.wav");
             }
             if (this.hitPos) {
-                maxDist = 1000;
-                dist = Math.min(v2.distance(this.pos, this.hitPos), maxDist);
-                size = Math.pow(maxDist - dist, 2) / (maxDist * maxDist) * (this.aoe / 120);
-                color = [255, 0, 0, 100];
-                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 240, this.aoe / 240], 0, color);
+                dist = Math.min(v2.distance(this.pos, this.hitPos), 1000);
+                size = Math.pow(1.003, -dist) * this.aoe / 162;
+                color = [255, 0, 0, 80];
+                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 256, this.aoe / 256], 0, color);
                 baseAtlas.drawSprite("img/fire02.png", this.hitPos, [size * 2, size * 2], 0, color);
             }
         };
@@ -15410,7 +20252,7 @@ General Game Objects live here
 
         WavePullTurret.prototype.bulletCls = types.WavePullArch;
 
-        WavePullTurret.prototype.range = 825;
+        WavePullTurret.prototype.range = 850;
 
         WavePullTurret.prototype.shotEnergy = 1200;
 
@@ -15462,9 +20304,9 @@ General Game Objects live here
 
         WavePushTurret.prototype.bulletCls = types.WavePushArch;
 
-        WavePushTurret.prototype.range = 750;
+        WavePushTurret.prototype.range = 775;
 
-        WavePushTurret.prototype.damage = 4;
+        WavePushTurret.prototype.damage = 5;
 
         WavePushTurret.prototype.multiHit = true;
 
@@ -16240,9 +21082,9 @@ General Game Objects live here
 
         OverKillAi.prototype.desc = "Makes the adjacent turrets not shoot if it would kill an enemy twice in one shot.";
 
-        OverKillAi.prototype.cost = 5;
+        OverKillAi.prototype.cost = 1;
 
-        OverKillAi.prototype.hp = 5;
+        OverKillAi.prototype.hp = 4;
 
         OverKillAi.prototype.image = "OverKillAi.png";
 
@@ -37344,6 +42186,2022 @@ ais.all.nulitor = [{
 }];
 ;
 
+
+//from src/network.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var getAIRules,
+        slice = [].slice;
+
+    window.Connection = (function () {
+        function Connection(address) {
+            this.address = address;
+            console.log("connecting to", this.address);
+            this.connect();
+        }
+
+        Connection.prototype.connect = function () {
+            this.websocket = new WebSocket(this.address);
+            this.websocket.binaryType = 'arraybuffer';
+            console.log("websocket", this.websocket);
+            this.websocket.onopen = (function (_this) {
+                return function (e) {
+                    console.log("ws open", e);
+                    _this.sendPlayer();
+                    console.log("sending game key", commander.name, rootNet.gameKey);
+                    return _this.send("gameKey", commander.name, rootNet.gameKey);
+                };
+            })(this);
+            this.websocket.onclose = (function (_this) {
+                return function (e) {
+                    return console.log("ws close", e);
+                };
+            })(this);
+            this.websocket.onmessage = (function (_this) {
+                return function (e) {
+                    var data, packet;
+                    stats.netAdd(e.data.byteLength);
+                    packet = new DataView(e.data);
+                    data = intp.zJson.loadDv(packet);
+                    return intp.recv(data);
+                };
+            })(this);
+            return this.websocket.onerror = (function (_this) {
+                return function (e) {
+                    return console.log("ws error", e);
+                };
+            })(this);
+        };
+
+        Connection.prototype.send = function () {
+            var args, dv;
+            args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+            if (this.websocket.readyState === 1) {
+                dv = sim.zJson.dumpDv(args);
+                return this.websocket.send(dv);
+            }
+        };
+
+        Connection.prototype.sendPlayer = function () {
+            var buildBar, i, j;
+            if (!commander) {
+                return;
+            }
+            buildBar = [null, null, null, null, null, null, null, null, null, null];
+            for (i = j = 0; j < 10; i = ++j) {
+                if (validSpec(commander, commander.buildBar[i])) {
+                    buildBar[i] = fromShort(commander.buildBar[i]);
+                }
+            }
+            return this.send("playerJoin", commander.id, commander.name, commander.color, buildBar, getAIRules());
+        };
+
+        Connection.prototype.close = function () {
+            return this.websocket.close();
+        };
+
+        return Connection;
+
+    })();
+
+    window.RootConnection = (function () {
+        function RootConnection(address) {
+            this.address = address;
+            this.connect();
+        }
+
+        RootConnection.prototype.connect = function () {
+            this.startTime = Date.now();
+            this.websocket = new WebSocket(this.address);
+            this.websocket.onopen = (function (_this) {
+                return function (e) {
+                    onecup.refresh();
+                    account.lastRootSave = {};
+                    account.connectedToRoot();
+                    return _this.sendMode();
+                };
+            })(this);
+            this.websocket.onclose = (function (_this) {
+                return function (e) {
+                    onecup.refresh();
+                    return console.log("root ws close", e);
+                };
+            })(this);
+            this.websocket.onmessage = (function (_this) {
+                return function (e) {
+                    var _, battleMode, k, msg, name, player, ref, ref1, ref2, ref3, s, server, v;
+                    onecup.refresh();
+                    msg = JSON.parse(e.data);
+                    switch (msg[0]) {
+                        case "serversStats":
+                            return _this.serversStats = msg[1];
+                        case "servers":
+                            _this.servers = {};
+                            ref = msg[1];
+                            for (_ in ref) {
+                                s = ref[_];
+                                _this.servers[s.name] = s;
+                            }
+                            if (typeof battleMode !== "undefined" && battleMode !== null ? battleMode.serverName : void 0) {
+                                battleMode = (ref1 = rootNet.servers) != null ? ref1[battleMode.serverName] : void 0;
+                            }
+                            return onecup.refresh();
+                        case "serversDiff":
+                            ref2 = msg[1];
+                            for (name in ref2) {
+                                server = ref2[name];
+                                if (server === null) {
+                                    delete _this.servers[name];
+                                } else {
+                                    if (_this.servers[name] == null) {
+                                        _this.servers[name] = {};
+                                    }
+                                    for (k in server) {
+                                        v = server[k];
+                                        _this.servers[name][k] = v;
+                                    }
+                                }
+                            }
+                            return onecup.refresh();
+                        case "players":
+                            chat.players = msg[1];
+                            return onecup.refresh();
+                        case "playersDiff":
+                            ref3 = msg[1];
+                            for (name in ref3) {
+                                player = ref3[name];
+                                if (player === null) {
+                                    delete chat.players[name];
+                                } else {
+                                    if (chat.players[name] == null) {
+                                        chat.players[name] = {};
+                                    }
+                                    for (k in player) {
+                                        v = player[k];
+                                        chat.players[name][k] = v;
+                                    }
+                                }
+                            }
+                            return onecup.refresh();
+                        case "message":
+                            msg[1].time = Date.now();
+                            chat.lines.push(msg[1]);
+                            return after(100, function () {
+                                var chatarea;
+                                chatarea = document.getElementById("chatarea");
+                                if (chatarea) {
+                                    return chatarea.scrollTop = 100000;
+                                }
+                            });
+                        case "messageLog":
+                            msg[1].time = 0;
+                            return chat.lines.push(msg[1]);
+                        case "authError":
+                            return account.authError(msg[1]);
+                        case "authPasswordChanged":
+                            return ui.changePassword = false;
+                        case "login":
+                            return account.signinReply(msg[1]);
+                        case "windowClose":
+                            return window.close();
+                        case "modInfo":
+                            console.log("modInfo", msg);
+                            return mod.info = msg[1];
+                        case "modLog":
+                            console.log("modLog", msg);
+                            return mod.log = msg[1];
+                        case "gameKey":
+                            return _this.gameKey = msg[1];
+                    }
+                };
+            })(this);
+            return this.websocket.onerror = (function (_this) {
+                return function (e) {
+                    return console.log("root ws error", e);
+                };
+            })(this);
+        };
+
+        RootConnection.prototype.send = function () {
+            var args;
+            args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+            if (this.websocket.readyState === 1) {
+                return this.websocket.send(JSON.stringify(args));
+            }
+        };
+
+        RootConnection.prototype.playerMode = function () {
+            var mode;
+            mode = ui.mode;
+            if (mode === "battle") {
+                if (sim.galaxyStar) {
+                    mode = "galaxy*";
+                } else if (sim.challenge) {
+                    mode = "challenge*";
+                } else if (sim.local) {
+                    mode = "local*";
+                }
+            }
+            return mode;
+        };
+
+        RootConnection.prototype.sendMode = function () {
+            return this.send("setMode", this.playerMode(), chat.channel);
+        };
+
+        return RootConnection;
+
+    })();
+
+    window.replays = {};
+
+    replays.recording = [];
+
+    getAIRules = function () {
+        if (localStorage.useAi !== "true") {
+            return null;
+        }
+        return ais.buildBar2aiRules(commander.buildBar);
+    };
+
+    window.Local = (function () {
+        function Local() {
+        }
+
+        Local.prototype.sendPlayer = function () {
+            var buildBar, i, j;
+            if (!commander) {
+                return;
+            }
+            buildBar = [null, null, null, null, null, null, null, null, null, null];
+            for (i = j = 0; j < 10; i = ++j) {
+                if (validSpec(commander, commander.buildBar[i])) {
+                    buildBar[i] = fromShort(commander.buildBar[i]);
+                }
+            }
+            return this.send("playerJoin", commander.id, commander.name, commander.color, buildBar, getAIRules());
+        };
+
+        Local.prototype.send = function () {
+            var args, dv, j, len, p, player, ref, ref1;
+            args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+            dv = (ref = sim.zJson).dumpDv.apply(ref, args);
+            player = null;
+            ref1 = sim.players;
+            for (j = 0, len = ref1.length; j < len; j++) {
+                p = ref1[j];
+                if (p.id === commander.id) {
+                    player = p;
+                    player.active = true;
+                }
+            }
+            return sim[args[0]].apply(sim, [player].concat(slice.call(args.slice(1))));
+        };
+
+        return Local;
+
+    })();
+
+}).call(this);
+;
+
+
+//from src/ui.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var campaignsView, warnCounter, warningMessage, webGLErrorMessage;
+
+    eval(onecup["import"]());
+
+    window.ui = {};
+
+    ui.path = ["menu"];
+
+    ui.go = function (mode) {
+        if (mode === "fleet" && buildBar.drag) {
+            commander.fleet[buildBar.drag.key] = buildBar.drag.spec;
+            buildBar.drag = null;
+        }
+        return ui.mode = mode;
+    };
+
+    ui.goBack = function (mode) {
+        if (history.length > 1) {
+            history.back();
+            ui.mode = window.location.hash.slice(1);
+            onecup.refresh();
+        } else {
+            ui.mode = mode;
+        }
+        return console.log("ui.mode =", ui.mode);
+    };
+
+    ui.warnings = [
+        {
+            title: "Warning issued",
+            subline: "You have violated ToS and the player's Code of Condcut by saying:",
+            text: "Aevean just kill yourself.",
+            time: 15
+        }, {
+            title: "Ban issued",
+            subline: "Greetings, beloved Istrolid player! Oh no! It looks like you've been bad! Here's a description of what you did:",
+            text: "Created multiple accounts to farm rank",
+            time: 30 * 60
+        }
+    ];
+
+    ui.mode = "menu";
+
+    ui.show = true;
+
+    window.body = function () {
+        var ref;
+        if (ui.error === "webGL") {
+            webGLErrorMessage();
+            return;
+        }
+        if (!(typeof baseAtlas !== "undefined" && baseAtlas !== null ? baseAtlas.ready : void 0) || !ui.loaded) {
+            ui.loadingMessage();
+            return;
+        } else {
+            document.body.style.backgroundColor = "#6B7375";
+        }
+        if (account.signedIn === false) {
+            ui.mode === "authenticate";
+            account.signinOrRegisterMenu();
+            return;
+        }
+        if (!ui.show) {
+            return;
+        }
+        ui.reconnectRoot();
+        if ((ref = sim.galaxyStar) != null ? typeof ref.ui === "function" ? ref.ui() : void 0 : void 0) {
+            return;
+        }
+        control.backgroundMode = battleMode;
+        control.mode = menuMode;
+        chat.draw();
+        switch (ui.mode) {
+            case "menu":
+                ui.menu();
+                break;
+            case "battle":
+                buildBar.draw();
+                control.mode = battleMode;
+                ui.reconnect();
+                break;
+            case "quickscore":
+                buildBar.draw();
+                battleroom.quickscore();
+                control.mode = battleMode;
+                break;
+            case "restart":
+                ui.restartDialog();
+                break;
+            case "design":
+                control.mode = designMode;
+                editorUI();
+                break;
+            case "fleet":
+                control.mode = fleetMode;
+                fleetUI();
+                break;
+            case "settings":
+                ui.settingsMain();
+                break;
+            case "reset":
+                account.settingsResetPassword();
+                break;
+            case "multiplayer":
+                buildBar.draw();
+                chat.room();
+                break;
+            case "battleroom":
+                buildBar.draw();
+                battleroom.room();
+                ui.reconnect();
+                break;
+            case "challenges":
+                ui.challengesView();
+                break;
+            case "galaxy":
+                if (!galaxyMode.hasCurrent) {
+                    galaxyMode.difficulty = 1;
+                    galaxyMode.restart();
+                }
+                control.backgroundMode = galaxyMode;
+                control.mode = galaxyMode;
+                galaxyView();
+                break;
+            case "campaigns":
+                campaignsView();
+                break;
+            case "unit":
+                control.mode = designMode;
+                break;
+            case "unitpix":
+                ui.unitPix();
+                break;
+            case "copy":
+                ui.copyPage();
+                break;
+            case "mod":
+                ui.modPage();
+                break;
+            case "tournaments":
+                ui.tournamentsPage();
+                break;
+            case "servers":
+                ui.serverPage();
+        }
+        if (ui.mode !== "menu") {
+            bubbles.draw();
+        }
+        ui.perfPage();
+        if (account.savingToServer) {
+            ui.savingData();
+        }
+        if (ui.rmenu) {
+            div("#rmenu", function () {
+                position("fixed");
+                background_color("rgba(0,0,0,.9)");
+                color("white");
+                z_index("10");
+                left(ui.rmenu.pos[0]);
+                top(ui.rmenu.pos[1]);
+                return ui.rmenu.html();
+            });
+            return onecup.post_render(function () {
+                var bounds, diff, rmenuDiv;
+                rmenuDiv = onecup.lookup("#rmenu");
+                if (rmenuDiv) {
+                    bounds = rmenuDiv.getBoundingClientRect();
+                    diff = window.innerHeight - (bounds.top + bounds.height);
+                    if (diff < 0 && bounds.top > 0) {
+                        ui.rmenu.pos[1] += diff;
+                        if (ui.rmenu.pos[1] < 0) {
+                            ui.rmenu.pos[1] = 0;
+                        }
+                        return rmenuDiv.style.top = ui.rmenu.pos[1] + "px";
+                    }
+                }
+            });
+        }
+    };
+
+    webGLErrorMessage = function () {
+        return div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            right(0);
+            bottom(0);
+            min_height(600);
+            background_color("rgb(211, 84, 0)");
+            return div(function () {
+                margin_top(100);
+                font_size(20);
+                color("white");
+                return div(function () {
+                    h1(function () {
+                        return text("Graphic card error.");
+                    });
+                    br();
+                    margin("10px auto");
+                    width(600);
+                    br();
+                    p(function () {
+                        return text("You can try:");
+                    });
+                    br();
+                    ol(function () {
+                        margin_left(30);
+                        li(function () {
+                            return text("Restarting the computer.");
+                        });
+                        li(function () {
+                            return text("Update graphics drivers.");
+                        });
+                        if (typeof electron === "undefined" || electron === null) {
+                            li(function () {
+                                return text("Check for browser updates.");
+                            });
+                            li(function () {
+                                return text("Disable extensions like AdBlock, try incognito mode.");
+                            });
+                            return li(function () {
+                                return text("Make sure webGL is enabled.");
+                            });
+                        }
+                    });
+                    br();
+                    p(function () {
+                        return text("Technical reason:");
+                    });
+                    br();
+                    return p(function () {
+                        color("rgba(255, 200, 200, 1)");
+                        return text(ui.contextErrrorMessage);
+                    });
+                });
+            });
+        });
+    };
+
+    warningMessage = function (warning) {
+        return div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            right(0);
+            bottom(0);
+            min_height(600);
+            background_color("rgb(211, 84, 0)");
+            return div(function () {
+                margin_top(100);
+                font_size(20);
+                color("white");
+                return div(function () {
+                    h1(function () {
+                        return text(warning.title);
+                    });
+                    br();
+                    margin("10px auto");
+                    width(600);
+                    br();
+                    p(function () {
+                        return text(warning.subline);
+                    });
+                    div(function () {
+                        margin("60px 0px");
+                        padding(20);
+                        background_color("rgba(0,0,0,.2)");
+                        return p(function () {
+                            return text(warning.text);
+                        });
+                    });
+                    br();
+                    div(function () {
+                        div(function () {
+                            var m, s;
+                            m = Math.floor(warning.time / 60);
+                            s = "" + (warning.time % 60);
+                            if (s.length === 1) {
+                                s = "0" + s;
+                            }
+                            return text("time left: " + m + ":" + s);
+                        });
+                        br();
+                        return button(".hover-black-dark", function () {
+                            border("none");
+                            padding(20);
+                            font_size(20);
+                            color("white");
+                            text("I understand and will not do this again");
+                            if (warning.time > 0) {
+                                background_color("rgba(0,0,0,1)");
+                                return opacity(".3");
+                            } else {
+                                return onclick(function () {
+                                    return ui.warnings.shift();
+                                });
+                            }
+                        });
+                    });
+                    br();
+                    return div(function () {
+                        return button(".hover-black-dark", function () {
+                            border("none");
+                            padding(20);
+                            font_size(20);
+                            color("white");
+                            text("Read players's Code of Conduct");
+                            return onclick(function () {
+                                return window.open("https://docs.google.com/document/d/1zxErnhOPlW1PqQpGGuHHo9Onu5Yj_OjCMDo_KaLGhyY/edit#heading=h.bzjo9gjpe451");
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    };
+
+    warnCounter = function () {
+        if (ui.warnings.length > 0) {
+            if (ui.warnings[0].time > 0) {
+                ui.warnings[0].time -= 1;
+                return onecup.refresh();
+            }
+        }
+    };
+
+    setInterval(warnCounter, 1000);
+
+    ui.loadTime = Date.now();
+
+    ui.loadingMessage = function () {
+        var fade;
+        fade = (Date.now() - ui.loadTime - 2000) / 5000;
+        fade = Math.max(0, Math.min(fade, 1));
+        div(function () {
+            margin_top(200);
+            text_align("center");
+            font_size(30);
+            color("#D3D5DE");
+            opacity("" + fade);
+            return text("loading...");
+        });
+        return div(function () {
+            margin("20px auto");
+            height(10);
+            width(200);
+            background_color("#E3E5EE");
+            opacity("" + fade);
+            return div(function () {
+                var p;
+                p = (typeof baseAtlas !== "undefined" && baseAtlas !== null ? baseAtlas.progress : void 0) || 0;
+                width((p * 100).toFixed(0) + "%");
+                background_color("#A3A5AE");
+                return height(10);
+            });
+        });
+    };
+
+    ui.reconnect = function () {
+        if ((network.websocket != null) && network.websocket.readyState === WebSocket.CLOSED) {
+            return div(function () {
+                position("absolute");
+                top(200);
+                left(0);
+                right(0);
+                color("white");
+                overflow("hidden");
+                text_align("center");
+                background_color("rgba(160,0,0,.9)");
+                padding(20);
+                z_index("100");
+                div(function () {
+                    margin(20);
+                    return text("Connection to server lost");
+                });
+                return div(".hover-black-dark", function () {
+                    padding(10);
+                    width(200);
+                    margin("0px auto");
+                    text_align("center");
+                    text("Reconnect");
+                    return onclick(function () {
+                        var ref;
+                        if ((ref = battleMode.server) != null ? ref.name : void 0) {
+                            return battleMode.joinServer(battleMode.server.name);
+                        } else {
+                            return ui.mode = "multiplayer";
+                        }
+                    });
+                });
+            });
+        }
+    };
+
+    ui.reconnectRoot = function () {
+        if ((rootNet.websocket != null) && rootNet.websocket.readyState !== WebSocket.OPEN) {
+            return div(function () {
+                position("absolute");
+                top(200);
+                left(0);
+                right(0);
+                color("white");
+                overflow("hidden");
+                text_align("center");
+                padding(20);
+                z_index("100");
+                if (account.error) {
+                    background_color("rgba(160,0,0,.9)");
+                    return div(function () {
+                        margin(20);
+                        return text(account.error);
+                    });
+                } else if (rootNet.websocket.readyState === WebSocket.CLOSED) {
+                    background_color("rgba(160,0,0,.9)");
+                    div(function () {
+                        margin(20);
+                        return text("Connection to root server lost. Can't save progress or ship designs.");
+                    });
+                    return div(".hover-black-dark", function () {
+                        padding(10);
+                        width(200);
+                        margin("0px auto");
+                        text_align("center");
+                        text("Reconnect");
+                        return onclick(function () {
+                            return rootNet.connect();
+                        });
+                    });
+                } else {
+                    background_color("rgba(0,160,0,.9)");
+                    return div(function () {
+                        margin(20);
+                        return text("Connecting to root server.");
+                    });
+                }
+            });
+        }
+    };
+
+    ui.savingData = function () {
+        return div(function () {
+            position("absolute");
+            top(200);
+            left(0);
+            right(0);
+            color("white");
+            overflow("hidden");
+            text_align("center");
+            background_color("rgba(0,160,0,.9)");
+            padding(20);
+            z_index("100");
+            return div(function () {
+                margin(20);
+                return text("Saving data before closing...");
+            });
+        });
+    };
+
+    ui.inScreen = function (back, title, fn) {
+        return div("#screen", function () {
+            position("relative");
+            margin("0px auto");
+            height(window.innerHeight);
+            width(520);
+            background_color("rgba(0,0,0,.6)");
+            color("white");
+            padding_top(64);
+            div(function () {
+                position("absolute");
+                top(16);
+                left(64);
+                right(64);
+                text_align("center");
+                font_size(30);
+                return text(title);
+            });
+            img(".hover-black", {
+                src: "img/ui/back.png",
+                width: 64,
+                height: 64
+            }, function () {
+                position("absolute");
+                top(0);
+                left(0);
+                return onclick(function () {
+                    return ui.go(back);
+                });
+            });
+            return fn();
+        });
+    };
+
+    campaignsView = function () {
+        if (!galaxyMode.hasCurrent) {
+            galaxyMode.difficulty = 1;
+            galaxyMode.restart();
+            return;
+        }
+        return ui.inScreen("menu", "Campaigns", function () {
+            div(function () {
+                position("relative");
+                top(-10);
+                text_align("center");
+                text("conquest of the galaxy");
+                return padding_bottom(10);
+            });
+            div(function () {
+                text_align("center");
+                div(".button", function () {
+                    padding(40);
+                    text("Continue Current");
+                    if (galaxyMode.hasCurrent) {
+                        return onclick(function () {
+                            return ui.go("galaxy");
+                        });
+                    } else {
+                        background_color("rgba(0,0,0,.5)");
+                        return opacity(".1");
+                    }
+                });
+                return div(function () {
+                    width("100%");
+                    return height(50);
+                });
+            });
+            div(function () {
+                padding(20);
+                text_align("center");
+                if (localStorage.galaxy) {
+                    p(function () {
+                        font_size(30);
+                        padding_bottom(10);
+                        return text("Start New");
+                    });
+                    return p(function () {
+                        return text("will overwirte current one");
+                    });
+                } else {
+                    p(function () {
+                        font_size(30);
+                        padding_bottom(10);
+                        return text("Galaxy");
+                    });
+                    return p(function () {
+                        return text("Let your conquest being");
+                    });
+                }
+            });
+            return div(function () {
+                var campaign;
+                campaign = function (label, difficulty) {
+                    return div(".button", function () {
+                        position("relative");
+                        padding(40);
+                        text_align("center");
+                        text(label);
+                        overflow("hidden");
+                        margin_bottom(20);
+                        return onclick(function () {
+                            galaxyMode.difficulty = difficulty;
+                            return galaxyMode.restart();
+                        });
+                    });
+                };
+                return campaign("Restart", 1);
+            });
+        });
+    };
+
+    css(".hover-black", function () {
+        return background_color("rgba(0,0,0,0)");
+    });
+
+    css(".hover-black:hover", function () {
+        return background_color("rgba(0,0,0,.3)");
+    });
+
+    css(".hover-black-dark", function () {
+        return background_color("rgba(0,0,0,.1)");
+    });
+
+    css(".hover-black-dark:hover", function () {
+        return background_color("rgba(0,0,0,.4)");
+    });
+
+    css(".hover-white", function () {
+        return background_color("rgba(255,255,255,0)");
+    });
+
+    css(".hover-white:hover", function () {
+        return background_color("rgba(255,255,255,.3)");
+    });
+
+    css(".hover-red", function () {
+        return background_color("rgba(255,0,0,.3)");
+    });
+
+    css(".hover-red:hover", function () {
+        return background_color("rgba(255,0,0,.7)");
+    });
+
+    css(".button", function () {
+        return background_color("rgba(255,255,255,.1)");
+    });
+
+    css(".button:hover", function () {
+        return background_color("rgba(0,0,0,.5)");
+    });
+
+    css(".menu-button", function () {
+        background_color("rgba(255,255,255,.1)");
+        text_align("left");
+        padding(20);
+        font_size(30);
+        color("white");
+        width("100%");
+        return border("none");
+    });
+
+    css(".menu-button:hover", function () {
+        return background_color("rgba(0,0,0,.5)");
+    });
+
+    css(".hover-fade", function () {
+        return opacity(".2");
+    });
+
+    css(".hover-fade:hover", function () {
+        return opacity("1");
+    });
+
+    ui.perfPage = function () {
+        var avg;
+        if (!control.perf) {
+            return;
+        }
+        avg = function (stat) {
+            var i, j, sec, total;
+            total = 0;
+            sec = Math.floor(Date.now() / 1000);
+            for (i = j = 0; j < 5; i = ++j) {
+                total += stat[sec - i - 1] || 0;
+            }
+            return Math.round(total / 5);
+        };
+        div(function () {
+            position("absolute");
+            top(76);
+            right(260);
+            width(100);
+            color("white");
+            text_align("right");
+            text("FPS");
+            br();
+            return text(avg(stats.fps));
+        });
+        div(function () {
+            position("absolute");
+            top(156);
+            right(260);
+            width(100);
+            color("white");
+            text_align("right");
+            text("Tick");
+            br();
+            return text(avg(stats.sim));
+        });
+        div(function () {
+            position("absolute");
+            top(356);
+            right(260);
+            width(100);
+            color("white");
+            text_align("right");
+            text("Network");
+            br();
+            return text((avg(stats.net) / 1000).toFixed(1) + "k/s");
+        });
+        return div(function () {
+            var j, k, ks, len, list, numbers, ref, ref1, results, v;
+            position("absolute");
+            top(64);
+            width(300);
+            background_color("rgba(0,0,0,.75)");
+            bottom(84);
+            color("white");
+            overflow("hidden");
+            padding(5);
+            if (intp.perf) {
+                numbers = intp.perf.numbers;
+                table(function () {
+                    tr(function () {
+                        td(function () {
+                            padding(4);
+                            text_align("left");
+                            return text("things");
+                        });
+                        td(function () {
+                            padding(4);
+                            return text(numbers.things);
+                        });
+                        return td(function () {
+                            padding(4);
+                            return text(numbers.sthings);
+                        });
+                    });
+                    tr(function () {
+                        td(function () {
+                            padding(4);
+                            text_align("left");
+                            return text("players");
+                        });
+                        td(function () {
+                            padding(4);
+                            return text(numbers.players);
+                        });
+                        return td(function () {
+                            padding(4);
+                            return text(numbers.splayers);
+                        });
+                    });
+                    return tr(function () {
+                        td(function () {
+                            padding(4);
+                            text_align("left");
+                            return text("units/bullets/others");
+                        });
+                        td(function () {
+                            padding(4);
+                            return text(numbers.units);
+                        });
+                        td(function () {
+                            padding(4);
+                            return text(numbers.bullets);
+                        });
+                        return td(function () {
+                            padding(4);
+                            return text(numbers.others);
+                        });
+                    });
+                });
+            }
+            if (((ref = intp.perf) != null ? ref.timeings : void 0) != null) {
+                list = (function () {
+                    var ref1, results;
+                    ref1 = intp.perf.timeings;
+                    results = [];
+                    for (k in ref1) {
+                        v = ref1[k];
+                        results.push([k, v]);
+                    }
+                    return results;
+                })();
+                list.sort(function (a, b) {
+                    return a[0].localeCompare(b[0]);
+                });
+                results = [];
+                for (j = 0, len = list.length; j < len; j++) {
+                    ref1 = list[j], k = ref1[0], v = ref1[1];
+                    ks = k.split(">");
+                    k = ks.pop();
+                    div(function () {
+                        margin_left(ks.length * 20);
+                        return text(k + " " + (v.toFixed(1)) + "ms");
+                    });
+                    results.push(div(function () {
+                        margin_left(ks.length * 20);
+                        height(8);
+                        width(200);
+                        background_color("black");
+                        return div(function () {
+                            height(8);
+                            if (v > 1000) {
+                                background_color("red");
+                            } else {
+                                background_color("rgba(255,0,0,.75)");
+                            }
+                            return width(Math.floor(200 * (v / 1000)));
+                        });
+                    }));
+                }
+                return results;
+            }
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/settings.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var drawKey, drawSlider, humanView, keyCharToCode, keyCodeToChar, settingsControls, settingsMisc, settingsSound,
+        settingsTab, spacer;
+
+    eval(onecup["import"]());
+
+    window.settings = {};
+
+    css(".tab", function () {
+        display("inline-block");
+        padding("10px 20px");
+        margin("10px 10px 0px 10px");
+        border_radius("5px 5px 0px 0px");
+        background_color("rgba(255,255,255,.2)");
+        return css(":hover", function () {
+            return background_color("rgba(0,0,0,.5)");
+        });
+    });
+
+    css("input.full", function () {
+        margin("10px 0px");
+        display("block");
+        padding(20);
+        font_size(30);
+        color("white");
+        width("100%");
+        background_color("rgba(0,0,0,.3)");
+        return border("none");
+    });
+
+    css("button.full", function () {
+        display("block");
+        width("100%");
+        padding(20);
+        text_align("center");
+        color("white");
+        border("none");
+        font_size(16);
+        return background_color("rgba(0,0,0,.1)");
+    });
+
+    css("button.full:hover", function () {
+        return background_color("rgba(0,0,0,.4)");
+    });
+
+    css("button.red", function () {
+        display("block");
+        width("100%");
+        padding(20);
+        text_align("center");
+        color("white");
+        border("none");
+        font_size(16);
+        return background_color("rgba(255,0,0,.1)");
+    });
+
+    css("button.red:hover", function () {
+        return background_color("rgba(255,0,0,.4)");
+    });
+
+    spacer = function () {
+        return div(function () {
+            return height(60);
+        });
+    };
+
+    settingsTab = "Profile";
+
+    ui.settingsMain = function () {
+        ui.quickOptions();
+        return ui.inScreen("menu", "Settings", function () {
+            var tabFn;
+            padding_bottom(100);
+            overflow_y("scroll");
+            tabFn = null;
+            div(function () {
+                var tab;
+                background_color("rgba(255,255,255,.2)");
+                text_align("center");
+                tab = function (name, fn) {
+                    return div(".tab", function () {
+                        if (settingsTab === name) {
+                            background_color("rgba(0,0,0,.5)");
+                            tabFn = fn;
+                        }
+                        onclick(function () {
+                            return settingsTab = name;
+                        });
+                        return text(name);
+                    });
+                };
+                tab("Profile", function () {
+                    return account.profileMenu();
+                });
+                tab("Controls", function () {
+                    return settingsControls();
+                });
+                tab("Sounds", function () {
+                    return settingsSound();
+                });
+                return tab("Misc", function () {
+                    return settingsMisc();
+                });
+            });
+            return typeof tabFn === "function" ? tabFn() : void 0;
+        });
+    };
+
+    window.DEFAULT_SETTINGS = {
+        "Select": {
+            "keys": [
+                {
+                    "mouse": true,
+                    "which": 1
+                }, {
+                    "which": 66
+                }
+            ]
+        },
+        "Line Move": {
+            "keys": [
+                {
+                    "mouse": true,
+                    "which": 3
+                }, {
+                    "which": 86
+                }
+            ]
+        },
+        "Pan Map": {
+            "keys": [
+                {
+                    "mouse": true,
+                    "which": 2
+                }, {
+                    "which": 32
+                }
+            ]
+        },
+        "Zoom In": {
+            "keys": [
+                {
+                    "which": 81
+                }, null
+            ]
+        },
+        "Zoom Out": {
+            "keys": [
+                {
+                    "which": 69
+                }, null
+            ]
+        },
+        "Up": {
+            "keys": [
+                {
+                    "which": 87
+                }, {
+                    "which": 38
+                }
+            ]
+        },
+        "Left": {
+            "keys": [
+                {
+                    "which": 65
+                }, {
+                    "which": 37
+                }
+            ]
+        },
+        "Down": {
+            "keys": [
+                {
+                    "which": 83
+                }, {
+                    "which": 40
+                }
+            ]
+        },
+        "Right": {
+            "keys": [
+                {
+                    "which": 68
+                }, {
+                    "which": 39
+                }
+            ]
+        },
+        "Stop Units": {
+            "keys": [
+                {
+                    "which": 88
+                }, null
+            ]
+        },
+        "Hold Position": {
+            "keys": [
+                {
+                    "which": 90
+                }, null
+            ]
+        },
+        "Focus Fire/Follow": {
+            "keys": [
+                {
+                    "which": 70
+                }, null
+            ]
+        },
+        "Place Rally Point": {
+            "keys": [
+                {
+                    "which": 71
+                }, null
+            ]
+        },
+        "Self Destruct": {
+            "keys": [
+                {
+                    "ctrlKey": true,
+                    "which": 88
+                }, null
+            ]
+        },
+        "Focus on Units": {
+            "keys": [
+                {
+                    "which": 67
+                }, null
+            ]
+        },
+        "Pause": {
+            "keys": [
+                {
+                    "which": 80
+                }, null
+            ]
+        },
+        "Toggle Roster": {
+            "keys": [
+                {
+                    "which": 9
+                }, null
+            ]
+        },
+        "Toggle UI": {
+            "keys": [
+                {
+                    "ctrlKey": true,
+                    "which": 79
+                }, null
+            ]
+        },
+        "Back": {
+            "keys": [
+                {
+                    "which": 192
+                }, null
+            ]
+        },
+        "Zoom Speed": {
+            "value": 0.25,
+            "speed": true
+        },
+        "Scroll Speed": {
+            "value": 0.25,
+            "speed": true
+        },
+        "Master Volume": {
+            "value": 0.90,
+            "sound": true
+        },
+        "Music Volume": {
+            "value": 0.50,
+            "sound": true
+        },
+        "FX Volume": {
+            "value": 0.80,
+            "sound": true
+        },
+        "Ambient Volume": {
+            "value": 0.20,
+            "sound": true
+        }
+    };
+
+    settings.save = function () {
+        return control.savePlayer();
+    };
+
+    settings.key = function (e, name) {
+        var binding, j, key, len, ref, ref1;
+        binding = typeof commander !== "undefined" && commander !== null ? (ref = commander.settings) != null ? ref[name] : void 0 : void 0;
+        if (!binding) {
+            binding = DEFAULT_SETTINGS[name];
+        }
+        if (!binding) {
+            throw "Looking for binding " + name + " but its not in DEFAULT_SETTINGS";
+        }
+        ref1 = binding.keys;
+        for (j = 0, len = ref1.length; j < len; j++) {
+            key = ref1[j];
+            if (key && key.altKey === (e.altKey || void 0) && key.ctrlKey === (e.ctrlKey || void 0) && key.metaKey === (e.metaKey || void 0) && (key.shiftKey === (e.shiftKey || void 0) || key.shiftKey === void 0) && key.which === e.which) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    settings.soundValue = function (name) {
+        var ref, volume;
+        volume = typeof commander !== "undefined" && commander !== null ? (ref = commander.settings) != null ? ref[name] : void 0 : void 0;
+        if (!volume) {
+            return DEFAULT_SETTINGS[name].value;
+        }
+        return volume.value;
+    };
+
+    settings.speedValue = function (name) {
+        var ref, volume;
+        volume = typeof commander !== "undefined" && commander !== null ? (ref = commander.settings) != null ? ref[name] : void 0 : void 0;
+        if (!volume) {
+            return DEFAULT_SETTINGS[name].value;
+        }
+        return volume.value;
+    };
+
+    settingsSound = function () {
+        var name, thing;
+        h2(function () {
+            padding(10);
+            return text("Sound");
+        });
+        p(function () {
+            padding(20);
+            return text("I would really like to thank 99sounds.com for providing royalty free sounds to use throughout the game.");
+        });
+        for (name in DEFAULT_SETTINGS) {
+            thing = DEFAULT_SETTINGS[name];
+            if (thing.sound) {
+                drawSlider(name);
+            }
+        }
+        return button(".red", function () {
+            margin_top(80);
+            padding(20);
+            text_align("center");
+            text("Reset to default volume levels");
+            return onclick(function () {
+                var j, k, len, ref;
+                ref = ["Master Volume", "Music Volume", "FX Volume", "Ambient Volume"];
+                for (j = 0, len = ref.length; j < len; j++) {
+                    k = ref[j];
+                    commander.settings[k] = DEFAULT_SETTINGS[k];
+                }
+                return settings.save();
+            });
+        });
+    };
+
+    settingsControls = function () {
+        var name, thing;
+        h2(function () {
+            padding(10);
+            return text("Speed");
+        });
+        for (name in DEFAULT_SETTINGS) {
+            thing = DEFAULT_SETTINGS[name];
+            if (thing.speed) {
+                drawSlider(name);
+            }
+        }
+        h2(function () {
+            padding(10);
+            return text("Key Bindings");
+        });
+        p(function () {
+            padding(20);
+            return text("Sorry, due to this being HTML5 game key codes can be really odd");
+        });
+        div(function () {
+            var results;
+            results = [];
+            for (name in DEFAULT_SETTINGS) {
+                thing = DEFAULT_SETTINGS[name];
+                if (thing.keys) {
+                    results.push(drawKey(name));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        });
+        return button(".red", function () {
+            margin_top(80);
+            padding(20);
+            text_align("center");
+            text("Reset to default settings");
+            return onclick(function () {
+                commander.settings = {};
+                return settings.save();
+            });
+        });
+    };
+
+    keyCodeToChar = {
+        8: "Backspace",
+        9: "Tab",
+        13: "Enter",
+        16: "Shift",
+        17: "Ctrl",
+        18: "Alt",
+        19: "Pause/Break",
+        20: "Caps Lock",
+        27: "Esc",
+        32: "Space",
+        33: "Page Up",
+        34: "Page Down",
+        35: "End",
+        36: "Home",
+        37: "Left",
+        38: "Up",
+        39: "Right",
+        40: "Down",
+        45: "Insert",
+        46: "Delete",
+        48: "0",
+        49: "1",
+        50: "2",
+        51: "3",
+        52: "4",
+        53: "5",
+        54: "6",
+        55: "7",
+        56: "8",
+        57: "9",
+        65: "A",
+        66: "B",
+        67: "C",
+        68: "D",
+        69: "E",
+        70: "F",
+        71: "G",
+        72: "H",
+        73: "I",
+        74: "J",
+        75: "K",
+        76: "L",
+        77: "M",
+        78: "N",
+        79: "O",
+        80: "P",
+        81: "Q",
+        82: "R",
+        83: "S",
+        84: "T",
+        85: "U",
+        86: "V",
+        87: "W",
+        88: "X",
+        89: "Y",
+        90: "Z",
+        91: "Windows",
+        93: "Right Click",
+        96: "Numpad 0",
+        97: "Numpad 1",
+        98: "Numpad 2",
+        99: "Numpad 3",
+        100: "Numpad 4",
+        101: "Numpad 5",
+        102: "Numpad 6",
+        103: "Numpad 7",
+        104: "Numpad 8",
+        105: "Numpad 9",
+        106: "Numpad *",
+        107: "Numpad +",
+        109: "Numpad -",
+        110: "Numpad .",
+        111: "Numpad /",
+        112: "F1",
+        113: "F2",
+        114: "F3",
+        115: "F4",
+        116: "F5",
+        117: "F6",
+        118: "F7",
+        119: "F8",
+        120: "F9",
+        121: "F10",
+        122: "F11",
+        123: "F12",
+        144: "Num Lock",
+        145: "Scroll Lock",
+        182: "My Computer",
+        183: "My Calculator",
+        186: ";",
+        187: "=",
+        188: ",",
+        189: "-",
+        190: ".",
+        191: "/",
+        192: "`",
+        219: "[",
+        220: "\\",
+        221: "]",
+        222: "'"
+    };
+
+    keyCharToCode = {
+        "Backspace": 8,
+        "Tab": 9,
+        "Enter": 13,
+        "Shift": 16,
+        "Ctrl": 17,
+        "Alt": 18,
+        "Pause/Break": 19,
+        "Caps Lock": 20,
+        "Esc": 27,
+        "Space": 32,
+        "Page Up": 33,
+        "Page Down": 34,
+        "End": 35,
+        "Home": 36,
+        "Left": 37,
+        "Up": 38,
+        "Right": 39,
+        "Down": 40,
+        "Insert": 45,
+        "Delete": 46,
+        "0": 48,
+        "1": 49,
+        "2": 50,
+        "3": 51,
+        "4": 52,
+        "5": 53,
+        "6": 54,
+        "7": 55,
+        "8": 56,
+        "9": 57,
+        "A": 65,
+        "B": 66,
+        "C": 67,
+        "D": 68,
+        "E": 69,
+        "F": 70,
+        "G": 71,
+        "H": 72,
+        "I": 73,
+        "J": 74,
+        "K": 75,
+        "L": 76,
+        "M": 77,
+        "N": 78,
+        "O": 79,
+        "P": 80,
+        "Q": 81,
+        "R": 82,
+        "S": 83,
+        "T": 84,
+        "U": 85,
+        "V": 86,
+        "W": 87,
+        "X": 88,
+        "Y": 89,
+        "Z": 90,
+        "Windows": 91,
+        "Right Click": 93,
+        "Numpad 0": 96,
+        "Numpad 1": 97,
+        "Numpad 2": 98,
+        "Numpad 3": 99,
+        "Numpad 4": 100,
+        "Numpad 5": 101,
+        "Numpad 6": 102,
+        "Numpad 7": 103,
+        "Numpad 8": 104,
+        "Numpad 9": 105,
+        "Numpad *": 106,
+        "Numpad +": 107,
+        "Numpad -": 109,
+        "Numpad .": 110,
+        "Numpad /": 111,
+        "F1": 112,
+        "F2": 113,
+        "F3": 114,
+        "F4": 115,
+        "F5": 116,
+        "F6": 117,
+        "F7": 118,
+        "F8": 119,
+        "F9": 120,
+        "F10": 121,
+        "F11": 122,
+        "F12": 123,
+        "Num Lock": 144,
+        "Scroll Lock": 145,
+        "My Computer": 182,
+        "My Calculator": 183,
+        ";": 186,
+        "=": 187,
+        ",": 188,
+        "-": 189,
+        ".": 190,
+        "/": 191,
+        "`": 192,
+        "[": 219,
+        "\\": 220,
+        "]": 221,
+        "'": 222
+    };
+
+    humanView = function (key) {
+        var full;
+        if (!key || !key.which) {
+            return "";
+        }
+        if (!key.mouse) {
+            full = keyCodeToChar[key.which];
+            if (!full) {
+                full = "#" + key.which;
+            }
+        } else {
+            full = "Mouse-#" + key.which;
+        }
+        if (key.shiftKey) {
+            full = "Shift-" + full;
+        }
+        if (key.ctrlKey) {
+            full = "Ctrl-" + full;
+        }
+        if (key.altKey) {
+            full = "Alt-" + full;
+        }
+        if (key.metaKey) {
+            full = "Meta-" + full;
+        }
+        return full;
+    };
+
+    settings.humanViewBinding = function (name) {
+        var binding, ref;
+        binding = typeof commander !== "undefined" && commander !== null ? (ref = commander.settings) != null ? ref[name] : void 0 : void 0;
+        if (!binding) {
+            binding = DEFAULT_SETTINGS[name];
+        }
+        if (!binding) {
+            return "unbound";
+        }
+        if (binding.keys[0]) {
+            return humanView(binding.keys[0]);
+        } else if (binding.keys[1]) {
+            return humanView(binding.keys[1]);
+        } else {
+            return "unbound";
+        }
+    };
+
+    drawKey = function (name) {
+        var binding, clean, ref;
+        binding = typeof commander !== "undefined" && commander !== null ? (ref = commander.settings) != null ? ref[name] : void 0 : void 0;
+        if (!binding) {
+            binding = deepCopy(DEFAULT_SETTINGS[name]);
+        }
+        clean = function (d) {
+            var k, newd, v;
+            newd = {};
+            for (k in d) {
+                v = d[k];
+                if (v) {
+                    newd[k] = v;
+                }
+            }
+            return newd;
+        };
+        return div(function () {
+            var i, j, len, ref1, results;
+            padding("5px 20px");
+            div(function () {
+                display("inline-block");
+                width(150);
+                return text(name);
+            });
+            ref1 = [0, 1];
+            results = [];
+            for (j = 0, len = ref1.length; j < len; j++) {
+                i = ref1[j];
+                results.push((function (i) {
+                    return input({
+                        type: "text",
+                        value: humanView(binding.keys[i])
+                    }, function () {
+                        width(100);
+                        margin_left(20);
+                        padding("2px 4px");
+                        border("1px solid #f39c12");
+                        background("rgba(0,0,0,.4)");
+                        color("#f39c12");
+                        font_size(16);
+                        text_align("center");
+                        onkeydown(function (e) {
+                            console.log("key down", e);
+                            if (e.which === 27) {
+                                binding.keys[i] = null;
+                            } else {
+                                binding.keys[i] = clean({
+                                    mouse: false,
+                                    altKey: e.altKey,
+                                    ctrlKey: e.ctrlKey,
+                                    metaKey: e.metaKey,
+                                    shiftKey: e.shiftKey,
+                                    which: e.which
+                                });
+                            }
+                            commander.settings[name] = binding;
+                            e.currentTarget.value = humanView(binding.keys[i]);
+                            e.preventDefault();
+                            return settings.save();
+                        });
+                        return onmousedown(function (e) {
+                            if (document.activeElement === e.currentTarget) {
+                                binding.keys[i] = clean({
+                                    mouse: true,
+                                    altKey: e.altKey,
+                                    ctrlKey: e.ctrlKey,
+                                    metaKey: e.metaKey,
+                                    shiftKey: e.shiftKey,
+                                    which: e.which
+                                });
+                                commander.settings[name] = binding;
+                                e.currentTarget.value = humanView(binding.keys[i]);
+                                e.preventDefault();
+                                return settings.save();
+                            }
+                        });
+                    });
+                })(i));
+            }
+            return results;
+        });
+    };
+
+    drawSlider = function (name) {
+        var ref, slider;
+        slider = typeof commander !== "undefined" && commander !== null ? (ref = commander.settings) != null ? ref[name] : void 0 : void 0;
+        if (!slider) {
+            slider = DEFAULT_SETTINGS[name];
+        }
+        if (!slider) {
+            throw "Looking for setting " + name;
+        }
+        return div(function () {
+            padding("5px 20px");
+            height(30);
+            div(function () {
+                display("inline-block");
+                width(150);
+                return text(name);
+            });
+            return div(function () {
+                margin_left(20);
+                display("inline-block");
+                width(220);
+                height(10);
+                overflow("hidden");
+                background_color("rgba(0,0,0,.4)");
+                onmousedown(function (e) {
+                    var rect, scrollLeft, scrollWidth, setValue;
+                    rect = e.target.getBoundingClientRect();
+                    scrollLeft = rect.left;
+                    scrollWidth = 220;
+                    setValue = function (e) {
+                        var value;
+                        value = (e.pageX - scrollLeft) / scrollWidth;
+                        value = Math.min(Math.max(value, 0), 1);
+                        return commander.settings[name] = {
+                            value: value
+                        };
+                    };
+                    setValue(e);
+                    document.onmouseup = function (e) {
+                        document.onmousemove = null;
+                        document.onmouseup = null;
+                        setValue(e);
+                        return settings.save();
+                    };
+                    return document.onmousemove = function (e) {
+                        setValue(e);
+                        return onecup.refresh();
+                    };
+                });
+                return div(function () {
+                    width(Math.floor(220 * slider.value));
+                    height(10);
+                    return background_color("#f39c12");
+                });
+            });
+        });
+    };
+
+    settingsMisc = function () {
+        h2(function () {
+            padding(10);
+            return text("Misc");
+        });
+        div(function () {
+            padding(10);
+            return text("You can reset your campaign here. All progress will be cleared and you will start from the beginning");
+        });
+        button(".red", function () {
+            padding(20);
+            text_align("center");
+            text("Reset Campaign");
+            return onclick(function () {
+                galaxyMode.restart();
+                return ui.go("galaxy");
+            });
+        });
+        div(function () {
+            padding(10);
+            return text("You can stop chat from appearing in single player. Great for recording or focusing on what you are doing");
+        });
+        return button(".full", function () {
+            padding(20);
+            text_align("center");
+            if (localStorage.chatSilent !== "true") {
+                text("Silent Mode Off");
+            } else {
+                text("Silent Mode On");
+            }
+            return onclick(function () {
+                if (localStorage.chatSilent === "true") {
+                    return localStorage.chatSilent = "false";
+                } else {
+                    return localStorage.chatSilent = "true";
+                }
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/challenges.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var drawAiChallenge;
+
+    eval(onecup["import"]());
+
+    ui.challengesView = function () {
+        return ui.inScreen("menu", "Challenges vs AI", function () {
+            var ai, i, j, k, len, len1, len2, n, ref, ref1, ref2, results, title;
+            overflow_y("scroll");
+            width(820);
+            height(window.innerHeight);
+            title = function (what) {
+                return div(function () {
+                    margin(0);
+                    text_align("center");
+                    padding(30);
+                    font_size(20);
+                    background_color("rgba(0,0,0,.5)");
+                    return text(what);
+                });
+            };
+            title("easy");
+            if (commander.challenges == null) {
+                commander.challenges = {};
+            }
+            n = 0;
+            ref = ais.easy;
+            for (i = 0, len = ref.length; i < len; i++) {
+                ai = ref[i];
+                drawAiChallenge(ai, n);
+                n += 1;
+            }
+            title("medium");
+            ref1 = ais.med;
+            for (j = 0, len1 = ref1.length; j < len1; j++) {
+                ai = ref1[j];
+                drawAiChallenge(ai, n);
+                n += 1;
+            }
+            title("hard");
+            ref2 = ais.hard;
+            results = [];
+            for (k = 0, len2 = ref2.length; k < len2; k++) {
+                ai = ref2[k];
+                drawAiChallenge(ai, n);
+                results.push(n += 1);
+            }
+            return results;
+        });
+    };
+
+    drawAiChallenge = function (aiName, n) {
+        return div(".hover-black", function () {
+            display("inline-block");
+            width(200);
+            height(100);
+            return div(function () {
+                var bestTime;
+                position("relative");
+                width(200);
+                height(100);
+                line_height(100);
+                color("white");
+                font_size(24);
+                text_align("center");
+                bestTime = commander.challenges[aiName];
+                if (bestTime != null) {
+                    background_color("rgba(255, 255, 255, .2)");
+                    div(function () {
+                        var m, s, sec;
+                        position("absolute");
+                        right(6);
+                        bottom(3);
+                        font_size(12);
+                        line_height(16);
+                        opacity(".5");
+                        sec = bestTime / 16;
+                        m = Math.floor(sec / 60);
+                        s = ("0" + Math.floor(sec) % 60).slice(0, 2);
+                        return text("best time: " + m + ":" + s);
+                    });
+                }
+                text(aiName);
+                return onclick(function () {
+                    battleMode.startAIChallenge(aiName);
+                    return ui.go("battle");
+                });
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
 //from src/grid.js
 // Generated by CoffeeScript 1.10.0
 (function () {
@@ -37735,3 +44593,11559 @@ ais.all.nulitor = [{
 }).call(this);
 ;
 
+
+//from src/design.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var NxN, SIZE, aiEditScreen, backToGalaxyButton, cell, divider, dragWhite, drawAddRule, drawAiParts, drawPart,
+        drawParts, drawRule, drawRuleDD, drawRuleNumber, drawTab, editorButtons, finishDesignButton, has, hoverInfo,
+        hoverTip, isBuildRule, lockScreen, partThumb, partThumbCache, powerBar, shareBox, smallTip, unitInfo,
+        weaponInfo, white,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        };
+
+    eval(onecup["import"]());
+
+    NxN = 24;
+
+    SIZE = 20;
+
+    white = [255, 255, 255, 255];
+
+    dragWhite = [255, 255, 255, 200];
+
+    window.DesignMode = (function () {
+        DesignMode.prototype.tab = "weapons";
+
+        DesignMode.prototype.hoverOverPart = null;
+
+        DesignMode.prototype.draggingPart = null;
+
+        DesignMode.prototype.draggingPart2 = null;
+
+        DesignMode.prototype.hoverTipPart = null;
+
+        DesignMode.prototype.wiggle = 0;
+
+        DesignMode.prototype.aiEdit = false;
+
+        DesignMode.prototype.showAiTools = true;
+
+        DesignMode.prototype.locked = false;
+
+        function DesignMode() {
+            this.draw = bind(this.draw, this);
+            var badParts, ref;
+            this.zoom = .5;
+            this.focus = v2.create();
+            this.draggingPart = null;
+            this.draggingPart2 = null;
+            this.mouse = [0, 0];
+            this.pos = [0, 0];
+            this.unit = new types.Unit("{}");
+            this.dragUnit = new types.Unit("{}");
+            ref = computeGrid(commander, this.unit), this.grid = ref[0], badParts = ref[1];
+            this.fresh = true;
+        }
+
+        DesignMode.prototype.fromSpec = function (spec) {
+            this.unit = new types.Unit(spec);
+            return this.refresh();
+        };
+
+        DesignMode.prototype.clear = function () {
+            this.unit = new types.Unit("{}");
+            buildBar.setSpec(buildBar.selected, "");
+            control.savePlayer();
+            return this.refresh();
+        };
+
+        DesignMode.prototype.partSpec = function () {
+            return this.unit.toSpec();
+        };
+
+        DesignMode.prototype.toGameSpace = function (point) {
+            point[0] = point[0] - window.innerWidth / 2;
+            point[1] = (window.innerHeight - point[1]) - window.innerHeight / 2;
+            v2.scale(point, this.zoom * 2);
+            v2.sub(point, this.focus);
+            return point;
+        };
+
+        DesignMode.prototype.rotatePart = function (part, way) {
+            if (way == null) {
+                way = 1;
+            }
+            if (account.hasDLCBonus()) {
+                if (part.canRotate) {
+                    part.dir = (4 + part.dir + way) % 4;
+                } else {
+                    this.wiggle = 10 * way;
+                }
+            } else {
+                this.wiggle = 10 * way;
+                part.dir = 0;
+            }
+            return part;
+        };
+
+        DesignMode.prototype.shiftShip = function (shift) {
+            var j, len, p, ref;
+            ref = this.unit.parts;
+            for (j = 0, len = ref.length; j < len; j++) {
+                p = ref[j];
+                v2.add(p.pos, shift);
+            }
+            this.save();
+            return this.refresh();
+        };
+
+        DesignMode.prototype.onkeyup = function (e) {
+            if (this.draggingPart) {
+                if (settings.key(e, "Zoom In")) {
+                    this.draggingPart = this.rotatePart(this.draggingPart, 1);
+                }
+                if (settings.key(e, "Zoom Out")) {
+                    return this.draggingPart = this.rotatePart(this.draggingPart, -1);
+                }
+            } else if (document.activeElement === document.body) {
+                if (!this.disabledEditing()) {
+                    if (settings.key(e, "Up")) {
+                        this.shiftShip([0, SIZE]);
+                    }
+                    if (settings.key(e, "Down")) {
+                        this.shiftShip([0, -SIZE]);
+                    }
+                    if (settings.key(e, "Left")) {
+                        this.shiftShip([-SIZE, 0]);
+                    }
+                    if (settings.key(e, "Right")) {
+                        return this.shiftShip([SIZE, 0]);
+                    }
+                }
+            }
+        };
+
+        DesignMode.prototype.onmousemove = function (e) {
+            var b, x, y;
+            this.mouse = this.toGameSpace([e.clientX, e.clientY]);
+            this.uiMouse = [e.clientX, e.clientY];
+            if (designMode.smallTipBounds) {
+                b = designMode.smallTipBounds;
+                x = this.uiMouse[0];
+                y = this.uiMouse[1];
+                if (x < b.left || x > b.right || y < b.top || y > b.bottom) {
+                    designMode.smallTipBounds = null;
+                    return designMode.smallTip = null;
+                }
+            }
+        };
+
+        DesignMode.prototype.disabledEditing = function () {
+            return designMode.aiEdit || designMode.locked || designMode.showShareBox;
+        };
+
+        DesignMode.prototype.onmousedown = function (e) {
+            var className, j, len, p, part, ref, ref1, ref2, symmetryPos;
+            if (this.disabledEditing()) {
+                return;
+            }
+            if (e.which === 3 && this.draggingPart) {
+                this.draggingPart = this.rotatePart(this.draggingPart);
+                return;
+            }
+            if (this.draggingPart) {
+                return;
+            }
+            if (this.hoverOverPart) {
+                if (e.shiftKey) {
+                    className = this.hoverOverPart.constructor.name;
+                    this.draggingPart = new parts[className]();
+                    this.draggingPart.pos = v2.create(this.hoverOverPart.pos);
+                    this.draggingPart.dir = this.hoverOverPart.dir;
+                    this.dragUnit.parts = [this.draggingPart];
+                    this.draggingPart.unit = this.dragUnit;
+                    return;
+                } else {
+                    this.draggingPart = this.hoverOverPart;
+                    this.dragUnit.parts = [this.draggingPart];
+                    if (this.symmetryMode) {
+                        symmetryPos = v2.create(this.draggingPart.pos);
+                        symmetryPos[0] *= -1;
+                        ref = this.unit.parts;
+                        for (j = 0, len = ref.length; j < len; j++) {
+                            part = ref[j];
+                            if (v2.distance(part.pos, symmetryPos) < .1 && part.constructor.name === this.draggingPart.constructor.name && part !== this.draggingPart) {
+                                this.draggingPart2 = part;
+                                this.dragUnit.parts.push(this.draggingPart2);
+                                break;
+                            }
+                        }
+                    }
+                    this.unit.parts = (function () {
+                        var l, len1, ref1, results;
+                        ref1 = this.unit.parts;
+                        results = [];
+                        for (l = 0, len1 = ref1.length; l < len1; l++) {
+                            p = ref1[l];
+                            if (p !== this.draggingPart && p !== this.draggingPart2) {
+                                results.push(p);
+                            }
+                        }
+                        return results;
+                    }).call(this);
+                    if (e.altKey && !((ref1 = sim.galaxyStar) != null ? ref1.noDesignTools : void 0)) {
+                        this.draggingPart = null;
+                        this.draggingPart2 = null;
+                        this.dragUnit.parts = [];
+                        this.save();
+                        return;
+                    }
+                }
+                e.preventDefault();
+            }
+            if (((ref2 = sim.galaxyStar) != null ? ref2.noDesignTools : void 0) === true) {
+                onecup.refresh();
+            }
+            return this.save();
+        };
+
+        DesignMode.prototype.onmouseup = function (e) {
+            var placePart, ref;
+            if (e.which === 3 && this.draggingPart) {
+                return;
+            }
+            if (this.draggingPart) {
+                if (Math.abs(this.pos[0]) < NxN * 10 && Math.abs(this.pos[1]) < NxN * 10) {
+                    placePart = (function (_this) {
+                        return function (part) {
+                            var p, ref;
+                            part.pos = v2.create(part.pos);
+                            if (!((ref = sim.galaxyStar) != null ? ref.noDesignTools : void 0)) {
+                                _this.unit.parts = (function () {
+                                    var j, len, ref1, results;
+                                    ref1 = this.unit.parts;
+                                    results = [];
+                                    for (j = 0, len = ref1.length; j < len; j++) {
+                                        p = ref1[j];
+                                        if (v2.distance(part.pos, p.pos) < .1 && part.constructor.name === p.constructor.name) {
+                                            continue;
+                                        }
+                                        results.push(p);
+                                    }
+                                    return results;
+                                }).call(_this);
+                            }
+                            _this.unit.parts.push(part);
+                            return part.unit = _this.unit;
+                        };
+                    })(this);
+                    placePart(this.draggingPart);
+                    if (this.symmetryMode && this.draggingPart2) {
+                        placePart(this.draggingPart2);
+                    }
+                    playSound("sounds/ui/flick.wav");
+                } else {
+                    if (((ref = sim.galaxyStar) != null ? ref.noDesignTools : void 0) === true) {
+                        onecup.refresh();
+                        return;
+                    }
+                    playSound("sounds/ui/shake.wav");
+                }
+                this.refresh();
+                this.save();
+                this.draggingPart = null;
+                this.dragUnit.parts = [];
+                e.preventDefault();
+                return onecup.refresh();
+            }
+        };
+
+        DesignMode.prototype.refresh = function () {
+            this.refreshGrid();
+            return onecup.refresh();
+        };
+
+        DesignMode.prototype.onbuildclick = function (e, index) {
+            return this.select(index);
+        };
+
+        DesignMode.prototype.select = function (index) {
+            buildBar.selected = index;
+            this.fromSpec(commander.buildBar[index]);
+            return this.refresh();
+        };
+
+        DesignMode.prototype.save = function () {
+            var spec;
+            spec = this.partSpec();
+            if (commander.side === "spectators") {
+                commander.validBar[buildBar.selected] = validSpec(commander, spec);
+            }
+            buildBar.setSpec(buildBar.selected, spec);
+            return control.savePlayer();
+        };
+
+        DesignMode.prototype.tick = function () {
+        };
+
+        DesignMode.prototype.refreshGrid = function () {
+            var badPart, badParts, j, len, p, partScore, ref;
+            partScore = function (part) {
+                if (part.damage) {
+                    return 1000 + part.damage;
+                } else if (part.decal) {
+                    return 100;
+                } else {
+                    return 0;
+                }
+            };
+            this.unit.parts.sort(function (a, b) {
+                return partScore(a) - partScore(b);
+            });
+            ref = computeGrid(commander, this.unit), this.grid = ref[0], badParts = ref[1];
+            if (badParts) {
+                for (j = 0, len = badParts.length; j < len; j++) {
+                    badPart = badParts[j];
+                    this.unit.parts = (function () {
+                        var l, len1, ref1, results;
+                        ref1 = this.unit.parts;
+                        results = [];
+                        for (l = 0, len1 = ref1.length; l < len1; l++) {
+                            p = ref1[l];
+                            if (p !== badPart) {
+                                results.push(p);
+                            }
+                        }
+                        return results;
+                    }).call(this);
+                }
+                return onecup.refresh();
+            }
+        };
+
+        DesignMode.prototype.warpIn = 0;
+
+        DesignMode.prototype.draw = function () {
+            var adjustAndDrawUnit, bg_zoom, className, color, flip, hoverOverPart, j, l, len, len1, len2, m, part,
+                partNum, ref, ref1, ref2, row, s, size, t, th, tip, x, xoff, y, yoff, z;
+            if (designMode.locked) {
+                this.draggingPart = null;
+                this.hoverOverPart = null;
+            }
+            baseAtlas.beginSprites(this.focus, this.zoom);
+            if (this.fresh) {
+                this.select(buildBar.selected);
+                this.fresh = false;
+            }
+            color = commander.color;
+            bg_zoom = Math.max(window.innerWidth, window.innerHeight) / 128;
+            z = bg_zoom * this.zoom;
+            baseAtlas.drawSprite("img/newbg/fill.png", [-this.focus[0], -this.focus[1]], [z, z], 0, mapping.themes[0].fillColor);
+            baseAtlas.drawSprite("img/newbg/gradient.png", [-this.focus[0], -this.focus[1]], [z, z], 0, mapping.themes[0].spotColor);
+            hoverOverPart = null;
+            ref = this.unit.parts;
+            for (partNum = j = 0, len = ref.length; j < len; partNum = ++j) {
+                part = ref[partNum];
+                part.working = true;
+                size = part.flippedSize();
+                x = Math.abs(part.pos[0] - this.mouse[0]) < size[0] / 2 * SIZE;
+                y = Math.abs(part.pos[1] - this.mouse[1]) < size[1] / 2 * SIZE;
+                if (x && y) {
+                    hoverOverPart = part;
+                }
+            }
+            if (this.hoverOverPart !== hoverOverPart) {
+                this.hoverOverPart = hoverOverPart;
+                if (hoverOverPart !== null) {
+                    this.hoverTipPart = hoverOverPart;
+                }
+                onecup.refresh();
+            }
+            adjustAndDrawUnit = function (unit) {
+                var l, len1, ref1, weapon;
+                unit.rot = Math.PI;
+                ref1 = unit.weapons;
+                for (l = 0, len1 = ref1.length; l < len1; l++) {
+                    weapon = ref1[l];
+                    weapon.rot = Math.PI;
+                }
+                unit.computeCenter();
+                unit.pos[0] = unit.center[0];
+                unit.pos[1] = unit.center[1];
+                unit.warpIn = 1;
+                unit.shield = unit.maxShield;
+                unit.jump = 40;
+                unit.color = commander.color;
+                return unit.draw();
+            };
+            adjustAndDrawUnit(this.unit);
+            adjustAndDrawUnit(this.dragUnit);
+            if (ui.show) {
+                ref1 = this.grid;
+                for (x = l = 0, len1 = ref1.length; l < len1; x = ++l) {
+                    row = ref1[x];
+                    for (y = m = 0, len2 = row.length; m < len2; y = ++m) {
+                        t = row[y];
+                        if (t.bad) {
+                            color = [255, 0, 0, 80 + Math.sin(Date.now() / 300) * 80];
+                        } else if (t.exhaust) {
+                            color = [255, 255, 255, 65];
+                        } else if (t.attach && !t.solid) {
+                            color = [0, 255, 0, 35];
+                        } else if (t.solid) {
+                            continue;
+                        } else if ((NxN / 2 - 1 <= x && x <= NxN / 2) && (NxN / 2 - 1 <= y && y <= NxN / 2)) {
+                            color = [0, 0, 0, 50];
+                        } else {
+                            color = [0, 0, 0, 25];
+                        }
+                        baseAtlas.drawSprite("parts/sel1x1.png", [(x - NxN / 2) * SIZE + SIZE / 2, (y - NxN / 2) * SIZE + SIZE / 2], [.8, .8], 0, color);
+                    }
+                }
+            }
+            if (this.draggingPart) {
+                this.draggingPart.rot = Math.PI;
+                this.draggingPart.working = true;
+                if (this.mouse[0] < 0 && this.draggingPart.flip) {
+                    flip = -1;
+                } else {
+                    flip = 1;
+                }
+                s = SIZE;
+                if (this.draggingPart.size[0] % 2 === 1) {
+                    xoff = .5 * s;
+                } else {
+                    xoff = 0;
+                }
+                if (this.draggingPart.size[1] % 2 === 1) {
+                    yoff = .5 * s;
+                } else {
+                    yoff = 0;
+                }
+                if (this.draggingPart.dir % 2 === 1) {
+                    ref2 = [yoff, xoff], xoff = ref2[0], yoff = ref2[1];
+                }
+                this.pos = [Math.floor(this.mouse[0] / s) * s + xoff, Math.floor(this.mouse[1] / s) * s + yoff];
+                this.wiggle *= .9;
+                th = Math.sin(this.wiggle / 50);
+                v2.set(this.pos, this.draggingPart.worldPos);
+                v2.set(this.pos, this.draggingPart.pos);
+                if (this.draggingPart.adjacent) {
+                    s = 35 / 255;
+                    baseAtlas.drawSprite("img/point02.png", [this.pos[0], this.pos[1]], [s, s], 0, white);
+                }
+            }
+            if (designMode.symmetryMode) {
+                if (this.draggingPart && !this.draggingPart2) {
+                    className = this.draggingPart.constructor.name;
+                    this.draggingPart2 = new parts[className]();
+                    this.draggingPart2.unit = this.dragUnit;
+                    this.dragUnit.parts.push(this.draggingPart2);
+                }
+                if (this.draggingPart && this.draggingPart2) {
+                    v2.set(this.draggingPart.worldPos, this.draggingPart2.worldPos);
+                    v2.set(this.draggingPart.pos, this.draggingPart2.pos);
+                    this.draggingPart2.worldPos[0] *= -1;
+                    this.draggingPart2.pos[0] *= -1;
+                    this.draggingPart2.rot = this.draggingPart.rot;
+                    this.draggingPart2.working = this.draggingPart.working;
+                    if (this.draggingPart.noFlip) {
+                        this.draggingPart2.dir = (1 + this.draggingPart.dir) % 4;
+                    } else {
+                        this.draggingPart2.dir = (4 - this.draggingPart.dir) % 4;
+                    }
+                }
+                if (!this.draggingPart && this.draggingPart2) {
+                    this.dragUnit.parts = [];
+                    this.draggingPart2 = null;
+                }
+            }
+            baseAtlas.finishSprites();
+            tip = onecup.lookup("#smalltip");
+            if ((tip != null) && designMode.uiMouse) {
+                x = designMode.uiMouse[0];
+                y = designMode.uiMouse[1];
+                if (!this.smallTip) {
+                    x = -1000;
+                    y = -1000;
+                }
+                if (x > window.innerWidth - 400) {
+                    x -= 10;
+                    tip.style.left = null;
+                    tip.style.right = (window.innerWidth - x) + "px";
+                } else {
+                    x += 20;
+                    tip.style.left = x + "px";
+                    tip.style.right = null;
+                }
+                return tip.style.top = (y + 10) + "px";
+            }
+        };
+
+        return DesignMode;
+
+    })();
+
+    partThumbCache = {};
+
+    partThumb = function (part) {
+        var imageDataUrl, k, scale;
+        k = part.prototype.constructor.name + commander.color;
+        if (!partThumbCache[k]) {
+            baseAtlas.startOffscreenFrame();
+            scale = .5 * part.prototype.scale;
+            if (part.prototype.size[0] === 4 || part.prototype.size[1] === 4) {
+                scale *= 1.5;
+            }
+            baseAtlas.beginSprites([0, 0], scale, [0, 0, -baseAtlas.rtt.width, baseAtlas.rtt.height]);
+            if (part.prototype.stripe) {
+                baseAtlas.drawSprite("parts/gray-" + part.prototype.image, [0, 0], [-1, 1], 0, white);
+                baseAtlas.drawSprite("parts/red-" + part.prototype.image, [0, 0], [-1, 1], 0, commander.color);
+            } else if (part.prototype.decal) {
+                baseAtlas.drawSprite("parts/" + part.prototype.image, [0, 0], [-1, 1], 0, commander.color);
+            } else {
+                baseAtlas.drawSprite("parts/" + part.prototype.image, [0, 0], [-1, 1], 0, white);
+            }
+            baseAtlas.finishSprites(false);
+            imageDataUrl = baseAtlas.endOffscreenFrame();
+            partThumbCache[k] = imageDataUrl;
+            return imageDataUrl;
+        }
+        return partThumbCache[k];
+    };
+
+    hoverTip = function (message) {
+        return onmouseover(function (e) {
+            designMode.smallTipBounds = e.target.getBoundingClientRect();
+            return designMode.smallTip = message;
+        });
+    };
+
+    window.editorUI = function () {
+        var ref;
+        if (designMode.unit.spec !== commander.buildBar[buildBar.selected]) {
+            designMode.unit = new types.Unit(commander.buildBar[buildBar.selected]);
+            buildBar.setSpec(buildBar.selected, designMode.partSpec());
+            designMode.refreshGrid();
+        }
+        if (!designMode.unit) {
+            designMode.select(buildBar.selected);
+            designMode.fresh = false;
+        }
+        if (sim.galaxyStar && commander.galaxyDifficulty !== "captain" && commander.galaxyDifficulty !== "admiral") {
+            designMode.aiEdit = false;
+            designMode.showAiTools = false;
+        } else {
+            designMode.showAiTools = true;
+        }
+        if (((ref = sim.galaxyStar) != null ? ref.noDesignTools : void 0) === true) {
+            issueInfo();
+            finishDesignButton();
+            backToGalaxyButton();
+            return;
+        }
+        if (!ui.chatToggle) {
+            unitInfo();
+            editorButtons();
+        }
+        buildBar.draw();
+        hoverInfo();
+        issueInfo();
+        if (designMode.aiEdit) {
+            aiEditScreen();
+            drawAiParts();
+        } else {
+            drawParts();
+        }
+        smallTip();
+        if (designMode.showShareBox) {
+            shareBox();
+        }
+        if (designMode.locked) {
+            return lockScreen();
+        }
+    };
+
+    shareBox = function () {
+        return textarea(function () {
+            position("absolute");
+            top(innerHeight / 2 - 300 / 2);
+            left(innerWidth / 2 - 300 / 2);
+            padding(20);
+            color("white");
+            font_size(6);
+            width(300);
+            height(300);
+            background_color("rgba(0,0,0,.8)");
+            resize("none");
+            text("ship" + btoa(designMode.unit.toSpec()));
+            return oninput(function (e) {
+                var spec, unit;
+                if (e.target.value.slice(0, 4) === "ship") {
+                    try {
+                        spec = atob(e.target.value.slice(4));
+                    } catch (undefined) {
+                    }
+                    if (spec && spec[0] === "{") {
+                        unit = new types.Unit(spec);
+                        if (unit.parts && unit.parts.length > 0) {
+                            designMode.unit = unit;
+                            designMode.refresh();
+                        }
+                    }
+                }
+                return designMode.save();
+            });
+        });
+    };
+
+    lockScreen = function () {
+        return div(function () {
+            position("absolute");
+            top(64);
+            left(0);
+            right(0);
+            bottom(84);
+            background_color("rgba(0,0,0,.8)");
+            return div(function () {
+                position("absolute");
+                top(200);
+                right(0);
+                left(0);
+                height(100);
+                line_height(100);
+                background_color("rgba(200,0,0,.6)");
+                color("white");
+                text_align("center");
+                return text("You can't edit ships in 1v1 tournament mode");
+            });
+        });
+    };
+
+    finishDesignButton = function () {
+        if (!hasIssue(commander, designMode.unit.spec) && designMode.draggingPart === null) {
+            return div(function () {
+                var quarterWidth;
+                quarterWidth = window.innerWidth / 4;
+                position("absolute");
+                left(quarterWidth);
+                width(quarterWidth * 2);
+                top(0);
+                height(64);
+                overflow("hidden");
+                text_align("center");
+                background_color("rgba(0,0,0,.6)");
+                color("white");
+                line_height(64);
+                font_size(18);
+                return div(".hover-black", function () {
+                    position("absolute");
+                    top(0);
+                    left(0);
+                    right(0);
+                    bottom(0);
+                    onclick(function () {
+                        return ui.mode = "battle";
+                    });
+                    return text("Click here to start the battle.");
+                });
+            });
+        }
+    };
+
+    backToGalaxyButton = function () {
+        return div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            return img(".hover-black", {
+                src: "img/ui/back.png",
+                width: 64,
+                height: 64
+            }, function () {
+                position("absolute");
+                top(0);
+                left(0);
+                return onclick(function () {
+                    return ui.go("galaxy");
+                });
+            });
+        });
+    };
+
+    smallTip = function () {
+        return div("#smalltip", function () {
+            position("absolute");
+            top(-1000);
+            max_width(400);
+            background_color("rgba(0,0,0,.6)");
+            padding(5);
+            color("white");
+            if (designMode.smallTip) {
+                return raw(designMode.smallTip);
+            }
+        });
+    };
+
+    cell = function (icon, readout, tip) {
+        return div(".cell", function () {
+            display("inline-block");
+            width(90);
+            height(20);
+            margin("0 10px 10px 0");
+            font_size(12);
+            line_height(20);
+            vertical_align("middle");
+            img({
+                src: "img/ui/" + icon,
+                width: 20,
+                height: 20
+            }, function () {
+                display("block");
+                float("left");
+                return margin_right(10);
+            });
+            raw(readout);
+            return onmouseover(function (e) {
+                designMode.smallTipBounds = e.target.getBoundingClientRect();
+                return designMode.smallTip = readout + " " + tip;
+            });
+        });
+    };
+
+    divider = function () {
+        return div(function () {
+            width("100%");
+            height(20);
+            return margin_bottom(10);
+        });
+    };
+
+    window.unitInfoSmall = function (spec, valid) {
+        var ghostCopy, j, len, part, ref, u;
+        if (valid == null) {
+            valid = true;
+        }
+        u = buildBar.specToUnit(spec);
+        if (u.parts.length === 0) {
+            div(function () {
+                var ref;
+                text_align("center");
+                if (((ref = commander.selection) != null ? ref.length : void 0) === 1) {
+                    return text("Click here to copy selected unit");
+                } else {
+                    return text("Click here to design a unit");
+                }
+            });
+            return;
+        }
+        ghostCopy = false;
+        ref = u.parts;
+        for (j = 0, len = ref.length; j < len; j++) {
+            part = ref[j];
+            if (part.ghostCopy) {
+                ghostCopy = true;
+                break;
+            }
+        }
+        if (!ghostCopy && !valid) {
+            div(function () {
+                text_align("center");
+                return text("Click here to fix the design");
+            });
+            return;
+        }
+        div(function () {
+            text_align("center");
+            padding_bottom(15);
+            if (ghostCopy) {
+                color("#f39c12");
+                text("Copy Only");
+            } else if (!u.name) {
+                text("Build Unit");
+            } else {
+                text(u.name);
+            }
+            return text(" $" + u.cost);
+        });
+        cell("dps.png", ((16 * u.weaponDPS).toFixed(1)) + "dps");
+        cell("armor.png", (u.hp.toFixed(0)) + "HP");
+        cell("range.png", (u.weaponRange.toFixed(0)) + "m");
+        cell("speed.png", ((u.maxSpeed * 16).toFixed(1)) + "m/s");
+        cell("arc.png", u.weaponArc + "&deg;");
+        cell("turnSpeed.png", ((u.turnSpeed * 16 / Math.PI * 180).toFixed(1)) + "&deg;/s");
+        return powerBar(u);
+    };
+
+    unitInfo = function () {
+        var u;
+        u = designMode.unit;
+        div(function () {
+            position("absolute");
+            top(64);
+            right(0);
+            width(240);
+            height(50);
+            background_color("rgba(0,0,0,.1)");
+            color("#DDD");
+            padding(10);
+            padding_top(10);
+            text_align("right");
+            nbsp(3);
+            return span(function () {
+                font_size(24);
+                return text("$" + u.cost);
+            });
+        });
+        return div(function () {
+            position("absolute");
+            top(64 + 50);
+            right(0);
+            bottom(84);
+            width(240);
+            background_color("rgba(0,0,0,.4)");
+            color("#DDD");
+            overflow_y("auto");
+            if (account.hasDLCBonus()) {
+                input({
+                    placeholder: "Name your ship",
+                    value: designMode.unit.name
+                }, function () {
+                    display("block");
+                    background_color("rgba(0,0,0,.4)");
+                    border("none");
+                    width(240);
+                    padding(10);
+                    font_size(16);
+                    color("white");
+                    return oninput(function (e) {
+                        designMode.unit.name = e.target.value;
+                        return designMode.save();
+                    });
+                });
+            } else {
+                div(function () {
+                    display("block");
+                    background_color("rgba(0,0,0,.4)");
+                    border("none");
+                    width(240);
+                    padding(10);
+                    font_size(16);
+                    color("rgba(255,255,255,.1)");
+                    text("Name your ship");
+                    return onmouseover(function (e) {
+                        designMode.smallTipBounds = e.target.getBoundingClientRect();
+                        return designMode.smallTip = "Naming your ships is a bonus feature <br> and requires the Paint Job DLC.";
+                    });
+                });
+            }
+            return div(function () {
+                var j, len, ref, results, w;
+                padding(10);
+                padding_left(20);
+                cell("dps.png", ((16 * u.weaponDPS).toFixed(1)) + "dps", "damage per second from all weapons");
+                cell("armor.png", (u.hp.toFixed(0)) + "HP", "total armor hit points");
+                if (u.shield) {
+                    cell("shield.png", u.shield + "sh", "+ shield hit points");
+                }
+                cell("range.png", (u.weaponRange.toFixed(0)) + "m", "max range of weapons");
+                cell("speed.png", ((u.maxSpeed * 16).toFixed(1)) + "m/s", "max unit move speed");
+                if (u.jumpDistance) {
+                    cell("jump.png", (u.jumpDistance.toFixed(0)) + "m", "jump distance (in meters)");
+                }
+                cell("arc.png", u.weaponArc + "&deg;", "max arc of weapons");
+                cell("turnSpeed.png", ((u.turnSpeed * 16 / Math.PI * 180).toFixed(1)) + "&deg;/s", "turn rate");
+                cell("mass.png", (u.mass.toFixed(1)) + "T", "ship total mass");
+                cell("arc360.png", (u.radius.toFixed(1)) + "m", "ship size");
+                divider();
+                powerBar(u);
+                cell("energyGen.png", "+" + ((u.genEnergy * 16).toFixed(0)) + "E", "energy generated per second");
+                cell("energyMove.png", ((u.moveEnergy * 16).toFixed(0)) + "E", "energy needed to move per second");
+                cell("energyStorage.png", (u.storeEnergy.toFixed(0)) + "E", "battery capacity");
+                cell("energyFire.png", ((u.fireEnergy * 16).toFixed(0)) + "E", "energy needed to fire all weapons per second");
+                divider();
+                u.weapons.sort(function (a, b) {
+                    return b.dps - a.dps;
+                });
+                ref = u.weapons;
+                results = [];
+                for (j = 0, len = ref.length; j < len; j++) {
+                    w = ref[j];
+                    weaponInfo(w, false);
+                    results.push(divider());
+                }
+                return results;
+            });
+        });
+    };
+
+    powerBar = function (u) {
+        return div(".cell", function () {
+            var firePer, genPer, max, movePer, moveWidth, s, tip, w;
+            position("relative");
+            display("inline-block");
+            width(200);
+            height(20);
+            margin("0 10px 10px 0");
+            font_size(12);
+            line_height(20);
+            vertical_align("middle");
+            genPer = (100 * u.genEnergy * 160 / u.storeEnergy).toFixed(1);
+            movePer = (100 * u.moveEnergy * 160 / u.storeEnergy).toFixed(1);
+            firePer = (100 * u.fireEnergy * 160 / u.storeEnergy).toFixed(1);
+            tip = "In 10 seconds: <br>\n" + genPer + "% will be regenerated <br>\n" + movePer + "% will be used up while moving <br>\n" + firePer + "% will be used up while firing <br>";
+            onmouseover(function (e) {
+                designMode.smallTipBounds = e.target.getBoundingClientRect();
+                return designMode.smallTip = tip;
+            });
+            img({
+                src: "img/ui/energy.png",
+                width: 20,
+                height: 20
+            }, function () {
+                display("block");
+                float("left");
+                return margin_right(10);
+            });
+            w = 150;
+            s = 160;
+            max = Math.max(Math.max(s * u.genEnergy, u.storeEnergy), s * u.moveEnergy + s * u.fireEnergy);
+            div(function () {
+                position("absolute");
+                top(3);
+                left(31);
+                height(12);
+                width(Math.floor(s * w * u.genEnergy / max));
+                return background("#9BBCE2");
+            });
+            div(function () {
+                position("absolute");
+                top(2);
+                left(30);
+                height(14);
+                width(Math.floor(w * u.storeEnergy / max));
+                return border("1px solid white");
+            });
+            moveWidth = Math.floor(s * w * u.moveEnergy / max) - 5;
+            if (moveWidth < 0) {
+                moveWidth = 0;
+            }
+            div(function () {
+                position("absolute");
+                top(5);
+                left(30 + 3);
+                height(8);
+                width(moveWidth);
+                background("#C6EDA0");
+                return border("1px solid white");
+            });
+            return div(function () {
+                position("absolute");
+                top(5);
+                left(30 + 5 + Math.max(moveWidth, 2));
+                height(8);
+                width(Math.floor(s * w * u.fireEnergy / max) - 4);
+                background("#E59090");
+                return border("1px solid white");
+            });
+        });
+    };
+
+    weaponInfo = function (w, extra) {
+        var dps, ref, ref1, rt;
+        div(function () {
+            font_size(14);
+            text(w.name);
+            height(20);
+            return margin_bottom(10);
+        });
+        if (extra) {
+            div(function () {
+                font_size(12);
+                margin_bottom(10);
+                return text(w.desc);
+            });
+            cell("armor.png", w.hp + "hp", "- adds hit points");
+            cell("mass.png", (w.mass.toFixed(1)) + "T", "- adds mass");
+        }
+        rt = Math.max(w.reloadTime, 1);
+        dps = w.dps || w.damage / rt;
+        cell("dps.png", ((16 * dps).toFixed(1)) + "dps", "damage per second");
+        if ((ref = w.bulletCls) != null ? ref.prototype.hitsMultiple : void 0) {
+            cell("multihit.png", "MultiHit", "passes through and hits multiple ships");
+        }
+        cell("damage.png", (w.damage.toFixed(1)) + "d", "damage per shot");
+        cell("range.png", (w.range.toFixed(1)) + "m", "weapon range");
+        cell("reload.png", ((w.reloadTime / 16).toFixed(2)) + "s", "reload time");
+        cell("energy.png", "-" + (w.shotEnergy.toFixed(1)) + "E", "energy per shot");
+        if (w.fireEnergy) {
+            cell("energy.png", "-" + ((w.fireEnergy * 16).toFixed(1)) + "E", "energy per second");
+        }
+        if (!w.instant) {
+            cell("speed.png", ((w.bulletSpeed * 16).toFixed(0)) + "m/s", "speed of the projectile");
+        }
+        if (w.aoe) {
+            cell("aoe.png", w.aoe + "m", "area of effect");
+        }
+        if (w.instant) {
+            cell("instant.png", "instant", "- instahit weapon");
+        }
+        if (w.exactRange) {
+            cell("exactRange.png", "exact", "timed explosion");
+        }
+        if ((ref1 = w.bulletCls) != null ? ref1.prototype.missile : void 0) {
+            cell("missle.png", "Missile", "- can be shot down by point defence");
+        }
+        if (w.hitsMissiles) {
+            cell("antiMissle.png", "PD", "points defence, can shoot down missiles");
+        }
+        if (w.energyDamage) {
+            cell("energyDamage.png", ((16 * w.energyDamage / rt).toFixed(1)) + "dps", "amount of energy drain per second");
+        }
+        if (w.energyDamage) {
+            cell("energyDamage.png", (w.energyDamage.toFixed(1)) + "d", "amount of energy drain per shot");
+        }
+        if (w.dealsBurnDamage) {
+            cell("burnDps.png", ((16 * dps * w.burnAmount).toFixed(1)) + "dps", "burn damage per second");
+            cell("burnDamage.png", ((w.damage * w.burnAmount).toFixed(1)) + "d", "burn damage per shot");
+            cell("burnDps.png", "3%", "of burn as damage per second");
+        }
+        if (w.minRange > 0) {
+            return cell("minrange.png", (w.minRange.toFixed(1)) + "m", "minimum range");
+        }
+    };
+
+    editorButtons = function () {
+        return div(function () {
+            var editorButton;
+            position("absolute");
+            right(260);
+            top(80);
+            width(620);
+            text_align("right");
+            color("#DDD");
+            padding(0);
+            editorButton = function (icon, tip, fn) {
+                return div(".hover-black", function () {
+                    position("relative");
+                    display("inline-block");
+                    width(40);
+                    height(40);
+                    padding(10);
+                    if (icon) {
+                        img({
+                            src: icon,
+                            width: 20,
+                            height: 20
+                        }, function () {
+                            position("absolute");
+                            top(10);
+                            return left(10);
+                        });
+                    }
+                    if (tip) {
+                        hoverTip(tip);
+                    }
+                    return fn();
+                });
+            };
+            if (designMode.clearQ) {
+                editorButton(null, null, function () {
+                    padding("10px 0px");
+                    width(60);
+                    text_align("center");
+                    background("rgba(255,0,0,.2)");
+                    text("clear");
+                    return onclick(function () {
+                        designMode.clear();
+                        return designMode.clearQ = false;
+                    });
+                });
+                editorButton(null, null, function () {
+                    padding("10px 0px");
+                    width(60);
+                    text_align("center");
+                    text("cancel");
+                    return onclick(function () {
+                        return designMode.clearQ = false;
+                    });
+                });
+                return;
+            }
+            if (designMode.showAiTools) {
+                editorButton("img/ui/ai.png", "AI mode", function () {
+                    if (localStorage.useAi === "true") {
+                        background("rgba(255,0,0,.2)");
+                    }
+                    return onclick(function () {
+                        if (localStorage.useAi !== "true") {
+                            localStorage.useAi = "true";
+                        } else {
+                            localStorage.useAi = "false";
+                            designMode.aiEdit = false;
+                        }
+                        return designMode.save();
+                    });
+                });
+                if (localStorage.useAi === "true") {
+                    editorButton("img/ui/aiRules.png", "AI editor", function () {
+                        if (designMode.aiEdit) {
+                            background("rgba(0,0,0,.2)");
+                        }
+                        return onclick(function () {
+                            return designMode.aiEdit = !designMode.aiEdit;
+                        });
+                    });
+                    if (intp.local) {
+                        editorButton("img/ui/aiBubbles.png", "AI debugging bubbles", function () {
+                            if (localStorage.aiGrid === "true") {
+                                background("rgba(0,0,0,.2)");
+                            }
+                            return onclick(function () {
+                                if (localStorage.aiGrid !== "true") {
+                                    return localStorage.aiGrid = "true";
+                                } else {
+                                    return localStorage.aiGrid = "false";
+                                }
+                            });
+                        });
+                    }
+                }
+            }
+            editorButton("img/ui/symmetry.png", "Symmetry", function () {
+                if (designMode.symmetryMode) {
+                    background("rgba(0,0,0,.2)");
+                }
+                return onclick(function () {
+                    return designMode.symmetryMode = !designMode.symmetryMode;
+                });
+            });
+            editorButton("img/ui/share.png", "Share", function () {
+                if (designMode.showShareBox) {
+                    background("rgba(0,0,0,.2)");
+                }
+                return onclick(function () {
+                    return designMode.showShareBox = !designMode.showShareBox;
+                });
+            });
+            return editorButton("img/ui/clear.png", "Delete", function () {
+                return onclick(function () {
+                    return designMode.clearQ = true;
+                });
+            });
+        });
+    };
+
+    window.issueInfo = function () {
+        var issue, u, warning;
+        u = designMode.unit;
+        issue = hasIssue(commander, u.spec);
+        if (issue) {
+            div(function () {
+                position("relative");
+                width(300);
+                margin("0px auto");
+                top(75);
+                text_align("center");
+                background_color("rgba(255,0,0,.5)");
+                color("#EEE");
+                padding(10);
+                return raw(issue);
+            });
+            return;
+        }
+        if (u.spec.length >= 6) {
+            if (intp.serverType === "1v1t" && u.aiRules.length > 0) {
+                warning = "No AI in 1v1 tournament mode.";
+            }
+            if (u.moveEnergy * 160 > u.storeEnergy) {
+                if (u.maxSpeed * 16 > 250) {
+                    warning = "Thrusters using too much energy, remove thrusters.";
+                } else {
+                    warning = "Not enough energy for thrusters.";
+                }
+            }
+            if (u.fireEnergy * 16 * 2 > u.storeEnergy) {
+                warning = "Not enough energy for weapons, add batteries.";
+            }
+            if (u.maxSpeed < 5) {
+                warning = "Movement speed is very slow, reduce weight.";
+            }
+            if (u.turnSpeed < .02) {
+                warning = "Turn speed is very slow, add wings.";
+            }
+            if (u.jumpDistance > 0 && u.jumpDistance < 100) {
+                warning = "Low jump distance.";
+            }
+        }
+        if (warning) {
+            return div(function () {
+                position("relative");
+                width(300);
+                margin("0px auto");
+                top(75);
+                text_align("center");
+                background_color("rgba(0, 0, 0, .5)");
+                color("white");
+                padding(10);
+                return text("Note: ", warning);
+            });
+        }
+    };
+
+    hoverInfo = function () {
+        var part;
+        if (designMode.draggingPart) {
+            part = designMode.draggingPart;
+        } else if (designMode.hoverTipPart) {
+            part = designMode.hoverTipPart;
+        }
+        if (!part) {
+            return;
+        }
+        if (designMode.aiEdit) {
+            return;
+        }
+        return div("#hoverInfo", function () {
+            var pr;
+            position("absolute");
+            left(250);
+            top(75);
+            width(220);
+            background_color("rgba(0,0,0,.5)");
+            color("#DDD");
+            padding(10);
+            div(function () {
+                float("right");
+                return text("$" + part.cost);
+            });
+            if (part.bulletCls) {
+                weaponInfo(part, true);
+                return;
+            }
+            div(function () {
+                font_size(14);
+                text(part.name);
+                height(20);
+                return margin_bottom(10);
+            });
+            if (!account.hasDLC(part.dlc)) {
+                div(function () {
+                    font_size(16);
+                    color("rgba(255,255,255,.5)");
+                    raw("Support Istrolid and get this part with the <a href='http://store.steampowered.com/app/449140' target='_blank'>" + part.dlc + " DLC</a>.");
+                    return margin_bottom(10);
+                });
+            }
+            div(function () {
+                font_size(12);
+                margin_bottom(10);
+                return text(part.desc);
+            });
+            if (!part.decal) {
+                cell("armor.png", part.hp + "hp", "armor hit points");
+                cell("mass.png", (part.mass.toFixed(1)) + "T", "mass");
+            }
+            if (part.thrust) {
+                cell("speed.png", ((part.thrust * 16).toFixed(0)) + "kN", "thrust (in kilonewtons)");
+            }
+            if (part.turnSpeed) {
+                cell("turnSpeed.png", ((part.turnSpeed / Math.PI * 180).toFixed(0)) + "&deg;/s", "+ turn speed (slowed down by mass)");
+            }
+            if (part.jumpCount) {
+                cell("jump.png", ((part.jumpCount * 500).toFixed(0)) + "m", "jump distance (in meters)");
+            }
+            pr = function (percent) {
+                if (percent > 0) {
+                    return "+" + percent + "%";
+                } else {
+                    return percent + "%";
+                }
+            };
+            if (part.weaponRange) {
+                cell("range.png", pr(part.weaponRange), "range");
+            }
+            if (part.weaponRangeFlat) {
+                cell("range.png", "+" + part.weaponRangeFlat + "m", "flat range");
+            }
+            if (part.weaponDamage) {
+                cell("damage.png", pr(part.weaponDamage), "damage per hit");
+            }
+            if (part.weaponSpeed) {
+                cell("speed.png", pr(part.weaponSpeed), "projectile speed");
+            }
+            if (part.weaponReload) {
+                cell("reload.png", pr(part.weaponReload), "reload time");
+            }
+            if (part.weaponEnergy) {
+                cell("energy.png", pr(part.weaponEnergy), "energy usage");
+            }
+            if (part.adjacent) {
+                cell("stripes.png", "-15%", "reduced effectiveness per additional adjacent weapon");
+            }
+            if (part.genShield) {
+                cell("shield.png", "+" + part.genShield * 16 + "sh/s", "recharges shield");
+            }
+            if (part.shield) {
+                cell("shield.png", part.shield + "sh", "+ shield hit points");
+            }
+            if (part.energyLine) {
+                cell("energyStorage.png", (part.energyLine * 100) + "%", "energy storage threshold for regeneration");
+            }
+            if (part.range) {
+                cell("range.png", part.range + "m", "range");
+            }
+            if (part.trasferEnergy) {
+                cell("energy.png", "-" + part.trasferEnergy * 16 + "E/s", "amount transfer per second per ship");
+            }
+            if (part.slow) {
+                cell("speed.png", "-" + part.slow * 20 + "%", "Slows down ships in range");
+                cell("decloak.png", "Decloaks", "units in range");
+            }
+            if (part.genCloak) {
+                cell("cloak.png", "+" + part.genCloak * 16 * 2 + "T/s", "mass cloaked per second");
+                cell("cloakMass.png", part.genCloak * 16 * 5 + "T", "while moving");
+            }
+            if (part.explodes) {
+                if (part.damage) {
+                    cell("damage.png", part.damage + "d", "damage per explosion");
+                }
+                if (part.aoe) {
+                    cell("range.png", part.aoe + "m", "area of effect");
+                }
+                if (part.energyDamage) {
+                    cell("energyDamage.png", part.energyDamage + "d", "amount of energy drain per explosion");
+                }
+            }
+            if (part.genEnergy) {
+                cell("energyGen.png", "+" + (part.genEnergy * 16) + "E", "generates energy");
+            }
+            if (part.storeEnergy) {
+                cell("energyStorage.png", part.storeEnergy + "E", "stores energy");
+            }
+            if (part.useEnergy) {
+                cell("energy.png", "-" + (part.useEnergy * 16) + "E/s", "uses energy");
+            }
+            if (part.arc) {
+                cell("arc.png", part.arc + "°", "firing arc");
+            }
+            if (part.rangeBuffMul) {
+                cell("range.png", pr(-100 + (part.rangeBuffMul * 100)), "range");
+            }
+            if (part.burnAmount) {
+                cell("burnDamage.png", ((part.damage * part.burnAmount).toFixed(1)) + "d", "burn damage per warhead");
+                return cell("burnDps.png", "3%", "of burn as damage per second");
+            }
+        });
+    };
+
+    has = function (a, b) {
+        if (a && b) {
+            return a.toLowerCase().indexOf(b.toLowerCase()) !== -1;
+        }
+    };
+
+    drawParts = function () {
+        var minParts, p, totalParts;
+        minParts = 3 * 8;
+        if (sim.galaxyStar && !account.DLCbonus) {
+            totalParts = 0;
+            for (p in galaxyMode.unlockedParts) {
+                totalParts += 1;
+            }
+        } else {
+            totalParts = 100;
+        }
+        div("#partTabs", function () {
+            position("absolute");
+            top(64);
+            left(0);
+            width(240);
+            color("#DDD");
+            height(100);
+            if (totalParts > minParts) {
+                div(function () {
+                    drawTab("weapons", "dps.png");
+                    drawTab("energy", "energy.png");
+                    drawTab("armor1", "armor.png");
+                    drawTab("armor2", "armor3.png");
+                    return drawTab("armor3", "armor2.png");
+                });
+                return div(function () {
+                    drawTab("engines", "speed.png");
+                    drawTab("defence", "minrange.png");
+                    drawTab("decal", "decals.png");
+                    drawTab("letters", "letters.png");
+                    return drawTab("stripes", "stripes.png");
+                });
+            }
+        });
+        return div("#partArea", function () {
+            var clsName, part, results;
+            position("absolute");
+            top(64 + 100);
+            left(0);
+            bottom(84);
+            width(240);
+            background_color("rgba(0,0,0,.4)");
+            padding(10);
+            overflow_y("auto");
+            results = [];
+            for (clsName in parts) {
+                part = parts[clsName];
+                if (totalParts > minParts) {
+                    if (part.prototype.tab !== designMode.tab) {
+                        continue;
+                    }
+                }
+                results.push(drawPart(clsName, part));
+            }
+            return results;
+        });
+    };
+
+    drawAiParts = function () {
+        div(function () {
+            position("absolute");
+            top(64);
+            height(50);
+            left(0);
+            width(240);
+            color("#DDD");
+            drawTab("energy", "build.png");
+            drawTab("engines", "movement.png");
+            drawTab("weapons", "offence.png");
+            return drawTab("armor", "defence.png");
+        });
+        return div(function () {
+            var j, len, results, rule, rules;
+            position("absolute");
+            top(64 + 50);
+            bottom(84);
+            left(0);
+            width(240);
+            background_color("rgba(0,0,0,.4)");
+            padding(10);
+            overflow_y("auto");
+            if (allAiRules[designMode.tab] == null) {
+                designMode.tab = "energy";
+            }
+            rules = allAiRules[designMode.tab];
+            results = [];
+            for (j = 0, len = rules.length; j < len; j++) {
+                rule = rules[j];
+                results.push(drawAddRule(rule));
+            }
+            return results;
+        });
+    };
+
+    drawAddRule = function (rule) {
+        return div(function () {
+            background_color("rgba(0,0,0,.4)");
+            margin(5);
+            return div(".hover-black", function () {
+                var count, i, j, len, part, parts, rule_text;
+                padding(5);
+                color("white");
+                rule_text = rule[0];
+                parts = rule_text.split(/([\#\?\*]|\@\w+)/);
+                count = 1;
+                for (i = j = 0, len = parts.length; j < len; i = ++j) {
+                    part = parts[i];
+                    if (part === "#" || part === "?" || part === "*" || part[0] === "@") {
+                        span(function () {
+                            text(rule[count]);
+                            padding("1px 2px 1px 2px");
+                            border("1px solid #f39c12");
+                            background("rgba(0,0,0,.4)");
+                            color("#f39c12");
+                            return font_size(12);
+                        });
+                        count += 1;
+                    } else {
+                        span(function () {
+                            return text(part);
+                        });
+                    }
+                }
+                return onclick(function () {
+                    if (!designMode.unit.aiRules) {
+                        designMode.unit.aiRules = [];
+                    }
+                    designMode.unit.aiRules.push((function (func, args, ctor) {
+                        ctor.prototype = func.prototype;
+                        var child = new ctor, result = func.apply(child, args);
+                        return Object(result) === result ? result : child;
+                    })(Array, rule, function () {
+                    }));
+                    return designMode.save();
+                });
+            });
+        });
+    };
+
+    drawTab = function (name, pic) {
+        return div(function () {
+            position("relative");
+            display("inline-block");
+            width(48);
+            height(50);
+            background_color("rgba(0,0,0,.4)");
+            img({
+                src: "img/ui/" + pic,
+                width: 20,
+                height: 20
+            }, function () {
+                return margin("15px 14px 0px 14px");
+            });
+            if (designMode.tab !== name) {
+                opacity(".3");
+            }
+            return onclick(function () {
+                return designMode.tab = name;
+            });
+        });
+    };
+
+    drawPart = function (clsName, part) {
+        if (sim.galaxyStar && !galaxyMode.unlockedParts[clsName]) {
+            if (!(part.prototype.dlc && account.hasDLC(part.prototype.dlc))) {
+                return;
+            }
+        }
+        if (part.prototype.hide || part.prototype.disable) {
+            return;
+        }
+        if (part.prototype.faction && part.prototype.faction !== commander.faction) {
+            return;
+        }
+        return div(".unitpic", function () {
+            var image, j, len, ref, unlockName;
+            position("relative");
+            display("inline-block");
+            width(52 + 16);
+            height(52 + 16);
+            margin(0);
+            border_radius(5);
+            overflow("hidden");
+            if (sim.galaxyStar) {
+                if (galaxyMode.justWon) {
+                    ref = galaxyMode.justWon.unlocks;
+                    for (j = 0, len = ref.length; j < len; j++) {
+                        unlockName = ref[j];
+                        if (clsName === unlockName) {
+                            animation("innerGlowPulse 1.2s infinite");
+                            animation_direction("alternate");
+                            div(function () {
+                                width(70);
+                                position("absolute");
+                                right(-23);
+                                top(5);
+                                text_align("center");
+                                transform("rotate(45deg)");
+                                font_size(12);
+                                color("white");
+                                background_color("red");
+                                return text("new");
+                            });
+                        }
+                    }
+                }
+            }
+            image = partThumb(part);
+            background_image("url('" + image + "')");
+            background_size(52 + 16);
+            background_position("center");
+            background_repeat("no-repeat");
+            onmouseover(function (e) {
+                return designMode.hoverTipPart = part.prototype;
+            });
+            if (!account.hasDLC(part.prototype.dlc)) {
+                return opacity(".5");
+            } else {
+                return onmousedown(function (e) {
+                    designMode.draggingPart = new part();
+                    designMode.draggingPart.unit = designMode.dragUnit;
+                    v2.set(designMode.pos, designMode.draggingPart.worldPos);
+                    v2.set(designMode.pos, designMode.draggingPart.pos);
+                    designMode.dragUnit.parts = [designMode.draggingPart];
+                    return e.preventDefault();
+                });
+            }
+        });
+    };
+
+    isBuildRule = function (rule) {
+        var j, len, r, ref;
+        ref = allAiRules["energy"];
+        for (j = 0, len = ref.length; j < len; j++) {
+            r = ref[j];
+            if (r[0] === rule[0]) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    aiEditScreen = function () {
+        return div("#unitAiRules" + buildBar.selected, function () {
+            var aiRuleSet, index, j, l, len, len1, results, rule;
+            position("absolute");
+            top(130);
+            bottom(84);
+            left(300);
+            right(300);
+            background("rgba(0,0,0,.7)");
+            padding(50);
+            overflow_y("auto");
+            aiRuleSet = designMode.unit.aiRules;
+            if (aiRuleSet.length > 0) {
+                for (index = j = 0, len = aiRuleSet.length; j < len; index = ++j) {
+                    rule = aiRuleSet[index];
+                    if (!isBuildRule(rule)) {
+                        drawRule(rule, index);
+                    }
+                }
+                div(function () {
+                    return height(20);
+                });
+                results = [];
+                for (index = l = 0, len1 = aiRuleSet.length; l < len1; index = ++l) {
+                    rule = aiRuleSet[index];
+                    if (isBuildRule(rule)) {
+                        results.push(drawRule(rule, index));
+                    } else {
+                        results.push(void 0);
+                    }
+                }
+                return results;
+            } else {
+                return div(function () {
+                    color("gray");
+                    return text("no rules yet, add some rules from the side");
+                });
+            }
+        });
+    };
+
+    drawRuleNumber = function (rule, index, count) {
+        return input({
+            type: "text",
+            value: rule[count]
+        }, function () {
+            display("inline-block");
+            padding("2px 4px 2px 4px");
+            border("1px solid #f39c12");
+            background("rgba(0,0,0,.4)");
+            color("#f39c12");
+            font_size(16);
+            text_align("center");
+            line_height(20);
+            width(60);
+            vertical_align("baseline");
+            return oninput(function (e) {
+                rule[count] = parseInt(e.target.value);
+                return designMode.save();
+            });
+        });
+    };
+
+    drawRuleDD = function (rule, index, count, options, w) {
+        return div(function () {
+            var j, len, type;
+            display("inline-block");
+            padding("3px 4px 1px 4px");
+            border("1px solid #f39c12");
+            background("rgba(0,0,0,.4)");
+            color("#f39c12");
+            font_size(16);
+            line_height(20);
+            vertical_align("baseline");
+            for (j = 0, len = options.length; j < len; j++) {
+                type = options[j];
+                if (type.toLowerCase() === rule[count].toLowerCase()) {
+                    text(type);
+                }
+            }
+            return onclick(function (e) {
+                return ui.rmenu = {
+                    id: rid(),
+                    pos: [e.clientX, e.clientY],
+                    html: function () {
+                        var l, len1, results;
+                        results = [];
+                        for (l = 0, len1 = options.length; l < len1; l++) {
+                            type = options[l];
+                            results.push((function (type) {
+                                return div(".hover-red", function () {
+                                    padding("4px 8px");
+                                    text(type);
+                                    return onmousedown(function () {
+                                        var ddopen;
+                                        rule[count] = type;
+                                        return ddopen = null;
+                                    });
+                                });
+                            })(type));
+                        }
+                        return results;
+                    }
+                };
+            });
+        });
+    };
+
+    drawRule = function (rule, index) {
+        var aiRuleSet;
+        aiRuleSet = designMode.unit.aiRules;
+        return div(function () {
+            var count, i, j, len, part, parts, rule_text;
+            position("relative");
+            background("rgba(0,0,0,.4)");
+            padding("5px 10px");
+            color("white");
+            margin(10);
+            padding_left(40);
+            padding_right(40);
+            min_height(40);
+            line_height(36);
+            vertical_align("baseline");
+            rule_text = rule[0];
+            if (!ais.goodRule(rule)) {
+                background_color("rgba(255,0,0,.5)");
+            }
+            if (rule_text === "Code Block") {
+                textarea(function () {
+                    border("none");
+                    background("rgba(0,0,0,.4)");
+                    padding(4);
+                    font_family("monospace");
+                    font_size(14);
+                    color("white");
+                    width("100%");
+                    height(200);
+                    return text(rule[1]);
+                });
+            } else {
+                parts = rule_text.split(/(\#|\@\w+)/);
+                count = 1;
+                for (i = j = 0, len = parts.length; j < len; i = ++j) {
+                    part = parts[i];
+                    if (part === "#") {
+                        drawRuleNumber(rule, index, count);
+                        count += 1;
+                    } else if (part[0] === "@") {
+                        drawRuleDD(rule, index, count, ais[part.slice(1)], 120);
+                        count += 1;
+                    } else {
+                        span(function () {
+                            return text(part);
+                        });
+                    }
+                }
+            }
+            img(".hover-fade", {
+                src: "img/ui/upVote.png",
+                width: 14,
+                height: 14
+            }, function () {
+                position("absolute");
+                top(4);
+                left(10);
+                return onclick(function () {
+                    if (index > 0) {
+                        aiRuleSet.splice(index, 0, aiRuleSet.splice(index - 1, 1)[0]);
+                        return designMode.save();
+                    }
+                });
+            });
+            img(".hover-fade", {
+                src: "img/ui/downVote.png",
+                width: 14,
+                height: 14
+            }, function () {
+                position("absolute");
+                bottom(4);
+                left(10);
+                return onclick(function () {
+                    if (index < aiRuleSet.length - 1) {
+                        aiRuleSet.splice(index, 0, aiRuleSet.splice(index + 1, 1)[0]);
+                        return designMode.save();
+                    }
+                });
+            });
+            return img(".hover-fade", {
+                src: "img/ui/delete.png",
+                width: 28,
+                height: 28
+            }, function () {
+                position("absolute");
+                top(6);
+                right(6);
+                return onclick(function () {
+                    aiRuleSet.splice(index, 1);
+                    return designMode.save();
+                });
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/battle.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var MAX_ZOOM_IN,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    MAX_ZOOM_IN = .5;
+
+    window.GameMode = (function () {
+        function GameMode() {
+        }
+
+        GameMode.prototype.toGameSpace = function (point) {
+            point[0] = point[0] - window.innerWidth / 2;
+            point[1] = window.innerHeight / 2 - point[1];
+            v2.scale(point, this.zoom * 2);
+            v2.sub(point, this.focus);
+            return point;
+        };
+
+        GameMode.prototype.fromGameSpace = function (point) {
+            point = v2.create(point);
+            v2.add(point, this.focus);
+            v2.scale(point, 1 / (this.zoom * 2));
+            point[0] = point[0] + window.innerWidth / 2;
+            point[1] = -point[1] + window.innerHeight / 2;
+            return point;
+        };
+
+        return GameMode;
+
+    })();
+
+    window.ControlsMode = (function (superClass) {
+        extend(ControlsMode, superClass);
+
+        function ControlsMode() {
+            this.onzoom = bind(this.onzoom, this);
+            this.onkeyup = bind(this.onkeyup, this);
+            this.onkeydown = bind(this.onkeydown, this);
+            return ControlsMode.__super__.constructor.apply(this, arguments);
+        }
+
+        ControlsMode.prototype.keyScroll = [0, 0];
+
+        ControlsMode.prototype.keyZoom = 0;
+
+        ControlsMode.prototype.panLeft = 0;
+
+        ControlsMode.prototype.panRight = 0;
+
+        ControlsMode.prototype.panUp = 0;
+
+        ControlsMode.prototype.panDown = 0;
+
+        ControlsMode.prototype.zoomIn = 0;
+
+        ControlsMode.prototype.zoomOut = 0;
+
+        ControlsMode.prototype.mapBounds = 10000;
+
+        ControlsMode.prototype.onkeydown = function (e) {
+            if (settings.key(e, "Pan Map")) {
+                this.moving = true;
+            } else if (settings.key(e, "Up")) {
+                this.panUp = -1;
+            } else if (settings.key(e, "Down")) {
+                this.panDown = 1;
+            } else if (settings.key(e, "Left")) {
+                this.panLeft = 1;
+            } else if (settings.key(e, "Right")) {
+                this.panRight = -1;
+            } else if (settings.key(e, "Zoom In")) {
+                this.zoomIn = -1;
+            } else if (settings.key(e, "Zoom Out")) {
+                this.zoomOut = 1;
+            } else {
+                return;
+            }
+            return e.preventDefault();
+        };
+
+        ControlsMode.prototype.onkeyup = function (e) {
+            if (settings.key(e, "Pan Map")) {
+                this.moving = false;
+            }
+            if (settings.key(e, "Up")) {
+                this.panUp = 0;
+            }
+            if (settings.key(e, "Down")) {
+                this.panDown = 0;
+            }
+            if (settings.key(e, "Left")) {
+                this.panLeft = 0;
+            }
+            if (settings.key(e, "Right")) {
+                this.panRight = 0;
+            }
+            if (settings.key(e, "Zoom In")) {
+                this.zoomIn = 0;
+            }
+            if (settings.key(e, "Zoom Out")) {
+                this.zoomOut = 0;
+            }
+            if (settings.key(e, "Focus on Units")) {
+                return this.centerOnUnit = false;
+            }
+        };
+
+        ControlsMode.prototype.onzoom = function (delta, e) {
+            var afterPos, beforePos, z;
+            beforePos = this.toGameSpace([e.clientX, e.clientY]);
+            z = .10;
+            this.zoom += delta * settings.speedValue("Zoom Speed") * z;
+            if (this.zoom < MAX_ZOOM_IN) {
+                this.zoom = MAX_ZOOM_IN;
+            }
+            if (this.zoom > 10) {
+                this.zoom = 10;
+            }
+            afterPos = this.toGameSpace([e.clientX, e.clientY]);
+            this.focus[0] -= beforePos[0] - afterPos[0];
+            return this.focus[1] -= beforePos[1] - afterPos[1];
+        };
+
+        ControlsMode.prototype.controls = function () {
+            var a, edge, j, len, numSel, ref, ref1, speed, thing, z;
+            if (!commander) {
+                return;
+            }
+            this.keyScroll[0] *= .8;
+            this.keyScroll[1] *= .8;
+            a = 10 * this.zoom * settings.speedValue("Scroll Speed");
+            this.keyScroll[1] += (this.panUp + this.panDown) * a;
+            this.keyScroll[0] += (this.panLeft + this.panRight) * a;
+            v2.add(this.focus, this.keyScroll);
+            if (v2.mag(this.focus) > this.mapBounds) {
+                this.focus[0] -= this.focus[0] * .003;
+                this.focus[1] -= this.focus[1] * .003;
+            }
+            this.keyZoom *= .9;
+            z = .02;
+            this.keyZoom += (this.zoomIn + this.zoomOut) * z * settings.speedValue("Scroll Speed");
+            this.zoom += this.keyZoom;
+            if (this.zoom < MAX_ZOOM_IN) {
+                this.zoom = MAX_ZOOM_IN;
+            }
+            if (this.zoom > 10) {
+                this.zoom = 10;
+            }
+            numSel = (ref = commander.selection) != null ? ref.length : void 0;
+            if (this.centerOnUnit && numSel > 0) {
+                this.focus[0] = 0;
+                this.focus[1] = 0;
+                ref1 = commander.selection;
+                for (j = 0, len = ref1.length; j < len; j++) {
+                    thing = ref1[j];
+                    this.focus[0] -= thing.pos[0] / numSel;
+                    this.focus[1] -= thing.pos[1] / numSel;
+                }
+            }
+            if (isFullScreen() && (ui.mode === "battle" || ui.mode === "galaxy")) {
+                speed = 20 * this.zoom * settings.speedValue("Scroll Speed");
+                edge = 2;
+                if (this.screenMouse[0] < edge) {
+                    this.keyScroll[0] += speed;
+                }
+                if (this.screenMouse[0] > window.innerWidth - edge) {
+                    this.keyScroll[0] -= speed;
+                }
+                if (this.screenMouse[1] < edge) {
+                    this.keyScroll[1] -= speed;
+                }
+                if (this.screenMouse[1] > window.innerHeight - edge) {
+                    return this.keyScroll[1] += speed;
+                }
+            }
+        };
+
+        return ControlsMode;
+
+    })(GameMode);
+
+    window.BattleMode = (function (superClass) {
+        extend(BattleMode, superClass);
+
+        function BattleMode(player1) {
+            this.player = player1;
+            this.onkeyup = bind(this.onkeyup, this);
+            this.onkeydown = bind(this.onkeydown, this);
+            this.onmouseup = bind(this.onmouseup, this);
+            this.onmousedown = bind(this.onmousedown, this);
+            this.ondblclick = bind(this.ondblclick, this);
+            this.canvas = document.getElementById("webGL");
+            this.selection = document.getElementById("selection");
+            this.reset();
+        }
+
+        BattleMode.prototype.reset = function () {
+            this.selectAt = v2.create();
+            this.savedSelections = {};
+            this.selecting = false;
+            this.moving = false;
+            this.drawing = false;
+            this.ordering = false;
+            this.shiftOrder = false;
+            this.panLeft = 0;
+            this.panRight = 0;
+            this.panUp = 0;
+            this.panDown = 0;
+            this.zoomIn = 0;
+            this.zoomOut = 0;
+            this.zoom = 5;
+            this.focus = v2.create();
+            this.lastMouseMove = 0;
+            this.mouse = v2.create();
+            this.screenMouse = v2.create();
+            this.placeingCls = null;
+            this.drawPoints = [];
+            this.movePoints = [];
+            return this.orderId = 0;
+        };
+
+        BattleMode.prototype.genOrderId = function () {
+            var o;
+            o = this.orderId;
+            this.orderId += 2;
+            return o;
+        };
+
+        BattleMode.prototype.startNewLocal = function () {
+            var base;
+            this.reset();
+            bubbles.clear();
+            ui.go("battle");
+            if (window.network != null) {
+                if (typeof (base = window.network).close === "function") {
+                    base.close();
+                }
+            }
+            window.intp = new Interpolator();
+            window.sim = new Sim();
+            sim.sound = true;
+            sim.local = true;
+            intp.local = true;
+            window.network = new Local();
+            if (typeof network !== "undefined" && network !== null) {
+                network.sendPlayer();
+            }
+            sim.generateMap(.5, 1, 0);
+            sim.extra = function () {
+                if (sim.winningSide) {
+                    return bubbles.clear();
+                }
+            };
+            return sim.start();
+        };
+
+        BattleMode.prototype.startAIChallenge = function (challengeName) {
+            var base, player;
+            this.reset();
+            if (window.network != null) {
+                if (typeof (base = window.network).close === "function") {
+                    base.close();
+                }
+            }
+            window.network = new Local();
+            ui.go("battle");
+            window.intp = new Interpolator();
+            window.sim = new Sim("challenge");
+            sim.sound = true;
+            sim.local = true;
+            sim.challenge = challengeName;
+            intp.local = true;
+            intp.theme = sim.theme;
+            player = ais.useAi(challengeName, "beta");
+            if (typeof network !== "undefined" && network !== null) {
+                network.sendPlayer();
+            }
+            sim.start();
+            return intp.gameEnded = function () {
+                if (intp.winningSide === "alpha") {
+                    if ((commander.challenges[challengeName] == null) || commander.challenges[challengeName] > sim.step) {
+                        commander.challenges[challengeName] = sim.step;
+                    }
+                    account.rootRealSave();
+                }
+                return ui.go("challenges");
+            };
+        };
+
+        BattleMode.prototype.joinServer = function (serverName) {
+            var base, ref;
+            this.serverName = serverName;
+            this.reset();
+            this.server = (ref = rootNet.servers) != null ? ref[this.serverName] : void 0;
+            if (!this.server) {
+                console.log("server not found");
+                return;
+            }
+            ui.go("battleroom");
+            ui.pickingLobbyAiSide = false;
+            track("join_server", {
+                server: this.server.name
+            });
+            bubbles.clear();
+            window.intp = new Interpolator();
+            intp.local = false;
+            window.sim = intp;
+            window.sim.battleType = "multiplayer";
+            if (window.network != null) {
+                if (typeof (base = window.network).close === "function") {
+                    base.close();
+                }
+            }
+            window.network = new Connection(this.server.address);
+            return actionMixer.reset();
+        };
+
+        BattleMode.prototype.joinLocal = function () {
+            var base;
+            if (!sim.local || sim.galaxyStar || sim.challenge) {
+                this.reset();
+                bubbles.clear();
+                if (window.network != null) {
+                    if (typeof (base = window.network).close === "function") {
+                        base.close();
+                    }
+                }
+                window.network = new Local();
+                window.intp = new Interpolator();
+                window.sim = new Sim();
+                sim.sound = true;
+                sim.local = true;
+                intp.local = true;
+                sim.generateMap();
+            } else {
+                sim.winningSide = false;
+                sim.endOfGame();
+            }
+            ui.go("battleroom");
+            return after(0, function () {
+                print("here?");
+                network.sendPlayer();
+                return network.send("switchSide", "alpha");
+            });
+        };
+
+        BattleMode.prototype.onmousemove = function (e) {
+            var b, dx, dy, end, endx, endy, id, ifHasFilter, index, j, len, need_tip, now, ref, ref1, ref2, ref3, ref4,
+                selected, start, startx, starty, t, thing, unit, x, y;
+            if (!this.player) {
+                return;
+            }
+            this.screenMouse = [e.clientX, e.clientY];
+            this.mouse = this.toGameSpace([this.screenMouse[0], this.screenMouse[1]]);
+            now = Date.now();
+            if (this.lastMouseMove < now - 1000 / 16) {
+                this.lastMouseMove = now;
+                if (typeof network !== "undefined" && network !== null) {
+                    network.send("mouseMove", this.mouse, this.selecting || this.ordering);
+                }
+            }
+            if (this.selecting) {
+                this.selection.style.display = "block";
+                startx = Math.min(this.selectAt[0], e.clientX);
+                starty = Math.min(this.selectAt[1], e.clientY);
+                endx = Math.max(this.selectAt[0], e.clientX);
+                endy = Math.max(this.selectAt[1], e.clientY);
+                this.selection.style.left = startx + "px";
+                this.selection.style.top = starty + "px";
+                this.selection.style.width = -startx + endx + "px";
+                this.selection.style.height = -starty + endy + "px";
+                start = this.toGameSpace([startx, starty]);
+                end = this.toGameSpace([endx, endy]);
+                selected = [];
+                if (v2.distance([startx, starty], [endx, endy]) < 10) {
+                    unit = this.closestUnit(start);
+                    if (unit) {
+                        selected.push(unit);
+                    }
+                } else {
+                    ref = intp.things;
+                    for (id in ref) {
+                        thing = ref[id];
+                        if ((start[0] < (ref1 = thing.pos[0]) && ref1 < end[0]) && (start[1] > (ref2 = thing.pos[1]) && ref2 > end[1])) {
+                            selected.push(thing);
+                        }
+                    }
+                }
+                if (this.selectAdd) {
+                    ref3 = commander.selection;
+                    for (j = 0, len = ref3.length; j < len; j++) {
+                        thing = ref3[j];
+                        selected.push(thing);
+                    }
+                }
+                ifHasFilter = function (selected, fn) {
+                    var has, k, l, len1, len2, newSelected, t;
+                    has = false;
+                    for (k = 0, len1 = selected.length; k < len1; k++) {
+                        t = selected[k];
+                        if (fn(t)) {
+                            has = true;
+                        }
+                    }
+                    if (!has) {
+                        return selected;
+                    }
+                    newSelected = [];
+                    for (l = 0, len2 = selected.length; l < len2; l++) {
+                        t = selected[l];
+                        if (fn(t)) {
+                            newSelected.push(t);
+                        }
+                    }
+                    return newSelected;
+                };
+                selected = (function () {
+                    var k, len1, results;
+                    results = [];
+                    for (k = 0, len1 = selected.length; k < len1; k++) {
+                        t = selected[k];
+                        if (t.unit) {
+                            results.push(t);
+                        }
+                    }
+                    return results;
+                })();
+                selected = ifHasFilter(selected, function (u) {
+                    return u.owner === commander.id;
+                });
+                selected.sort(function (a, b) {
+                    return a.id - b.id;
+                });
+                this.selectUnitsFake(selected);
+            }
+            if (this.moving) {
+                dx = e.movementX;
+                dy = e.movementY;
+                if (dx === void 0) {
+                    dx = e.mozMovementX;
+                }
+                if (dy === void 0) {
+                    dy = e.mozMovementY;
+                }
+                this.focus[0] += dx * this.zoom * 2;
+                this.focus[1] -= dy * this.zoom * 2;
+            }
+            if (this.ordering) {
+                this.drawPoints.push(this.toGameSpace([e.clientX, e.clientY]));
+            }
+            need_tip = null;
+            if (e.clientY > window.innerHeight - 84 && !tutor.buildBarHide()) {
+                index = Math.floor((e.clientX - window.innerWidth / 2) / 84 + 5);
+                if (index >= 0 && index < 10) {
+                    need_tip = {
+                        bottom: 84 + 28,
+                        x: window.innerWidth / 2 + (index - 5) * 84 - 43,
+                        width: 240,
+                        stem: "center",
+                        modeOnly: "battle",
+                        html: function () {
+                            var spec, valid;
+                            spec = commander.buildBar[index];
+                            valid = commander.validBar[index];
+                            return unitInfoSmall(spec, valid);
+                        }
+                    };
+                }
+            }
+            if (this.tip) {
+                b = this.tipBounds;
+                x = this.screenMouse[0];
+                y = this.screenMouse[1];
+                if (x < b.left || x > b.right || y < b.top || y > b.bottom) {
+                    this.tipBounds = null;
+                    this.tip = null;
+                }
+                need_tip = {
+                    bottom: window.innerHeight - b.top,
+                    x: (b.left + b.right) / 2 - 140 / 2 + 20,
+                    width: 160,
+                    stem: "center",
+                    modeOnly: "battle",
+                    html: this.tip
+                };
+            }
+            if (((ref4 = bubbles.tip) != null ? ref4.x : void 0) !== (need_tip != null ? need_tip.x : void 0)) {
+                bubbles.tip = need_tip;
+                return onecup.refresh();
+            }
+        };
+
+        BattleMode.prototype.selectUnitsFake = function (things) {
+            var j, len, ref, selected, selectedIds, t;
+            selectedIds = [];
+            selected = [];
+            for (j = 0, len = things.length; j < len; j++) {
+                t = things[j];
+                if (selectedIds.indexOf(t.id) === -1) {
+                    selectedIds.push(t.id);
+                    selected.push(t);
+                }
+            }
+            commander.selection = selected;
+            return (ref = intp.players[commander.id]) != null ? ref.selection = selected : void 0;
+        };
+
+        BattleMode.prototype.selectUnits = function (things) {
+            var ids, t;
+            ids = (function () {
+                var j, len, results;
+                results = [];
+                for (j = 0, len = things.length; j < len; j++) {
+                    t = things[j];
+                    if (intp.things[t.id]) {
+                        results.push(t.id);
+                    }
+                }
+                return results;
+            })();
+            return this.selectThings(things, ids);
+        };
+
+        BattleMode.prototype.selectUnitsIds = function (ids) {
+            var id, j, len, t, things;
+            things = [];
+            for (j = 0, len = ids.length; j < len; j++) {
+                id = ids[j];
+                t = intp.things[id];
+                if (t) {
+                    things.push(t);
+                }
+            }
+            return this.selectThings(things, ids);
+        };
+
+        BattleMode.prototype.selectThings = function (things, ids) {
+            var ref;
+            commander.selection = things;
+            if ((ref = intp.players[commander.number]) != null) {
+                ref.selection = things;
+            }
+            return network.send("playerSelected", ids);
+        };
+
+        BattleMode.prototype.ondblclick = function (e) {
+            var at, id, j, len, ref, ref1, selected, thing, unit;
+            if (e.which !== 1) {
+                return;
+            }
+            at = this.toGameSpace([e.clientX, e.clientY]);
+            unit = this.closestUnit(at);
+            if (!unit) {
+                return;
+            }
+            selected = [];
+            ref = intp.things;
+            for (id in ref) {
+                thing = ref[id];
+                if (JSON.stringify(thing.spec) === JSON.stringify(unit.spec) && thing.owner === unit.owner) {
+                    selected.push(thing);
+                }
+            }
+            if (e.shiftKey) {
+                ref1 = commander.selection;
+                for (j = 0, len = ref1.length; j < len; j++) {
+                    thing = ref1[j];
+                    selected.push(thing);
+                }
+            }
+            this.selectUnits(selected);
+            return this.selecting = false;
+        };
+
+        BattleMode.prototype.onmousedown = function (e) {
+            var ref;
+            if (e.which === 1) {
+                if (e.clientY > window.innerHeight - 84 - 42) {
+                    return;
+                }
+            }
+            if (!this.player) {
+                return;
+            }
+            if (this.rallyPlacing && (e.which === 1 || e.which === 3)) {
+                network.send("setRallyPoint", this.mouse);
+                commander.rallyPoint = v2.create(this.mouse);
+                if ((ref = intp.players[commander.number]) != null) {
+                    ref.rallyPoint = v2.create(this.mouse);
+                }
+                this.rallyPlacing = false;
+                onecup.refresh();
+                return;
+            }
+            if (e.which === 1) {
+                this.selectAt[0] = e.clientX;
+                this.selectAt[1] = e.clientY;
+                this.selecting = true;
+                this.selectAdd = e.shiftKey;
+            }
+            if (e.which === 2) {
+                this.moving = true;
+            }
+            if (e.which === 3) {
+                this.ordering = true;
+                this.shiftOrder = e.shiftKey;
+                this.drawPoints = [this.toGameSpace([e.clientX, e.clientY])];
+            }
+            e.preventDefault();
+            return false;
+        };
+
+        BattleMode.prototype.onmouseup = function (e) {
+            if (!this.player) {
+                return;
+            }
+            this.moving = false;
+            this.drawing = false;
+            if (this.ordering) {
+                this.sendMoveOrder(e.shiftKey);
+                this.ordering = false;
+            }
+            this.drawPoints = [];
+            if (this.selecting) {
+                window.onmousemove(e);
+                this.selecting = false;
+                this.selectUnits(commander.selection);
+            }
+            this.selection.style.display = "none";
+            e.preventDefault();
+            return false;
+        };
+
+        BattleMode.prototype.onkeydown = function (e) {
+            var id, j, len, number, ref, ref1, selectedIds, t, thing;
+            BattleMode.__super__.onkeydown.call(this, e);
+            this.shiftOrder = e.shiftKey;
+            if (settings.key(e, "Line Move")) {
+                this.drawPoints.push(this.mouse);
+                this.ordering = true;
+            } else if (settings.key(e, "Select") && !this.selecting) {
+                this.selectAt[0] = this.screenMouse[0];
+                this.selectAt[1] = this.screenMouse[1];
+                this.selecting = true;
+                this.selectAdd = e.shiftKey;
+            } else if (e.which === 9) {
+                this.showOverlay();
+            } else if (settings.key(e, "Stop Units")) {
+                this.stopOrder();
+            } else if (settings.key(e, "Hold Position")) {
+                this.holdPositionOrder();
+            } else if (settings.key(e, "Self Destruct")) {
+                this.selfDestructOrder();
+            } else if (settings.key(e, "Focus Fire/Follow")) {
+                this.follow = !this.follow;
+            } else if (settings.key(e, "Place Rally Point")) {
+                this.rallyPlacing = !this.rallyPlacing;
+            } else if (e.which >= 48 && e.which <= 57) {
+                number = e.which - 49;
+                if (number === -1) {
+                    number = 9;
+                }
+                if (e.ctrlKey && e.altKey) {
+                    this.copySelected(number);
+                } else if (e.altKey) {
+                    if (commander.validBar[number]) {
+                        network.send("buildRq", number, 1);
+                    }
+                } else if (e.ctrlKey) {
+                    this.savedSelections[number] = (function () {
+                        var j, len, ref, results;
+                        ref = this.player.selection;
+                        results = [];
+                        for (j = 0, len = ref.length; j < len; j++) {
+                            t = ref[j];
+                            results.push(t.id);
+                        }
+                        return results;
+                    }).call(this);
+                } else {
+                    selectedIds = this.savedSelections[number] || [];
+                    if (selectedIds.length === 0) {
+                        ref = intp.things;
+                        for (id in ref) {
+                            thing = ref[id];
+                            if (thing.owner === commander.number && thing.spec === commander.buildBar[number]) {
+                                selectedIds.push(id);
+                            }
+                        }
+                    }
+                    if (e.shiftKey) {
+                        ref1 = commander.selection;
+                        for (j = 0, len = ref1.length; j < len; j++) {
+                            thing = ref1[j];
+                            selectedIds.push(thing.id);
+                        }
+                    }
+                    this.selectUnitsIds(selectedIds);
+                }
+            } else if (settings.key(e, "Focus on Units")) {
+                this.centerOnUnit = true;
+            } else if (settings.key(e, "Pause") || e.which === 19) {
+                sim.paused = !(sim.paused === true);
+            } else {
+                return;
+            }
+            return e.preventDefault();
+        };
+
+        BattleMode.prototype.onkeyup = function (e) {
+            BattleMode.__super__.onkeyup.call(this, e);
+            if (this.selecting) {
+                this.selection.style.display = "none";
+                this.selecting = false;
+            }
+            if (settings.key(e, "Line Move")) {
+                this.sendMoveOrder(e.shiftKey);
+                this.ordering = false;
+                this.drawing = false;
+                this.drawPoints = [];
+            }
+            if (settings.key(e, "Toggle Roster")) {
+                this.hideOverlay();
+            }
+            if (settings.key(e, "Focus on Units")) {
+                this.centerOnUnit = false;
+            }
+            return this.shiftOrder = false;
+        };
+
+        BattleMode.prototype.stopOrder = function () {
+            return network.send("stopOrder");
+        };
+
+        BattleMode.prototype.holdPositionOrder = function () {
+            return network.send("holdPositionOrder");
+        };
+
+        BattleMode.prototype.followOrder = function (unit, shiftKey) {
+            var i, id, j, len, ref, results, t;
+            id = this.genOrderId();
+            network.send("followOrder", unit.id, shiftKey, id);
+            ref = commander.selection;
+            results = [];
+            for (i = j = 0, len = ref.length; j < len; i = ++j) {
+                t = ref[i];
+                if (t.owner === commander.number) {
+                    if (!shiftKey) {
+                        t.preOrders = [];
+                    }
+                    results.push(t.preOrders.push({
+                        type: "Follow",
+                        targetId: unit.id,
+                        id: id
+                    }));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        BattleMode.prototype.selfDestructOrder = function () {
+            return network.send("selfDestructOrder");
+        };
+
+        BattleMode.prototype.moveOrder = function (formation, shiftKey) {
+            var i, id, j, len, ref, results, t;
+            id = this.genOrderId();
+            network.send("moveOrder", formation, shiftKey, id);
+            ref = commander.selection;
+            results = [];
+            for (i = j = 0, len = ref.length; j < len; i = ++j) {
+                t = ref[i];
+                if (t.owner === commander.number) {
+                    if (!shiftKey) {
+                        t.preOrders = [];
+                    }
+                    results.push(t.preOrders.push({
+                        type: "Move",
+                        dest: formation[i],
+                        id: id
+                    }));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        BattleMode.prototype.sendMoveOrder = function (shiftKey) {
+            var unit;
+            if (this.drawPoints.length === 0) {
+                return;
+            }
+            if (this.follow) {
+                this.follow = false;
+                unit = this.closestUnit(this.drawPoints[0]);
+                if (unit) {
+                    this.followOrder(unit, shiftKey);
+                }
+                return;
+            }
+            return this.moveOrder(this.movePoints, shiftKey);
+        };
+
+        BattleMode.prototype.onbuildclick = function (e, index) {
+            var number, ref, ref1;
+            e.stopPropagation();
+            this.buildClicked = true;
+            if (buildBar.emptySpec(commander.buildBar[index]) && commander.selection.length === 1) {
+                if ((ref = sim.galaxyStar) != null ? ref.noDesignTools : void 0) {
+                    return;
+                }
+                this.copySelected(index);
+                return;
+            }
+            if (commander.buildBar[index].length === 0 || !commander.validBar[index]) {
+                if ((ref1 = sim.galaxyStar) != null ? ref1.noDesignTools : void 0) {
+                    return;
+                }
+                buildBar.selected = index;
+                ui.mode = "design";
+                return;
+            }
+            number = 1;
+            if (e.shiftKey) {
+                number = 5;
+            }
+            if (e.which === 3 || e.altKey || e.metaKey || e.ctrlkey) {
+                number = -number;
+            }
+            return network.send("buildRq", index, number);
+        };
+
+        BattleMode.prototype.computeLineMove = function () {
+            var points, selected, totalDistance, u, walkRope;
+            selected = commander.selection;
+            if (!selected) {
+                return;
+            }
+            selected = (function () {
+                var j, len, results;
+                results = [];
+                for (j = 0, len = selected.length; j < len; j++) {
+                    u = selected[j];
+                    if (u.owner === commander.number) {
+                        results.push(u);
+                    }
+                }
+                return results;
+            })();
+            if (selected.length === 0) {
+                return;
+            }
+            totalDistance = function (points) {
+                var distance, j, last, len, point, ref;
+                distance = 0;
+                last = points[0];
+                ref = points.slice(1);
+                for (j = 0, len = ref.length; j < len; j++) {
+                    point = ref[j];
+                    distance += v2.distance(last, point);
+                    last = point;
+                }
+                return distance;
+            };
+            walkRope = function (points, units, cb) {
+                var dir, dist, i, j, last, len, n, point, pos, prev, results, step, stepLeft, total, use;
+                total = totalDistance(points);
+                if (total === 0 || points.length === 1 || units.length === 1) {
+                    for (j = 0, len = units.length; j < len; j++) {
+                        u = units[j];
+                        cb(points[0], u);
+                    }
+                    return;
+                }
+                step = total / (units.length - 1);
+                dir = v2.create();
+                pos = v2.create();
+                n = 0;
+                i = 0;
+                stepLeft = 0;
+                last = null;
+                results = [];
+                while (i < units.length) {
+                    use = function (p) {
+                        cb(v2.create(p), units[i]);
+                        stepLeft = step;
+                        return i += 1;
+                    };
+                    point = points[n];
+                    if (i === 0) {
+                        use(point);
+                        n += 1;
+                        continue;
+                    }
+                    if (i === units.length - 1) {
+                        use(points[points.length - 1]);
+                        continue;
+                    }
+                    if (n > points.length - 1) {
+                        use(points[points.length - 1]);
+                        continue;
+                    }
+                    prev = points[n - 1];
+                    dist = v2.distance(prev, point);
+                    if (dist === stepLeft) {
+                        use(point);
+                        n += 1;
+                        continue;
+                    } else if (dist < stepLeft) {
+                        stepLeft -= dist;
+                        n += 1;
+                        continue;
+                    } else if (dist > stepLeft) {
+                        v2.set(prev, pos);
+                        dist = v2.distance(prev, point);
+                        while (dist > stepLeft) {
+                            v2.direction(point, prev, dir);
+                            v2.scale(dir, stepLeft);
+                            v2.add(pos, dir);
+                            dist -= stepLeft;
+                            use(pos);
+                        }
+                        n += 1;
+                        results.push(stepLeft -= dist);
+                    } else {
+                        results.push(void 0);
+                    }
+                }
+                return results;
+            };
+            this.movePoints = [];
+            points = this.drawPoints;
+            return walkRope(points, selected, (function (_this) {
+                return function (point, unit) {
+                    var angle, pos;
+                    _this.movePoints.push(point);
+                    if (_this.shiftOrder && unit.preOrders.length > 0) {
+                        pos = unit.preOrders.last().dest;
+                    }
+                    if (!pos) {
+                        pos = unit.pos;
+                    }
+                    angle = v2.angle(v2.sub(point, pos, v2.create()));
+                    return baseAtlas.drawSprite("img/arrow01.png", point, [1, 1], angle, [255, 255, 255, 255]);
+                };
+            })(this));
+        };
+
+        BattleMode.prototype.draw = function () {
+            var bg_zoom, theme, z;
+            baseAtlas.beginSprites(this.focus, this.zoom);
+            if (this.follow) {
+                control.setCursor("mouseAttack");
+            } else {
+                control.setCursor("mouse");
+            }
+            if (intp.theme != null) {
+                theme = intp.theme;
+            } else {
+                theme = mapping.themes[0];
+            }
+            bg_zoom = Math.max(window.innerWidth, window.innerHeight) / 120;
+            z = bg_zoom * this.zoom;
+            baseAtlas.drawSprite("img/newbg/fill.png", [-this.focus[0], -this.focus[1]], [z, z], 0, theme.fillColor);
+            baseAtlas.drawSprite("img/newbg/gradient.png", [-this.focus[0], -this.focus[1]], [z, z], 0, theme.spotColor);
+            intp.draw();
+            if (this.drawPoints.length > 0) {
+                this.computeLineMove();
+            }
+            return baseAtlas.finishSprites();
+        };
+
+        BattleMode.prototype.tick = function () {
+            var ref;
+            this.player = commander;
+            this.controls();
+            if ((this.serverToJoin != null) && (typeof rootNet !== "undefined" && rootNet !== null ? (ref = rootNet.servers) != null ? ref[this.serverToJoin] : void 0 : void 0)) {
+                this.joinServer(this.serverToJoin);
+                return this.serverToJoin = null;
+            }
+        };
+
+        BattleMode.prototype.showOverlay = function () {
+            var overlay;
+            overlay = onecup.lookup("#overlay");
+            return overlay != null ? overlay.style.display = "block" : void 0;
+        };
+
+        BattleMode.prototype.hideOverlay = function () {
+            var overlay;
+            overlay = onecup.lookup("#overlay");
+            return overlay != null ? overlay.style.display = "none" : void 0;
+        };
+
+        BattleMode.prototype.closestUnit = function (pos, exact) {
+            var dist, id, minDist, minUnit, ref, thing;
+            if (exact == null) {
+                exact = false;
+            }
+            minDist = 0;
+            minUnit = null;
+            ref = intp.things;
+            for (id in ref) {
+                thing = ref[id];
+                if (!thing.unit) {
+                    continue;
+                }
+                dist = v2.distance(thing.pos, pos);
+                if (dist < 1000) {
+                    if (!minUnit || minDist > dist) {
+                        minUnit = thing;
+                        minDist = dist;
+                    }
+                }
+            }
+            return minUnit;
+        };
+
+        BattleMode.prototype.copySelected = function (index) {
+            var copy, spec, unit;
+            if (commander.selection.length === 1) {
+                unit = commander.selection[0];
+                spec = unit.spec;
+                copy = new types.Unit(spec);
+                copy.aiRules = [];
+                if (!sim.local && window.location.href.indexOf("gamedev.html") === -1 && unit.owner !== commander.number) {
+                    copy.ghostCopy = true;
+                }
+                buildBar.setSpec(index, copy.toSpec());
+                return control.savePlayer();
+            }
+        };
+
+        return BattleMode;
+
+    })(window.ControlsMode);
+
+}).call(this);
+;
+
+
+//from src/buildbar.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var drawBuildButton, leftMenu, rightMenu, specToUnitMap, standAlone;
+
+    eval(onecup["import"]());
+
+    window.buildBar = {};
+
+    buildBar.selected = 0;
+
+    css(".unitpic", function () {
+        width(84);
+        height(84);
+        padding(10);
+        return transition("background-color .2s");
+    });
+
+    css(".unitpic:hover", function () {
+        return background_color("rgba(255,255,255,.4)");
+    });
+
+    standAlone = function () {
+        return ui.path[0] === "design" || ui.path[0] === "fleet";
+    };
+
+    ui.topButton = function (mode, fn) {
+        return div(".hover-black", function () {
+            display("inline-block");
+            height(64);
+            width(64);
+            position("relative");
+            img({
+                src: "img/ui/topbar/" + mode + ".png",
+                width: 44,
+                height: 44
+            }, function () {
+                top(0);
+                left(10);
+                return position("absolute");
+            });
+            div(function () {
+                position("absolute");
+                line_height(12);
+                font_size(12);
+                text_align("center");
+                width(64);
+                top(44);
+                return text(mode);
+            });
+            if (fn != null) {
+                return fn();
+            } else {
+                if (ui.mode === mode) {
+                    background_color("rgba(255,255,255,.6)");
+                    return onclick(function () {
+                        return ui.go("battle");
+                    });
+                } else {
+                    return onclick(function () {
+                        return ui.go(mode);
+                    });
+                }
+            }
+        });
+    };
+
+    ui.barButton = function (mode) {
+        height(84);
+        width(84);
+        if (mode === ui.mode) {
+            background_color("rgba(255,255,255,.6)");
+            onclick(function () {
+                return ui.go("battle");
+            });
+        } else {
+            onclick(function () {
+                return ui.go(mode);
+            });
+        }
+        img({
+            src: "img/ui/" + mode + ".png",
+            width: 64,
+            height: 64
+        }, function () {
+            position("absolute");
+            top(0);
+            return left(10);
+        });
+        return div(function () {
+            position("absolute");
+            line_height(12);
+            font_size(12);
+            text_align("center");
+            width(84);
+            top(59);
+            color("white");
+            return text(mode);
+        });
+    };
+
+    leftMenu = function () {
+        ui.topButton("menu");
+        if (!sim.galaxyStar) {
+            ui.topButton("multiplayer");
+            return ui.topButton("battleroom");
+        }
+    };
+
+    rightMenu = function () {
+        if (sim.galaxyStar != null) {
+            ui.topButton("restart", function () {
+                return onclick(function () {
+                    return ui.mode = "restart";
+                });
+            });
+        } else {
+            ui.topButton("chat", function () {
+                if (ui.chatToggle) {
+                    background_color("rgba(255,255,255,.6)");
+                }
+                return onclick(function () {
+                    return ui.chatToggle = !ui.chatToggle;
+                });
+            });
+        }
+        return ui.topButton("controls", function () {
+            if (ui.contorlHelpToggle) {
+                background_color("rgba(255,255,255,.6)");
+            }
+            return onclick(function () {
+                return ui.contorlHelpToggle = !ui.contorlHelpToggle;
+            });
+        });
+    };
+
+    buildBar.draw = function (folded) {
+        if (folded == null) {
+            folded = false;
+        }
+        if (!commander || !commander.buildBar) {
+            return;
+        }
+        div(function () {
+            position("absolute");
+            if (folded) {
+                top(-64 - 48);
+            } else {
+                top(0);
+            }
+            left(0);
+            right(0);
+            height(64);
+            if (intp.serverType === "1v1r" || intp.serverType === "1v1t") {
+                background_color("rgba(100,0,0,.6)");
+            } else {
+                background_color("rgba(0,0,0,.6)");
+            }
+            color("white");
+            line_height(64);
+            font_size(18);
+            div(function () {
+                position("absolute");
+                left(0);
+                width(300);
+                return leftMenu();
+            });
+            div(".hover-black", function () {
+                var quarterWidth;
+                quarterWidth = window.innerWidth / 4;
+                position("absolute");
+                left(quarterWidth);
+                width(quarterWidth * 2);
+                height(64);
+                overflow("hidden");
+                text_align("center");
+                onclick(function () {
+                    if (ui.mode !== "battle") {
+                        return ui.mode = "battle";
+                    } else {
+                        return ui.mode = "quickscore";
+                    }
+                });
+                if (sim.galaxyStar && ui.mode !== "battle") {
+                    if (sim.step < 16) {
+                        return text("Click here to start the battle.");
+                    } else {
+                        return text("Click here to return to the battle.");
+                    }
+                } else if (intp.countDown > 15) {
+                    font_size(30);
+                    return text(Math.floor(intp.countDown / 16));
+                } else {
+                    return ui.topPlayers();
+                }
+            });
+            return div(function () {
+                position("absolute");
+                right(0);
+                width(300);
+                text_align("right");
+                return rightMenu();
+            });
+        });
+        div(function () {
+            var i, j, ref, showDesign;
+            position("absolute");
+            if (folded) {
+                bottom(-84 - 48);
+            } else {
+                bottom(0);
+            }
+            left(0);
+            right(0);
+            height(84);
+            background_color("rgba(0,0,0,.2)");
+            text_align("center");
+            for (i = j = 0; j < 10; i = ++j) {
+                drawBuildButton(i);
+            }
+            showDesign = true;
+            if ((ref = sim.galaxyStar) != null ? ref.noDesignTools : void 0) {
+                showDesign = false;
+            }
+            if (showDesign) {
+                div(".hover-black", function () {
+                    position("absolute");
+                    top(0);
+                    left(0);
+                    return ui.barButton("design");
+                });
+                div(".hover-black", function () {
+                    position("absolute");
+                    top(0);
+                    right(0);
+                    return ui.barButton("fleet");
+                });
+            }
+            if (ui.mode === "battle") {
+                return div("#action-bar", function () {
+                    var c, miniButton;
+                    position("absolute");
+                    left(0);
+                    right(0);
+                    bottom(84);
+                    height(42);
+                    background_color("rgba(0,0,0,.1)");
+                    c = Math.floor(window.innerWidth / 2);
+                    div(function () {
+                        position("absolute");
+                        bottom(0);
+                        left(c - 80);
+                        right(c - 80);
+                        line_height(42);
+                        color("rgba(240, 240, 240, 1)");
+                        span("#money-text", function () {
+                            return font_size(24);
+                        });
+                        span("#money-income", function () {
+                            font_size(14);
+                            vertical_align("super");
+                            return margin_left(10);
+                        });
+                        return onecup.post_render((function (_this) {
+                            return function () {
+                                var ref1, ref2;
+                                if ((ref1 = onecup.lookup("#money-text")) != null) {
+                                    ref1.innerHTML = buildBar.moneyText();
+                                }
+                                return (ref2 = onecup.lookup("#money-income")) != null ? ref2.innerHTML = buildBar.moneyIncomeText() : void 0;
+                            };
+                        })(this));
+                    });
+                    miniButton = function (name, binding, fn) {
+                        return div(".hover-black", function () {
+                            position("absolute");
+                            top(0);
+                            bottom(0);
+                            height(42);
+                            width(42);
+                            left(84);
+                            padding(5);
+                            img({
+                                src: "img/ui/actions/" + name + ".png",
+                                width: 32,
+                                height: 32
+                            });
+                            onmouseover(function (e) {
+                                battleMode.tipBounds = e.target.getBoundingClientRect();
+                                return battleMode.tip = function () {
+                                    text_align("center");
+                                    text(binding);
+                                    text(" ");
+                                    return span(function () {
+                                        color("#f39c12");
+                                        return text(settings.humanViewBinding(binding));
+                                    });
+                                };
+                            });
+                            return fn();
+                        });
+                    };
+                    miniButton("stop", "Stop Units", function () {
+                        top(0);
+                        left(c - 182);
+                        return onclick(function () {
+                            return battleMode.stopOrder();
+                        });
+                    });
+                    miniButton("focus", "Focus Fire/Follow", function () {
+                        top(0);
+                        left(c - 140);
+                        return onclick(function () {
+                            return battleMode.follow = true;
+                        });
+                    });
+                    miniButton("rally", "Place Rally Point", function () {
+                        top(0);
+                        left(c + 182 - 42);
+                        onclick(function () {
+                        });
+                        if (battleMode.rallyPlacing) {
+                            background("rgba(255,0,0,.5)");
+                        }
+                        return onclick(function () {
+                            return battleMode.rallyPlacing = !battleMode.rallyPlacing;
+                        });
+                    });
+                    return miniButton("selfd", "Self Destruct", function () {
+                        top(0);
+                        left(c + 140 - 42);
+                        if (ui.selfdOn) {
+                            background("rgba(255,0,0,.5)");
+                        }
+                        onclick(function () {
+                            ui.selfdOn = !ui.selfdOn;
+                            return setTimeout((function () {
+                                return ui.selfdOn = false;
+                            }), 200);
+                        });
+                        return ondblclick(function () {
+                            battleMode.selfDestructOrder();
+                            return ui.selfdOn = false;
+                        });
+                    });
+                });
+            }
+        });
+        if (ui.contorlHelpToggle && ui.mode === "battle") {
+            return div(function () {
+                position("absolute");
+                if (folded) {
+                    top(0);
+                } else {
+                    top(64);
+                }
+                width("100%");
+                text_align("center");
+                height(281 + 80);
+                padding(40);
+                background_color("rgba(0,0,0,.6)");
+                return img({
+                    src: "img/ui/tips/controls.png",
+                    width: 848,
+                    height: 281
+                });
+            });
+        }
+    };
+
+    buildBar.moneyText = function () {
+        if (!commander) {
+            return "";
+        }
+        if (!intp.state === "waiting") {
+            return "waiting...";
+        } else {
+            if (commander.side === "spectators") {
+                return "Spectating";
+            } else {
+                return "$" + (Math.floor(commander.money));
+            }
+        }
+    };
+
+    buildBar.moneyIncomeText = function () {
+        var _, income, ref, t;
+        if (!commander) {
+            return "";
+        }
+        if (commander.side === "spectators" || intp.state === "waiting") {
+            return "";
+        }
+        income = 10;
+        ref = sim.things;
+        for (_ in ref) {
+            t = ref[_];
+            if (t.commandPoint && t.side === commander.side) {
+                income += 1;
+            }
+        }
+        return "+$" + income;
+    };
+
+    specToUnitMap = {};
+
+    buildBar.specToUnit = function (spec) {
+        var unit;
+        if (!specToUnitMap[spec]) {
+            unit = new types.Unit(spec);
+            unit.pos = [0, 0];
+            unit.rot = 0;
+            unit.warpIn = 1;
+            specToUnitMap[spec] = unit;
+        }
+        return specToUnitMap[spec];
+    };
+
+    buildBar.specToThumb = function (spec, color) {
+        var unit;
+        unit = buildBar.specToUnit(spec);
+        if (unit) {
+            if (color) {
+                unit.color = color;
+            }
+            return unit.thumb();
+        }
+    };
+
+    buildBar.specToThumbBg = function (spec) {
+        var thumb;
+        background_size("64px 64px");
+        background_repeat("no-repeat");
+        background_position("10px 10px");
+        thumb = buildBar.specToThumb(spec, commander.color);
+        if (!thumb) {
+            return background_image("url(img/empty.png)");
+        } else {
+            return background_image("url(" + thumb + ")");
+        }
+    };
+
+    css(".unitpic .onhover", function () {
+        return opacity("0");
+    });
+
+    css(".unitpic:hover .onhover", function () {
+        return opacity("1");
+    });
+
+    drawBuildButton = function (index) {
+        return div(".unitpic", function () {
+            var count, i, j, len, ref, ref1;
+            position("absolute");
+            height(84);
+            width(84);
+            top(0);
+            left(window.innerWidth / 2 + (index - 5) * 84);
+            buildBar.specToThumbBg(commander.buildBar[index]);
+            onmousedown(function (e) {
+                var base;
+                return typeof (base = control.mode).onbuildclick === "function" ? base.onbuildclick(e, index) : void 0;
+            });
+            if (buildBar.selected === index && ui.mode === "design") {
+                background_color("rgba(0,0,0,.3)");
+            }
+            count = 0;
+            ref = commander.buildQ;
+            for (j = 0, len = ref.length; j < len; j++) {
+                i = ref[j];
+                if (i === index) {
+                    count += 1;
+                }
+            }
+            if (count > 0) {
+                div(".count", function () {
+                    position("absolute");
+                    top(0);
+                    left(0);
+                    min_width(24);
+                    height(24);
+                    color("white");
+                    background_color("rgba(0, 0, 0, .2)");
+                    text_align("center");
+                    text(count);
+                    font_size(18);
+                    return padding(2);
+                });
+            }
+            if ((ref1 = sim.galaxyStar) != null ? ref1.noDesignTools : void 0) {
+                return;
+            }
+            if (buildBar.emptySpec(commander.buildBar[index])) {
+                return div(".onhover", function () {
+                    position("absolute");
+                    color("white");
+                    top(30);
+                    left(0);
+                    width("100%");
+                    text_align("center");
+                    return text("Empty");
+                });
+            } else if (!commander.validBar[index]) {
+                if (buildBar.selected === index) {
+                    background_color("rgba(100,0,0,.3)");
+                } else {
+                    background_color("rgba(255,0,0,.3)");
+                }
+                return div(function () {
+                    position("absolute");
+                    color("white");
+                    top(30);
+                    left(30);
+                    return text("Fix");
+                });
+            }
+        });
+    };
+
+    buildBar.setSpec = function (index, spec) {
+        commander.buildBar[index] = spec;
+        return commander.fleet[commander.fleet.selection + "," + index] = spec;
+    };
+
+    buildBar.emptySpec = function (spec) {
+        if (spec === "") {
+            return true;
+        }
+        if (spec === '{"parts":[],"name":"","aiRules":[]}') {
+            return true;
+        }
+        return false;
+    };
+
+    window.MenuMode = (function () {
+        function MenuMode() {
+        }
+
+        MenuMode.prototype.focus = [0, 0];
+
+        MenuMode.prototype.zoom = 1;
+
+        MenuMode.prototype.onbuildclick = function () {
+        };
+
+        MenuMode.prototype.tick = function () {
+        };
+
+        MenuMode.prototype.draw = function () {
+        };
+
+        return MenuMode;
+
+    })();
+
+}).call(this);
+;
+
+
+//from src/fleet.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var isEmptySpec, lockScreen, swapFleet, unitButton;
+
+    eval(onecup["import"]());
+
+    isEmptySpec = function (spec) {
+        var error;
+        if (!spec) {
+            return true;
+        }
+        try {
+            spec = JSON.parse(spec);
+        } catch (error) {
+            return true;
+        }
+        if (spec.parts == null) {
+            return true;
+        }
+        if (spec.parts.length === 0) {
+            return true;
+        }
+        return false;
+    };
+
+    window.FleetMode = (function () {
+        function FleetMode() {
+        }
+
+        FleetMode.prototype.focus = [0, 0];
+
+        FleetMode.prototype.zoom = 1;
+
+        FleetMode.prototype.onbuildclick = function (e, index) {
+            return e.preventDefault();
+        };
+
+        FleetMode.prototype.tick = function () {
+            var dragger, trash;
+            trash = onecup.lookup("#trash");
+            if (buildBar.drag) {
+                dragger = onecup.lookup("#dragger");
+                if ((dragger != null) && (trash != null)) {
+                    dragger.style.left = control.mouse[0] - 84 / 2 + "px";
+                    dragger.style.top = control.mouse[1] - 84 / 2 + "px";
+                    if (control.mouse[0] < 100 || control.mouse[0] > window.innerWidth - 100) {
+                        dragger.style.backgroundColor = "rgba(255,0,0,.5)";
+                        return trash.src = "img/ui/trashOpen@2x.png";
+                    } else {
+                        dragger.style.backgroundColor = "rgba(0,0,0,0)";
+                        return trash.src = "img/ui/trash@2x.png";
+                    }
+                }
+            } else {
+                return trash.src = "img/ui/trash@2x.png";
+            }
+        };
+
+        FleetMode.prototype.draw = function () {
+            var bg_zoom, z;
+            bg_zoom = Math.max(window.innerWidth, window.innerHeight) / 128;
+            z = bg_zoom * this.zoom;
+            baseAtlas.beginSprites(this.focus, this.zoom);
+            baseAtlas.drawSprite("img/newbg/fill.png", [-this.focus[0], -this.focus[1]], [z, z], 0, mapping.themes[0].fillColor);
+            baseAtlas.drawSprite("img/newbg/gradient.png", [-this.focus[0], -this.focus[1]], [z, z], 0, mapping.themes[0].spotColor);
+            return baseAtlas.finishSprites();
+        };
+
+        return FleetMode;
+
+    })();
+
+    swapFleet = function (row) {
+        var i, j, key, specA, specB;
+        console.log("swapFleet", row);
+        for (i = j = 0; j < 10; i = ++j) {
+            key = row + "," + i;
+            specA = commander.fleet[key] || "";
+            specB = commander.buildBar[i] || "";
+            commander.fleet[key] = specB;
+            commander.buildBar[i] = specA;
+        }
+        return control.savePlayer();
+    };
+
+    window.fleetUI = function () {
+        if (!commander) {
+            return;
+        }
+        div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            color("white");
+            z_index("2");
+            return ui.topButton("menu");
+        });
+        div(".hover-black", function () {
+            position("absolute");
+            bottom(0);
+            left(0);
+            z_index("2");
+            return ui.barButton("design");
+        });
+        div(function () {
+            position("absolute");
+            bottom(0);
+            right(0);
+            z_index("2");
+            return ui.barButton("fleet");
+        });
+        div(function () {
+            position("absolute");
+            top(0);
+            right(0);
+            z_index("2");
+            img("#trash", {
+                src: "img/ui/trash.png",
+                width: 64,
+                height: 64
+            });
+            return onmouseup(function () {
+                if (buildBar.drag) {
+                    playSound("sounds/ui/shake.wav");
+                    buildBar.drag = null;
+                    return fleetMode.tick();
+                }
+            });
+        });
+        div(function () {
+            text_align("center");
+            overflow_y("scroll");
+            position("absolute");
+            z_index("0");
+            left(0);
+            right(0);
+            top(0);
+            bottom(0);
+            onmouseup(function () {
+                var ref, ref1;
+                if (control.mouse[0] < 100 || control.mouse[0] > window.innerWidth - 100) {
+                    buildBar.drag = null;
+                    playSound("sounds/ui/shake.wav");
+                    return;
+                }
+                if ((ref = buildBar.drag) != null ? ref.key : void 0) {
+                    commander.fleet[buildBar.drag.key] = buildBar.drag.spec;
+                    buildBar.drag = null;
+                    playSound("sounds/ui/flick.wav");
+                }
+                if ((ref1 = buildBar.drag) != null ? ref1.index : void 0) {
+                    commander.buildBar[buildBar.drag.index] = buildBar.drag.spec;
+                    buildBar.drag = null;
+                    playSound("sounds/ui/flick.wav");
+                }
+                return fleetMode.tick();
+            });
+            div(function () {
+                margin(20);
+                text_align("center");
+                color("white");
+                return text("Drag and drop ships designs or select row for your build bar.");
+            });
+            if (account.hasDLCBonus()) {
+                div(function () {
+                    margin(20);
+                    return input({
+                        type: "text",
+                        placeholder: "search for ships"
+                    }, function () {
+                        padding(10);
+                        font_size(16);
+                        width(300);
+                        background_color("rgba(0,0,0,.4)");
+                        color("white");
+                        border("none");
+                        return oninput(function (e) {
+                            return fleetMode.search = e.target.value;
+                        });
+                    });
+                });
+            }
+            return div("#fleet", function () {
+                var c, j, k, nrows, r, ref, ref1, ref2, results, row, v;
+                nrows = 6;
+                ref = commander.fleet;
+                for (k in ref) {
+                    v = ref[k];
+                    if (v) {
+                        ref1 = k.split(","), r = ref1[0], c = ref1[1];
+                        r = parseInt(r);
+                        if (r + 4 > nrows) {
+                            nrows = r + 4;
+                        }
+                    }
+                }
+                if (!commander.fleet.selection) {
+                    commander.fleet.selection = 0;
+                }
+                results = [];
+                for (row = j = 0, ref2 = nrows; 0 <= ref2 ? j < ref2 : j > ref2; row = 0 <= ref2 ? ++j : --j) {
+                    results.push((function (row) {
+                        return div(function () {
+                            var col, fleetAis, l;
+                            position("relative");
+                            height(84);
+                            width(840);
+                            margin("0px auto");
+                            if (commander.fleet.selection === row) {
+                                background_color("rgba(255,255,255,.2)");
+                            }
+                            for (col = l = 0; l < 10; col = ++l) {
+                                unitButton(row + "," + col);
+                            }
+                            img(".hover-fade", {
+                                src: "img/ui/back.png",
+                                width: 32,
+                                height: 32
+                            }, function () {
+                                position("absolute");
+                                top(24);
+                                right(-50);
+                                return onclick(function (e) {
+                                    var i, m;
+                                    if (e.altKey) {
+                                        for (i = m = 0; m < 10; i = ++m) {
+                                            commander.fleet[row + "," + i] = "";
+                                        }
+                                        return control.savePlayer();
+                                    } else {
+                                        commander.fleet.selection = row;
+                                        return account.save();
+                                    }
+                                });
+                            });
+                            fleetAis = commander.fleet.ais || {};
+                            return input(".hover-black", {
+                                type: "text",
+                                value: fleetAis[row] || "",
+                                maxlength: 15,
+                                placeholder: "●"
+                            }, function () {
+                                position("absolute");
+                                padding(10);
+                                top(20);
+                                left(-84);
+                                width(84);
+                                color("white");
+                                font_size(16);
+                                border("none");
+                                font_size(12);
+                                text_align("right");
+                                return oninput(function (e) {
+                                    if (!commander.fleet.ais) {
+                                        commander.fleet.ais = {};
+                                    }
+                                    fleetAis = commander.fleet.ais;
+                                    e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, "");
+                                    fleetAis[row] = e.target.value;
+                                    return account.rootSave();
+                                });
+                            });
+                        });
+                    })(row));
+                }
+                return results;
+            });
+        });
+        div("#dragger", function () {
+            position("absolute");
+            width(84);
+            height(84);
+            pointer_events("none");
+            if (buildBar.drag) {
+                left("-100px");
+                top("-100px");
+                return buildBar.specToThumbBg(buildBar.drag.spec);
+            }
+        });
+        if (designMode.locked) {
+            return lockScreen();
+        }
+    };
+
+    lockScreen = function () {
+        return div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            right(0);
+            bottom(0);
+            background_color("rgba(0,0,0,.8)");
+            z_index("1");
+            return div(function () {
+                position("absolute");
+                top(200);
+                right(0);
+                left(0);
+                height(100);
+                line_height(100);
+                background_color("rgba(200,0,0,.6)");
+                color("white");
+                text_align("center");
+                return text("You can't switch fleets in 1v1 tournament mode");
+            });
+        });
+    };
+
+    unitButton = function (key) {
+        var spec;
+        spec = commander.fleet[key];
+        return div(".unitpic", function () {
+            var found, name, unit;
+            border("1px solid rgba(255,255,255,.05)");
+            display("inline-block");
+            position("relative");
+            unit = buildBar.specToUnit(spec);
+            buildBar.specToThumbBg(spec);
+            if (buildBar.dragover === key && buildBar.drag) {
+                if (!spec) {
+                    background_color("rgba(255,255,255,.4)");
+                } else {
+                    background_color("rgba(155,255,155,.4)");
+                }
+            }
+            if (fleetMode.search) {
+                if (spec && spec[0] === "{") {
+                    name = JSON.parse(spec).name;
+                    if (name && name.indexOf(fleetMode.search) !== -1) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    opacity(".1");
+                }
+            }
+            onmousedown(function (e) {
+                if (e.which === 1) {
+                    if (e.altKey) {
+                        commander.fleet[key] = "";
+                        return;
+                    }
+                    if (spec) {
+                        buildBar.drag = {
+                            spec: spec,
+                            key: key
+                        };
+                        if (!e.shiftKey) {
+                            commander.fleet[key] = "";
+                        }
+                    }
+                }
+                return e.preventDefault();
+            });
+            onmousemove(function (e) {
+                if (e.which === 1) {
+                    if (buildBar.dragover !== key) {
+                        buildBar.dragover = key;
+                        if (buildBar.drag) {
+                            return;
+                        }
+                    }
+                }
+                return onecup.no_refresh();
+            });
+            return onmouseup(function (e) {
+                var atSpec;
+                if (e.which === 1) {
+                    if (buildBar.drag) {
+                        atSpec = commander.fleet[key];
+                        if (!isEmptySpec(atSpec)) {
+                            commander.fleet[buildBar.drag.key] = atSpec;
+                        }
+                        commander.fleet[key] = buildBar.drag.spec;
+                        control.savePlayer();
+                        buildBar.drag = null;
+                        return playSound("sounds/ui/flick.wav");
+                    }
+                }
+            });
+        });
+    };
+
+    ui.unitPix = function () {
+        return div(function () {
+            var j, results, row;
+            position("absolute");
+            top(0);
+            left(0);
+            right(0);
+            bottom(0);
+            background("rgba(0,0,0,.9)");
+            text("unit pix");
+            results = [];
+            for (row = j = 1; j < 25; row = ++j) {
+                results.push(div(function () {
+                    var col, key, l, results1, spec, unit;
+                    height(84);
+                    min_width(840);
+                    results1 = [];
+                    for (col = l = 0; l < 10; col = ++l) {
+                        key = row + "," + col;
+                        spec = commander.fleet[key];
+                        unit = buildBar.specToUnit(spec);
+                        if (unit) {
+                            unit.color = commander.color;
+                            results1.push(img({
+                                src: unit.thumb(),
+                                width: 64,
+                                height: 64
+                            }));
+                        } else {
+                            results1.push(void 0);
+                        }
+                    }
+                    return results1;
+                }));
+            }
+            return results;
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/tutor.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var Tutorial,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        };
+
+    eval(onecup["import"]());
+
+    window.tutor = new (Tutorial = (function () {
+        function Tutorial() {
+            this.tick = bind(this.tick, this);
+            this.buildBarHide = bind(this.buildBarHide, this);
+            this.lastTipFiredTime = Date.now();
+            this.tips = [];
+            this.firedTips = {};
+            this.buildBarShow = false;
+            if (localStorage.firedTips) {
+                this.firedTips = JSON.parse(localStorage.firedTips);
+            }
+        }
+
+        Tutorial.prototype.reset = function () {
+            this.lastTipFired = Date.now();
+            this.firedTips = {};
+            return delete localStorage.firedTips;
+        };
+
+        Tutorial.prototype.buildBarHide = function () {
+            var _, cappedPoints, playerUnits, ref, ref1, t;
+            if (ui.mode !== "battle") {
+                return false;
+            }
+            if (((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (sim.step < 16 * 5) {
+                return true;
+            }
+            if (this.buildBarShow) {
+                return false;
+            }
+            playerUnits = 0;
+            cappedPoints = 0;
+            ref1 = sim.things;
+            for (_ in ref1) {
+                t = ref1[_];
+                if (t.commandPoint && t.side === commander.side) {
+                    cappedPoints += 1;
+                }
+                if (t.unit && t.side === commander.side) {
+                    playerUnits += 1;
+                }
+            }
+            if (playerUnits === 0) {
+                this.buildBarShow = true;
+                return false;
+            }
+            if (cappedPoints > 1) {
+                this.buildBarShow = true;
+                return false;
+            }
+            return true;
+        };
+
+        Tutorial.prototype.add = function (tipCls) {
+            return tutor.tips.push(new tipCls());
+        };
+
+        Tutorial.prototype.done = function (tip) {
+            this.firedTips[tip.name] = true;
+            localStorage.firedTips = JSON.stringify(this.firedTips);
+            this.lastTipFiredTime = Date.now();
+            tutor.bubble = null;
+            tutor.currentTip = null;
+            return onecup.refresh();
+        };
+
+        Tutorial.prototype.tick = function () {
+            var i, len, ref, results, tip;
+            return;
+            if (!intp.local) {
+                return;
+            }
+            if (this.lastTipFiredTime > Date.now() - 15000 && tutor.bubble === null) {
+                return;
+            }
+            tutor.bubble = null;
+            ref = this.tips;
+            results = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+                tip = ref[i];
+                if (this.firedTips[tip.name]) {
+                    continue;
+                }
+                this.currentTip = tip;
+                if (this.currentTip.tick()) {
+                    onecup.refresh();
+                    break;
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        Tutorial.prototype.noUnitsLeft = function () {
+            var k, ref, thing;
+            ref = sim.things;
+            for (k in ref) {
+                thing = ref[k];
+                if (thing.unit && thing.side === commander.side) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        Tutorial.prototype.findEnemyCp = function () {
+            var _, cp, ref, thing;
+            cp = null;
+            ref = sim.things;
+            for (_ in ref) {
+                thing = ref[_];
+                if (thing.commandPoint === true && thing.side !== commander.side) {
+                    if (!cp || cp.pos[0] > thing.pos[0]) {
+                        cp = thing;
+                    }
+                }
+            }
+            return cp;
+        };
+
+        Tutorial.prototype.findMyUnit = function () {
+            var k, ref, thing, unit;
+            unit = null;
+            ref = sim.things;
+            for (k in ref) {
+                thing = ref[k];
+                if (thing.unit && thing.side === commander.side) {
+                    unit = thing;
+                    break;
+                }
+            }
+            return unit;
+        };
+
+        return Tutorial;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "panning";
+
+        _Class.prototype.tick = function () {
+            var ref;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (v2.mag(battleMode.focus) > 500) {
+                tutor.done(this);
+                return false;
+            }
+            tutor.bubble = {
+                image: ["img/ui/tips/pan.png", 300, 300],
+                x: "50%",
+                y: "50%"
+            };
+            return true;
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "unzoom";
+
+        _Class.prototype.tick = function () {
+            var ref;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (battleMode.zoom > .7 && battleMode.zoom < 9) {
+                return false;
+            }
+            tutor.bubble = {
+                image: ["img/ui/tips/zoom.png", 300, 300],
+                x: "50%",
+                y: "50%"
+            };
+            return true;
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "unpan";
+
+        _Class.prototype.tick = function () {
+            var ref;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (v2.mag(battleMode.focus) < 2500) {
+                return false;
+            }
+            tutor.bubble = {
+                image: ["img/ui/tips/pan.png", 300, 300],
+                x: "50%",
+                y: "50%"
+            };
+            return true;
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "zoom";
+
+        _Class.prototype.tick = function () {
+            var ref;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (battleMode.zoom < 4 || battleMode.zoom > 6) {
+                tutor.done(this);
+                return false;
+            }
+            tutor.bubble = {
+                image: ["img/ui/tips/zoom.png", 300, 300],
+                x: "50%",
+                y: "50%"
+            };
+            return true;
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "movement";
+
+        _Class.prototype.tick = function () {
+            var i, j, len, len1, ref, ref1, ref2, selected, u;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (tutor.noUnitsLeft()) {
+                return false;
+            }
+            ref1 = commander.selection;
+            for (i = 0, len = ref1.length; i < len; i++) {
+                u = ref1[i];
+                if (u.side === "alpha" && v2.mag(commander.selection[0].vel) > 1) {
+                    tutor.done(this);
+                    return false;
+                }
+            }
+            if (!battleMode.selecting) {
+                ref2 = commander.selection;
+                for (j = 0, len1 = ref2.length; j < len1; j++) {
+                    u = ref2[j];
+                    if (u.side === "alpha") {
+                        selected = true;
+                    }
+                }
+            }
+            if (selected) {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/move.png", 300, 300],
+                    thing: tutor.findMyUnit()
+                };
+            } else {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/drag.png", 300, 300],
+                    thing: tutor.findMyUnit()
+                };
+            }
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "capping";
+
+        _Class.prototype.tick = function () {
+            var _, closeCP, cp, i, len, noUnits, ref, ref1, ref2, ref3, selected, u, unit;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (tutor.noUnitsLeft()) {
+                return false;
+            }
+            closeCP = null;
+            ref1 = sim.things;
+            for (_ in ref1) {
+                cp = ref1[_];
+                if (cp.commandPoint === true && cp.side !== commander.side) {
+                    noUnits = true;
+                    ref2 = sim.things;
+                    for (_ in ref2) {
+                        unit = ref2[_];
+                        if (unit.unit && unit.side !== commander.side && v2.distance(unit.pos, cp.pos) < cp.radius) {
+                            noUnits = false;
+                        }
+                    }
+                    if (noUnits && (!closeCP || closeCP.pos[0] > cp.pos[0])) {
+                        closeCP = cp;
+                    }
+                }
+            }
+            if (!closeCP) {
+                return false;
+            }
+            if (!battleMode.selecting) {
+                ref3 = commander.selection;
+                for (i = 0, len = ref3.length; i < len; i++) {
+                    u = ref3[i];
+                    if (u.side === "alpha") {
+                        selected = true;
+                    }
+                }
+            }
+            if (closeCP.capping) {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/waitcap.png", 300, 300],
+                    thing: closeCP
+                };
+            } else if (selected) {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/capping.png", 300, 300],
+                    thing: closeCP
+                };
+            } else {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/drag.png", 300, 300],
+                    thing: tutor.findMyUnit()
+                };
+            }
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "attack";
+
+        _Class.prototype.tick = function () {
+            var cp, i, len, ref, ref1, selected, u;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (tutor.noUnitsLeft()) {
+                return false;
+            }
+            cp = tutor.findEnemyCp();
+            if (!battleMode.selecting) {
+                ref1 = commander.selection;
+                for (i = 0, len = ref1.length; i < len; i++) {
+                    u = ref1[i];
+                    if (u.side === "alpha") {
+                        selected = true;
+                    }
+                }
+            }
+            if (selected) {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/attack.png", 300, 300],
+                    thing: cp
+                };
+            } else {
+                return tutor.bubble = {
+                    image: ["img/ui/tips/drag.png", 300, 300],
+                    thing: tutor.findMyUnit()
+                };
+            }
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "build";
+
+        _Class.prototype.tick = function () {
+            var ref;
+            if (ui.mode !== "battle" || ((ref = sim.galaxyStar) != null ? ref.type : void 0) !== "home") {
+                return false;
+            }
+            if (battleMode.buildClicked) {
+                tutor.done(this);
+                return false;
+            }
+            return tutor.bubble = {
+                x: "25%",
+                bottom: 84,
+                message: "You build ships with the build bar down here. Click on a ship to build it."
+            };
+        };
+
+        return _Class;
+
+    })());
+
+    tutor.add((function () {
+        function _Class() {
+        }
+
+        _Class.prototype.name = "buildQ";
+
+        _Class.prototype.time = 0;
+
+        _Class.prototype.tick = function () {
+            if (ui.mode !== "battle") {
+                return false;
+            }
+            if (commander.buildQ.length > 1) {
+                tutor.bubble = {
+                    x: "25%",
+                    bottom: 84,
+                    message: "When you don't have enough money, ships queue up to be build later. You can right click to cancel."
+                };
+                this.time += 1;
+                if (this.time > 16 * 15) {
+                    tutor.done(this);
+                }
+                return true;
+            }
+        };
+
+        return _Class;
+
+    })());
+
+
+    /*
+  defineTip class
+      name: "editorIntro"
+
+      check: ->
+          if ui.mode == "design"
+              @fire()
+
+      fire: ->
+          tutor.fired(this)
+          bubbles.add
+              x: "40%"
+              y: "40%"
+              message: "This is the ship editor. Here you can create any ship you like. A big part of the game is creating cool new designs. (click me to close)"
+              modeOnly: "design"
+
+
+  defineTip class
+      name: "editorDrag"
+
+      check: ->
+          if ui.mode == "design"
+              @fire()
+
+      condition: -> designMode.draggedAPart
+
+      fire: ->
+          tutor.fired(this)
+          bubbles.add
+              x: 120
+              y: 300
+              message: "You can drag parts from here. On to the ship."
+              close: => @condition()
+              modeOnly: "design"
+
+
+  defineTip class
+      name: "editorDelete"
+
+      check: ->
+          if ui.mode == "design"
+              @fire()
+
+      condition: -> designMode.deletedAPart
+
+      fire: ->
+          tutor.fired(this)
+          bubbles.add
+              x: 320
+              y: "60%"
+              message: "To remove parts simply drag them off the design grid."
+              close: => @condition()
+              modeOnly: "design"
+   */
+
+}).call(this);
+;
+
+
+//from src/galaxy.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var FREE_AI, LOOSE_TIPS, _offset, bubble_html, doPaths, drawRay, draw_part, galaxyBg, green, onplacement, red,
+        shipsFromAI, users, white,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        },
+        extend = function (child, parent) {
+            for (var key in parent) {
+                if (hasProp.call(parent, key)) child[key] = parent[key];
+            }
+
+            function ctor() {
+                this.constructor = child;
+            }
+
+            ctor.prototype = parent.prototype;
+            child.prototype = new ctor();
+            child.__super__ = parent.prototype;
+            return child;
+        },
+        hasProp = {}.hasOwnProperty;
+
+    eval(onecup["import"]());
+
+    window.easyPlayerBuildBar = [];
+
+    easyPlayerBuildBar[0] = "";
+
+    easyPlayerBuildBar[1] = "";
+
+    easyPlayerBuildBar[2] = "";
+
+    easyPlayerBuildBar[3] = "";
+
+    easyPlayerBuildBar[4] = "";
+
+    easyPlayerBuildBar[5] = "";
+
+    easyPlayerBuildBar[6] = "";
+
+    easyPlayerBuildBar[7] = "";
+
+    easyPlayerBuildBar[8] = "";
+
+    easyPlayerBuildBar[9] = "";
+
+    FREE_AI = ["AlphaSwarm", "CreepingHoard", "BullDogs"];
+
+    LOOSE_TIPS = ["Try using only the parts that you need. The extra cost adds up!", "Try to use only 1 type of weapon, engine, or armor on a given ship. Diversity often makes ships weaker.", "Try going back to eariler designs that worked.", "Stuck? Just try going around this star.", "Remember to capture points. They give you extra money to fight with.", "Try having a cheap and fast ship to capture points with, it will save you a lot of time.", "Click-drag moves are useful for splitting up around the map as well.", "Heavyweight HP is very cheap, but slows you down.", "Try relying on batteries for short range ships, they are very cheap.", "Bigger isn't always better. Don't try to do everything at once", "In general, the more accurate a weapon, the more energy it takes, but it is more guaranteed that the shot will hit"];
+
+    green = [46, 204, 113, 255];
+
+    red = [255, 0, 0, 255];
+
+    white = [255, 255, 255, 255];
+
+    galaxyBg = [11, 25, 46, 255];
+
+    window.GalaxyMode = (function (superClass) {
+        extend(GalaxyMode, superClass);
+
+        GalaxyMode.prototype.edit = false;
+
+        GalaxyMode.prototype.test = onecup.params.test;
+
+        GalaxyMode.prototype.difficulty = 1;
+
+        GalaxyMode.prototype.mapBounds = 2100;
+
+        function GalaxyMode() {
+            this.onmouseup = bind(this.onmouseup, this);
+            this.onmousedown = bind(this.onmousedown, this);
+            var k, len, ref, star;
+            this.zoom = 1.3;
+            this.focus = v2.create();
+            this.mouse = v2.create();
+            this.screenMouse = v2.create();
+            this.starNumber = 0;
+            this.starsWon = {};
+            this.unlockedParts = [];
+            ref = galaxyMap.stars;
+            for (k = 0, len = ref.length; k < len; k++) {
+                star = ref[k];
+                if (star.type === "home") {
+                    this.focus[0] = -star.pos[0];
+                    this.focus[1] = -star.pos[1];
+                }
+            }
+        }
+
+        GalaxyMode.prototype.checkGalaxy = function () {
+            var data, dup, i, k, l, len, len1, len2, m, n, new_paths, p, path, ref, ref1;
+            new_paths = [];
+            ref = galaxyMap.paths;
+            for (i = k = 0, len = ref.length; k < len; i = ++k) {
+                path = ref[i];
+                if (!this.findStar(path[0])) {
+                    console.log("galaxy path #", i, path[0], "is broken");
+                    continue;
+                }
+                if (!this.findStar(path[1])) {
+                    console.log("galaxy path #", i, path[1], "is broken");
+                    continue;
+                }
+                if (path[0] > path[1]) {
+                    ref1 = [path[1], path[0]], path[0] = ref1[0], path[1] = ref1[1];
+                }
+                dup = false;
+                for (n = l = 0, len1 = new_paths.length; l < len1; n = ++l) {
+                    p = new_paths[n];
+                    if (p[0] === path[0] && p[1] === path[1]) {
+                        console.log("galaxy path #", i, path, "is a duplicate of #", n);
+                        dup = true;
+                    }
+                }
+                if (!dup) {
+                    new_paths.push(path);
+                }
+            }
+            new_paths = new_paths.sort(function (a, b) {
+                return a[0].localeCompare(b[0]);
+            });
+            data = "";
+            for (m = 0, len2 = new_paths.length; m < len2; m++) {
+                path = new_paths[m];
+                data += "paths.push(['" + path[0] + "', '" + path[1] + "'])\n";
+            }
+            return console.log(data);
+        };
+
+        GalaxyMode.prototype.findStar = function (id) {
+            var k, len, ref, star;
+            ref = galaxyMap.stars;
+            for (k = 0, len = ref.length; k < len; k++) {
+                star = ref[k];
+                if (star.id === id) {
+                    return star;
+                }
+            }
+            return null;
+        };
+
+        GalaxyMode.prototype.load = function () {
+            var galaxy, k, key, len, ref, ref1, star, what;
+            galaxy = commander.galaxy;
+            if (!galaxy) {
+                return;
+            }
+            if (galaxy.version !== 4) {
+                return;
+            }
+            this.starsWon = galaxy.starsWon;
+            ref = this.starsWon;
+            for (key in ref) {
+                what = ref[key];
+                if (what === true) {
+                    this.starsWon[key] = "commander";
+                }
+            }
+            this.starNumber = galaxy.starNumber;
+            this.unlockedParts = galaxy.unlockedParts;
+            this.justWon = this.findStar(galaxy.justWonId);
+            if (this.justWon) {
+                this.focus[0] = -this.justWon.pos[0];
+                this.focus[1] = -this.justWon.pos[1];
+            }
+            ref1 = galaxyMap.stars;
+            for (k = 0, len = ref1.length; k < len; k++) {
+                star = ref1[k];
+                if (this.starsWon[star.id]) {
+                    this.unlockParts(star);
+                }
+            }
+            return this.hasCurrent = true;
+        };
+
+        GalaxyMode.prototype.save = function () {
+            var galaxy, ref;
+            galaxy = {
+                starsWon: this.starsWon,
+                justWonId: (ref = this.justWon) != null ? ref.id : void 0,
+                unlockedParts: this.unlockedParts,
+                starNumber: this.starNumber,
+                version: 4
+            };
+            commander.galaxy = galaxy;
+            control.savePlayer();
+            return this.hasCurrent = true;
+        };
+
+        GalaxyMode.prototype.regenerate = function () {
+            var i, k, l, len, len1, m, p, ref, spec;
+            for (i = k = 0; k < 10; i = ++k) {
+                this.replaceBuildBar(i, easyPlayerBuildBar[i]);
+            }
+            this.unlockedParts = {};
+            this.starsWon = {};
+            this.justWon = null;
+            for (l = 0, len = easyPlayerBuildBar.length; l < len; l++) {
+                spec = easyPlayerBuildBar[l];
+                ref = fromShort(spec);
+                for (m = 0, len1 = ref.length; m < len1; m++) {
+                    p = ref[m];
+                    this.unlockedParts[p.type] = true;
+                }
+            }
+            this.starLossUp = null;
+            this.starWinUp = null;
+            this.galaxyWinUp = null;
+            return this.save();
+        };
+
+        GalaxyMode.prototype.replaceBuildBar = function (index, spec) {
+            commander.fleet.ais[0] = "Galaxy";
+            commander.fleet.selection = 0;
+            this.putSomePlaceEmpty(commander.fleet["0," + index]);
+            commander.fleet["0," + index] = spec;
+            return control.savePlayer();
+        };
+
+        GalaxyMode.prototype.putSomePlaceEmpty = function (spec) {
+            var col, k, key, l, row;
+            if (!spec) {
+                return;
+            }
+            for (row = k = 2; k < 25; row = ++k) {
+                for (col = l = 0; l < 10; col = ++l) {
+                    key = row + "," + col;
+                    if (!commander.fleet[key]) {
+                        commander.fleet[key] = spec;
+                        return;
+                    }
+                }
+            }
+        };
+
+        GalaxyMode.prototype.unlockParts = function (star) {
+            var k, len, p, ref, results;
+            ref = star.unlocks;
+            results = [];
+            for (k = 0, len = ref.length; k < len; k++) {
+                p = ref[k];
+                results.push(this.unlockedParts[p] = true);
+            }
+            return results;
+        };
+
+        GalaxyMode.prototype.canReach = function (star) {
+            var k, len, path, ref;
+            if (this.test) {
+                return true;
+            }
+            if (star.replay === false && this.starsWon[star.id]) {
+                return false;
+            }
+            if (star.type === "home") {
+                return true;
+            }
+            ref = galaxyMap.paths;
+            for (k = 0, len = ref.length; k < len; k++) {
+                path = ref[k];
+                if (path[0] === star.id || path[1] === star.id) {
+                    if (this.starsWon[path[0]] || this.starsWon[path[1]]) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+
+        GalaxyMode.prototype.onmousedown = function (e) {
+            var k, len, ref, results, star;
+            if (this.popupUp()) {
+                return;
+            }
+            if (e.which === 2) {
+                this.moving = true;
+                e.preventDefault();
+                return;
+            }
+            ref = galaxyMap.stars;
+            results = [];
+            for (k = 0, len = ref.length; k < len; k++) {
+                star = ref[k];
+                if (v2.distance(this.mouse, star.pos) < 32) {
+                    if (e.which === 3) {
+                        if (e.shiftKey) {
+                            results.push(this.connectStar = star);
+                        } else {
+                            results.push(this.dragStar = star);
+                        }
+                    } else {
+                        if (this.canReach(star)) {
+                            results.push(this.fightAt(star));
+                        } else {
+                            results.push(void 0);
+                        }
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        };
+
+        GalaxyMode.prototype.onmouseup = function (e) {
+            var j, k, l, len, len1, p, ref, ref1, removed, star;
+            this.moving = false;
+            if (this.test) {
+                if (this.dragStar) {
+                    this.dragStar.pos = [Math.floor(this.mouse[0]), Math.floor(this.mouse[1])];
+                    galaxyMap.locations[this.dragStar.id] = this.dragStar.pos;
+                    this.dragStar = null;
+                }
+                if (this.connectStar) {
+                    ref = galaxyMap.stars;
+                    for (k = 0, len = ref.length; k < len; k++) {
+                        star = ref[k];
+                        if (v2.distance(this.mouse, star.pos) < 32) {
+                            removed = false;
+                            ref1 = galaxyMap.paths;
+                            for (j = l = 0, len1 = ref1.length; l < len1; j = ++l) {
+                                p = ref1[j];
+                                if (p[0] === this.connectStar.id && p[1] === star.id || p[1] === this.connectStar.id && p[0] === star.id) {
+                                    galaxyMap.paths.splice(j, 1);
+                                    removed = true;
+                                    break;
+                                }
+                            }
+                            if (!removed) {
+                                galaxyMap.paths.push([this.connectStar.id, star.id]);
+                                console.log("connect!");
+                            }
+                        }
+                    }
+                    return this.connectStar = null;
+                }
+            }
+        };
+
+        GalaxyMode.prototype.toGameSpace = function (point) {
+            point[0] = point[0] - window.innerWidth / 2;
+            point[1] = (window.innerHeight - point[1]) - window.innerHeight / 2;
+            v2.scale(point, this.zoom * 2);
+            v2.sub(point, this.focus);
+            return point;
+        };
+
+        GalaxyMode.prototype.popupUp = function () {
+            return this.starLossUp || this.starWinUp || this.galaxyWinUp === "show";
+        };
+
+        GalaxyMode.prototype.onmousemove = function (e) {
+            var found, k, len, ref, star;
+            if (this.popupUp()) {
+                return;
+            }
+            this.screenMouse = [e.clientX, e.clientY];
+            this.mouse = this.toGameSpace([this.screenMouse[0], this.screenMouse[1]]);
+            if (this.moving) {
+                this.focus[0] += e.movementX * this.zoom * 2;
+                this.focus[1] -= e.movementY * this.zoom * 2;
+            }
+            found = false;
+            ref = galaxyMap.stars;
+            for (k = 0, len = ref.length; k < len; k++) {
+                star = ref[k];
+                if (v2.distance(this.mouse, star.pos) < 32) {
+                    found = true;
+                    if (star !== this.hoverStar) {
+                        this.hoverStar = star;
+                        if (star.type === "boss" || this.canReach(star) || this.test) {
+                            bubbles.tip = {
+                                thing: star,
+                                html: bubble_html
+                            };
+                        } else {
+                            bubbles.tip = false;
+                        }
+                    }
+                }
+            }
+            if (!found) {
+                this.hoverStar = null;
+                bubbles.tip = null;
+            }
+            return onecup.refresh();
+        };
+
+        GalaxyMode.prototype.restart = function () {
+            var k, len, ref, star;
+            this.regenerate();
+            ref = galaxyMap.stars;
+            for (k = 0, len = ref.length; k < len; k++) {
+                star = ref[k];
+                if (star.type === "home") {
+                    ui.mode = "battle";
+                    this.justWon = star;
+                    this.fightAt(star);
+                    return;
+                }
+            }
+        };
+
+        GalaxyMode.prototype.tick = function () {
+            return this.controls();
+        };
+
+        GalaxyMode.prototype.draw = function () {
+            var bg_zoom, cls, color, diff, i, icon, k, l, len, len1, len2, len3, len4, len5, m, name2Star, o, part_name,
+                path, q, r, ref, ref1, ref2, ref3, ref4, s, size, star, to, toPos, userId, x, z;
+            battleMode.selection.style.display = "none";
+            baseAtlas.beginSprites(this.focus, this.zoom);
+            bg_zoom = Math.max(window.innerWidth, window.innerHeight) / 128;
+            z = bg_zoom * this.zoom;
+            baseAtlas.drawSprite("img/newbg/fill.png", [-this.focus[0], -this.focus[1]], [z, z], 0, galaxyBg);
+            baseAtlas.drawSprite("img/bg/galaxy.png", [0, 0], [2, 2], 0);
+            if (this.hoverStar) {
+                ref = galaxyMap.paths;
+                for (k = 0, len = ref.length; k < len; k++) {
+                    path = ref[k];
+                    if (path[0] === this.hoverStar.id || path[1] === this.hoverStar.id) {
+                        if (this.starsWon[path[0]] || this.starsWon[path[1]]) {
+                            color = green;
+                        } else {
+                            color = white;
+                        }
+                        drawRay(this.findStar(path[0]).pos, this.findStar(path[1]).pos, color);
+                    }
+                }
+            }
+            ref1 = galaxyMap.stars;
+            for (l = 0, len1 = ref1.length; l < len1; l++) {
+                star = ref1[l];
+                s = .5 + star.difficulty * .5;
+                color = white;
+                icon = "img/galaxy/star.png";
+                if (star.type === "2v2") {
+                    icon = "img/galaxy/2v2.png";
+                }
+                if (star.type === "3v3") {
+                    icon = "img/galaxy/3v3.png";
+                }
+                if (star.type === "home") {
+                    s = 2;
+                }
+                if (star.type === "boss") {
+                    s = 2;
+                    color = red;
+                    icon = "img/galaxy/boss.png";
+                }
+                if (this.starsWon[star.id]) {
+                    color = green;
+                    diff = this.starsWon[star.id];
+                    icon = "img/galaxy/" + diff + ".png";
+                }
+                if (star === this.justWon) {
+                    s = s + Math.sin(Date.now() / 100) * .2;
+                }
+                baseAtlas.drawSprite(icon, star.pos, [s, -s], 0, color);
+                if (star.type === "fort" || star.type === "home") {
+                    baseAtlas.drawSprite("img/galaxy/fort.png", star.pos, [s, -s], 0, color);
+                }
+                if (this.test) {
+                    x = 50;
+                    ref2 = star.unlocks;
+                    for (m = 0, len2 = ref2.length; m < len2; m++) {
+                        part_name = ref2[m];
+                        cls = parts[part_name];
+                        if (cls) {
+                            baseAtlas.drawSprite("parts/" + cls.prototype.image, [star.pos[0] + x, star.pos[1]], [1, -1], 0);
+                            x += 40;
+                        }
+                    }
+                }
+            }
+            if (this.test) {
+                name2Star = {};
+                ref3 = galaxyMap.stars;
+                for (o = 0, len3 = ref3.length; o < len3; o++) {
+                    s = ref3[o];
+                    name2Star[s.name] = s;
+                    s.visit = 0;
+                }
+                toPos = v2.create();
+                for (userId in users) {
+                    path = users[userId];
+                    for (i = q = 0, len4 = path.length; q < len4; i = ++q) {
+                        star = path[i];
+                        if (star[1] === "won") {
+                            color = [0, 255, 0, 150];
+                        } else if (star[1] === "loss") {
+                            color = [255, 0, 0, 150];
+                        } else {
+                            color = [255, 255, 0, 150];
+                        }
+                        to = name2Star[star[2]];
+                        if (!to) {
+                            console.log("start", star[2]);
+                            continue;
+                        }
+                        v2.set(to.pos, toPos);
+                        toPos[0] += 8 * Math.floor(to.visit % 10);
+                        toPos[1] -= 30 + 8 * Math.floor(to.visit / 10);
+                        to.visit += 1;
+                        if (i !== path.length - 1) {
+                            size = [.5, .5];
+                        } else {
+                            size = [1, 1];
+                        }
+                        size = [.25, .25];
+                        baseAtlas.drawSprite("img/pip1.png", toPos, size, 0, color);
+                    }
+                }
+            }
+            if (this.test) {
+                ref4 = galaxyMap.paths;
+                for (r = 0, len5 = ref4.length; r < len5; r++) {
+                    path = ref4[r];
+                    drawRay(this.findStar(path[0]).pos, this.findStar(path[1]).pos, [255, 255, 255, 50]);
+                }
+            }
+            return baseAtlas.finishSprites();
+        };
+
+        GalaxyMode.prototype.fightAt = function (star, softRestart) {
+            var _, addAI, aiName, k, l, len, len1, len2, m, p, player, ref, ref1, ref2, ref3, sp, u;
+            if (softRestart == null) {
+                softRestart = false;
+            }
+            if (!designMode.showAiTools) {
+                localStorage.useAi = "false";
+            }
+            intp.doMapFocus = true;
+            onecup.refresh();
+            track("start_galaxy_battle", {
+                starName: star.name,
+                ai: star.ai || (star.alpha + " vs " + star.beta),
+                aiMoney: star.aiMoney || 2000,
+                starNumber: galaxyMode.starNumber
+            });
+            bubbles.tip = null;
+            battleMode.startNewLocal();
+            sim.galaxyStar = star;
+            sim.makeRocks = !star.mapNoThings;
+            console.log("fight at", star.mapSize, star.mapNumCPs, star.mapSeed);
+            sim.generateMap(star.mapSize, star.mapNumCPs, star.mapSeed);
+            if (star.type === "fort") {
+                mapping.genTower();
+            }
+            if (typeof star.mapLayout === "function") {
+                star.mapLayout();
+            }
+            network.sendPlayer();
+            player = sim.players[0];
+            console.log(player);
+            switch (commander.galaxyDifficulty) {
+                case "lieutenant":
+                    player.money *= 1.5;
+                    player.moneyRatio = 1.5;
+                    break;
+                case "commander":
+                    player.money *= 1.1;
+                    player.moneyRatio = 1.1;
+                    break;
+                case "captain":
+                    player.money *= .90;
+                    player.moneyRatio = .90;
+                    break;
+                case "admiral":
+                    player.money *= .75;
+                    player.moneyRatio = .75;
+            }
+            addAI = function (aiName, side) {
+                player = ais.useAi(aiName, side);
+                if (side === "beta") {
+                    player.color = [255, 0, 0, 255];
+                }
+                if (side === "alpha") {
+                    player.color = [0, 255, 0, 255];
+                }
+                if (star.aiMoney) {
+                    player.money = star.aiMoney;
+                } else {
+                    if (star.size === 1) {
+                        player.money = 1000;
+                    }
+                    if (star.size === 2) {
+                        player.money = 2000;
+                    }
+                    if (star.size === 3) {
+                        player.money = 3000;
+                    }
+                }
+                return player;
+            };
+            if (star.alpha) {
+                ref = star.alpha;
+                for (k = 0, len = ref.length; k < len; k++) {
+                    aiName = ref[k];
+                    if (aiName !== "Player") {
+                        addAI(aiName, "alpha");
+                    }
+                }
+            }
+            if (star.beta) {
+                ref1 = star.beta;
+                for (l = 0, len1 = ref1.length; l < len1; l++) {
+                    aiName = ref1[l];
+                    addAI(aiName, "beta");
+                }
+            }
+            if (star.ai) {
+                player = addAI(star.ai, "beta");
+            }
+            if (star.type === "boss") {
+                player.color = [255, 0, 0, 255];
+                u = new types.Unit(player.buildBar[0]);
+                ref2 = sim.things;
+                for (_ in ref2) {
+                    sp = ref2[_];
+                    if (sp.spawn && sp.side === player.side) {
+                        u.pos = v2.create(sp.pos);
+                    }
+                }
+                u.side = "beta";
+                u.rot = v2.angle(u.pos) + Math.PI;
+                u.owner = player.number;
+                u.number = 0;
+                sim.things[u.id] = u;
+                sim.winSoon = false;
+                sim.victoryConditions = function () {
+                    var capped, cp, ref3;
+                    if (this.state !== "running") {
+                        return;
+                    }
+                    if (u.dead && !this.winSoon) {
+                        this.winSoon = this.step + 16 * 5;
+                    }
+                    if (this.winSoon && this.winSoon < this.step) {
+                        this.winningSide = "alpha";
+                    }
+                    capped = true;
+                    ref3 = sim.things;
+                    for (_ in ref3) {
+                        cp = ref3[_];
+                        if (cp.commandPoint && cp.side === "alpha") {
+                            capped = false;
+                        }
+                    }
+                    if (capped) {
+                        this.winningSide = "beta";
+                    }
+                    if (this.winningSide) {
+                        return this.endOfGame();
+                    }
+                };
+            }
+            if (typeof star.addAIUnits === "function") {
+                star.addAIUnits();
+            }
+            if (!softRestart && star.giveDesign) {
+                console.log("give design", star.giveDesignSlot, star.giveDesign);
+                buildBar.selected = star.giveDesignSlot;
+                galaxyMode.replaceBuildBar(star.giveDesignSlot, star.giveDesign);
+                designMode.select(buildBar.selected);
+                ref3 = fromShort(star.giveDesign).parts;
+                for (m = 0, len2 = ref3.length; m < len2; m++) {
+                    p = ref3[m];
+                    galaxyMode.unlockedParts[p.type] = true;
+                }
+                designMode.fresh = false;
+            }
+            intp.gameEnded = function () {
+                var numbering, prev;
+                actionMixer.reset();
+                if (intp.winningSide === "alpha") {
+                    track("won_galaxy_battle", {
+                        starName: star.name,
+                        time: sim.step / 16,
+                        ai: star.ai || (star.alpha + " vs " + star.beta),
+                        aiMoney: star.aiMoney || 2000,
+                        starNumber: galaxyMode.starNumber
+                    });
+                    galaxyMode.justWon = star;
+                    numbering = {
+                        "lieutenant": 1,
+                        "commander": 2,
+                        "captain": 3,
+                        "admiral": 4
+                    };
+                    prev = galaxyMode.starsWon[star.id];
+                    if (!prev || numbering[prev] < numbering[commander.galaxyDifficulty]) {
+                        galaxyMode.starsWon[star.id] = commander.galaxyDifficulty;
+                    }
+                    galaxyMode.unlockParts(galaxyMode.justWon);
+                    galaxyMode.starNumber += 1;
+                    galaxyMode.save();
+                    galaxyMode.starWinUp = true;
+                } else {
+                    track("lost_galaxy_battle", {
+                        starName: star.name,
+                        time: sim.step / 16,
+                        ai: star.ai || (star.alpha + " vs " + star.beta),
+                        aiMoney: star.aiMoney || 2000,
+                        starNumber: galaxyMode.starNumber
+                    });
+                    star.randomLossTip = choose(LOOSE_TIPS);
+                    galaxyMode.starLossUp = star;
+                }
+                ui.mode = "galaxy";
+                control.savePlayer();
+                return onecup.refresh();
+            };
+            if (star.startWithDesigner === false) {
+                ui.go("battle");
+            } else {
+                ui.go("design");
+            }
+        };
+
+        GalaxyMode.prototype.bossCheck = function () {
+            var bossesLeft, k, len, ref, star;
+            bossesLeft = 0;
+            ref = galaxyMap.stars;
+            for (k = 0, len = ref.length; k < len; k++) {
+                star = ref[k];
+                if (star.type === "boss" && !this.starsWon[star.id]) {
+                    bossesLeft += 1;
+                }
+            }
+            if (bossesLeft === 0 && this.galaxyWinUp !== "closed") {
+                this.galaxyWinUp = "show";
+                return true;
+            }
+        };
+
+        return GalaxyMode;
+
+    })(window.ControlsMode);
+
+    _offset = v2.create();
+
+    drawRay = function (a, b, color) {
+        var d, image, rot;
+        image = "img/laser01.png";
+        v2.sub(b, a, _offset);
+        rot = v2.angle(_offset);
+        d = v2.mag(_offset) / 437;
+        v2.scale(_offset, .5);
+        v2.add(_offset, a);
+        return baseAtlas.drawSprite(image, _offset, [.2, d], rot, color);
+    };
+
+    onplacement = function () {
+        var pos;
+        if (true && e.which === 1) {
+            pos = this.toGameSpace([e.x, e.y]);
+            return stars.push({
+                size: Math.floor(Math.random() * 3) + 1,
+                x: pos[0],
+                y: pos[1]
+            });
+        }
+    };
+
+    bubble_html = function () {
+        var star;
+        star = galaxyMode.hoverStar;
+        div(function () {
+            opacity(".5");
+            text_align("right");
+            return text(star.name);
+        });
+        div(function () {
+            var ai, k, l, len, len1, ref, ref1;
+            margin_bottom(10);
+            font_size(20);
+            if (star.ai) {
+                text("Fight vs " + star.ai);
+            }
+            if (star.type === "2v2" || star.type === "3v3") {
+                text(star.type + " vs ");
+                ref = star.alpha;
+                for (k = 0, len = ref.length; k < len; k++) {
+                    ai = ref[k];
+                    text(" " + ai);
+                }
+                text(" vs ");
+                ref1 = star.beta;
+                for (l = 0, len1 = ref1.length; l < len1; l++) {
+                    ai = ref1[l];
+                    text(" " + ai);
+                }
+            }
+            if (galaxyMode.test) {
+                shipsFromAI(star);
+            }
+            if (star.size === 1) {
+                return text(" (hard)");
+            } else if (star.size === 2) {
+                return text(" (medium)");
+            } else if (star.size === 3) {
+                return text(" (easy)");
+            }
+        });
+        if (star.about) {
+            div(function () {
+                padding("10px 0px");
+                return text(star.about);
+            });
+        }
+        if (!star.noDesignTools) {
+            return div(function () {
+                var k, len, part_name, ref, results;
+                ref = star.unlocks;
+                results = [];
+                for (k = 0, len = ref.length; k < len; k++) {
+                    part_name = ref[k];
+                    results.push(draw_part(part_name));
+                }
+                return results;
+            });
+        }
+    };
+
+    shipsFromAI = function (star) {
+        return div(function () {
+            var ai, aiName, aiNames, k, len, results, spec, unitThumb, x, y;
+            if (star.ai) {
+                aiNames = [star.ai];
+            } else if (star.beta) {
+                aiNames = star.beta;
+            } else {
+                aiNames = [];
+            }
+            y = 50;
+            x = 50;
+            results = [];
+            for (k = 0, len = aiNames.length; k < len; k++) {
+                aiName = aiNames[k];
+                ai = ais.all[aiName];
+                results.push((function () {
+                    var l, len1, results1;
+                    results1 = [];
+                    for (l = 0, len1 = ai.length; l < len1; l++) {
+                        spec = ai[l];
+                        if (spec) {
+                            unitThumb = buildBar.specToThumb(JSON.stringify(spec));
+                            results1.push(img({
+                                src: unitThumb,
+                                width: 64,
+                                height: 64
+                            }));
+                        } else {
+                            results1.push(void 0);
+                        }
+                    }
+                    return results1;
+                })());
+            }
+            return results;
+        });
+    };
+
+    draw_part = function (part_name) {
+        return div(function () {
+            overflow("hidden");
+            div(function () {
+                float("left");
+                display("inline-block");
+                background_image("url('parts/" + parts[part_name].prototype.image + "')");
+                background_size("auto");
+                background_position("center");
+                background_repeat("no-repeat");
+                width(52);
+                return height(52);
+            });
+            return div(function () {
+                width(180);
+                float("left");
+                font_size(14);
+                margin(5);
+                span(function () {
+                    font_weight("bold");
+                    return text(parts[part_name].prototype.name);
+                });
+                text(" ");
+                return span(function () {
+                    color("#888");
+                    return text(parts[part_name].prototype.desc);
+                });
+            });
+        });
+    };
+
+    ui.galaxyDifficultyPicker = false;
+
+    window.galaxyView = function () {
+        div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            color("white");
+            return ui.topButton("menu");
+        });
+        div(function () {
+            var diff, k, len, pickModes, results;
+            position("absolute");
+            top(0);
+            right(0);
+            width(64);
+            color("white");
+            pickModes = ["lieutenant", "commander", "captain", "admiral"];
+            if (pickModes.indexOf(commander.galaxyDifficulty) === -1) {
+                commander.galaxyDifficulty = "commander";
+            }
+            ui.topButton(commander.galaxyDifficulty, function () {
+                if (ui.galaxyDifficultyPicker) {
+                    opacity(".2");
+                }
+                return onclick(function () {
+                    return ui.galaxyDifficultyPicker = !ui.galaxyDifficultyPicker;
+                });
+            });
+            if (ui.galaxyDifficultyPicker) {
+                div(function () {
+                    padding("20px 0px");
+                    return text("difficulty");
+                });
+                results = [];
+                for (k = 0, len = pickModes.length; k < len; k++) {
+                    diff = pickModes[k];
+                    results.push((function (diff) {
+                        return ui.topButton(diff, function () {
+                            return onclick(function () {
+                                commander.galaxyDifficulty = diff;
+                                ui.galaxyDifficultyPicker = false;
+                                return control.savePlayer();
+                            });
+                        });
+                    })(diff));
+                }
+                return results;
+            }
+        });
+        galaxyMode.bossCheck();
+        if (galaxyMode.galaxyWinUp === "show") {
+            return galaxyWinPopup();
+        } else if (galaxyMode.starLossUp) {
+            return starLossPopup();
+        } else if (galaxyMode.starWinUp) {
+            return starWinPopup();
+        }
+    };
+
+    window.starLossPopup = function () {
+        if (!galaxyMode.starLossUp) {
+            return;
+        }
+        return div(function () {
+            position("absolute");
+            top(0);
+            bottom(0);
+            left(0);
+            right(0);
+            background_color("rgba(0, 0, 0, .2)");
+            return div(function () {
+                margin("100px auto");
+                width(340);
+                padding_bottom(30);
+                background("rgba(0, 0, 0, .7)");
+                color("white");
+                div(function () {
+                    font_size(40);
+                    padding(20);
+                    text_align("center");
+                    return text("DEFEAT");
+                });
+                div(function () {
+                    padding(10);
+                    color("white");
+                    text_align("center");
+                    if (galaxyMode.starLossUp.lossTip) {
+                        return text(galaxyMode.starLossUp.lossTip);
+                    } else {
+                        return text(galaxyMode.starLossUp.randomLossTip);
+                    }
+                });
+                return div(".hover-white", function () {
+                    color("white");
+                    text_align("center");
+                    padding(20);
+                    text("CONTINUE");
+                    return onclick(function () {
+                        return galaxyMode.starLossUp = null;
+                    });
+                });
+            });
+        });
+    };
+
+    window.starWinPopup = function () {
+        if (!galaxyMode.starWinUp) {
+            return;
+        }
+        if (!galaxyMode.justWon) {
+            designMode.starWinUp = false;
+        }
+        bubbles.tip = false;
+        return div(function () {
+            position("absolute");
+            top(0);
+            bottom(0);
+            left(0);
+            right(0);
+            background_color("rgba(0, 0, 0, .2)");
+            return div(function () {
+                margin("100px auto");
+                width(340);
+                padding_bottom(30);
+                background("rgba(0, 0, 0, .7)");
+                color("white");
+                div(function () {
+                    font_size(40);
+                    padding(20);
+                    text_align("center");
+                    return text("VICTORY");
+                });
+                if (galaxyMode.justWon.unlocks.length > 0) {
+                    div(function () {
+                        color("rgba(236, 240, 241, 1.0)");
+                        text_align("center");
+                        padding(10);
+                        return text("You have unlocked:");
+                    });
+                }
+                div(function () {
+                    var k, len, part_name, ref;
+                    padding(30);
+                    text_align("left");
+                    if (galaxyMode.justWon) {
+                        ref = galaxyMode.justWon.unlocks;
+                        for (k = 0, len = ref.length; k < len; k++) {
+                            part_name = ref[k];
+                            draw_part(part_name);
+                        }
+                        if (galaxyMode.justWon.type === "boss") {
+                            return div(function () {
+                                color("white");
+                                return text("You have defeated one of the bosses. Kill all of the bosses to win the game!");
+                            });
+                        }
+                    }
+                });
+                return div(".hover-white", function () {
+                    color("white");
+                    text_align("center");
+                    padding(20);
+                    text("CONTINUE");
+                    return onclick(function () {
+                        return galaxyMode.starWinUp = false;
+                    });
+                });
+            });
+        });
+    };
+
+    window.galaxyWinPopup = function () {
+        return div(function () {
+            position("absolute");
+            top(0);
+            bottom(0);
+            left(0);
+            right(0);
+            background_color("rgba(100, 0, 0, .5)");
+            return div(function () {
+                margin("0px auto");
+                width(500);
+                padding_bottom(30);
+                background("rgba(0, 0, 0, .5)");
+                color("white");
+                height(window.innerHeight);
+                overflow_y("auto");
+                div(function () {
+                    padding_top(40);
+                    font_size(20);
+                    color("white");
+                    text_align("center");
+                    color("#DDD");
+                    return text("You have achieved total galactic");
+                });
+                div(function () {
+                    font_size(80);
+                    padding_bottom(20);
+                    text_align("center");
+                    return text("VICTORY");
+                });
+                div(function () {
+                    text_align("center");
+                    padding("30px 60px");
+                    color("white");
+                    color("#BBB");
+                    line_height(26);
+                    text("The galaxy will be forever free and grateful for your contribution. ");
+                    text("Its citizens will forever know your name. ");
+                    text("No one can erase what you have accomplished. ");
+                    br();
+                    br();
+                    return text("You are the Istro Commander.");
+                });
+                div(function () {
+                    text_align("center");
+                    padding(10);
+                    line_height(26);
+                    color("#BBB");
+                    div(function () {
+                        font_size(20);
+                        text("Credits");
+                        color("white");
+                        return br();
+                    });
+                    div(function () {
+                        return text("Code & Art by Andre 'Treeform' von Houck");
+                    });
+                    div(function () {
+                        return text("Design by Oscar 'Saktoth' Evans");
+                    });
+                    div(function () {
+                        return text("Co-Design by Kevin 'RyMarq' Piala");
+                    });
+                    div(function () {
+                        color("white");
+                        font_size(20);
+                        br();
+                        text("Special thanks for testing, AI writing and playing");
+                        return br();
+                    });
+                    return div(function () {
+                        return text("Godde, Nepthali Celles, Tully Elliston, Nicholas Wylder");
+                    });
+                });
+                return div(".hover-white", function () {
+                    color("white");
+                    text_align("center");
+                    padding(20);
+                    text("Return to Galaxy");
+                    return onclick(function () {
+                        ui.mode = "galaxy";
+                        return galaxyMode.galaxyWinUp = "closed";
+                    });
+                });
+            });
+        });
+    };
+
+    users = {};
+
+    if (onecup.params.test) {
+        doPaths = function (type) {
+            var req;
+            req = new XMLHttpRequest();
+            req.open("GET", "/stats/" + type + ".json");
+            req.onload = function () {
+                var data, k, len, path, starName, stat, ts, userId;
+                data = JSON.parse(req.response).table;
+                for (k = 0, len = data.length; k < len; k++) {
+                    stat = data[k];
+                    userId = stat[0];
+                    starName = stat[1];
+                    ts = stat[2];
+                    path = users[userId];
+                    if (!path) {
+                        path = [];
+                        users[userId] = path;
+                    }
+                    path.push([ts, type, starName]);
+                }
+                for (userId in users) {
+                    path = users[userId];
+                    path.sort(function (a, b) {
+                        return a[0] - b[0];
+                    });
+                }
+                return console.log(type, "loded", users);
+            };
+            return req.send();
+        };
+        doPaths("start");
+        doPaths("won");
+        doPaths("loss");
+        console.log("users", users);
+    }
+
+}).call(this);
+;
+
+
+//from src/galaxydata.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var _pos, designSwapper, drawIncome, j, l, len, len1, mkTip, mkUnit, partName, paths, ref, ring, star, stars,
+        tickIncome, unlocks;
+
+    eval(onecup["import"]());
+
+    window.galaxyMap = {};
+
+    stars = galaxyMap.stars = [];
+
+    paths = galaxyMap.paths = [];
+
+    _pos = new v2.create();
+
+    drawIncome = function () {
+        var m;
+        return galaxyMap.moneyRain = (function () {
+            var j, len, ref, results;
+            ref = galaxyMap.moneyRain;
+            results = [];
+            for (j = 0, len = ref.length; j < len; j++) {
+                m = ref[j];
+                baseAtlas.drawSprite("img/tips/money" + m.amount + ".png", m.pos, [1, -1], 0, m.color);
+                m.pos[1] += 4;
+                m.color[3] *= .98;
+                if (m.color[3] < 10) {
+                    continue;
+                }
+                results.push(m);
+            }
+            return results;
+        })();
+    };
+
+    tickIncome = function () {
+        var _, m, ref, results, t;
+        if (sim.step % 16 === 0) {
+            ref = sim.things;
+            results = [];
+            for (_ in ref) {
+                t = ref[_];
+                if (t.commandPoint) {
+                    if (t.beforeSide === "beta" && t.side === "alpha") {
+                        m = {
+                            amount: 100,
+                            pos: v3.create(),
+                            color: [255, 255, 255, 255]
+                        };
+                        v2.add(m.pos, t.pos);
+                        galaxyMap.moneyRain.push(m);
+                    } else if (t.side === "alpha") {
+                        m = {
+                            amount: 1,
+                            pos: v3.create(),
+                            color: [255, 255, 255, 255]
+                        };
+                        v2.add(m.pos, t.pos);
+                        galaxyMap.moneyRain.push(m);
+                    }
+                    t.beforeSide = t.side;
+                }
+                if (t.spawn && t.side === "alpha") {
+                    m = {
+                        amount: 10,
+                        pos: v3.create(),
+                        color: [255, 255, 255, 255]
+                    };
+                    v2.add(m.pos, t.pos);
+                    results.push(galaxyMap.moneyRain.push(m));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        }
+    };
+
+    mkTip = function (img, x, y) {
+        var tip;
+        tip = new types.Rock();
+        tip.z = 0;
+        tip.rot = 0;
+        tip.scale = [1, 1];
+        tip.color = [255, 255, 255, 255];
+        tip.image = img;
+        tip.pos = [x, y];
+        sim.things[tip.id] = tip;
+        return tip;
+    };
+
+    mkUnit = function (spec, pos, side, number) {
+        var u;
+        if (number == null) {
+            number = 0;
+        }
+        console.log("spec", spec);
+        u = new types.Unit(spec);
+        u.pos = v2.create(pos);
+        u.side = side;
+        u.rot = -Math.PI / 2;
+        u.number = number;
+        sim.things[u.id] = u;
+        return u;
+    };
+
+    ring = (function (_this) {
+        return function (spec, n, radius, ox, oy, offset, side) {
+            var i, j, ref, results, x, y;
+            if (ox == null) {
+                ox = 0;
+            }
+            if (oy == null) {
+                oy = 0;
+            }
+            if (offset == null) {
+                offset = 0;
+            }
+            if (side == null) {
+                side = "beta";
+            }
+            results = [];
+            for (i = j = 0, ref = n; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                x = Math.sin((offset + i) / n * 2 * Math.PI) * radius;
+                y = Math.cos((offset + i) / n * 2 * Math.PI) * radius;
+                results.push(mkUnit(spec, [x + ox, y + oy], side));
+            }
+            return results;
+        };
+    })(this);
+
+    designSwapper = function () {
+        var name, what;
+        onecup.preload("img/ui/tips/basicDrag.png");
+        onecup.preload("img/ui/tips/basicEngine.png");
+        onecup.preload("img/ui/tips/basicReactor.png");
+        onecup.preload("img/ui/tips/basicWeapon.png");
+        onecup.preload("img/ui/tips/basicReactor.png");
+        onecup.preload("img/ui/tips/basicMount.png");
+        onecup.preload("img/ui/tips/basicArmor.png");
+        onecup.preload("img/ui/tips/basicWing.png");
+        onecup.preload("img/ui/tips/basicBattery.png");
+        if (ui.mode === "design") {
+            img({
+                src: "img/ui/tips/designArrow.png",
+                draggable: false,
+                width: 100,
+                height: 100
+            }, function () {
+                position("absolute");
+                top(window.innerHeight / 2 - 110);
+                return left(window.innerWidth / 2 + 150);
+            });
+            what = "Drag";
+            if (designMode.draggingPart) {
+                name = designMode.draggingPart.constructor.name;
+                console.log("dragging part?", name);
+                switch (name) {
+                    case "Engine04":
+                        what = "Engine";
+                        break;
+                    case "Reactor2x1":
+                        what = "Reactor";
+                        break;
+                    case "LightBeamTurret":
+                        what = "Weapon";
+                        break;
+                    case "Reactor2x1":
+                        what = "Reactor";
+                        break;
+                    case "Mount90":
+                        what = "Mount";
+                        break;
+                    case "HArmor1x2":
+                        what = "Armor";
+                        break;
+                    case "Wing1x1Round":
+                        what = "Wing";
+                        break;
+                    case "Battery1x1":
+                        what = "Battery";
+                }
+            }
+            img({
+                src: "img/ui/tips/basic" + what + ".png",
+                draggable: false,
+                width: 200,
+                height: 200
+            }, function () {
+                position("absolute");
+                top(window.innerHeight / 2 - 110 + 50);
+                return left(window.innerWidth / 2 + 150 + 50);
+            });
+            return false;
+        }
+    };
+
+    stars.push({
+        id: 'kiusd6o',
+        name: "Homeworld",
+        type: "home",
+        about: "This is your planet. Your origin.",
+        ai: "StaticAI",
+        difficulty: 1,
+        noDesignTools: true,
+        mapSize: 0.8576046077068895,
+        mapNumCPs: 4,
+        barTips: true,
+        noDesignTools: true,
+        unlocks: ["LightBeamTurret", "Mount90", "Engine04", "Reactor2x1"],
+        giveDesignSlot: 0,
+        giveDesign: "FBQEFA8SFwodEQodFBQ2",
+        mapSeed: 2344,
+        replay: false,
+        mapLayout: function () {
+            var a, cp, r;
+            buildBar.show = false;
+            sim.things = {};
+            intp.things = {};
+            sim.theme = {
+                rockColor: [63, 85, 96, 255],
+                spotColor: [115, 193, 226, 255],
+                fillColor: [123, 63, 68, 255]
+            };
+            r = 1000;
+            a = new types.SpawnPoint();
+            a.side = "alpha";
+            a.spawn = "alpha";
+            a.pos = [-3000, 0];
+            sim.things[a.id] = a;
+            mkTip("img/tips/dragBig@2x.png", -3000, 0);
+            mkTip("img/tips/move@2x.png", -2200, 0);
+            mkTip("img/tips/pan@2x.png", -1500, 0);
+            mkTip("img/tips/zoom@2x.png", -500, 0);
+            cp = new types.CommandPoint();
+            cp.side = "alpha";
+            cp.pos = [0, -1e100];
+            sim.things[cp.id] = cp;
+            cp = new types.CommandPoint();
+            cp.side = "beta";
+            cp.pos = [-1000, 600];
+            sim.things[cp.id] = cp;
+            mkTip("img/tips/capping@2x.png", -1000, 600).cappingTip = true;
+            cp = new types.CommandPoint();
+            cp.side = "beta";
+            cp.pos = [100, -600];
+            sim.things[cp.id] = cp;
+            mkTip("img/tips/attack@2x.png", 100, -600).cappingTip = true;
+            mkUnit('GBhIEBBJGBBJEBhIERQHFxQHFBQ8FBcSExAdFRAd', [100, -600], "beta");
+            cp = new types.CommandPoint();
+            cp.side = "beta";
+            cp.pos = [1600, 0];
+            sim.things[cp.id] = cp;
+            mkTip("img/tips/win@2x.png", 1600, 0).cappingTip = true;
+            return mkUnit('FxQHFRAdGBhIERQHEBBJEBhIExAdFBcSGBBJFBQDFBQ1', [1600, 0], "beta");
+        },
+        tick: function () {
+            var j, n, results;
+            if (sim.step === 1) {
+                results = [];
+                for (n = j = 0; j < 6; n = ++j) {
+                    results.push(sim.players[0].rqUnit(0));
+                }
+                return results;
+            }
+        },
+        draw: function () {
+            var _, cp, enemyUnits, myCP, myUnits, p, playerUnits, ref, ref1, ref2, ref3, ref4, results, t, u;
+            playerUnits = 0;
+            ref = sim.things;
+            for (_ in ref) {
+                t = ref[_];
+                if (t.unit && t.side === commander.side) {
+                    playerUnits += 1;
+                }
+            }
+            if (playerUnits === 0) {
+                battleMode.focus[0] = battleMode.focus[0] * .95 + 3000 * .05;
+                battleMode.focus[1] = battleMode.focus[1] * .95 + 0 * .05;
+                battleMode.zoom = battleMode.zoom * .95 + 1.4 * .05;
+            }
+            if (!buildBar.show && sim.step > 16 * 15) {
+                if (playerUnits === 0) {
+                    ref1 = sim.player;
+                    for (_ in ref1) {
+                        p = ref1[_];
+                        if (p.id === commander.id) {
+                            p.money = 1000;
+                        }
+                    }
+                    buildBar.show = true;
+                    onecup.refresh();
+                }
+            }
+            ref2 = sim.things;
+            results = [];
+            for (_ in ref2) {
+                t = ref2[_];
+                if (t.cappingTip) {
+                    enemyUnits = false;
+                    myUnits = false;
+                    ref3 = sim.things;
+                    for (_ in ref3) {
+                        u = ref3[_];
+                        if (u.unit && v2.distance(t.pos, u.pos) < 250) {
+                            if (u.side === "beta") {
+                                enemyUnits = true;
+                            }
+                            if (u.side === "alpha") {
+                                myUnits = true;
+                            }
+                        }
+                    }
+                    myCP = null;
+                    ref4 = sim.things;
+                    for (_ in ref4) {
+                        cp = ref4[_];
+                        if (cp.commandPoint && v2.distance(t.pos, cp.pos) < 500) {
+                            myCP = cp;
+                        }
+                    }
+                    if (enemyUnits) {
+                        results.push(t.image = "img/tips/attack@2x.png");
+                    } else if (myUnits && (myCP != null ? myCP.capping : void 0) > 0) {
+                        results.push(t.image = "img/tips/waitcap@2x.png");
+                    } else if ((myCP != null ? myCP.side : void 0) === "alpha") {
+                        results.push(t.image = "img/tips/win@2x.png");
+                    } else {
+                        results.push(t.image = "img/tips/capping@2x.png");
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        },
+        ui: function () {
+            var imgSrc;
+            designSwapper();
+            if (ui.mode === "battle") {
+                control.mode = battleMode;
+                buildBar.draw(!buildBar.show);
+                if (!buildBar.show) {
+                    div(function () {
+                        position("absolute");
+                        top(0);
+                        right(0);
+                        color("white");
+                        return ui.topButton("controls", function () {
+                            if (ui.contorlHelpToggle) {
+                                background_color("rgba(255,255,255,.6)");
+                            }
+                            return onclick(function () {
+                                return ui.contorlHelpToggle = !ui.contorlHelpToggle;
+                            });
+                        });
+                    });
+                    div(function () {
+                        position("absolute");
+                        top(0);
+                        left(0);
+                        color("white");
+                        return ui.topButton("menu");
+                    });
+                }
+                if (buildBar.show) {
+                    if (commander.buildQ.length > 0 && commander.money < 600) {
+                        imgSrc = "img/ui/tips/qued.png";
+                    } else {
+                        imgSrc = "img/ui/tips/buildbar.png";
+                    }
+                    img({
+                        src: imgSrc,
+                        width: 300,
+                        height: 100
+                    }, function () {
+                        position("absolute");
+                        bottom(84);
+                        return left(window.innerWidth / 2 - 84 * 5 - 60);
+                    });
+                }
+                return true;
+            }
+            return false;
+        }
+    });
+
+    galaxyMap.moneyRain = [];
+
+    stars.push({
+        id: 'ocef3t',
+        name: "Shi",
+        about: "Mobile Targets",
+        lossTip: "Don't let the enemy capture all the command points.",
+        ai: "Targets",
+        aiMoney: 150,
+        difficulty: 1,
+        mapSize: 0.7,
+        mapNumCPs: 4,
+        mapNoThings: true,
+        barTips: true,
+        noDesignTools: true,
+        unlocks: ["Wing1x1Round", "HArmor1x2"],
+        giveDesignSlot: 0,
+        giveDesign: "GRQHDxcuFQ4dEw4dDxIHFBESFBQEGRkuFBQ2",
+        mapSeed: 1233,
+        guard: 'GBBJGBhIDBZIEBBJEBhIHBZIDBJJHBJJDxQQGRQQFxQHERQHFBQDFRAdExAdFBQ1',
+        mapLayout: function () {
+            var a, cp;
+            sim.things = {};
+            intp.things = {};
+            sim.theme = {
+                rockColor: [63, 85, 96, 255],
+                spotColor: [115, 193, 226, 255],
+                fillColor: [123, 63, 68, 255]
+            };
+            a = new types.SpawnPoint();
+            a.side = "alpha";
+            a.spawn = "alpha";
+            a.pos = [-2000, 0];
+            sim.things[a.id] = a;
+            a = new types.SpawnPoint();
+            a.side = "beta";
+            a.spawn = "beta";
+            a.pos = [2000, 0];
+            sim.things[a.id] = a;
+            cp = new types.CommandPoint();
+            cp.side = "alpha";
+            cp.pos = [-1000, -1000];
+            sim.things[cp.id] = cp;
+            cp = new types.CommandPoint();
+            cp.side = "alpha";
+            cp.pos = [-1000, 1000];
+            sim.things[cp.id] = cp;
+            cp = new types.CommandPoint();
+            cp.side = "beta";
+            cp.pos = [1000, -1000];
+            sim.things[cp.id] = cp;
+            mkUnit(this.guard, [1000, -1000], "beta", 2);
+            cp = new types.CommandPoint();
+            cp.side = "beta";
+            cp.pos = [1000, 1000];
+            sim.things[cp.id] = cp;
+            return mkUnit(this.guard, [1000, 1000], "beta", 2);
+        },
+        draw: function () {
+            var _, ref, u;
+            drawIncome();
+            ref = intp.things;
+            for (_ in ref) {
+                u = ref[_];
+                if (u.unit && u.side === "beta" && u.spec !== this.guard) {
+                    baseAtlas.drawSprite("img/tips/fire@2x.png", [u.pos[0], u.pos[1] - 200], [1, -1], 0);
+                }
+                if (u.unit && u.side === "beta" && u.spec === this.guard) {
+                    baseAtlas.drawSprite("img/tips/stop@2x.png", [u.pos[0] - 400, u.pos[1]], [1, -1], 0);
+                }
+            }
+        },
+        tick: function () {
+            return tickIncome();
+        },
+        ui: function () {
+            var imgSrc;
+            designSwapper();
+            if (ui.mode === "battle") {
+                if (commander.buildQ.length > 0 && commander.money < 600) {
+                    imgSrc = "img/ui/tips/qued.png";
+                    img({
+                        src: imgSrc,
+                        width: 300,
+                        height: 100
+                    }, function () {
+                        position("absolute");
+                        bottom(84);
+                        return left(window.innerWidth / 2 - 84 * 5 - 60);
+                    });
+                }
+            }
+            return false;
+        }
+    });
+
+    _pos = new v2.create();
+
+    stars.push({
+        id: 'j2ui0n8',
+        name: "Eioneus",
+        about: "Long range, forward-facing Plasma.",
+        lossTip: "Dodgey is weak from the rear.",
+        ai: "Dodgey",
+        aiMoney: 1000,
+        difficulty: 1,
+        mapSize: 0.73,
+        mapNumCPs: 4,
+        mapNoThings: true,
+        barTips: true,
+        noDesignTools: true,
+        unlocks: [],
+        giveDesignSlot: 0,
+        giveDesign: "FBESERcuFBQEEw4dFxQHFQ4dERQHFxcuDwwdGQwdFBsSCBo2",
+        mapSeed: 9934,
+        draw: function () {
+            return drawIncome();
+        },
+        tick: function () {
+            return tickIncome();
+        },
+        ui: function () {
+            designSwapper();
+            return false;
+        }
+    });
+
+    stars.push({
+        id: 'amqfcv',
+        name: "Punar",
+        about: "Light, mobile fighters.",
+        lossTip: "Don't let fighters take the map, push them off and hold the control points to win.",
+        ai: "Fighter",
+        aiMoney: 1200,
+        difficulty: 1,
+        mapSize: 0.8,
+        mapNumCPs: 4,
+        noDesignTools: true,
+        unlocks: ["Battery1x1"],
+        giveDesignSlot: 1,
+        giveDesign: "FBQEEw4dERUuFxUXDxEXFw4dGxcuFBQ2",
+        mapSeed: 5564,
+        ui: function () {
+            designSwapper();
+            return false;
+        }
+    });
+
+    stars.push({
+        id: 'kvfgni1',
+        name: "Lymax",
+        about: "High firepower basic cruisers.",
+        lossTip: "Ensure you spend all your income on fielding ships.",
+        ai: "Novice",
+        aiMoney: 1000,
+        difficulty: 1,
+        mapSize: 0.7,
+        mapNumCPs: 4,
+        mapNoThings: true,
+        unlocks: ["HArmor2x2Angle", "HArmor2x2AngleBack"],
+        giveDesignSlot: 2,
+        giveDesign: "GQwHDRAHFxgHFBcSEhQEFhQEDxQHEBAEGRQHERgHFBoEGBAEDwwHGxAHEg0SFAsSFg0SExAHFRAH",
+        mapSeed: 8876,
+        draw: function () {
+            return drawIncome();
+        },
+        tick: function () {
+            return tickIncome();
+        },
+        ui: function () {
+            if (ui.mode === "design") {
+                img({
+                    src: "img/ui/tips/designDragOff.png",
+                    draggable: false,
+                    width: 173,
+                    height: 195
+                }, function () {
+                    position("absolute");
+                    top(window.innerHeight / 2 + 0);
+                    return left(window.innerWidth / 2 - 350);
+                });
+                img({
+                    src: "img/ui/tips/designParts.png",
+                    draggable: false,
+                    width: 173,
+                    height: 138
+                }, function () {
+                    position("absolute");
+                    top(400);
+                    left(20);
+                    return z_index("10");
+                });
+                return false;
+            }
+            return false;
+        }
+    });
+
+    _pos = new v2.create();
+
+    stars.push({
+        id: '89m4glg',
+        name: "Nero",
+        about: "High HP, slower battleships.",
+        lossTip: "Ensure you spend all your income on fielding ships.",
+        ai: "Tank",
+        aiMoney: 1200,
+        difficulty: 1,
+        mapSize: 0.7,
+        mapNumCPs: 4,
+        mapNoThings: true,
+        unlocks: ["PlasmaTurret"],
+        giveDesignSlot: 3,
+        giveDesign: "DRAHEBAEGhRIEBhIGBhIChJIFxQHHhJIFBYEExoHERQHDhRIGBAEGxAHFRoHFBMSFQ4HFBESEw4HDgxJCg5JGgxJHg5J",
+        mapSeed: 2231,
+        draw: function () {
+            return drawIncome();
+        },
+        tick: function () {
+            return tickIncome();
+        },
+        ui: function () {
+            if (ui.mode === "design") {
+                img({
+                    src: "img/ui/tips/designDragOff.png",
+                    draggable: false,
+                    width: 173,
+                    height: 195
+                }, function () {
+                    position("absolute");
+                    bottom(window.innerHeight / 2 + 0);
+                    return left(window.innerWidth / 2 - 350);
+                });
+                img({
+                    src: "img/ui/tips/designParts.png",
+                    draggable: false,
+                    width: 173,
+                    height: 138
+                }, function () {
+                    position("absolute");
+                    bottom(140);
+                    left(20);
+                    return z_index("10");
+                });
+                return false;
+            }
+            return false;
+        }
+    });
+
+    _pos = new v2.create();
+
+    stars.push({
+        id: 'lq82oro',
+        name: "Soyulos",
+        about: "Torpedo Cruisers.",
+        lossTip: "Torpman has ranged torpedoes, avoid them.",
+        ai: "TorpMan",
+        aiMoney: 1000,
+        difficulty: 1,
+        mapSize: 0.8,
+        mapNumCPs: 4,
+        mapNoThings: true,
+        unlocks: ["Mount270"],
+        mapSeed: 5666
+    });
+
+    stars.push({
+        id: 'o2fash',
+        name: "Antin",
+        about: "",
+        ai: "Yarki",
+        aiMoney: 1400,
+        difficulty: 1,
+        mapSize: 0.7212449601385742,
+        mapNumCPs: 4,
+        unlocks: ["VArmor1x2IBeam", "VArmor1x2Corner4", "VArmor1x1Corner2"],
+        mapSeed: 9876
+    });
+
+    stars.push({
+        id: 'rg75pdo',
+        name: "Chronos",
+        about: "Anti-fighter Flak ships",
+        lossTip: "BatteryRam runs on batteries, and has no staying power to chew through armour.",
+        ai: "BatteryRam",
+        aiMoney: 1000,
+        difficulty: 1,
+        mapSize: 0.8,
+        mapNumCPs: 4,
+        unlocks: ["FlackTurret"],
+        mapSeed: 4554
+    });
+
+    stars.push({
+        id: 'iifg0h',
+        name: "Noptri",
+        about: "Fighter Swarm",
+        lossTip: "Holding your home point with a large amount of firepower is important vs an aggressive swarm.",
+        ai: "AlphaSwarm",
+        aiMoney: 2000,
+        difficulty: 1,
+        mapSize: 0.7797135706990956,
+        mapNumCPs: 4,
+        unlocks: ["UArmor1x1Angle", "UArmor1x1AngleBack"],
+        mapSeed: 2345
+    });
+
+    stars.push({
+        id: 'j56hbdo',
+        name: "Amurru",
+        about: "Armoured Fighter Swarm",
+        lossTip: "Batteries eventually run down, while reactors provide continuous power to weapons and engines.",
+        ai: "BetaSwarm",
+        aiMoney: 1800,
+        difficulty: 1,
+        mapSize: 0.7170660080853849,
+        mapNumCPs: 4,
+        unlocks: ["Wing1x1Notch", "HArmor1x1Angle", "HArmor1x1AngleBack"],
+        mapSeed: 9883
+    });
+
+    stars.push({
+        id: 'klhsi6',
+        name: "Angel Falls",
+        about: "AutoCannon Fighters",
+        ai: "BladeRanger",
+        aiMoney: 1800,
+        difficulty: 1,
+        mapSize: 1.1,
+        mapNumCPs: 6,
+        unlocks: ["AutoTurret"],
+        mapSeed: 8754
+    });
+
+    stars.push({
+        id: 'ifb162o',
+        name: "Zephyr",
+        about: "",
+        ai: "Kornine",
+        aiMoney: 1800,
+        difficulty: 1,
+        mapSize: 0.6678998027695343,
+        mapNumCPs: 4,
+        unlocks: ["EnergyTransfer", "Reactor2x2"],
+        mapSeed: 2355
+    });
+
+    stars.push({
+        id: 'lples3g',
+        name: "Kini",
+        about: "",
+        ai: "TurtleFence",
+        aiMoney: 2000,
+        difficulty: 1,
+        mapSize: 0.8099276877008378,
+        mapNumCPs: 4,
+        unlocks: ["ShieldGen1x1"],
+        mapSeed: 4532
+    });
+
+    stars.push({
+        id: 'kb83bsg',
+        name: "Serpi",
+        about: "",
+        ai: "FighterBomber",
+        difficulty: 1,
+        mapSize: 0.8482277991715819,
+        mapNumCPs: 4,
+        unlocks: ["Engine03"],
+        mapSeed: 9938
+    });
+
+    stars.push({
+        id: 'nhq4sdg',
+        name: "Minnus",
+        about: "Powerful but sluggish battleships.",
+        lossTip: "SlowPoke can only shoot forward.",
+        ai: "Slowpoke",
+        difficulty: 2,
+        mapSize: 0.7,
+        mapNumCPs: 6,
+        mapNoThings: true,
+        unlocks: ["HArmor2x1", "Engine02"],
+        mapSeed: 8855,
+        draw: function () {
+            var k, ref, results, unit;
+            ref = intp.things;
+            results = [];
+            for (k in ref) {
+                unit = ref[k];
+                if (unit.unit && unit.side !== commander.side) {
+                    results.push(drawAllArcs(unit));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        },
+        ui: function () {
+            if (ui.mode === "design") {
+                img({
+                    src: "img/ui/tips/designChange.png",
+                    width: 400,
+                    height: 100
+                }, function () {
+                    position("absolute");
+                    bottom(84);
+                    return left(window.innerWidth / 2 - 84 * 5 + 10);
+                });
+            }
+            return false;
+        }
+    });
+
+    stars.push({
+        id: 'i1ocdqo',
+        name: "Orion",
+        about: "Point Defense to shoot down projectiles.",
+        lossTip: "Point Defense only works against Torpedoes, Missiles and Artillery.",
+        ai: "PointDefender",
+        difficulty: 2,
+        mapSize: 1,
+        mapNumCPs: 5,
+        unlocks: ["PDTurret"],
+        mapSeed: 2334,
+        mapLayout: function () {
+            var _, cp, ref, results, u;
+            ref = sim.things;
+            results = [];
+            for (_ in ref) {
+                cp = ref[_];
+                if (cp.commandPoint) {
+                    if (cp.side === "alpha") {
+                        u = mkUnit('FBQBFBEYGBBJEBBJEBhIGBhIERQWFxQWFBcYFBQv', [cp.pos[0], cp.pos[1] + 170], cp.side);
+                        u.rot += Math.PI;
+                        u.color = [20, 200, 20, 255];
+                        u = mkUnit('FBQBFBEYGBBJEBBJEBhIGBhIERQWFxQWFBcYFBQv', [cp.pos[0], cp.pos[1] - 170], cp.side);
+                        u.rot += Math.PI;
+                        u.color = [20, 200, 20, 255];
+                        u = mkUnit('FBQBFBEYGBBJEBBJEBhIGBhIERQWFxQWFBcYFBQv', [cp.pos[0] + 170, cp.pos[1]], cp.side);
+                        u.rot += Math.PI;
+                        u.color = [20, 200, 20, 255];
+                        u = mkUnit('FBQBFBEYGBBJEBBJEBhIGBhIERQWFxQWFBcYFBQv', [cp.pos[0] - 170, cp.pos[1]], cp.side);
+                        u.rot += Math.PI;
+                        results.push(u.color = [20, 200, 20, 255]);
+                    } else {
+                        results.push(u = mkUnit('GBoEFx0XDx0KGR0KGxsKDRsKEBoEFB8SFBwEFx8KFBkSER0XER8KDRlGDxdGGRdGGxlGFBUYERVGFxVGEhcJFhcJEBoyGBoyFBwy', cp.pos, cp.side));
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        }
+    });
+
+    stars.push({
+        id: '0rn9hbo',
+        name: "Calius",
+        about: "Hit and Run torpedo destroyers",
+        ai: "RocketMan",
+        difficulty: 2,
+        mapSize: 0.8087868114933371,
+        mapNumCPs: 5,
+        unlocks: ["TorpTurret"],
+        mapSeed: 1436
+    });
+
+    stars.push({
+        id: '7dcrjg',
+        name: "Boliz",
+        about: "Battery powered fighters.",
+        ai: "Cython",
+        difficulty: 2,
+        mapSize: 0.8,
+        mapNumCPs: 4,
+        unlocks: ["Wing1x2", "Battery2x1"],
+        mapSeed: 7865
+    });
+
+    stars.push({
+        id: 'pj6hlio',
+        name: "Orome",
+        about: "",
+        ai: "Waxon",
+        difficulty: 2,
+        mapSize: 1.1186667210422456,
+        mapNumCPs: 6,
+        unlocks: ["ShieldGen2x1"],
+        mapSeed: 8764
+    });
+
+    stars.push({
+        id: 'fkjv44',
+        name: "Delphini",
+        about: "Important stellar library guarded by two generals.",
+        ai: "BaitandMissile",
+        difficulty: 2,
+        mapSize: 1.288371010031551,
+        mapNumCPs: 6,
+        unlocks: ["MissileTurret"],
+        mapSeed: 9865
+    });
+
+    stars.push({
+        id: 'hj440sg',
+        name: "Vortu",
+        about: "",
+        ai: "CubeCollective",
+        difficulty: 2,
+        mapSize: 1.0952299905009568,
+        mapNumCPs: 6,
+        unlocks: ["Engine01"],
+        mapSeed: 5564
+    });
+
+    stars.push({
+        id: '45k6uko',
+        name: "Jenai",
+        about: "",
+        ai: "Ficon",
+        aiMoney: 1500,
+        difficulty: 2,
+        mapSize: 1.0045061607845127,
+        mapNumCPs: 6,
+        unlocks: ["VArmor1x2SideBar", "VArmor1x2SideBarFilled"],
+        mapSeed: 6754
+    });
+
+    stars.push({
+        id: '3dmjdro',
+        name: "Bani",
+        about: "",
+        ai: "Rearguard",
+        aiMoney: 1800,
+        difficulty: 2,
+        mapSize: 1.3513613959774375,
+        mapNumCPs: 6,
+        unlocks: ["Mount360Micro"],
+        mapSeed: 8753
+    });
+
+    stars.push({
+        id: 'tnad808',
+        name: "Mali",
+        about: "",
+        ai: "SuperBelfry",
+        difficulty: 2,
+        mapSize: 0.6735611163312569,
+        mapNumCPs: 4,
+        unlocks: ["ShieldGen2x2"],
+        mapSeed: 6543
+    });
+
+    stars.push({
+        id: 'gdgnd2o',
+        name: "Lyra Acallaris",
+        about: "Naturally occurring gravity waves in this system caused the inhabitants to harness their power and to develop gravity weapons.",
+        ai: "WaveMotion",
+        difficulty: 2,
+        mapSize: 1.1048907704651356,
+        mapNumCPs: 6,
+        unlocks: ["WavePullTurret", "WavePushTurret"],
+        mapSeed: 8732
+    });
+
+    stars.push({
+        id: 'avrm6p',
+        name: "Angith",
+        about: "",
+        ai: "DarkStar",
+        difficulty: 3,
+        mapSize: 1.2582162277773024,
+        mapNumCPs: 6,
+        unlocks: ["HArmor1x1", "CloakGenerator"],
+        mapSeed: 9045
+    });
+
+    stars.push({
+        id: 'fd08nfg',
+        name: "Tabiz",
+        about: "",
+        ai: "FireFly",
+        aiMoney: 2600,
+        difficulty: 3,
+        mapSize: 1.2976905869320035,
+        mapNumCPs: 6,
+        unlocks: ["Engine07"],
+        mapSeed: 7234
+    });
+
+    stars.push({
+        id: '6kn69oo',
+        name: "Chani",
+        about: "",
+        ai: "Sidewinder",
+        aiMoney: 2800,
+        difficulty: 3,
+        mapSize: 1.2164454489946366,
+        mapNumCPs: 6,
+        unlocks: ["HArmor1x2Front2", "HArmor1x2Back2", "SidewinderTurret"],
+        mapSeed: 1256
+    });
+
+    stars.push({
+        id: 's3255c',
+        name: "Aker",
+        about: "",
+        type: "fort",
+        ai: "FlamethrowerArmadillo",
+        difficulty: 2,
+        mapSize: 0.7285537156043573,
+        mapNumCPs: 4,
+        unlocks: ["HArmor1x2Font1", "HArmor2x2Front1", "FlameTurret"],
+        mapSeed: 9883
+    });
+
+    stars.push({
+        id: 'cjph01g',
+        name: "Kaylis",
+        about: "",
+        ai: "Orbiter",
+        difficulty: 2,
+        mapSize: 0.6785172562580556,
+        mapNumCPs: 12,
+        aiMoney: 2200,
+        unlocks: ["Wing2x1", "Solar1x1", "Solar2x2", "Solar3x3"],
+        mapSeed: 1342
+    });
+
+    stars.push({
+        id: 'gru669o',
+        name: "Apep",
+        about: "",
+        ai: "BladeRanger",
+        aiMoney: 2100,
+        difficulty: 2,
+        mapSize: 0.8578058236045762,
+        mapNumCPs: 6,
+        unlocks: ["VArmor1x1Corner1", "VArmor1x1Corner3", "VArmor1x1Hook"],
+        mapSeed: 3444
+    });
+
+    stars.push({
+        id: 'ockunt8',
+        name: "Irmo",
+        about: "",
+        ai: "BattleStar",
+        difficulty: 3,
+        mapSize: 1.6373389302752912,
+        mapNumCPs: 6,
+        unlocks: ["HArmor2x2Front2", "HArmor2x2Back2"],
+        mapSeed: 3455
+    });
+
+    stars.push({
+        id: '45ucun8',
+        name: "Antaris",
+        about: "",
+        ai: "Electro",
+        difficulty: 2,
+        mapSize: 0.8022207571892067,
+        mapNumCPs: 4,
+        unlocks: ["EMPGun"],
+        mapSeed: 3345
+    });
+
+    stars.push({
+        id: 'lbrgh6',
+        name: "Massgib",
+        about: "",
+        ai: "BullDogs",
+        difficulty: 2,
+        type: "fort",
+        mapSize: 0.863845500536263,
+        mapNumCPs: 4,
+        unlocks: ["Mount30"],
+        mapSeed: 4555,
+        aiMoney: 1400
+    });
+
+    stars.push({
+        id: '63t1isg',
+        name: "Korak Labs",
+        about: "Some of the largest detonations happend here.",
+        ai: "NukeSwarm",
+        aiMoney: 5000,
+        difficulty: 2,
+        mapSize: 1,
+        mapNumCPs: 6,
+        unlocks: ["AOEWarhead"],
+        mapSeed: 4333
+    });
+
+    stars.push({
+        id: '637tk68',
+        name: "Kono Testing Grounds",
+        about: "Many nuclear tests have left the space irradiated.",
+        ai: "NukeSwarm",
+        aiMoney: 15000,
+        difficulty: 2,
+        mapSize: 1.2,
+        mapNumCPs: 8,
+        unlocks: ["ShapedWarhead"],
+        mapSeed: 9022
+    });
+
+    stars.push({
+        id: 'k4nnvl8',
+        name: "Librae",
+        about: "",
+        ai: "Furia",
+        difficulty: 2,
+        mapSize: 1.2664555584080517,
+        aiMoney: 2500,
+        mapNumCPs: 6,
+        unlocks: ["Mount360"],
+        mapSeed: 9111
+    });
+
+    stars.push({
+        id: 'rqvuj08',
+        name: "Alki",
+        about: "",
+        ai: "Belfry",
+        difficulty: 2,
+        mapSize: 1.0320802667178213,
+        mapNumCPs: 6,
+        unlocks: ["RingTurret"],
+        mapSeed: 3422
+    });
+
+    stars.push({
+        id: '9kq7oug',
+        name: "Tannis",
+        about: "",
+        ai: "LazerBlade",
+        aiMoney: 2800,
+        difficulty: 3,
+        mapSize: 1.1704251921735704,
+        mapNumCPs: 6,
+        unlocks: ["Reactor1x2"],
+        mapSeed: 9877
+    });
+
+    stars.push({
+        id: '31t2obg',
+        name: "Pegasi",
+        about: "",
+        ai: "ThePounder",
+        difficulty: 3,
+        mapSize: 1.0324680821038783,
+        mapNumCPs: 6,
+        unlocks: ["BombGun"],
+        mapSeed: 7666
+    });
+
+    stars.push({
+        id: 'g710q5',
+        name: "Eridu",
+        about: "",
+        ai: "CreepingHoard",
+        difficulty: 3,
+        mapSize: 1.4514648726675659,
+        mapNumCPs: 8,
+        unlocks: ["Wing1x1Angle", "Mount10Range"],
+        mapSeed: 7123
+    });
+
+    stars.push({
+        id: 'rdlm558',
+        name: "Dou",
+        about: "",
+        ai: "Yarki",
+        aiMoney: 2600,
+        difficulty: 2,
+        mapSize: 0.6138879344332963,
+        mapNumCPs: 4,
+        unlocks: ["Wing2x2"],
+        mapSeed: 3422
+    });
+
+    stars.push({
+        id: '0v1jtk8',
+        name: "Prani",
+        about: "",
+        type: "fort",
+        ai: "Razorback",
+        difficulty: 2,
+        mapSize: 0.8728945788927376,
+        mapNumCPs: 4,
+        unlocks: ["UArmor1x2", "UArmor2x1"],
+        mapSeed: 3422
+    });
+
+    stars.push({
+        id: '90i41rg',
+        name: "Galli",
+        about: "",
+        type: "fort",
+        ai: "Liberty",
+        difficulty: 2,
+        mapSize: 1.301776747405529,
+        mapNumCPs: 6,
+        unlocks: ["HArmor2x2"],
+        mapSeed: 7722
+    });
+
+    stars.push({
+        id: 'cucp8o',
+        name: "Cerberi",
+        about: "",
+        type: "2v2",
+        alpha: ["Player", "CreepingHoard"],
+        beta: ["BullDogs", "Orblin"],
+        difficulty: 2,
+        mapSize: 1.1530530820600688,
+        mapNumCPs: 6,
+        unlocks: ["Battery1x2", "HeavyPDTurret"],
+        mapSeed: 3322
+    });
+
+    stars.push({
+        id: '4acnhu8',
+        name: "Boyar Denz",
+        about: "",
+        ai: "Anubis",
+        difficulty: 2,
+        mapSize: 1.2120997282676398,
+        mapNumCPs: 6,
+        unlocks: ["ReloaderMod"],
+        mapSeed: 9003
+    });
+
+    stars.push({
+        id: '0kgoj8',
+        name: "Octantis",
+        about: "",
+        ai: "AlphaStriker",
+        difficulty: 2,
+        mapSize: 0.7085130656138062,
+        mapNumCPs: 4,
+        unlocks: ["DamageMod"],
+        mapSeed: 8933
+    });
+
+    stars.push({
+        id: 'esjo00o',
+        name: "Aethaldus",
+        about: "",
+        ai: "RushDown",
+        difficulty: 2,
+        mapSize: 0.606543418765068,
+        mapNumCPs: 4,
+        unlocks: ["Reactor1x1"],
+        mapSeed: 221
+    });
+
+    stars.push({
+        id: '4ofptho',
+        name: "Polystratus",
+        about: "",
+        ai: "Micor",
+        difficulty: 2,
+        mapSize: 1.2934446890838445,
+        mapNumCPs: 6,
+        unlocks: ["Mount180"],
+        mapSeed: 5433
+    });
+
+    stars.push({
+        id: 'rnro1eo',
+        name: "Hemithea",
+        about: "",
+        ai: "SiegeCore",
+        aiMoney: 2000,
+        difficulty: 3,
+        mapSize: 1.328067924361676,
+        mapNumCPs: 6,
+        unlocks: ["ArtilleryTurret"],
+        mapSeed: 5223
+    });
+
+    stars.push({
+        id: 'r85ucl',
+        name: "Pavo",
+        about: "",
+        ai: "AssaultandBattery",
+        difficulty: 3,
+        mapSize: 1.587393354368396,
+        mapNumCPs: 8,
+        unlocks: ["Battery2x2"],
+        mapSeed: 4555
+    });
+
+    stars.push({
+        id: 'no4s0bo',
+        name: "Aldebaran",
+        about: "The armies are gathering. This will be a battle to remmber.",
+        alpha: ["Player", "CreepingHoard", "MBT"],
+        beta: ["Furia", "CreepingHoard", "BullDogs"],
+        type: "3v3",
+        difficulty: 3,
+        mapSize: 1.7243340934859588,
+        mapNumCPs: 8,
+        unlocks: ["UArmor1x1"],
+        mapSeed: 2344
+    });
+
+    stars.push({
+        id: 'bd1s1jo',
+        name: "Cronark",
+        about: "",
+        ai: "LongPoint",
+        difficulty: 2,
+        mapSize: 0.7398028523661195,
+        mapNumCPs: 4,
+        unlocks: ["BulletSpeedMod"],
+        mapSeed: 9002
+    });
+
+    stars.push({
+        id: 'o6n3l68',
+        name: "Augria",
+        about: "",
+        ai: "Dreadnaught",
+        difficulty: 2,
+        mapSize: 1.3617570428177714,
+        mapNumCPs: 6,
+        unlocks: ["VArmor1x2End", "VArmor1x1CornerBack"],
+        mapSeed: 6677
+    });
+
+    stars.push({
+        id: 'tn19i28',
+        name: "Orithyia",
+        about: "",
+        ai: "DoomTrain",
+        difficulty: 2,
+        mapSize: 1.0143948028795422,
+        mapNumCPs: 6,
+        unlocks: ["HArmor2x2Back1", "HArmor1x2Back1"],
+        mapSeed: 6377
+    });
+
+    stars.push({
+        id: 'u72hl0o',
+        name: "Porphyrion",
+        about: "",
+        ai: "SparkShower",
+        difficulty: 2,
+        mapSize: 1.219316438306123,
+        mapNumCPs: 6,
+        unlocks: ["TeslaTurret"],
+        mapSeed: 3555
+    });
+
+    stars.push({
+        id: 'e0100v8',
+        name: "Omega",
+        about: "",
+        ai: "LightShower",
+        difficulty: 2,
+        mapSize: 1.3014241704717278,
+        mapNumCPs: 6,
+        unlocks: ["TargetingMod"],
+        mapSeed: 1788
+    });
+
+    stars.push({
+        id: 'obh98f',
+        name: "Sagitta",
+        about: "",
+        ai: "BeamMan",
+        difficulty: 2,
+        mapSize: 1.2050061562098562,
+        mapNumCPs: 6,
+        unlocks: ["HeavyBeamTurret"],
+        mapSeed: 5673
+    });
+
+    stars.push({
+        id: 'tb74kro',
+        name: "Drakon",
+        about: "",
+        alpha: ["Player", "CreepingHoard"],
+        beta: ["Razorback", "FighterBomber"],
+        type: "2v2",
+        difficulty: 2,
+        mapSize: 1.2595503549091518,
+        mapNumCPs: 6,
+        unlocks: ["OverKillAi"],
+        mapSeed: 9873
+    });
+
+    stars.push({
+        id: 'qki9tjg',
+        name: "Tarandi",
+        about: "Here sits of one the bosses.",
+        ai: "Tempest",
+        type: "boss",
+        difficulty: 3,
+        mapSize: 1,
+        mapNumCPs: 6,
+        unlocks: [],
+        mapSeed: 3773
+    });
+
+    stars.push({
+        id: '161kekg',
+        name: "Perkunas",
+        about: "Here is one of the bosses. You must kill all of them to win the game.",
+        ai: "MasterMind",
+        type: "boss",
+        difficulty: 1.5,
+        mapSize: 2,
+        mapNumCPs: 8,
+        unlocks: [],
+        mapSeed: 3441,
+        addAIUnits: function () {
+            var _, cp, ref, results, u;
+            ref = sim.things;
+            results = [];
+            for (_ in ref) {
+                cp = ref[_];
+                if (cp.commandPoint) {
+                    if (cp.side === "beta") {
+                        u = mkUnit(sim.players[1].buildBar[9], [cp.pos[0], cp.pos[1]], cp.side);
+                        u.owner = 1;
+                        results.push(u.rot = Math.PI / 4);
+                    } else {
+                        results.push(void 0);
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        }
+    });
+
+    stars.push({
+        id: 'er44698',
+        name: "Leporis",
+        about: "Here is one of the bosses. You must kill all of them to win the game.",
+        ai: "DeathStrike",
+        type: "boss",
+        difficulty: 2,
+        mapSize: 1.1906210828572512,
+        mapNumCPs: 6,
+        unlocks: [],
+        mapSeed: 345,
+        addAIUnits: function () {
+            var _, cp, ref, results, u;
+            ref = sim.things;
+            results = [];
+            for (_ in ref) {
+                cp = ref[_];
+                if (cp.commandPoint) {
+                    if (cp.side === "beta") {
+                        u = mkUnit(sim.players[1].buildBar[9], [cp.pos[0], cp.pos[1]], cp.side);
+                        u.owner = 1;
+                        results.push(u.rot = Math.PI / 4);
+                    } else {
+                        results.push(void 0);
+                    }
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        }
+    });
+
+    stars.push({
+        id: '3nkf8s8',
+        name: "Lachesis",
+        about: "Here is one of the bosses. You must kill all of them to win the game.",
+        ai: "SwarmLord",
+        type: "boss",
+        difficulty: 3,
+        mapSize: 1.2775459574535488,
+        mapNumCPs: 6,
+        unlocks: [],
+        mapSeed: 1455
+    });
+
+    stars.push({
+        id: 'b9hhch8',
+        name: "Sceptri",
+        about: "Here is one of the bosses. You must kill all of them to win the game.",
+        ai: "Zeus",
+        type: "boss",
+        difficulty: 3,
+        mapSize: 1.365885538328439,
+        mapNumCPs: 6,
+        unlocks: [],
+        mapSeed: 8677
+    });
+
+    galaxyMap["export"] = function () {
+        return console.log("galaxyMap.locations = " + (JSON.stringify(galaxyMap.locations)) + "\ngalaxyMap.paths = " + (JSON.stringify(galaxyMap.paths)));
+    };
+
+    galaxyMap.locations = {
+        "kiusd6o": [1223, -1494],
+        "ocef3t": [1300, -1340],
+        "j2ui0n8": [1450, -1190],
+        "amqfcv": [1509, -983],
+        "kvfgni1": [1684, -760],
+        "89m4glg": [1532, -729],
+        "lq82oro": [1508, -519],
+        "rg75pdo": [1623, -322],
+        "nhq4sdg": [1049, -602],
+        "i1ocdqo": [970, -339],
+        "0rn9hbo": [792, -374],
+        "iifg0h": [1649, -138],
+        "j56hbdo": [1517, -126],
+        "7dcrjg": [1113, -178],
+        "klhsi6": [1733, -36],
+        "lples3g": [551, 169],
+        "o2fash": [1773, -390],
+        "ifb162o": [1407, 338],
+        "pj6hlio": [356, -282],
+        "fkjv44": [-235, 382],
+        "hj440sg": [-205, -312],
+        "45k6uko": [663, -285],
+        "3dmjdro": [943, 213],
+        "tnad808": [366, -916],
+        "gdgnd2o": [593, -88],
+        "avrm6p": [-841, 440],
+        "fd08nfg": [-64, 727],
+        "6kn69oo": [419, 1191],
+        "s3255c": [415, 46],
+        "cjph01g": [25, 585],
+        "gru669o": [-8, 39],
+        "ockunt8": [-1127, -654],
+        "45ucun8": [536, -736],
+        "lbrgh6": [661, -454],
+        "63t1isg": [-523, -1208],
+        "637tk68": [-749, -1136],
+        "k4nnvl8": [95, 1110],
+        "rqvuj08": [283, 619],
+        "9kq7oug": [-1543, 34],
+        "31t2obg": [-1627, 386],
+        "g710q5": [-1476, 1032],
+        "rdlm558": [63, -596],
+        "0v1jtk8": [-365, -664],
+        "90i41rg": [-925, 31],
+        "cucp8o": [-568, 716],
+        "4acnhu8": [23, 445],
+        "0kgoj8": [794, 172],
+        "esjo00o": [-430, 217],
+        "4ofptho": [767, 401],
+        "kb83bsg": [1274, 494],
+        "rnro1eo": [182, -1115],
+        "r85ucl": [674, 593],
+        "no4s0bo": [-1622, 694],
+        "bd1s1jo": [-143, -1212],
+        "o6n3l68": [-784, -334],
+        "tn19i28": [-525, -150],
+        "u72hl0o": [109, -406],
+        "e0100v8": [336, 223],
+        "obh98f": [293, 425],
+        "tb74kro": [-258, 1012],
+        "qki9tjg": [-1269, 1360],
+        "161kekg": [-1394, -581],
+        "er44698": [-319, 1258],
+        "3nkf8s8": [-1739, 118],
+        "b9hhch8": [696, 1172]
+    };
+
+    galaxyMap.paths = [["kiusd6o", "ocef3t"], ["ocef3t", "j2ui0n8"], ["j2ui0n8", "amqfcv"], ["amqfcv", "89m4glg"], ["amqfcv", "kvfgni1"], ["lq82oro", "rg75pdo"], ["0v1jtk8", "ockunt8"], ["161kekg", "ockunt8"], ["31t2obg", "no4s0bo"], ["31t2obg", "9kq7oug"], ["3nkf8s8", "9kq7oug"], ["637tk68", "63t1isg"], ["6kn69oo", "b9hhch8"], ["6kn69oo", "k4nnvl8"], ["avrm6p", "no4s0bo"], ["avrm6p", "cucp8o"], ["g710q5", "qki9tjg"], ["g710q5", "no4s0bo"], ["iifg0h", "rg75pdo"], ["iifg0h", "klhsi6"], ["iifg0h", "j56hbdo"], ["j56hbdo", "rg75pdo"], ["nhq4sdg", "nhq4sdg"], ["i1ocdqo", "i1ocdqo"], ["lq82oro", "7dcrjg"], ["7dcrjg", "j56hbdo"], ["o2fash", "klhsi6"], ["bd1s1jo", "rnro1eo"], ["7dcrjg", "i1ocdqo"], ["i1ocdqo", "0rn9hbo"], ["j56hbdo", "ifb162o"], ["45ucun8", "rdlm558"], ["o6n3l68", "0v1jtk8"], ["kvfgni1", "lq82oro"], ["89m4glg", "lq82oro"], ["89m4glg", "nhq4sdg"], ["kvfgni1", "o2fash"], ["kvfgni1", "rg75pdo"], ["nhq4sdg", "i1ocdqo"], ["lbrgh6", "0rn9hbo"], ["lbrgh6", "45ucun8"], ["45ucun8", "tnad808"], ["rnro1eo", "tnad808"], ["bd1s1jo", "63t1isg"], ["obh98f", "4acnhu8"], ["4acnhu8", "fkjv44"], ["fkjv44", "esjo00o"], ["ifb162o", "3dmjdro"], ["3dmjdro", "0kgoj8"], ["klhsi6", "ifb162o"], ["0kgoj8", "lples3g"], ["lples3g", "e0100v8"], ["e0100v8", "obh98f"], ["3dmjdro", "4ofptho"], ["4ofptho", "obh98f"], ["s3255c", "e0100v8"], ["s3255c", "gdgnd2o"], ["gdgnd2o", "45k6uko"], ["45k6uko", "lbrgh6"], ["u72hl0o", "hj440sg"], ["gdgnd2o", "pj6hlio"], ["pj6hlio", "u72hl0o"], ["hj440sg", "tn19i28"], ["rdlm558", "0v1jtk8"], ["4acnhu8", "gru669o"], ["gru669o", "hj440sg"], ["rdlm558", "bd1s1jo"], ["rdlm558", "hj440sg"], ["ifb162o", "kb83bsg"], ["kb83bsg", "3dmjdro"], ["o6n3l68", "ockunt8"], ["o6n3l68", "tn19i28"], ["rqvuj08", "fd08nfg"], ["o6n3l68", "90i41rg"], ["90i41rg", "avrm6p"], ["90i41rg", "9kq7oug"], ["fd08nfg", "tb74kro"], ["obh98f", "r85ucl"], ["r85ucl", "rqvuj08"], ["tb74kro", "er44698"], ["tb74kro", "k4nnvl8"], ["tb74kro", "cucp8o"], ["esjo00o", "cucp8o"], ["4ofptho", "r85ucl"], ["4acnhu8", "cjph01g"], ["cjph01g", "fd08nfg"], ["esjo00o", "tn19i28"]];
+
+    unlocks = {};
+
+    for (j = 0, len = stars.length; j < len; j++) {
+        star = stars[j];
+
+        /*
+    if star.alpha
+        for aiName in star.alpha
+            if aiName != "Player" and not ais.all[aiName]?.name
+                console.error "Ai not found", star.name, aiName
+    if star.beta
+        for aiName in star.beta
+            if not ais.all[aiName]?.name
+                console.error "Ai not found", star.name, aiName
+
+    if star.ai
+        if not ais.all[star.ai]?.name
+            console.error star.name, star.ai
+     */
+        star.pos = galaxyMap.locations[star.id];
+        if (!star.pos) {
+            console.log("star without position", star.name);
+        }
+        if (!star.mapSeed) {
+            console.log("star without mapSeed", star.name);
+        }
+        ref = star.unlocks;
+        for (l = 0, len1 = ref.length; l < len1; l++) {
+            partName = ref[l];
+            if (!parts[partName]) {
+                console.error("Part is not valid " + partName + " at " + star.name);
+            }
+            if (unlocks[partName] != null) {
+                console.error("Part already unlocked " + partName + " at " + star.name);
+            } else {
+                unlocks[partName] = true;
+            }
+        }
+    }
+
+}).call(this);
+;
+
+
+//from src/galaxygen.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var BOSS, FREE_AI, MINI_BOSSES;
+
+    BOSS = "HgIgIyYpFBQPCiIBChoBChIBHhIBHhoBHiIBHA4%2FCA4%2FDA4%2FIA4%2FCBY%2BDBY%2BCB48DB48HB48IB48IBY%2BHBY%2BIhI8BhI8GhI%2BBho9DhI%2BBiI9IiI9Iho9CCY9GiI%2BDiI%2BDCY%2BHCY%2BDho8ICY9Gho8FxIHCAoZERIHIAoZHgYZCgYZCgIgBSYpIx4pBR4pBRYpIxYpBQ4HBQoHIw4HIwoHDyYHEB4BGSYHEBYBGBYBGB4BBQYHGQYHIwYHBwUbDQUbGwUbIQUbERoHFxoHFBgPFAgPFBAPEA4PGA4PEAoPGAoPDAoPHAoPFAwPEB4vGB4vCiI3HiI3EBYwGBYwCho1Hho1ChI0HhI0";
+
+    MINI_BOSSES = [BOSS, BOSS, BOSS];
+
+    FREE_AI = ["AlphaSwarm", "CreepingHoard", "BullDogs"];
+
+    galaxyMap.generateStub = function () {
+        var _r, a, aa, ab, ac, ad, ae, allStars, b, bossStar, d, data, dist, emptyStar, hasPart, i, interct, j, justWon,
+            k, l, len, len1, len10, len11, len12, len2, len3, len4, len5, len6, len7, len8, len9, m, myStar, n, o,
+            other, p, p1, p2, part, path, paths, pos, q, r, ref, s, spec, star, starNames, starPosList, stars, u,
+            unlockedParts, v, w, x, y, z;
+        interct = function (p0, p1, p2, p3) {
+            var i, s, s1, s2, t;
+            s1 = v2.create();
+            s2 = v2.create();
+            s1[0] = p1[0] - p0[0];
+            s1[1] = p1[1] - p0[1];
+            s2[0] = p3[0] - p2[0];
+            s2[1] = p3[1] - p2[1];
+            s = (-s1[1] * (p0[0] - p2[0]) + s1[0] * (p0[1] - p2[1])) / (-s2[0] * s1[1] + s1[0] * s2[1]);
+            t = (s2[0] * (p0[1] - p2[1]) - s2[1] * (p0[0] - p2[0])) / (-s2[0] * s1[1] + s1[0] * s2[1]);
+            if (s > 0 && s < 1 && t > 0 && t < 1) {
+                i = v2.create();
+                i[0] = p0[0] + (t * s1[0]);
+                i[1] = p0[1] + (t * s1[1]);
+                return 1;
+            }
+            return null;
+        };
+        starPosList = [[-1267.6885009765626, 1380.2528076171875], [1315.9303466796875, -1374.8926025390626], [-254.60974121093753, -259.96994628906253], [-329.6526123046875, -24.1209228515625], [-206.3678955078125, 179.5668701171875], [-40.2015380859375, 222.44851074218752], [83.0831787109375, 174.2066650390625], [184.9270751953125, 18.760717773437502], [174.2066650390625, -142.04543457031252], [-24.1209228515625, -335.0128173828125], [-544.0608154296875, -152.7658447265625], [-753.1088134765625, 217.08830566406252], [-704.8669677734375, 581.5822509765626], [-527.9802001953126, 806.7108642578125], [-158.1260498046875, 1005.0384521484376], [329.6526123046875, 1122.9629638671877], [672.7057373046875, 1074.7211181640625], [1080.0813232421876, 785.2700439453125], [1396.3334228515625, 286.77097167968753], [1492.8171142578126, -147.4056396484375], [479.7383544921875, 115.24440917968751], [694.1465576171876, -109.8842041015625], [635.1843017578126, -710.2271728515625], [318.9322021484375, -1069.3609130859377], [-506.5393798828125, -1267.6885009765626], [-988.9578369140626, -929.9955810546876], [-1412.4140380859376, -586.9424560546876], [-1583.9406005859375, -125.9648193359375], [-1696.5049072265626, 318.9322021484375], [-1562.4997802734376, 956.7966064453126], [-1096.1619384765627, -640.5445068359376], [-833.5118896484375, -790.6302490234375], [34.8413330078125, -790.6302490234375], [388.6148681640625, -463.6577392578125], [-308.2117919921875, -887.1139404296875], [1128.3231689453125, -769.1894287109376], [1133.6833740234376, -88.44338378906251], [988.9578369140626, 292.1311767578125], [629.8240966796875, 619.1036865234375], [195.64748535156252, 763.8292236328125], [-356.4536376953125, 619.1036865234375], [-924.6353759765626, -174.2066650390625], [-1289.1293212890625, 142.04543457031252], [-1171.2048095703126, 399.3352783203125], [-1122.9629638671877, 1047.9200927734375], [-115.24440917968751, -549.4210205078125], [-447.57712402343753, -544.0608154296875], [-753.1088134765625, -335.0128173828125], [-565.5016357421875, 50.921948242187504], [-404.69548339843755, 361.8138427734375], [13.4005126953125, 436.8567138671875], [597.6628662109375, 436.8567138671875], [-56.2821533203125, -29.481127929687503], [147.4056396484375, -506.5393798828125], [388.6148681640625, -211.7281005859375], [249.24953613281252, 388.6148681640625], [656.6251220703125, -361.8138427734375], [731.6679931640625, 88.44338378906251], [972.8772216796875, -522.6199951171875], [903.1945556640626, -1064.0007080078126], [1417.7742431640627, -544.0608154296875], [704.8669677734375, 822.7914794921876], [903.1945556640626, 597.6628662109375], [125.9648193359375, 1058.6405029296875], [-88.44338378906251, 1267.6885009765626], [-565.5016357421875, 978.2374267578126], [-999.6782470703125, 704.8669677734375], [-1412.4140380859376, 549.4210205078125], [-104.52399902343751, -1026.4792724609376], [-211.7281005859375, -753.1088134765625], [-527.9802001953126, -710.2271728515625], [-1219.4466552734375, -222.44851074218752], [-833.5118896484375, 2.6801025390625], [-431.49650878906255, -324.29240722656255], [-426.1363037109375, 184.9270751953125], [-179.5668701171875, 410.0556884765625], [313.57199707031253, 168.84645996093752], [-67.0025634765625, -201.0076904296875], [-206.3678955078125, -61.6423583984375], [254.60974121093753, -292.1311767578125], [377.89445800781255, 356.4536376953125], [-50.921948242187504, 624.4638916015625], [838.8720947265625, -324.29240722656255]];
+        starNames = "Sigma\nAsteropaios\nCassiopeia\nOrion\nDioscuri\nMosaic\nTiger\nIris\nHyperion\nProxima Dioscuri\nPeleus\nAstraeus\nCymopoleia\nSerpent\nEubuleus\nAra Alatheia\nProxima Ilioneus\nDioscuri\nHyperbius\nBanana\nArrowhead\nVortex\nEpsilon Eubuleus\nIchnaea\nCrux Draconis\nNemesis\nPhoroneus\nFishscale\nBlueberry\nBellflare\nOmega Orithyia\nUpsilon Proioxis\nUrsa\nAstraeus\nSolymus\nAquila Porphyrion\nZephyrus\nBeta\nIcarius\nEioneus\nSawblade\nDragontooth\nBowl\nOmega\nSagitta Porphyrion\nLyra Acallaris\nOrithyia\nAurigae\nCrown\nSpiderleg\nEioneus\nCanis Aldebaran\nPavo Calesius\nLeporis\nHemithea\nSerpent\nChronos\nNemo\nZephyrus\nCalesius\nPolystratus\nAethalides\nOctantis\nSextantis\nAntini\nBestla\nCerberi\nGalli\nPunarvasu\nPrani\nDou\nEridu\nPegasi\nSextantis\nPushya\nLibrae\nKini\nAmurru\nMaenali\nShravishtha\nAntliae\nIrmo\nLachesis\nMaenali\nPerkunas\nPascia\nApep\nOrionis\nAuseklis\nAker\nNoptri\nNiu\nSceptri\nChani\nShatabhisha\nAngith\nShi\nGoll\nKrily\nMali\nBani\nJenaii\nVortu\nDelphini\nOrome\nAo-Jun\nTarandi".split("\n");
+        stars = [];
+        paths = [];
+        _r = v2.create();
+        for (l = 0, len = starPosList.length; l < len; l++) {
+            pos = starPosList[l];
+            if (Math.random() > .8) {
+                continue;
+            }
+            s = {};
+            s.id = rid();
+            s.pos = pos;
+            s.name = starNames.pop();
+            v2.random(_r);
+            v2.scale(_r, 20);
+            v2.add(s.pos, _r);
+            s.good = false;
+            s.unlocksParts = [];
+            stars.push(s);
+        }
+        dist = 0;
+        for (m = 0, len1 = stars.length; m < len1; m++) {
+            star = stars[m];
+            if (v2.mag(star.pos) > dist) {
+                dist = v2.mag(star.pos);
+                myStar = star;
+            }
+        }
+        myStar.side = "alpha";
+        myStar.type = "home";
+        myStar.size = 1;
+        justWon = myStar;
+        for (i = n = 1; n < 7; i = ++n) {
+            for (a = o = 0, len2 = stars.length; o < len2; a = ++o) {
+                star = stars[a];
+                if (star.good > 4) {
+                    continue;
+                }
+                for (b = q = 0, len3 = stars.length; q < len3; b = ++q) {
+                    other = stars[b];
+                    if (a === b) {
+                        continue;
+                    }
+                    d = v2.distance(star.pos, other.pos);
+                    if (((i - 1) * 200 < d && d < i * 200)) {
+                        paths.push([d, star, other]);
+                        star.good += 1;
+                        other.good += 1;
+                    }
+                }
+            }
+        }
+        for (j = r = 0, len4 = paths.length; r < len4; j = ++r) {
+            p1 = paths[j];
+            for (k = u = 0, len5 = paths.length; u < len5; k = ++u) {
+                p2 = paths[k];
+                if (j !== k && p2[0] !== null && p1[0] !== null && interct(p1[1].pos, p1[2].pos, p2[1].pos, p2[2].pos)) {
+                    if (p2[0] > p1[0]) {
+                        p2[0] = null;
+                    } else {
+                        p1[0] = null;
+                    }
+                }
+            }
+        }
+        paths = (function () {
+            var len6, results, v;
+            results = [];
+            for (v = 0, len6 = paths.length; v < len6; v++) {
+                p = paths[v];
+                if (p[0] !== null) {
+                    results.push(p);
+                }
+            }
+            return results;
+        })();
+        myStar.fill = true;
+        for (i = v = 0; v < 100; i = ++v) {
+            for (w = 0, len6 = paths.length; w < len6; w++) {
+                path = paths[w];
+                if (path[1].fill || path[2].fill) {
+                    path[1].fill = true;
+                    path[2].fill = true;
+                }
+            }
+        }
+        stars = (function () {
+            var len7, results, x;
+            results = [];
+            for (x = 0, len7 = stars.length; x < len7; x++) {
+                s = stars[x];
+                if (s.fill) {
+                    results.push(s);
+                }
+            }
+            return results;
+        })();
+        paths = (function () {
+            var len7, results, x;
+            results = [];
+            for (x = 0, len7 = paths.length; x < len7; x++) {
+                p = paths[x];
+                if (p[1].fill) {
+                    results.push(p);
+                }
+            }
+            return results;
+        })();
+        dist = 0;
+        for (x = 0, len7 = stars.length; x < len7; x++) {
+            star = stars[x];
+            d = v2.distance(star.pos, myStar.pos);
+            if (d > dist) {
+                dist = d;
+                bossStar = star;
+            }
+        }
+        bossStar.size = 1;
+        bossStar.type = "boss";
+        bossStar.ai = "Boss";
+        bossStar.boss = BOSS;
+        for (y = 0, len8 = stars.length; y < len8; y++) {
+            star = stars[y];
+            d = v2.distance(star.pos, bossStar.pos);
+            if (d < 900) {
+                star.size = 3;
+            } else if (d < 2000) {
+                star.size = 2;
+            } else {
+                star.size = 1;
+            }
+            if (!star.ai) {
+                if (star.size === 3) {
+                    star.ai = choose(ais.hard);
+                    star.mapSize = 1.4 + Math.random() * .5;
+                    star.spots = 8;
+                } else if (star.size === 2) {
+                    star.ai = choose(ais.med);
+                    star.mapSize = 1 + Math.random() * .4;
+                    star.spots = 6;
+                } else if (star.size === 1) {
+                    star.ai = choose(ais.easy);
+                    star.mapSize = .6 + Math.random() * .3;
+                    star.spots = 4;
+                }
+            }
+        }
+        unlockedParts = {};
+        for (z = 0, len9 = easyPlayerBuildBar.length; z < len9; z++) {
+            spec = easyPlayerBuildBar[z];
+            ref = fromShort(spec);
+            for (aa = 0, len10 = ref.length; aa < len10; aa++) {
+                p = ref[aa];
+                unlockedParts[p.type] = true;
+            }
+        }
+        allStars = (function () {
+            var ab, len11, results;
+            results = [];
+            for (ab = 0, len11 = stars.length; ab < len11; ab++) {
+                s = stars[ab];
+                if (s.id !== bossStar.id && s.id !== myStar.id) {
+                    results.push(s);
+                }
+            }
+            return results;
+        })();
+        allStars.sort(function () {
+            return Math.random();
+        });
+        for (k in parts) {
+            part = parts[k];
+            if (!part.prototype.hide && !unlockedParts[k] && part.prototype.tab === "weapons") {
+                for (i = ab = 0; ab < 100; i = ++ab) {
+                    star = choose(stars);
+                    if (star.type === "home" || star.type === "boss") {
+                        continue;
+                    }
+                    if (star.unlocksParts.length > 0) {
+                        continue;
+                    }
+                    star.unlocksParts.push(k);
+                    break;
+                }
+            }
+        }
+        emptyStar = (function (_this) {
+            return function () {
+                var ac, len11;
+                for (ac = 0, len11 = stars.length; ac < len11; ac++) {
+                    star = stars[ac];
+                    if (star.type === "home" || star.type === "boss") {
+                        continue;
+                    }
+                    if (star.unlocksParts.length === 0) {
+                        return star;
+                    }
+                }
+                return null;
+            };
+        })(this);
+        for (k in parts) {
+            part = parts[k];
+            if (!part.prototype.hide && !unlockedParts[k] && part.prototype.tab !== "weapons") {
+                for (i = ac = 0; ac < 100; i = ++ac) {
+                    star = emptyStar() || choose(stars);
+                    if (star.type === "home" || star.type === "boss") {
+                        continue;
+                    }
+                    if (star.unlocksParts.length > 0) {
+                        hasPart = parts[star.unlocksParts[0]];
+                        if (hasPart.prototype.tab === "weapons") {
+                            continue;
+                        }
+                        if (part.prototype.tab === "armor" && hasPart.prototype.tab !== "armor") {
+                            continue;
+                        }
+                    }
+                    if (star.unlocksParts.length > 2) {
+                        continue;
+                    }
+                    star.unlocksParts.push(k);
+                    break;
+                }
+            }
+        }
+        data = [];
+        for (ad = 0, len11 = stars.length; ad < len11; ad++) {
+            star = stars[ad];
+            data += "\n\nstars.push\n    id: '" + star.id + "'\n    name: \"" + star.name + "\"\n    about: \"\"\n    ai: \"" + star.ai + "\"\n    difficulty: " + star.size + "\n    mapSize: " + star.mapSize + "\n    mapNumCPs: " + star.spots + "\n    unlocks: " + (JSON.stringify(star.unlocksParts)) + "\n    pos: [" + (Math.floor(star.pos[0])) + ", " + (Math.floor(star.pos[1])) + "]";
+        }
+        data += "\n\n";
+        for (ae = 0, len12 = paths.length; ae < len12; ae++) {
+            p = paths[ae];
+            data += "\npaths.push(['" + p[1].id + "', '" + p[2].id + "'])";
+        }
+        return console.log(data);
+    };
+
+}).call(this);
+;
+
+
+//from src/bubbles.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var drawBubble, fixBubblePos;
+
+    eval(onecup["import"]());
+
+    window.bubbles = {};
+
+    bubbles.list = [];
+
+    bubbles.tip = null;
+
+    bubbles.add = function (bubble) {
+        bubbles.list.push(bubble);
+        return onecup.refresh();
+    };
+
+    bubbles.clear = function () {
+        bubbles.list = [];
+        return onecup.refresh();
+    };
+
+    bubbles.draw = function () {
+        var i, len, ref, results, thing;
+        if (bubbles.list.length > 0) {
+            drawBubble(bubbles.list[0]);
+        }
+        if (bubbles.tip) {
+            drawBubble(bubbles.tip);
+        }
+        if (tutor.bubble) {
+            drawBubble(tutor.bubble);
+        }
+        if (commander.selection && localStorage.useAi === "true" && localStorage.aiGrid === "true") {
+            ref = commander.selection;
+            results = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+                thing = ref[i];
+                if (thing.message) {
+                    results.push(drawBubble({
+                        thing: thing,
+                        message: thing.message,
+                        modeOnly: "battle"
+                    }));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        }
+    };
+
+    bubbles.tick = function () {
+        var bubble, id, ref, results, thing;
+        if (control.mode.fromGameSpace == null) {
+            return;
+        }
+        if (bubbles.list.length > 0) {
+            bubble = bubbles.list[0];
+            if (bubble.thing) {
+                fixBubblePos(bubble.thing);
+            }
+            if (typeof bubble.close === "function" ? bubble.close() : void 0) {
+                onecup.refresh();
+            }
+        }
+        if (intp) {
+            ref = intp.things;
+            results = [];
+            for (id in ref) {
+                thing = ref[id];
+                if (thing.message != null) {
+                    results.push(fixBubblePos(thing));
+                } else {
+                    results.push(void 0);
+                }
+            }
+            return results;
+        }
+    };
+
+    fixBubblePos = function (thing) {
+        var dom, pos;
+        dom = document.getElementById("bubble-" + thing.id);
+        if (dom) {
+            pos = control.mode.fromGameSpace(thing.pos);
+            dom.style.left = pos[0] + "px";
+            return dom.style.top = pos[1] + "px";
+        }
+    };
+
+    drawBubble = function (bubble) {
+        var pos, ref;
+        if (bubble.findThing != null) {
+            bubble.thing = bubble.findThing();
+            if (!bubble.thing) {
+                return;
+            }
+        }
+        if (bubble.thing) {
+            if (control.mode.fromGameSpace == null) {
+                return;
+            }
+            pos = control.mode.fromGameSpace(bubble.thing.pos);
+            bubble.x = Math.floor(pos[0]);
+            bubble.y = Math.floor(pos[1]);
+        }
+        if (typeof bubble.close === "function" ? bubble.close() : void 0) {
+            if (typeof bubble.onclose === "function") {
+                bubble.onclose();
+            }
+            bubbles.list.shift();
+            return;
+        }
+        if (bubble.onshow) {
+            bubble.onshow();
+            bubble.onshow = false;
+        }
+        if (bubble.delay != null) {
+            bubble.delay -= 1 / 16;
+            if (bubble.delay <= 0) {
+                bubbles.list.shift();
+            }
+        }
+        if ((bubble.modeOnly != null) && bubble.modeOnly !== ui.mode) {
+            return;
+            console.log("mode only");
+        }
+        return div("#bubble-" + ((ref = bubble.thing) != null ? ref.id : void 0), function () {
+            var h, ref1, src, w;
+            position("absolute");
+            if (bubble.bottom) {
+                bottom(bubble.bottom);
+            } else {
+                top(bubble.y);
+            }
+            left(bubble.x);
+            overflow("visible");
+            z_index("10");
+            if (bubble.image) {
+                ref1 = bubble.image, src = ref1[0], w = ref1[1], h = ref1[2];
+                img({
+                    src: src + "?_1",
+                    width: w,
+                    height: h
+                });
+                transform("translate(" + (-w / 2) + "px, " + (-h / 2) + "px)");
+                return;
+            }
+            div(function () {
+                onclick(function () {
+                    if (bubble.notclosable) {
+                        return;
+                    }
+                    if (typeof bubble.onclose === "function") {
+                        bubble.onclose();
+                    }
+                    return bubbles.list.shift();
+                });
+                if (bubble.stem !== "top") {
+                    position("absolute");
+                    display("inline-block");
+                    left(-30);
+                    bottom(20);
+                }
+                width(bubble.width || 300);
+                padding(10);
+                border_radius(5);
+                background_color("rgba(0,0,0,.5)");
+                color("white");
+                font_size(14);
+                if (!bubble.notclosable) {
+                    div(function () {
+                        position("absolute");
+                        top(7);
+                        right(7);
+                        width(10);
+                        height(10);
+                        return background_color("rgba(0,0,0,.2)");
+                    });
+                }
+                if (bubble.message) {
+                    text(bubble.message);
+                }
+                return typeof bubble.html === "function" ? bubble.html() : void 0;
+            });
+            return div(function () {
+                position("absolute");
+                width(0);
+                height(0);
+                if (bubble.stem === "top") {
+                    top(-20);
+                    left(20);
+                    border_left("20px solid rgba(0,0,0,.5)");
+                    border_top("20px solid transparent");
+                }
+                if (bubble.stem === "center") {
+                    bottom(0);
+                    left(bubble.width / 2 - 50);
+                    ({
+                        margin_left: -20
+                    });
+                    border_left("20px solid transparent");
+                    border_right("20px solid transparent");
+                    return border_top("20px solid rgba(0,0,0,.5)");
+                } else {
+                    bottom(0);
+                    ({
+                        margin_left: -20
+                    });
+                    border_left("20px solid rgba(0,0,0,.5)");
+                    return border_bottom("20px solid transparent");
+                }
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/menus.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var menuButtons;
+
+    eval(onecup["import"]());
+
+    ui.menu = function () {
+        ui.menuFrame("mainmenu", function () {
+            menuButtons();
+            return ui.dlcs();
+        });
+        return ui.quickOptions();
+    };
+
+    ui.quickOptions = function () {
+        div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            return img(".hover-black", {
+                src: "img/ui/back.png",
+                width: 64,
+                height: 64
+            }, function () {
+                position("absolute");
+                top(0);
+                left(0);
+                return onclick(function () {
+                    return ui.go("battle");
+                });
+            });
+        });
+        div(function () {
+            position("absolute");
+            bottom(0);
+            right(0);
+            width(200);
+            text_align("right");
+            span(function () {
+                var imgSrc;
+                display("inline-block");
+                padding(10);
+                if (isFullScreen()) {
+                    imgSrc = "img/ui/fullscreen.png";
+                } else {
+                    imgSrc = "img/ui/window.png";
+                }
+                return img({
+                    src: imgSrc,
+                    width: 40,
+                    height: 40
+                }, function () {
+                    return onclick(function () {
+                        return toggleFullScreen();
+                    });
+                });
+            });
+            return span(function () {
+                var imgSrc;
+                display("inline-block");
+                padding(10);
+                if (localStorage.mute !== "true") {
+                    imgSrc = "img/ui/mute.png";
+                } else {
+                    imgSrc = "img/ui/unmute.png";
+                }
+                return img({
+                    src: imgSrc,
+                    width: 40,
+                    height: 40
+                }, function () {
+                    return onclick(function () {
+                        if (localStorage.mute !== "true") {
+                            return localStorage.mute = "true";
+                        } else {
+                            return localStorage.mute = "false";
+                        }
+                    });
+                });
+            });
+        });
+        return div(function () {
+            var siteLink;
+            position("absolute");
+            top(0);
+            right(0);
+            text_align("right");
+            padding(10);
+            width((window.innerWidth - 600) / 2);
+            siteLink = function (name, url) {
+                return span(".hover-text-glow", function () {
+                    color("white");
+                    display("inline-bock");
+                    font_size(20);
+                    margin(10);
+                    text(name);
+                    return onclick(function () {
+                        return onecup.newTab(url);
+                    });
+                });
+            };
+            siteLink("blog", "https://medium.com/@treeform");
+            siteLink("reddit", "http://reddit.com/r/istrolid/");
+            siteLink("discord", "https://discord.gg/stX3pmF");
+            return siteLink("twitter", "https://twitter.com/treeform");
+        });
+    };
+
+    css(".hover-text-glow:hover", function () {
+        return text_shadow("0 0 3px white");
+    });
+
+    ui.div_hover_blur = function (cb) {
+        return div(".hover-blur", function () {
+            div(".blur", function () {
+                return cb();
+            });
+            return div(".top", function () {
+                return cb();
+            });
+        });
+    };
+
+    ui.menuFrame = function (name, fn) {
+        return div("#" + name, function () {
+            var m;
+            position("relative");
+            margin("0px auto");
+            height(window.innerHeight);
+            width(600);
+            background_color("rgba(0,0,0,.6)");
+            color("white");
+            overflow_y("scroll");
+            m = 600 / 2;
+            img({
+                src: "img/ui/menu_logo.png",
+                width: 330,
+                height: 145
+            }, function () {
+                position("absolute");
+                top(40);
+                return left(m - 330 / 2);
+            });
+            div(function () {
+                position("absolute");
+                top(0);
+                width("100%");
+                height(200);
+                overflow("hidden");
+                return div(function () {
+                    position("absolute");
+                    top(30);
+                    right(-50);
+                    padding("6px 0px");
+                    font_size(18);
+                    font_weight("bold");
+                    text_align("center");
+                    text("BETA 0." + VERSION + "." + MINOR_VERSION);
+                    color("white");
+                    background("black");
+                    width(200);
+                    return transform("rotate(45deg)");
+                });
+            });
+            return fn();
+        });
+    };
+
+    menuButtons = function () {
+        var bottomRow, m, s;
+        m = 600 / 2;
+        s = 50;
+        div("#galaxybuttons", function () {
+            position("absolute");
+            top(220);
+            width("100%");
+            height(221);
+            background_color("rgba(0,0,0,.6)");
+            ui.div_hover_blur(function () {
+                position("absolute");
+                padding(5);
+                width(120);
+                top(26);
+                left(s);
+                text_align("center");
+                img({
+                    src: "img/ui/menu_multiplayer.png",
+                    width: 80,
+                    height: 80
+                });
+                text("Multiplayer");
+                return onclick(function () {
+                    return ui.go("multiplayer");
+                });
+            });
+            ui.div_hover_blur(function () {
+                position("absolute");
+                top(26);
+                left(m - 150 / 2);
+                padding(5);
+                width(150);
+                text_align("center");
+                img({
+                    src: "img/ui/menu_campaign.png",
+                    width: 130,
+                    height: 130
+                });
+                text("Campaign");
+                return onclick(function (e) {
+                    console.log("galaxy on click", e);
+                    return ui.go("galaxy");
+                });
+            });
+            return ui.div_hover_blur(function () {
+                position("absolute");
+                padding(5);
+                width(120);
+                top(26);
+                right(s);
+                text_align("center");
+                img({
+                    src: "img/ui/challenges.png",
+                    width: 80,
+                    height: 80
+                });
+                text("Challenges");
+                return onclick(function () {
+                    return ui.go("challenges");
+                });
+            });
+        });
+        bottomRow = window.innerHeight - 120;
+        if (bottomRow < 370 + 240) {
+            bottomRow = 370 + 240;
+        }
+        ui.div_hover_blur(function () {
+            position("absolute");
+            padding(5);
+            width(120);
+            top(bottomRow);
+            left(s * 2);
+            text_align("center");
+            div(function () {
+                return img({
+                    src: "img/ui/design.png",
+                    width: 64,
+                    height: 64
+                });
+            });
+            text("Design");
+            return onclick(function () {
+                battleMode.joinLocal();
+                return ui.go("design");
+            });
+        });
+        ui.div_hover_blur(function () {
+            position("absolute");
+            padding(5);
+            width(120);
+            top(bottomRow);
+            left(m - 120 / 2);
+            text_align("center");
+            div(function () {
+                return img({
+                    src: "img/ui/fleet.png",
+                    width: 64,
+                    height: 64
+                });
+            });
+            text("Fleet");
+            return onclick(function () {
+                return ui.go("fleet");
+            });
+        });
+        ui.div_hover_blur(function () {
+            position("absolute");
+            padding(5);
+            width(120);
+            top(bottomRow);
+            right(s * 2);
+            text_align("center");
+            div(function () {
+                return img({
+                    src: "img/ui/settings.png",
+                    width: 64,
+                    height: 64
+                });
+            });
+            text("Settings");
+            return onclick(function () {
+                return ui.go("settings");
+            });
+        });
+        if (typeof electron !== "undefined" && electron !== null) {
+            return ui.div_hover_blur(function () {
+                position("absolute");
+                padding(5);
+                top(590);
+                left(200);
+                right(200);
+                height(40);
+                font_size(20);
+                text_align("center");
+                line_height(40);
+                text("Quit Game");
+                return onclick(function () {
+                    return account.closeAndSave();
+                });
+            });
+        }
+    };
+
+    css(".hover-bright:hover", function () {
+        return filter("saturate(160%)");
+    });
+
+    ui.dlcs = function () {
+        var drawDlc;
+        drawDlc = function (name, image, url, fn) {
+            return div(function () {
+                fn();
+                overflow("hidden");
+                img(".hover-bright", {
+                    src: image,
+                    width: 260,
+                    height: 100
+                }, function () {
+                    return onclick(function () {
+                        return open(url, "_blank");
+                    });
+                });
+                if (account.DLCs[name]) {
+                    return div(function () {
+                        position("absolute");
+                        top(30);
+                        right(-48);
+                        padding(5);
+                        font_size(20);
+                        font_weight("bold");
+                        text_align("center");
+                        color("white");
+                        background("rgba(200,0,0,1)");
+                        width(200);
+                        transform("rotate(45deg)");
+                        return text("THANKS!");
+                    });
+                }
+            });
+        };
+        drawDlc("Paint Job", "img/ui/dlc/dlc1.png", "steam://store/472490", function () {
+            position("absolute");
+            top(465);
+            left(25);
+            width(260);
+            return height(100);
+        });
+        return drawDlc("Curves and Shadows", "img/ui/dlc/dlc2.png", "steam://store/614180", function () {
+            position("absolute");
+            top(465);
+            right(25);
+            width(260);
+            return height(100);
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/chat.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var canJoinServer, closeToStart, drawLocal, drawPlayers, drawPrivateServer, drawPrivateServerFoldOut, drawServer,
+        drawServers, numRealPlayers, playerItem, quickJoin, sizeOf;
+
+    eval(onecup["import"]());
+
+    window.chat = {};
+
+    chat.players = {};
+
+    sizeOf = function (map) {
+        var k, l;
+        l = 0;
+        for (k in map) {
+            l += 1;
+        }
+        return l;
+    };
+
+    chat.room = function () {
+        var sideWidth;
+        sideWidth = window.innerWidth / 4;
+        div(function () {
+            color("white");
+            position("absolute");
+            top(64);
+            bottom(84);
+            left(0);
+            width(sideWidth);
+            overflow_y("auto");
+            background_color("rgba(0,0,0,.1)");
+            return drawServers();
+        });
+        return div(function () {
+            color("white");
+            position("absolute");
+            top(64);
+            bottom(84);
+            right(0);
+            width(sideWidth);
+            overflow_y("auto");
+            background_color("rgba(0,0,0,.3)");
+            return drawPlayers();
+        });
+    };
+
+    ui.serverSearch = null;
+
+    drawServers = function (m) {
+        var _, j, len, results, server, servers, str;
+        drawLocal();
+        quickJoin("1v1");
+        quickJoin("2v2");
+        quickJoin("3v3");
+        div(function () {
+            position("relative");
+            padding(10);
+            height(40);
+            background_color("rgba(255,255,255,.1)");
+            padding_left(20);
+            return text("Servers List");
+        });
+        input("#serversearch", {
+            type: "text",
+            value: ui.serverSearch,
+            placeholder: "search servers"
+        }, function () {
+            padding(10);
+            font_size(16);
+            color("white");
+            display("block");
+            border("none");
+            width("100%");
+            background_color("rgba(0,0,0,.5)");
+            return oninput(function (e) {
+                return ui.serverSearch = e.target.value;
+            });
+        });
+        servers = (function () {
+            var ref, results;
+            ref = rootNet.servers;
+            results = [];
+            for (_ in ref) {
+                server = ref[_];
+                results.push(server);
+            }
+            return results;
+        })();
+        servers.sort(function (a, b) {
+            var avalue, bvalue;
+            avalue = closeToStart(a) * 100 + numRealPlayers(a);
+            bvalue = closeToStart(b) * 100 + numRealPlayers(b);
+            if (a.state !== "waiting") {
+                avalue = -a.observers;
+            }
+            if (b.state !== "waiting") {
+                bvalue = -b.observers;
+            }
+            if (avalue === bvalue) {
+                return a.name.localeCompare(b.name);
+            }
+            return bvalue - avalue;
+        });
+        results = [];
+        for (j = 0, len = servers.length; j < len; j++) {
+            server = servers[j];
+            if (server.hidden) {
+                continue;
+            }
+            if (ui.serverSearch) {
+                str = server.name + " " + server.type;
+                if (str.toLowerCase().indexOf(ui.serverSearch.toLowerCase()) === -1) {
+                    continue;
+                }
+            }
+            results.push(drawServer(server));
+        }
+        return results;
+    };
+
+    drawLocal = function () {
+        return div(".hover-black", function () {
+            position("relative");
+            height(40);
+            padding_top(10);
+            if (sim.local) {
+                background_color("rgba(0,0,0,.4)");
+            }
+            div(function () {
+                position("absolute");
+                left(20);
+                return text("Play vs AI");
+            });
+            return onclick(function () {
+                battleMode.joinLocal();
+                return ui.go("battleroom");
+            });
+        });
+    };
+
+    quickJoin = function (type) {
+        return div(".hover-black", function () {
+            position("relative");
+            height(40);
+            padding_top(10);
+            div(function () {
+                position("absolute");
+                left(20);
+                return text("Play " + type);
+            });
+            return onclick(function () {
+                var _, goodNumPlayers, goodServer, j, len, numPlayers, p, ref, ref1, server;
+                goodNumPlayers = 0;
+                goodServer = null;
+                ref = rootNet.servers;
+                for (_ in ref) {
+                    server = ref[_];
+                    if (server.hidden || server.state !== "waiting") {
+                        continue;
+                    }
+                    if (server.type === type) {
+                        numPlayers = 0;
+                        ref1 = server.players;
+                        for (j = 0, len = ref1.length; j < len; j++) {
+                            p = ref1[j];
+                            if (!p.ai && p.side !== "spectators") {
+                                numPlayers += 1;
+                            }
+                        }
+                        console.log("looking at", server.name, numPlayers);
+                        if (goodServer === null || numPlayers > goodNumPlayers && numPlayers !== ui.serverNeedNumPlayers(type)) {
+                            goodServer = server;
+                            goodNumPlayers = numPlayers;
+                        }
+                    }
+                }
+                if (goodServer !== null) {
+                    battleMode.joinServer(goodServer.name);
+                    return ui.go("battleroom");
+                }
+            });
+        });
+    };
+
+    drawPrivateServerFoldOut = false;
+
+    drawPrivateServer = function () {
+        div(".hover-black", function () {
+            position("relative");
+            height(40);
+            padding_top(10);
+            if (sim.local) {
+                background_color("rgba(0,0,0,.4)");
+            }
+            div(function () {
+                position("absolute");
+                left(20);
+                return text("Host Private Server");
+            });
+            return onclick(function () {
+                return drawPrivateServerFoldOut = !drawPrivateServerFoldOut;
+            });
+        });
+        if (drawPrivateServerFoldOut) {
+            return div(function () {
+                return padding(10);
+            });
+        }
+    };
+
+    numRealPlayers = function (server) {
+        var alpha, beta, j, len, p, ref;
+        alpha = 0;
+        beta = 0;
+        ref = server.players;
+        for (j = 0, len = ref.length; j < len; j++) {
+            p = ref[j];
+            if (p.side === "alpha") {
+                alpha += 1;
+            }
+            if (p.side === "beta") {
+                beta += 1;
+            }
+        }
+        return alpha + beta;
+    };
+
+    closeToStart = function (server) {
+        var alphas, betas, hasAis, j, len, num, p, ref;
+        hasAis = false;
+        alphas = 0;
+        betas = 0;
+        ref = server.players;
+        for (j = 0, len = ref.length; j < len; j++) {
+            p = ref[j];
+            if (p.side === "alpha") {
+                alphas += 1;
+            }
+            if (p.side === "beta") {
+                betas += 1;
+            }
+        }
+        num = ui.serverNeedNumPlayers(server);
+        if (alphas + betas === num + num - 1) {
+            return true;
+        }
+        return false;
+    };
+
+    canJoinServer = function (server) {
+        if (server.players.length > 12) {
+            return false;
+        }
+        if (server.version !== window.VERSION) {
+            return false;
+        }
+        return true;
+    };
+
+    drawServer = function (server) {
+        var avgRank, j, len, maxRank, nPlayers, player, rank, ref, totalRank;
+        totalRank = 0;
+        maxRank = 0;
+        nPlayers = 0;
+        ref = server.players;
+        for (j = 0, len = ref.length; j < len; j++) {
+            player = ref[j];
+            if (player.side !== "spectators" && !player.ai) {
+                rank = findRank(player.name);
+                maxRank = Math.max(maxRank, rank);
+                totalRank += rank;
+                nPlayers += 1;
+            }
+        }
+        avgRank = totalRank / nPlayers;
+        return div(".hover-black", function () {
+            var connected;
+            position("relative");
+            height(40);
+            padding_top(10);
+            if (canJoinServer(server)) {
+                connected = server.address === network.address;
+                if (connected) {
+                    background_color("rgba(0,0,0,.4)");
+                }
+                onclick(function () {
+                    ui.mode = "battleroom";
+                    return battleMode.joinServer(server.name);
+                });
+            } else {
+                opacity(".5");
+            }
+            img({
+                src: rankImage(maxRank),
+                width: 20,
+                height: 20
+            }, function () {
+                position("absolute");
+                top(8);
+                return left(4);
+            });
+            div(function () {
+                position("absolute");
+                left(28);
+                text(server.type);
+                text(" ");
+                text(" ");
+                return text(server.name);
+            });
+            if (window.innerWidth > 1000) {
+                div(function () {
+                    position("absolute");
+                    right(80);
+                    if (server.version !== window.VERSION) {
+                        text("v" + server.version);
+                        if (server.version < window.VERSION) {
+                            return text("(older)");
+                        } else {
+                            return text("(newer)");
+                        }
+                    } else if (server.state !== "waiting") {
+                        return text(server.state);
+                    } else if (closeToStart(server)) {
+                        return text("+1 more");
+                    }
+                });
+                return div(function () {
+                    position("absolute");
+                    right(20);
+                    return text(server.observers);
+                });
+            }
+        });
+    };
+
+    ui.playerSearch = "";
+
+    drawPlayers = function () {
+        var _, fullname, hasFriends, isFriend, j, len, len1, len2, n, name, o, offline, online, player, playerSearch,
+            players, ref, ref1, results;
+        players = [];
+        playerSearch = ui.playerSearch.toLowerCase();
+        ref = chat.players;
+        for (_ in ref) {
+            player = ref[_];
+            if (playerSearch) {
+                fullname = player.faction + player.name;
+                if (fullname.toLowerCase().indexOf(playerSearch) !== -1) {
+                    players.unshift(player);
+                }
+            } else {
+                players.unshift(player);
+            }
+        }
+        players = players.sort(function (a, b) {
+            return (b.rank || 0) - (a.rank || 0);
+        });
+        players = players.slice(0, 200);
+        div(function () {
+            position("relative");
+            padding(10);
+            height(40);
+            background_color("rgba(255,255,255,.1)");
+            padding_left(20);
+            return text("Players (" + (sizeOf(chat.players)) + "):");
+        });
+        div(".hover-black", function () {
+            padding(10);
+            font_size(16);
+            color("white");
+            display("block");
+            border("none");
+            width("100%");
+            text("Discord Voice Chat");
+            return onclick(function () {
+                return onecup.newTab("https://discord.gg/stX3pmF");
+            });
+        });
+        input("#playersearch", {
+            type: "text",
+            value: ui.playerSearch,
+            placeholder: "search players"
+        }, function () {
+            padding(10);
+            font_size(16);
+            color("white");
+            display("block");
+            border("none");
+            width("100%");
+            background_color("rgba(0,0,0,.5)");
+            return oninput(function (e) {
+                return ui.playerSearch = e.target.value;
+            });
+        });
+        div(function () {
+            return height(10);
+        });
+        hasFriends = false;
+        online = [];
+        offline = [];
+        ref1 = commander.friends;
+        for (name in ref1) {
+            isFriend = ref1[name];
+            if (isFriend && name.toLowerCase().indexOf(playerSearch) !== -1) {
+                (name in chat.players ? online : offline).push(name);
+                hasFriends = true;
+            }
+        }
+        online.sort();
+        offline.sort();
+        for (j = 0, len = online.length; j < len; j++) {
+            name = online[j];
+            playerItem(chat.players[name]);
+        }
+        for (n = 0, len1 = offline.length; n < len1; n++) {
+            name = offline[n];
+            playerItem({
+                name: name
+            });
+        }
+        if (hasFriends) {
+            div(function () {
+                return height(20);
+            });
+        }
+        results = [];
+        for (o = 0, len2 = players.length; o < len2; o++) {
+            player = players[o];
+            results.push(playerItem(player));
+        }
+        return results;
+    };
+
+    playerItem = function (player) {
+        return div(function () {
+            var _, j, len, p, playerOnServer, ref, ref1, server;
+            position("relative");
+            padding("0px 10px");
+            height(30);
+            ui.playerChip(player);
+            if (window.innerWidth > 1000) {
+                playerOnServer = null;
+                ref = rootNet.servers;
+                for (_ in ref) {
+                    server = ref[_];
+                    if (server.players) {
+                        ref1 = server.players;
+                        for (j = 0, len = ref1.length; j < len; j++) {
+                            p = ref1[j];
+                            if (p.name === player.name) {
+                                playerOnServer = server;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (playerOnServer) {
+                    return div(".hover-black", function () {
+                        position("absolute");
+                        top(0);
+                        right(10);
+                        font_size(14);
+                        text(playerOnServer.name);
+                        padding(4);
+                        if (canJoinServer(playerOnServer)) {
+                            return onclick(function () {
+                                return battleMode.joinServer(playerOnServer.name);
+                            });
+                        } else {
+                            return opacity(".5");
+                        }
+                    });
+                } else {
+                    return div(function () {
+                        position("absolute");
+                        top(4);
+                        right(20);
+                        font_size(14);
+                        return text(player.mode);
+                    });
+                }
+            }
+        });
+    };
+
+    chat.lines = [];
+
+    chat.scrollLock = true;
+
+    chat.lastMessage = null;
+
+    chat.lastMode = null;
+
+    chat.draw = function (fullLobby) {
+        var chatLocation, m, messages, ref, ref1;
+        if (ui.mode === "multiplayer") {
+            chat.channel = void 0;
+        } else if (typeof battleMode !== "undefined" && battleMode !== null ? (ref = battleMode.server) != null ? ref.name : void 0 : void 0) {
+            chat.channel = battleMode.server.name;
+        } else {
+            chat.channel = void 0;
+        }
+        messages = (function () {
+            var j, len, ref1, results;
+            ref1 = chat.lines;
+            results = [];
+            for (j = 0, len = ref1.length; j < len; j++) {
+                m = ref1[j];
+                if (m.channel === chat.channel) {
+                    results.push(m);
+                }
+            }
+            return results;
+        })();
+        if ((ref1 = ui.mode) === "menu" || ref1 === "settings" || ref1 === "galaxy" || ref1 === "campaigns" || ref1 === "profile" || ref1 === "controls" || ref1 === "sound" || ref1 === "challenges" || ref1 === "fleet") {
+            return;
+        } else if (ui.mode === "multiplayer" || ui.mode === "battleroom") {
+            chatLocation = "middle";
+            messages = messages.slice(-200);
+        } else if (ui.chatToggle) {
+            chatLocation = "sidePanel";
+            messages = messages.slice(-50);
+        } else if (ui.chatting) {
+            chatLocation = "sidePanel";
+            messages = messages.slice(-50);
+        } else if (localStorage.chatSilent === "true") {
+            return;
+        } else if (sim.local) {
+            return;
+        } else {
+            messages = (function () {
+                var j, len, results;
+                results = [];
+                for (j = 0, len = messages.length; j < len; j++) {
+                    m = messages[j];
+                    if (m.time + 10000 > Date.now()) {
+                        results.push(m);
+                    }
+                }
+                return results;
+            })();
+            if (messages) {
+                chatLocation = "sliver";
+            } else {
+                return;
+            }
+        }
+        if (chatLocation === "sidePanel") {
+            div("#chat-x", function () {
+                position("absolute");
+                top(64);
+                right(0);
+                padding(10);
+                color("white");
+                z_index('2');
+                text("X");
+                return onclick(function () {
+                    return ui.chatToggle = false;
+                });
+            });
+        }
+        div("#chat-messages", function () {
+            var quarterWidth;
+            position("absolute");
+            overflow_x("hidden");
+            overflow_y("auto");
+            background_color("rgba(0,0,0,.8)");
+            z_index("1");
+            quarterWidth = window.innerWidth / 4;
+            switch (chatLocation) {
+                case "sidePanel":
+                    top(64);
+                    bottom(84 + 30);
+                    right(0);
+                    width(quarterWidth);
+                    break;
+                case "middle":
+                    top(64);
+                    bottom(84 + 30);
+                    left(quarterWidth);
+                    right(quarterWidth);
+                    break;
+                case "sliver":
+                    bottom(84);
+                    right(0);
+                    width(quarterWidth);
+            }
+            onecup.post_render(function () {
+                var j, len, line, newHeight, oldHeight, oldScrollTop, ref2, top, wrapper, wrapperGrew;
+                top = 0;
+                messages = onecup.lookup("#chat-messages");
+                wrapper = onecup.lookup("#chat-wrapper");
+                oldScrollTop = messages.scrollTop;
+                oldHeight = wrapper.clientHeight;
+                ref2 = onecup.lookup(".chat-message");
+                for (j = 0, len = ref2.length; j < len; j++) {
+                    line = ref2[j];
+                    line.style.top = top + "px";
+                    top += line.clientHeight;
+                }
+                newHeight = top;
+                wrapperGrew = newHeight - oldHeight;
+                wrapper.style.height = top + "px";
+                if (wrapperGrew > 0) {
+                    return messages.scrollTop += wrapperGrew;
+                }
+            });
+            return div("#chat-wrapper", function () {
+                var j, len, msg, results;
+                position("relative");
+                height("0px");
+                results = [];
+                for (j = 0, len = messages.length; j < len; j++) {
+                    msg = messages[j];
+                    if (commander.mutes[msg.name]) {
+                        continue;
+                    }
+                    results.push(p(".chat-message", function () {
+                        position("absolute");
+                        top(0);
+                        left(0);
+                        padding(2);
+                        font_size(16);
+                        if (msg.name === commander.name) {
+                            color("white");
+                        } else {
+                            color("#AAA");
+                        }
+                        ui.playerChip(msg, 20, "#AAA");
+                        padding(3);
+                        text(": ");
+                        return raw(linky.linkfy(msg.text));
+                    }));
+                }
+                return results;
+            });
+        });
+        return input("#chat", {
+            autocomplete: "off"
+        }, function () {
+            var quarterWidth;
+            position("absolute");
+            height(30);
+            font_size(16);
+            border("none");
+            color("white");
+            background_color("rgba(25,00,00,.8)");
+            z_index("2");
+            quarterWidth = window.innerWidth / 4;
+            switch (chatLocation) {
+                case "sidePanel":
+                    bottom(84);
+                    right(0);
+                    width(quarterWidth);
+                    break;
+                case "middle":
+                    bottom(84);
+                    left(quarterWidth);
+                    width(quarterWidth * 2);
+                    break;
+                case "sliver":
+                    display("none");
+            }
+            onblur(function () {
+                return ui.chatting = false;
+            });
+            return onkeydown(function (e) {
+                var _, commandArray, i, j, len, message, p, players, ref2, text, word, words;
+                if (e.which === 27) {
+                    ui.chatting = false;
+                    e.target.blur();
+                }
+                if (e.which === 9) {
+                    words = e.target.value.split(/[\s\"]+/);
+                    word = words[words.length - 1];
+                    players = [];
+                    ref2 = chat.players;
+                    for (_ in ref2) {
+                        p = ref2[_];
+                        if (p.name.startsWith(word)) {
+                            players.push(p.name);
+                        }
+                    }
+                    console.log("tab", word, players);
+                    if (players.length === 1) {
+                        e.target.value += players[0].slice(word.length);
+                    }
+                    e.preventDefault();
+                }
+                if (e.which === 13) {
+                    if (e.target.value === "") {
+                        e.target.blur();
+                        ui.chatting = false;
+                        return;
+                    }
+                    text = e.target.value.trim();
+                    if (text[0] === "/") {
+                        commandArray = text.slice(1).match(/('.*?'|".*?"|\S+)/g);
+                        if (!commandArray) {
+                            return;
+                        }
+                        for (i = j = 0, len = commandArray.length; j < len; i = ++j) {
+                            word = commandArray[i];
+                            if (word[0] === '"') {
+                                commandArray[i] = word.slice(1, word.length - 1);
+                            }
+                        }
+                        console.log("command", commandArray);
+                        rootNet.send("command", commandArray);
+                        return e.target.value = "";
+                    } else {
+                        message = {
+                            text: text,
+                            channel: chat.channel
+                        };
+                        rootNet.send("message", message);
+                        return e.target.value = "";
+                    }
+                }
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/battleroom.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var canAddAI, drawAI, drawAis, drawPlayerChip, drawServerSettings, drawSpecs, drawStart, drawTeam, drawTeams,
+        findChatPlayer, needNumPlayers, quickScorePlayer;
+
+    eval(onecup["import"]());
+
+    window.battleroom = {};
+
+    findChatPlayer = function (name) {
+        var player;
+        if (chat.players) {
+            player = chat.players[name];
+            if (player) {
+                return player;
+            }
+        }
+        return {
+            rank: 0
+        };
+    };
+
+    window.findRank = function (name) {
+        var chatPlayer;
+        chatPlayer = findChatPlayer(name);
+        if (!chatPlayer) {
+            return "?";
+        }
+        return Math.round(chatPlayer.rank || 0);
+    };
+
+    window.rankImage = function (rank) {
+        if (rank < 25) {
+            return "img/ui/rank/rank0.png";
+        } else if (rank < 75) {
+            return "img/ui/rank/rank1.png";
+        } else if (rank < 150) {
+            return "img/ui/rank/rank2.png";
+        } else if (rank < 225) {
+            return "img/ui/rank/rank3.png";
+        } else if (rank < 300) {
+            return "img/ui/rank/rank4.png";
+        } else if (rank < 400) {
+            return "img/ui/rank/rank5.png";
+        } else if (rank < 500) {
+            return "img/ui/rank/rank6.png";
+        } else if (rank < 600) {
+            return "img/ui/rank/rank7.png";
+        } else if (rank < 700) {
+            return "img/ui/rank/rank8.png";
+        } else if (rank < 800) {
+            return "img/ui/rank/rank9.png";
+        } else if (rank < 1000) {
+            return "img/ui/rank/rank10.png";
+        } else if (rank < 1250) {
+            return "img/ui/rank/rank11.png";
+        } else if (rank < 1500) {
+            return "img/ui/rank/rank12.png";
+        } else if (rank < 2000) {
+            return "img/ui/rank/rank13.png";
+        } else if (rank >= 2000) {
+            return "img/ui/rank/rank14.png";
+        }
+    };
+
+    ui.playerChip = function (player, cut, defaultColor) {
+        var chatPlayer;
+        if (cut == null) {
+            cut = 20;
+        }
+        if (defaultColor == null) {
+            defaultColor = "white";
+        }
+        if (player.ai) {
+            chatPlayer = {
+                rank: 0
+            };
+        } else {
+            chatPlayer = chat.players[player.name] || {
+                rank: 0
+            };
+        }
+        return div(".playerChip", function () {
+            var x;
+            position("relative");
+            display("inline-block");
+            height(24);
+            line_height(24);
+            oncontextmenu(function (e) {
+                e.preventDefault();
+                return ui.rmenu = {
+                    id: rid(),
+                    pos: [e.clientX, e.clientY],
+                    html: function () {
+                        div(function () {
+                            padding(5);
+                            return text(player.name);
+                        });
+                        if (player.name !== commander.name && player.name !== "Server") {
+                            div(".hover-red", function () {
+                                padding(5);
+                                if (!commander.mutes[player.name]) {
+                                    text("Mute player");
+                                } else {
+                                    text("Unmute player");
+                                }
+                                return onclick(function () {
+                                    commander.mutes[player.name] = !commander.mutes[player.name];
+                                    account.rootSave();
+                                    return ui.rmenu = null;
+                                });
+                            });
+                            return div(".hover-red", function () {
+                                padding(5);
+                                if (!commander.friends[player.name]) {
+                                    text("Add to friends");
+                                } else {
+                                    text("Remove from friends");
+                                }
+                                return onclick(function () {
+                                    commander.friends[player.name] = !commander.friends[player.name];
+                                    account.rootSave();
+                                    return ui.rmenu = null;
+                                });
+                            });
+                        }
+                    }
+                };
+            });
+            x = 0;
+            div(function () {
+                var c, rank;
+                left(x);
+                position("absolute");
+                box_shadow("inset 0 0 3px 2px rgba(255,255,255,.2)");
+                border_radius(5);
+                height(20);
+                width(20);
+                margin(2);
+                if (player.connected === void 0 || player.connected === true) {
+                    c = player.color;
+                    if (c) {
+                        background_color("rgba(" + c[0] + "," + c[1] + "," + c[2] + ",1)");
+                    }
+                }
+                if (player.ai && !sim.galaxyStar) {
+                    img({
+                        src: "img/ui/player/ai.png",
+                        width: 20,
+                        height: 20
+                    });
+                } else {
+                    rank = chatPlayer.rank;
+                    if (rank !== 0 && !isNaN(rank)) {
+                        img({
+                            src: rankImage(rank),
+                            width: 20,
+                            height: 20
+                        });
+                    }
+                }
+                return x += 24;
+            });
+            if (player.host && !sim.galaxyStar) {
+                x += 2;
+                img({
+                    src: "img/ui/player/host.png",
+                    width: 20,
+                    heigth: 20
+                }, function () {
+                    left(x);
+                    top(2);
+                    position("absolute");
+                    return x += 22;
+                });
+            }
+            if (commander.mutes[player.name]) {
+                img({
+                    src: "img/ui/player/mute.png",
+                    width: 20,
+                    heigth: 20
+                }, function () {
+                    left(x);
+                    top(2);
+                    position("absolute");
+                    return x += 18;
+                });
+            }
+            if (commander.friends[player.name]) {
+                img({
+                    src: "img/ui/player/friend.png",
+                    width: 20,
+                    heigth: 20
+                }, function () {
+                    left(x);
+                    top(2);
+                    position("absolute");
+                    return x += 18;
+                });
+            }
+            x += 2;
+            return span(function () {
+                padding_left(x);
+                if (player.afk) {
+                    color("rgba(255,255,255,.6)");
+                }
+                if (chatPlayer.faction) {
+                    span(function () {
+                        font_size(20);
+                        color("rgba(255,255,255,.3)");
+                        return text("[");
+                    });
+                    text(chatPlayer.faction);
+                    span(function () {
+                        font_size(20);
+                        color("rgba(255,255,255,.3)");
+                        return text("]");
+                    });
+                    cut -= chatPlayer.faction.length;
+                    if (cut < 0) {
+                        cut = 0;
+                    }
+                }
+                if (!player.name) {
+                    return text(" ???");
+                } else {
+                    return text(player.name.slice(0, cut));
+                }
+            });
+        });
+    };
+
+    battleroom.countDownSound = null;
+
+    battleroom.room = function () {
+        var sideWidth;
+        if (intp.countDown === 5 * 16 && !sim.local) {
+            onecup.refresh();
+        }
+        sideWidth = window.innerWidth / 4;
+        div(function () {
+            color("white");
+            position("absolute");
+            top(64);
+            bottom(84);
+            left(0);
+            width(sideWidth);
+            background_color("rgba(0,0,0,.1)");
+            overflow_y("scroll");
+            if ((network.websocket != null) && network.websocket.readyState === WebSocket.CONNECTING) {
+                div(function () {
+                    opacity(".4");
+                    padding("100px 20px");
+                    text_align("center");
+                    return text("Connecting...");
+                });
+            } else if (intp.players.length === 0) {
+                div(function () {
+                    opacity(".4");
+                    padding("100px 20px");
+                    text_align("center");
+                    return text("Waiting...");
+                });
+            } else {
+                drawServerSettings();
+                drawStart();
+                drawTeams();
+            }
+            if (!sim.local) {
+                return div(".hover-white", function () {
+                    padding(20);
+                    text_align("center");
+                    text("leave game");
+                    return onclick(function () {
+                        battleMode.startNewLocal();
+                        return ui.go("multiplayer");
+                    });
+                });
+            }
+        });
+        return div(function () {
+            color("white");
+            position("absolute");
+            top(64);
+            bottom(84);
+            right(0);
+            width(sideWidth);
+            background_color("rgba(0,0,0,.3)");
+            overflow_y("scroll");
+            if (ui.pickingLobbyAiSide) {
+                return drawAis();
+            }
+        });
+    };
+
+    needNumPlayers = function () {
+        if (sim.local) {
+            return 3;
+        }
+        if (intp.serverType.slice(0, 3) === "1v1") {
+            return 1;
+        }
+        if (intp.serverType === "2v2") {
+            return 2;
+        }
+        if (intp.serverType === "3v3") {
+            return 3;
+        }
+    };
+
+    ui.serverNeedNumPlayers = function (server) {
+        var ref;
+        if (!server.type) {
+            return 3;
+        }
+        if (((ref = server.type) != null ? ref.slice(0, 3) : void 0) === "1v1") {
+            return 1;
+        }
+        if (server.type === "2v2") {
+            return 2;
+        }
+        if (server.type === "3v3") {
+            return 3;
+        }
+    };
+
+    canAddAI = function () {
+        if (sim.local) {
+            return true;
+        }
+        if (intp.serverType.slice(0, 3) === "1v1") {
+            return false;
+        }
+        return commander.side !== "spectators";
+    };
+
+    drawServerSettings = function () {
+        var modeButton;
+        if (sim.local) {
+            return;
+        }
+        modeButton = function (name) {
+            return span(".hover-black", function () {
+                display("inline-block");
+                margin(5);
+                padding("10px 10px");
+                text_align("center");
+                color("white");
+                if (intp.serverType === name) {
+                    background_color("rgba(0,0,0,.2)");
+                }
+                text(name);
+                return onclick(function () {
+                    var config;
+                    if (commander.host && intp.state === "waiting") {
+                        config = {};
+                        config['type'] = name;
+                        console.log("send", "configGame", config);
+                        return network.send("configGame", config);
+                    }
+                });
+            });
+        };
+        return div(function () {
+            background_color("rgba(0,0,0,.1)");
+            modeButton("1v1");
+            modeButton("1v1r");
+            modeButton("1v1t");
+            modeButton("2v2");
+            return modeButton("3v3");
+        });
+    };
+
+    drawStart = function () {
+        var alphas, betas, i, len, p, ready, ref;
+        if (intp.state === "waiting") {
+            if (intp.countDown > 15) {
+                return div(function () {
+                    opacity(".4");
+                    padding(20);
+                    text_align("center");
+                    return text("Starting in " + Math.floor(intp.countDown / 16));
+                });
+            } else {
+                alphas = 0;
+                betas = 0;
+                ref = intp.players;
+                for (i = 0, len = ref.length; i < len; i++) {
+                    p = ref[i];
+                    if (p.side === "alpha") {
+                        alphas += 1;
+                    }
+                    if (p.side === "beta") {
+                        betas += 1;
+                    }
+                }
+                ready = alphas === needNumPlayers() && betas === needNumPlayers();
+                if (sim.local) {
+                    return div(".hover-white", function () {
+                        padding(20);
+                        text_align("center");
+                        text("Start");
+                        return onclick(function () {
+                            ui.go("battle");
+                            return network.send("startGame");
+                        });
+                    });
+                } else if (ready) {
+                    if (commander.host) {
+                        return div(".hover-white", function () {
+                            padding(20);
+                            text_align("center");
+                            text("Start");
+                            return onclick(function () {
+                                return network.send("startGame");
+                            });
+                        });
+                    } else {
+                        return div(function () {
+                            opacity(".4");
+                            padding(20);
+                            text_align("center");
+                            return text("Waiting for host to start");
+                        });
+                    }
+                } else {
+                    return div(function () {
+                        opacity(".4");
+                        padding(20);
+                        text_align("center");
+                        return text("Waiting for players " + intp.serverType);
+                    });
+                }
+            }
+        } else {
+            return div(".hover-white", function () {
+                padding(20);
+                text_align("center");
+                text("In Progress");
+                return onclick(function () {
+                    return ui.go("battle");
+                });
+            });
+        }
+    };
+
+    drawTeams = function () {
+        drawTeam("alpha", "Alpha Team");
+        drawTeam("beta", "Beta Team");
+        return drawSpecs("spectators", "Spectators");
+    };
+
+    drawAis = function () {
+        var fleetAis, i, j, k, l, len, len1, len2, len3, m, name, ref, ref1, ref2, results, row, yourAis;
+        color("white");
+        yourAis = [];
+        fleetAis = commander.fleet.ais || {};
+        for (row = i = 0; i < 1000; row = ++i) {
+            if (fleetAis[row]) {
+                yourAis.push(fleetAis[row]);
+            }
+        }
+        if (yourAis.length > 0) {
+            div(function () {
+                background_color("rgba(0,0,0,.1)");
+                text("Your AIs");
+                return padding(10);
+            });
+            for (j = 0, len = yourAis.length; j < len; j++) {
+                name = yourAis[j];
+                drawAI(name);
+            }
+        }
+        div(function () {
+            background_color("rgba(0,0,0,.1)");
+            text("Easy AIs");
+            return padding(10);
+        });
+        ref = ais.easy;
+        for (k = 0, len1 = ref.length; k < len1; k++) {
+            name = ref[k];
+            drawAI(name);
+        }
+        div(function () {
+            background_color("rgba(0,0,0,.1)");
+            text("Medium AIs");
+            return padding(10);
+        });
+        ref1 = ais.med;
+        for (l = 0, len2 = ref1.length; l < len2; l++) {
+            name = ref1[l];
+            drawAI(name);
+        }
+        div(function () {
+            background_color("rgba(0,0,0,.1)");
+            text("Hard AIs");
+            return padding(10);
+        });
+        ref2 = ais.hard;
+        results = [];
+        for (m = 0, len3 = ref2.length; m < len3; m++) {
+            name = ref2[m];
+            results.push(drawAI(name));
+        }
+        return results;
+    };
+
+    drawAI = function (name) {
+        return div(".hover-white", function () {
+            var w;
+            display("inline-block");
+            w = ((window.innerWidth / 4) - 25) / 2;
+            width(w);
+            padding(5);
+            margin(3);
+            text(name);
+            return onclick(function () {
+                var aiBuildBar, aiName, col, fleetAis, i, row;
+                aiBuildBar = false;
+                fleetAis = commander.fleet.ais || {};
+                for (row in fleetAis) {
+                    aiName = fleetAis[row];
+                    if (name === aiName) {
+                        aiBuildBar = [];
+                        for (col = i = 0; i < 10; col = ++i) {
+                            aiBuildBar.push(commander.fleet[row + "," + col]);
+                        }
+                        console.log("ai player from name", aiName, aiBuildBar);
+                    }
+                }
+                if (!aiBuildBar) {
+                    aiBuildBar = ais.all[name];
+                }
+                if (aiBuildBar) {
+                    network.send("addAi", name, ui.pickingLobbyAiSide, aiBuildBar);
+                }
+                return ui.pickingLobbyAiSide = false;
+            });
+        });
+    };
+
+    drawTeam = function (side, name) {
+        var _, num, p, ref;
+        num = 0;
+        ref = intp.players;
+        for (_ in ref) {
+            p = ref[_];
+            if (p.side === side) {
+                num += 1;
+            }
+        }
+        div(function () {
+            position("relative");
+            text(name);
+            padding(10);
+            background_color("rgba(255, 255, 255, .1)");
+            if (num < needNumPlayers() && canAddAI()) {
+                return div(".hover-black", function () {
+                    position("absolute");
+                    right(0);
+                    top(0);
+                    padding(10);
+                    text("+ AI");
+                    return onclick(function () {
+                        return ui.pickingLobbyAiSide = side;
+                    });
+                });
+            }
+        });
+        return div(function () {
+            var ref1;
+            min_height(100);
+            overflow_y("auto");
+            ref1 = intp.players;
+            for (_ in ref1) {
+                p = ref1[_];
+                if (p.side === side) {
+                    drawPlayerChip(p);
+                }
+            }
+            if (commander.side !== side && num < needNumPlayers()) {
+                return div(".hover-black", function () {
+                    padding(10);
+                    text_align("center");
+                    color("#DDD");
+                    text("join this team");
+                    return onclick(function () {
+                        network.send("switchSide", side);
+                        if (side !== "spectators") {
+                            return network.sendPlayer();
+                        }
+                    });
+                });
+            }
+        });
+    };
+
+    drawSpecs = function (side, name) {
+        div(function () {
+            position("relative");
+            padding(10);
+            background_color("rgba(255, 255, 255, .1)");
+            return text(name);
+        });
+        return div(function () {
+            var _, p, ref;
+            min_height(100);
+            overflow_y("auto");
+            ref = intp.players;
+            for (_ in ref) {
+                p = ref[_];
+                if (p.side === side && p.connected && !p.ai) {
+                    drawPlayerChip(p);
+                }
+            }
+            if (commander.side !== side) {
+                return div(".hover-black", function () {
+                    padding(10);
+                    text_align("center");
+                    color("#DDD");
+                    text("spectate");
+                    return onclick(function () {
+                        return network.send("switchSide", side);
+                    });
+                });
+            }
+        });
+    };
+
+    drawPlayerChip = function (player) {
+        return div(function () {
+            height(24);
+            line_height(24);
+            margin(4);
+            if (player.afk) {
+                color("rgba(255,255,255,.3)");
+            } else {
+                color("white");
+            }
+            ui.playerChip(player);
+            padding_left(5);
+            height(24);
+            text_overflow("ellipsis");
+            overflow("hidden");
+            white_space("nowrap");
+            if (intp.serverType === "1v1r" || intp.serverType === "1v1t") {
+                text("[" + (findRank(player.name)) + "]");
+            }
+            if (player.side !== "spectators" && sim.state === "waiting" && commander.host) {
+                return div(".button", function () {
+                    height(24);
+                    padding("0px 5px");
+                    float("right");
+                    if (player.id === commander.id) {
+                        text("leave");
+                    } else {
+                        text("kick");
+                    }
+                    return onclick(function () {
+                        console.log("kick", player.number);
+                        return network.send("kickPlayer", player.number);
+                    });
+                });
+            }
+        });
+    };
+
+    battleroom.quickscore = function () {
+        return div(function () {
+            var quarterWidth;
+            quarterWidth = window.innerWidth / 4;
+            position("absolute");
+            left(quarterWidth);
+            width(quarterWidth * 2);
+            top(64);
+            bottom(84);
+            overflow_y("scroll");
+            background_color("rgba(0, 0, 0, .1)");
+            color("white");
+            if (battleMode.server) {
+                div(function () {
+                    background_color("rgba(0,0,0,.25)");
+                    padding(20);
+                    text_align("center");
+                    font_size(18);
+                    text(battleMode.server.name);
+                    text(" ");
+                    return text(intp.serverType);
+                });
+            }
+            div(function () {
+                var teamTable;
+                padding(20);
+                teamTable = function (team) {
+                    return table(function () {
+                        var _, player, ref, results;
+                        padding_top(50);
+                        tr(function () {
+                            height(30);
+                            th(function () {
+                                width(400);
+                                text_align("left");
+                                text_align("left");
+                                text(team);
+                                if (intp.winningSide === team) {
+                                    return text("(won)");
+                                }
+                            });
+                            th(function () {
+                                width(100);
+                                return text("Rank");
+                            });
+                            th(function () {
+                                width(100);
+                                return text("APM");
+                            });
+                            th(function () {
+                                width(100);
+                                return text("Caps");
+                            });
+                            th(function () {
+                                width(100);
+                                return text("Units");
+                            });
+                            return th(function () {
+                                width(100);
+                                return text("Money");
+                            });
+                        });
+                        ref = intp.players;
+                        results = [];
+                        for (_ in ref) {
+                            player = ref[_];
+                            if (player.side === team) {
+                                results.push(quickScorePlayer(player));
+                            } else {
+                                results.push(void 0);
+                            }
+                        }
+                        return results;
+                    });
+                };
+                teamTable("alpha");
+                return teamTable("beta");
+            });
+            if (intp.winningSide) {
+                bottom(84);
+                div(function () {
+                    font_size(90);
+                    padding(10);
+                    text_align("center");
+                    text_shadow("0px 0px 5px #000");
+                    return text(intp.winningSide + " victory!");
+                });
+            }
+            if (intp.state === "running" && commander.side !== "spectators") {
+                return div(".hover-red", function () {
+                    padding(10);
+                    width(200);
+                    margin("0px auto");
+                    text("Surrender");
+                    text_align("center");
+                    return onclick(function () {
+                        return network.send("surrender");
+                    });
+                });
+            } else {
+                return div(".hover-black-dark", function () {
+                    padding(10);
+                    width(200);
+                    margin("0px auto");
+                    text("Battleroom");
+                    text_align("center");
+                    return onclick(function () {
+                        return ui.mode = "battleroom";
+                    });
+                });
+            }
+        });
+    };
+
+    quickScorePlayer = function (player) {
+        if (player.side === "dead") {
+            return;
+        }
+        return tr(function () {
+            td(function () {
+                text_align("left");
+                return ui.playerChip(player);
+            });
+            td(function () {
+                return text(findRank(player.name));
+            });
+            td(function () {
+                var ref;
+                return text((ref = player.apm) != null ? ref.toFixed(2) : void 0);
+            });
+            td(function () {
+                return text(player.capps);
+            });
+            td(function () {
+                return text(player.unitsBuilt);
+            });
+            return td(function () {
+                return text(player.money);
+            });
+        });
+    };
+
+    ui.topPlayers = function () {
+        var maybeChars, quarterWidth, s, team;
+        quarterWidth = window.innerWidth / 4;
+        maybeChars = quarterWidth / 16;
+        team = function (side) {
+            var _, cut, i, j, len, len1, p, player, players, results, totalChars;
+            players = (function () {
+                var ref, results;
+                ref = intp.players;
+                results = [];
+                for (_ in ref) {
+                    p = ref[_];
+                    if ((p != null ? p.side : void 0) === side) {
+                        results.push(p);
+                    }
+                }
+                return results;
+            })();
+            if (players.length === 0) {
+                return span(function () {
+                    color("rgba(255,255,255,.6)");
+                    return text("no one");
+                });
+            } else {
+                cut = 18;
+                while (cut > 1) {
+                    totalChars = 0;
+                    for (i = 0, len = players.length; i < len; i++) {
+                        p = players[i];
+                        totalChars += 4;
+                        if (p.faction) {
+                            totalChars += p.faction.length;
+                        }
+                        totalChars += p.name.slice(0, cut).length;
+                    }
+                    if (totalChars > maybeChars) {
+                        cut -= 1;
+                    } else {
+                        break;
+                    }
+                }
+                results = [];
+                for (j = 0, len1 = players.length; j < len1; j++) {
+                    player = players[j];
+                    ui.playerChip(player, cut);
+                    results.push(text(" "));
+                }
+                return results;
+            }
+        };
+        s = 20;
+        div(function () {
+            position("absolute");
+            top(0);
+            left(quarterWidth - s);
+            width(s * 2);
+            return text("vs");
+        });
+        div(function () {
+            position("absolute");
+            top(0);
+            right(quarterWidth + s);
+            return team("alpha");
+        });
+        return div(function () {
+            position("absolute");
+            top(0);
+            left(quarterWidth + s);
+            return team("beta");
+        });
+    };
+
+    ui.restartDialog = function () {
+        return div(function () {
+            var bigRestartButton;
+            position("absolute");
+            top((window.innerHeight - 500) / 2);
+            left(0);
+            right(0);
+            height(500);
+            background_color("rgba(0,0,0,.6)");
+            color("white");
+            line_height(64);
+            font_size(18);
+            img(".hover-black", {
+                src: "img/ui/back.png",
+                width: 64,
+                height: 64
+            }, function () {
+                position("absolute");
+                top(0);
+                left(0);
+                return onclick(function () {
+                    return ui.go("battle");
+                });
+            });
+            div(function () {
+                position("absolute");
+                top(0);
+                left(60);
+                text("back to battle");
+                return onclick(function () {
+                    return ui.mode = "battle";
+                });
+            });
+            h1(function () {
+                margin_top(80);
+                text_align("center");
+                return text("Restart");
+            });
+            bigRestartButton = function (label, mode) {
+                return div(function () {
+                    var w;
+                    w = 160;
+                    position("relative");
+                    width(w);
+                    height(136);
+                    display("inline-block");
+                    return ui.div_hover_blur(function () {
+                        position("absolute");
+                        width(w);
+                        height(136);
+                        img({
+                            src: "img/ui/restart/" + mode + ".png",
+                            width: 80,
+                            height: 80
+                        }, function () {
+                            position("absolute");
+                            top(0);
+                            return left((w - 80) / 2);
+                        });
+                        div(function () {
+                            position("absolute");
+                            bottom(0);
+                            width(w);
+                            text_align("center");
+                            return text(label);
+                        });
+                        return onclick(function () {
+                            var ref;
+                            track("galaxy_restart", {
+                                mode: mode,
+                                starName: (ref = sim.galaxyStar) != null ? ref.name : void 0
+                            });
+                            if (ui.mode !== "galaxy" && sim.galaxyStar) {
+                                galaxyMode.fightAt(sim.galaxyStar, true);
+                            }
+                            return ui.mode = mode;
+                        });
+                    });
+                });
+            };
+            div(function () {
+                margin_top(30);
+                text_align("center");
+                bigRestartButton("Back to Galaxy", "galaxy");
+                bigRestartButton("Back to Design", "design");
+                return bigRestartButton("Restart Battle", "battle");
+            });
+            return div(function () {
+                var ref;
+                width(600);
+                margin("20px auto");
+                text_align("center");
+                font_size(16);
+                opacity(".5");
+                if ((ref = sim.galaxyStar) != null ? ref.lossTip : void 0) {
+                    return text("tip: " + sim.galaxyStar.lossTip);
+                }
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/tournaments.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    eval(onecup["import"]());
+
+    window.tournaments = {};
+
+    ui.tournamentsPage = function () {
+        return div(function () {
+            var a, aKey, ai, aiList, ais, b, bKey, draws, game, j, len, losses, page, ref, size, tgames, times, twins,
+                winRatio, wins;
+            position("absolute");
+            top(0);
+            left(0);
+            width(window.innerWidth);
+            min_height(window.innerHeight);
+            overflow("auto");
+            background_color("rgba(0,0,0,.5)");
+            color("white");
+            h1(function () {
+                padding(5);
+                return text("AI vs AI #1");
+            });
+            page = onecup.get("games.json");
+            if (!page.loaded) {
+                text("loading...");
+                return;
+            }
+            tournaments.ais = ais = {};
+            tournaments.wins = wins = {};
+            tournaments.times = times = {};
+            tournaments.losses = losses = {};
+            tournaments.draws = draws = {};
+            tournaments.twins = twins = {};
+            tournaments.tgames = tgames = {};
+            ref = page.json;
+            for (j = 0, len = ref.length; j < len; j++) {
+                game = ref[j];
+                a = game.alpha;
+                b = game.beta;
+                aKey = a + 'vs' + b;
+                bKey = b + 'vs' + a;
+                ais[a] = true;
+                ais[b] = true;
+                tgames[a] = (tgames[a] || 0) + 1;
+                tgames[b] = (tgames[b] || 0) + 1;
+                times[aKey] = (times[aKey] || 0) + (game.time / 60 / 60);
+                times[bKey] = (times[bKey] || 0) + (game.time / 60 / 60);
+                if (game.winningSide === "alpha") {
+                    wins[aKey] = (wins[aKey] || 0) + 1;
+                    losses[bKey] = (losses[bKey] || 0) + 1;
+                    twins[a] = (twins[a] || 0) + 1;
+                }
+                if (game.winningSide === "beta") {
+                    wins[bKey] = (wins[bKey] || 0) + 1;
+                    losses[aKey] = (losses[aKey] || 0) + 1;
+                    twins[b] = (twins[b] || 0) + 1;
+                }
+                if (!game.winningSide) {
+                    draws[bKey] = (draws[bKey] || 0) + 1;
+                    draws[aKey] = (draws[aKey] || 0) + 1;
+                }
+            }
+            aiList = (function () {
+                var results;
+                results = [];
+                for (ai in ais) {
+                    results.push(ai);
+                }
+                return results;
+            })();
+            winRatio = function (ai) {
+                return (twins[ai] / tgames[ai]) || 0;
+            };
+            aiList = aiList.sort(function (a, b) {
+                return winRatio(b) - winRatio(a);
+            });
+            size = 20;
+            return div(function () {
+                var i, k, len1, len2, m, results, x, y;
+                position("relative");
+                font_size(10);
+                for (i = k = 0, len1 = aiList.length; k < len1; i = ++k) {
+                    ai = aiList[i];
+                    div(function () {
+                        position("absolute");
+                        top(i * size + 103);
+                        width(130);
+                        text_align("right");
+                        return text(ai);
+                    });
+                    div(function () {
+                        position("absolute");
+                        top(i * size + 103);
+                        left(140);
+                        width(20);
+                        text_align("right");
+                        if (!tgames[ai] || !twins[ai]) {
+                            return text("0");
+                        } else {
+                            return text(Math.floor(twins[ai] / tgames[ai] * 100));
+                        }
+                    });
+                    div(function () {
+                        position("absolute");
+                        left(i * size + 172);
+                        width(130);
+                        top(39);
+                        transform("rotate(-45deg)");
+                        return text(ai);
+                    });
+                }
+                div(function () {
+                    position("absolute");
+                    left(136);
+                    width(130);
+                    top(39);
+                    transform("rotate(-45deg)");
+                    return text("win %");
+                });
+                results = [];
+                for (y = m = 0, len2 = aiList.length; m < len2; y = ++m) {
+                    a = aiList[y];
+                    results.push((function () {
+                        var len3, o, results1;
+                        results1 = [];
+                        for (x = o = 0, len3 = aiList.length; o < len3; x = ++o) {
+                            b = aiList[x];
+                            results1.push(div(function () {
+                                var c, d, l, n, w;
+                                position("absolute");
+                                left(x * size + 180);
+                                top(y * size + 100);
+                                width(size - 2);
+                                height(size - 2);
+                                line_height(size - 2);
+                                text_align("center");
+                                if (a === b) {
+                                    return;
+                                }
+                                w = wins[a + 'vs' + b] || 0;
+                                l = losses[a + 'vs' + b] || 0;
+                                d = draws[a + 'vs' + b] || 0;
+
+                                /*
+                if w > l
+                    background_color "rgba(0,255,0,.6)"
+                else if w < l
+                    background_color "rgba(255,0,0,.6)"
+                else if w == l
+                    background_color "rgba(0,0,0,.4)"
+                #text w - l
+                #text w+":"+(l+d+w)
+                #text Math.floor(w / (w+l+d) * 100)
+                 */
+
+                                /*
+                n = w+l+d
+                c = n*10
+                background_color "rgba(#{c},#{c},#{c},.4)"
+
+                text n
+                 */
+                                n = times[a + 'vs' + b] * 60;
+                                c = times[a + 'vs' + b] / 2;
+                                background_color("rgba(255,0,0," + c + ")");
+                                return text(Math.floor(n));
+                            }));
+                        }
+                        return results1;
+                    })());
+                }
+                return results;
+            });
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/mod.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var chatLine;
+
+    eval(onecup["import"]());
+
+    window.mod = {};
+
+    mod.player = "";
+
+    css(".hover-green", function () {
+        background_color("rgba(0,255,0,.2)");
+        return css(":hover", function () {
+            return background_color("rgba(0,255,0,.5)");
+        });
+    });
+
+    ui.modPage = function () {
+        div(function () {
+            position("absolute");
+            top(0);
+            left(0);
+            width(300);
+            bottom(200);
+            background_color("rgba(0,0,0,.5)");
+            color("white");
+            overflow_y("scroll");
+            overflow_x("hidden");
+            div(".hover-black", function () {
+                padding(15);
+                text("Main");
+                return onclick(function () {
+                    mod.info = null;
+                    mod.player = "";
+                    mod.chanFilter = "";
+                    return rootNet.send("command", ["modLog"]);
+                });
+            });
+            input({
+                type: "text",
+                placeholder: "name",
+                value: mod.player
+            }, function () {
+                width(300);
+                font_size(20);
+                padding(5);
+                line_height(30);
+                border("none");
+                background_color("rgba(0,0,0,.5)");
+                color("white");
+                oninput(function (e) {
+                    return mod.player = e.target.value;
+                });
+                return onkeypress(function (e) {
+                    if (e.which === 13) {
+                        mod.info = null;
+                        return rootNet.send("command", ["modInfo", mod.player]);
+                    }
+                });
+            });
+            if (mod.info) {
+                if (mod.info.alts) {
+                    return div(function () {
+                        var alt, i, infoField, len, ref, results;
+                        user_select("text");
+                        padding(5);
+                        text("possible alts (not accureate)");
+                        ref = mod.info.alts;
+                        results = [];
+                        for (i = 0, len = ref.length; i < len; i++) {
+                            alt = ref[i];
+                            alt.afk = false;
+                            div(function () {
+                                return ui.playerChip(alt);
+                            });
+                            infoField = function (f) {
+                                return div(function () {
+                                    if (mod.info.player[f] === alt[f]) {
+                                        color("rgba(255,255,255,.6)");
+                                    } else {
+                                        color("rgba(255,255,255,.25)");
+                                    }
+                                    font_size(10);
+                                    return text(alt[f]);
+                                });
+                            };
+                            infoField("ip");
+                            infoField("email");
+                            results.push(infoField("fingerprint"));
+                        }
+                        return results;
+                    });
+                }
+            }
+        });
+        div(function () {
+            position("absolute");
+            left(0);
+            width(300);
+            height(200);
+            bottom(0);
+            background_color("rgba(0,0,0,.5)");
+            color("white");
+            return;
+            div(".hover-red", function () {
+                padding(5);
+                return text("mute 15min");
+            });
+            div(".hover-red", function () {
+                padding(5);
+                return text("mute 1h");
+            });
+            div(".hover-green", function () {
+                padding(5);
+                return text("unmute");
+            });
+            div(".hover-red", function () {
+                padding(5);
+                return text("ban 1h");
+            });
+            div(".hover-red", function () {
+                padding(5);
+                return text("ban 24h");
+            });
+            div(".hover-red", function () {
+                padding(5);
+                return text("ban 7d");
+            });
+            return div(".hover-green", function () {
+                padding(5);
+                return text("unban");
+            });
+        });
+        div(function () {
+            var i, j, len, len1, msg, ref, ref1, ref2, ref3, results, results1;
+            position("absolute");
+            top(0);
+            left(300);
+            right(0);
+            bottom(30);
+            padding(5);
+            background_color("rgba(0,0,0,.6)");
+            color("white");
+            overflow("auto");
+            user_select("text");
+            if ((ref = mod.info) != null ? ref.chatLog : void 0) {
+                ref1 = mod.info.chatLog;
+                results = [];
+                for (i = 0, len = ref1.length; i < len; i++) {
+                    msg = ref1[i];
+                    results.push(chatLine(msg));
+                }
+                return results;
+            } else if ((ref2 = mod.log) != null ? ref2.chatLog : void 0) {
+                ref3 = mod.log.chatLog.slice(mod.log.chatLog.length - 5000);
+                results1 = [];
+                for (j = 0, len1 = ref3.length; j < len1; j++) {
+                    msg = ref3[j];
+                    results1.push(chatLine(msg));
+                }
+                return results1;
+            }
+        });
+        return input({
+            type: "text"
+        }, function () {
+            border("none");
+            position("absolute");
+            left(300);
+            width(window.innerWidth - 300);
+            bottom(0);
+            height(30);
+            padding(5);
+            background_color("rgba(0,0,0,.8)");
+            return color("white");
+        });
+    };
+
+    chatLine = function (msg) {
+        if (mod.chanFilter && msg.channel !== mod.chanFilter) {
+            return;
+        }
+        return div(function () {
+            span(".hover-black", function () {
+                display("ineline-block");
+                text("F");
+                padding("0px 5px");
+                return onclick(function () {
+                    mod.player = msg.name;
+                    return rootNet.send("command", ["modInfo", mod.player]);
+                });
+            });
+            span(".hover-black", function () {
+                display("ineline-block");
+                text("S");
+                padding("0px 5px");
+                return onclick(function () {
+                    return mod.chanFilter = msg.channel;
+                });
+            });
+            ui.playerChip(msg, 20, "#AAA");
+            padding(3);
+            text(": ");
+            return raw(linky.linkfy(msg.text));
+        });
+    };
+
+}).call(this);
+;
+
+
+//from src/istrolid.js
+// Generated by CoffeeScript 1.10.0
+(function () {
+    var dpr, globalErrors, isFirefox, keymap, updateQ,
+        bind = function (fn, me) {
+            return function () {
+                return fn.apply(me, arguments);
+            };
+        };
+
+    window.baseAtlas = null;
+
+    window.intp = null;
+
+    window.sim = null;
+
+    window.network = null;
+
+    window.commander = null;
+
+    if (typeof require !== "undefined" && require !== null) {
+        window.electron = require("electron");
+    }
+
+    dpr = window.devicePixelRatio;
+
+    isFirefox = typeof InstallTrigger !== 'undefined';
+
+    keymap = {
+        38: "up",
+        40: "down",
+        39: "left",
+        37: "right",
+        33: "pageUp",
+        34: "pageDown",
+        87: "up",
+        83: "down",
+        68: "left",
+        65: "right",
+        69: "pageUp",
+        81: "pageDown"
+    };
+
+    updateQ = [];
+
+    globalErrors = 0;
+
+    window.onerror = function (msg, url, line, col, e) {
+        globalErrors += 1;
+        if (globalErrors < 10) {
+            return track("error", {
+                message: msg,
+                url: url,
+                line: line,
+                col: col,
+                stack: e != null ? e.stack : void 0
+            });
+        }
+    };
+
+    window.Control = (function () {
+        Control.prototype.jitter = 0;
+
+        Control.prototype.perf = false;
+
+        Control.prototype.setCursor = function (type) {
+            return document.body.style.cursor = "-webkit-image-set(url('img/ui/mouses/" + type + ".png') 1x, url('img/ui/mouses/" + type + "@2x.png') 2x) 2 2, auto";
+        };
+
+        function Control() {
+            this.simInterval = bind(this.simInterval, this);
+            this.clearMessage = bind(this.clearMessage, this);
+            this.tick = bind(this.tick, this);
+            var fn1, j, len, onevent, ref;
+            this.setCursor("mouse");
+            this.backgroundMode = menuMode;
+            this.mode = menuMode;
+            this.mouse = [0, 0];
+            this.observer = {};
+            this.keys = {};
+            ref = ["onmousemove", "ondblclick", "onmousedown", "onmouseup", "onwheel"];
+            fn1 = (function (_this) {
+                return function (onevent) {
+                    return window[onevent] = function (e) {
+                        var base, bounds, d, idToHide, ref1, ref2, rmenuDiv, x, y;
+                        if (onevent === "onmousedown") {
+                            if (e.target.type === "text" || e.target.type === "password" || e.target.tagName === "P") {
+                                return true;
+                            } else {
+                                if ((ref1 = document.activeElement) != null) {
+                                    if (typeof ref1.blur === "function") {
+                                        ref1.blur();
+                                    }
+                                }
+                            }
+                            if (ui.rmenu) {
+                                idToHide = ui.rmenu.id;
+                                after(100, function () {
+                                    var ref2;
+                                    if (idToHide === ((ref2 = ui.rmenu) != null ? ref2.id : void 0)) {
+                                        ui.rmenu = null;
+                                        return onecup.refresh();
+                                    }
+                                });
+                            }
+                            _this.mouseDown = true;
+                        }
+                        if (onevent === "onmouseup") {
+                            _this.mouseDown = false;
+                        }
+                        if (onevent === "onmousemove") {
+                            _this.mouse[0] = e.clientX;
+                            _this.mouse[1] = e.clientY;
+                            if (typeof ui !== "undefined" && ui !== null ? ui.rmenu : void 0) {
+                                rmenuDiv = onecup.lookup("#rmenu");
+                                if (rmenuDiv) {
+                                    bounds = rmenuDiv.getBoundingClientRect();
+                                    ref2 = _this.mouse, x = ref2[0], y = ref2[1];
+                                    d = 100;
+                                    if (x < bounds.left - d || x > bounds.left + bounds.width + d || y > bounds.top + bounds.height + d || y < bounds.top - d) {
+                                        ui.rmenu = null;
+                                        onecup.refresh();
+                                    }
+                                }
+                            }
+                        }
+                        return typeof (base = _this.mode)[onevent] === "function" ? base[onevent](e) : void 0;
+                    };
+                };
+            })(this);
+            for (j = 0, len = ref.length; j < len; j++) {
+                onevent = ref[j];
+                fn1(onevent);
+            }
+            account.load();
+            window.onwheel = (function (_this) {
+                return function (e) {
+                    var base, delta;
+                    if (e.target.tagName === "P") {
+                        return;
+                    }
+                    if (isFirefox) {
+                        delta = e.deltaY;
+                    } else {
+                        delta = e.deltaY / 20;
+                    }
+                    return typeof (base = _this.mode).onzoom === "function" ? base.onzoom(delta, e) : void 0;
+                };
+            })(this);
+            window.onkeydown = (function (_this) {
+                return function (e) {
+                    var base, ref1;
+                    if (e.target.type === "text") {
+                        return;
+                    }
+                    if (e.target.type === "password") {
+                        return;
+                    }
+                    if (e.target.nodeName === "TEXTAREA") {
+                        return;
+                    }
+                    if (e.which === 8) {
+                        e.preventDefault();
+                    }
+                    _this.keys[e.which] = true;
+                    _this.keys[keymap[e.which]] = true;
+                    if (e.which === 13) {
+                        ui.chatting = true;
+                        setTimeout((function () {
+                            var ref1;
+                            return (ref1 = document.getElementById("chat")) != null ? ref1.focus() : void 0;
+                        }), 100);
+                        onecup.refresh();
+                    }
+                    if (settings.key(e, "Toggle UI")) {
+                        ui.show = !ui.show;
+                        onecup.refresh();
+                        console.log("ui hide");
+                    }
+                    if (e.which === 27) {
+                        control.armFullScreen = true;
+                    }
+                    if (e.shiftKey && e.which === 220) {
+                        control.perf = !control.perf;
+                        onecup.refresh();
+                    }
+                    if (settings.key(e, "Back")) {
+                        _this.escape();
+                    }
+                    if (e.which === 122) {
+                        enterFullScreen();
+                    }
+                    if (e.which === 121) {
+                        if (typeof electron !== "undefined" && electron !== null) {
+                            electron.remote.getCurrentWindow().toggleDevTools();
+                        }
+                    }
+                    if (e.which === 116) {
+                        location.reload();
+                    }
+                    if (e.which === 85) {
+                        if (((ref1 = window.location) != null ? ref1.href.indexOf("dev.istrolid.com") : void 0) !== -1) {
+                            window.testAction();
+                        }
+                    }
+                    return typeof (base = _this.mode).onkeydown === "function" ? base.onkeydown(e) : void 0;
+                };
+            })(this);
+            window.onkeyup = (function (_this) {
+                return function (e) {
+                    var base;
+                    if (e.which === 27 && control.armFullScreen) {
+                        if (typeof require === "undefined" || require === null) {
+                            enterFullScreen();
+                        }
+                        control.armFullScreen = false;
+                    }
+                    _this.keys[e.which] = false;
+                    _this.keys[keymap[e.which]] = false;
+                    return typeof (base = _this.mode).onkeyup === "function" ? base.onkeyup(e) : void 0;
+                };
+            })(this);
+            window.oncontextmenu = (function (_this) {
+                return function (e) {
+                    return false;
+                };
+            })(this);
+        }
+
+        Control.prototype.tick = function () {
+            if (ui.mode !== ui.oldMode) {
+                ui.oldMode = ui.mode;
+                if (typeof rootNet !== "undefined" && rootNet !== null) {
+                    rootNet.sendMode();
+                }
+            }
+            if (chat.channel !== chat.oldChannel) {
+                chat.oldChannel = chat.channel;
+                if (typeof rootNet !== "undefined" && rootNet !== null) {
+                    rootNet.sendMode();
+                }
+            }
+            this.trySimInterval();
+            actionMixer.tick();
+            baseAtlas.startFrame();
+            this.backgroundMode.draw();
+            this.backgroundMode.tick();
+            if (this.backgroundMode !== this.mode) {
+                this.mode.draw();
+            }
+            baseAtlas.beginSprites([0, 0], 1);
+            stats.fpsAdd();
+            stats.draw();
+            baseAtlas.finishSprites();
+            this.mode.tick();
+            bubbles.tick();
+            tutor.tick();
+            return requestAnimationFrame(this.tick);
+        };
+
+        Control.prototype.escape = function () {
+            ui.mode = "battle";
+            onecup.refresh();
+        };
+
+        Control.prototype.savePlayer = function () {
+            account.save();
+            return account.rootSave();
+        };
+
+        Control.prototype.clearMessage = function () {
+            return this.message = "";
+        };
+
+        Control.prototype.lastSimInterval = 0;
+
+        Control.prototype.cheatSimInterval = -12;
+
+        Control.prototype.trySimInterval = function () {
+            var rightNow;
+            rightNow = now();
+            if (this.lastSimInterval + 1000 / 16 + this.cheatSimInterval <= rightNow) {
+                this.lastSimInterval = rightNow;
+                return this.simInterval();
+            }
+        };
+
+        Control.prototype.simInterval = function () {
+
+            /* TODO, fix the replay system
+      if intp?.playReplay
+          frame = localStorage["one"].split("\n")[sim.step]
+          frame = JSON.parse(frame)
+          if frame?.step == 1
+              sim.things = {}
+              intp.things = {}
+          intp.recv(frame)
+          sim.step += 1
+       */
+            var fn, frame, galaxyAway, localAway, packet, popQ, step;
+            if (typeof intp !== "undefined" && intp !== null ? intp.local : void 0) {
+                packet = sim.send();
+                step = sim.step;
+                galaxyAway = sim.galaxyStar && ui.mode !== "battle";
+                localAway = ui.mode !== "battle" && intp.state === "running";
+                if (!galaxyAway && !localAway && !sim.paused) {
+                    sim.simulate();
+                } else {
+                    sim.startingSim();
+                }
+                fn = function () {
+                    var data;
+                    stats.netAdd(packet.byteLength);
+                    data = intp.zJson.loadDv(packet);
+                    return intp.recv(data);
+                };
+                updateQ.unshift(fn);
+                popQ = function () {
+                    fn = updateQ.pop();
+                    return fn();
+                };
+                setTimeout(popQ, Math.random() * control.jitter);
+            }
+            if ((typeof intp !== "undefined" && intp !== null ? intp.replay : void 0) === "playing") {
+                frame = intp.replayFrames[intp.replayStep];
+                if (frame) {
+                    intp.recv(frame);
+                    intp.replayStep += 1;
+                }
+            }
+            if (intp) {
+                return intp.think();
+            }
+        };
+
+        return Control;
+
+    })();
+
+    window.startSkirmish = function () {
+        var ai, aiPlayer, base, u;
+        track("start_skirmish");
+        window.bubbles.clear();
+        if (window.network != null) {
+            if (typeof (base = window.network).close === "function") {
+                base.close();
+            }
+        }
+        window.intp = new Interpolator();
+        window.sim = new Sim("challenge");
+        sim.sound = true;
+        sim.local = true;
+        intp.local = true;
+        intp.theme = sim.theme;
+        sim.start();
+        window.network = new Local();
+        if (onecup.params.map === "small") {
+            sim.generateMap(.5, 1);
+        }
+        if (onecup.params.map === "medium") {
+            sim.generateMap(.75, 4);
+        }
+        if (onecup.params.map === "super") {
+            sim.generateMap(2, 8);
+        }
+        if (onecup.params.map === "weapontest") {
+            mapping.generateWeaponTest();
+            sim.victoryConditions = function () {
+            };
+        }
+        if (onecup.params.speed === "fast") {
+            sim.ticksPerSec = parseInt(onecup.params.speed);
+            intp.ticksPerSec = sim.ticksPerSec;
+            intp.fast = true;
+        }
+        if (onecup.params.watch === "true") {
+            ais.useAi("Cython", "alpha");
+            ais.useAi("AlphaSwarm", "beta");
+            ais.useAi("NodeSwarm", "alpha");
+            ais.useAi("Sidewinder", "beta");
+            ais.useAi("CreepingHoard", "alpha");
+            ais.useAi("BullDogs", "beta");
+        } else if (onecup.params.evolve === "true") {
+            window.evolve();
+        } else if (!onecup.params.single === "true") {
+            sim.ais.push(new AnarchAI("AnarchAI", "alpha"));
+        } else if (onecup.params.ai != null) {
+            if (ais.all[onecup.params.ai] != null) {
+                ai = ais.all[onecup.params.ai];
+                useAi(ai, "beta");
+            } else {
+                console.log("no valid ai found", onecup.params.ai);
+            }
+        } else if (onecup.params.boss != null) {
+            aiPlayer = useAi(ais.all.BossAI, "beta");
+            u = new types.Unit(fromShort(onecup.params.boss));
+            u.pos = v2.create([0, 0]);
+            u.side = "beta";
+            u.rot = 0;
+            u.owner = aiPlayer.id;
+            u.number = 0;
+            sim.things[u.id] = u;
+        }
+        window.observer = {};
+        if (onecup.params.money != null) {
+            sim.defaultMoney = parseInt(onecup.params.money);
+        }
+        actionMixer.reset();
+        if (onecup.params.mapName) {
+            return mapping.load(onecup.params.mapName);
+        }
+    };
+
+    window.startSurvival = function () {
+        var a, addUnit, base, cp, player;
+        track("start_skirmish");
+        window.bubbles.clear();
+        if (window.network != null) {
+            if (typeof (base = window.network).close === "function") {
+                base.close();
+            }
+        }
+        window.network = new Local();
+        window.intp = new Interpolator();
+        window.sim = new Sim("challenge");
+        sim.start();
+        sim.things = {};
+        sim.victoryConditions = function () {
+            var id, k, ref, sides, thing;
+            sides = {};
+            ref = sim.things;
+            for (id in ref) {
+                thing = ref[id];
+                if (thing.commandPoint) {
+                    sides[thing.side] = true;
+                }
+            }
+            sides = (function () {
+                var results;
+                results = [];
+                for (k in sides) {
+                    results.push(k);
+                }
+                return results;
+            })();
+            if (sides.length === 1 && sides[0] === 'beta') {
+                this.winningSide = 'beta';
+            }
+            if (this.winningSide) {
+                return this.endOfGame();
+            }
+        };
+        player = useAi(ais.all.Cython, "beta");
+        addUnit = function () {
+            var u;
+            u = new types.Unit(player.buildBar[0]);
+            u.pos = v2.create();
+            v2.random(u.pos);
+            v2.scale(u.pos, 2000);
+            u.side = "beta";
+            u.rot = v2.angle(u.pos) - Math.PI;
+            u.owner = player.id;
+            u.number = 0;
+            return sim.things[u.id] = u;
+        };
+        sim.extra = function () {
+            var i, j, ref, results, speed;
+            speed = 500;
+            if (sim.step % speed === 16) {
+                results = [];
+                for (i = j = 0, ref = 5 * (sim.step / speed + 1); 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
+                    results.push(addUnit());
+                }
+                return results;
+            }
+        };
+        a = new types.SpawnPoint();
+        a.side = "alpha";
+        a.spawn = "alpha";
+        a.pos = [0, 0];
+        sim.things[a.id] = a;
+        cp = function (x, y, side) {
+            var b;
+            b = new types.CommandPoint();
+            b.z = -.01;
+            b.pos[0] = x;
+            b.pos[1] = y;
+            b.side = side;
+            return sim.things[b.id] = b;
+        };
+        cp(-1000, 0, "alpha");
+        cp(1000, 0, "alpha");
+        cp(0, -1000, "alpha");
+        cp(0, 1000, "alpha");
+        sim.sound = true;
+        sim.local = true;
+        intp.local = true;
+        intp.theme = sim.theme;
+        window.observer = {};
+        return actionMixer.reset();
+    };
+
+    window.onload = function () {
+        var nextMode, ref, rootAddress, ua;
+        ua = detect.parse(navigator.userAgent);
+        track("load", {
+            electron: typeof electron !== "undefined" && electron !== null,
+            path: location.pathname,
+            referrer: document.referrer,
+            referrer_domain: typeof document !== "undefined" && document !== null ? (ref = document.referrer.match(/https?:\/\/([^\/]*)/)) != null ? ref[1] : void 0 : void 0,
+            platform: navigator.platform,
+            language: navigator.language,
+            browser: ua.browser.family,
+            browser_version: ua.browser.version,
+            device: ua.device.family,
+            os: ua.os.name
+        });
+        if (!initGL()) {
+            ui.mode = "error";
+            ui.error = "webGL";
+            return;
+        }
+        window.actionMixer = new ActionMixer();
+        actionMixer.reset();
+        window.battleMode = new BattleMode();
+        window.galaxyMode = new GalaxyMode();
+        window.designMode = new DesignMode();
+        window.fleetMode = new FleetMode();
+        window.menuMode = new MenuMode();
+        window.control = new Control();
+        window.sim = new Sim();
+        window.intp = new Interpolator();
+        window.baseAtlas = new Atlas();
+        baseAtlas.loadAtlas(atlas);
+        rootAddress = onecup.params.rootAddress || "ws://198.199.109.223:88";
+        window.rootNet = new RootConnection(rootAddress);
+        window.network = new Local();
+        battleMode.serverToJoin = onecup.params.server;
+        control.tick();
+        startSkirmish();
+        control.backgroundMode = battleMode;
+        if (onecup.params.mode != null) {
+            nextMode = onecup.params.mode;
+            doAfter(2000, function () {
+                ui.mode = nextMode;
+                return onecup.refresh();
+            });
+        }
+        return ui.loaded = true;
+    };
+
+    window.testAction = function () {
+        var exp;
+        console.log("here");
+        exp = new types.FrameExplosion();
+        exp.pos = battleMode.mouse;
+        exp.rot = rand() * Math.PI * 2;
+        return sim.things[exp.id] = exp;
+    };
+
+}).call(this);
+;
+
+
+//from atlases/atlas.js
+window.atlas = {
+    "size": 4096, "src": "atlases/atlas.png?r=880r1l8", "mappings": {
+        "img/bg/galaxy.png": {"uv": [0, 1, 0.5, 0.5]},
+        "img/tips/dragBig@2x.png": {"uv": [0.50390625, 1, 0.748046875, 0.755859375]},
+        "img/tips/pan@2x.png": {"uv": [0.751953125, 1, 0.8984375, 0.853515625]},
+        "img/tips/attack@2x.png": {"uv": [0.751953125, 0.849609375, 0.8984375, 0.703125]},
+        "img/tips/move@2x.png": {"uv": [0.50390625, 0.751953125, 0.6162109375, 0.60546875]},
+        "img/point02.png": {"uv": [0.6201171875, 0.751953125, 0.7451171875, 0.626953125]},
+        "img/dodads/bigdodad05.png": {"uv": [0.751953125, 0.69921875, 0.876953125, 0.57421875]},
+        "img/dodads/bigdodad04.png": {"uv": [0.6201171875, 0.623046875, 0.7451171875, 0.498046875]},
+        "img/dodads/bigdodad03.png": {"uv": [0.751953125, 0.5703125, 0.876953125, 0.4453125]},
+        "img/dodads/bigdodad02.png": {"uv": [0, 0.49609375, 0.125, 0.37109375]},
+        "img/dodads/bigdodad01.png": {"uv": [0.12890625, 0.49609375, 0.25390625, 0.37109375]},
+        "img/tips/capping@2x.png": {"uv": [0.90234375, 1, 0.9765625, 0.853515625]},
+        "img/tips/waitcap@2x.png": {"uv": [0.90234375, 0.849609375, 0.974609375, 0.751953125]},
+        "img/tips/fire@2x.png": {"uv": [0.90234375, 0.748046875, 0.9765625, 0.6845703125]},
+        "img/tips/zoom@2x.png": {"uv": [0.90234375, 0.6806640625, 0.9765625, 0.6171875]},
+        "img/tips/stop@2x.png": {"uv": [0.90234375, 0.61328125, 0.9765625, 0.5498046875]},
+        "img/debree/vcloud04.png": {"uv": [0.50390625, 0.6015625, 0.56640625, 0.5390625]},
+        "img/newbg/fill.png": {"uv": [0.90234375, 0.5458984375, 0.96484375, 0.4833984375]},
+        "img/fire02.png": {"uv": [0.50390625, 0.53515625, 0.56640625, 0.47265625]},
+        "img/debree/acloud03.png": {"uv": [0.2578125, 0.49609375, 0.3203125, 0.43359375]},
+        "img/dodads/meddodad04.png": {"uv": [0.32421875, 0.49609375, 0.38671875, 0.43359375]},
+        "img/dodads/meddodad03.png": {"uv": [0.390625, 0.49609375, 0.453125, 0.43359375]},
+        "img/dodads/meddodad02.png": {"uv": [0.6201171875, 0.494140625, 0.6826171875, 0.431640625]},
+        "img/dodads/meddodad01.png": {"uv": [0.90234375, 0.4794921875, 0.96484375, 0.4169921875]},
+        "img/debree/acloud04.png": {"uv": [0.50390625, 0.46875, 0.56640625, 0.40625]},
+        "img/newbg/gradient.png": {"uv": [0.751953125, 0.44140625, 0.814453125, 0.37890625]},
+        "img/unitBar/fire02.png": {"uv": [0.818359375, 0.44140625, 0.880859375, 0.37890625]},
+        "img/debree/vcloud03.png": {"uv": [0.2578125, 0.4296875, 0.3203125, 0.3671875]},
+        "img/debree/vcloud02.png": {"uv": [0.32421875, 0.4296875, 0.38671875, 0.3671875]},
+        "img/debree/acloud01.png": {"uv": [0.390625, 0.4296875, 0.453125, 0.3671875]},
+        "img/debree/vcloud01.png": {"uv": [0.6201171875, 0.427734375, 0.6826171875, 0.365234375]},
+        "img/debree/scloud01.png": {"uv": [0.90234375, 0.4130859375, 0.96484375, 0.3505859375]},
+        "img/debree/acloud02.png": {"uv": [0.50390625, 0.40234375, 0.56640625, 0.33984375]},
+        "img/debree/scloud04.png": {"uv": [0.751953125, 0.375, 0.814453125, 0.3125]},
+        "img/debree/gcloud01.png": {"uv": [0.818359375, 0.375, 0.880859375, 0.3125]},
+        "img/debree/gcloud02.png": {"uv": [0, 0.3671875, 0.0625, 0.3046875]},
+        "img/debree/gcloud03.png": {"uv": [0.06640625, 0.3671875, 0.12890625, 0.3046875]},
+        "img/debree/gcloud04.png": {"uv": [0.1328125, 0.3671875, 0.1953125, 0.3046875]},
+        "img/debree/scloud02.png": {"uv": [0.2578125, 0.36328125, 0.3203125, 0.30078125]},
+        "img/debree/scloud03.png": {"uv": [0.32421875, 0.36328125, 0.38671875, 0.30078125]},
+        "img/debree/bigdebree07.png": {"uv": [0.6865234375, 0.494140625, 0.7353515625, 0.4453125]},
+        "img/debree/bigdebree08.png": {"uv": [0.6865234375, 0.44140625, 0.7353515625, 0.392578125]},
+        "img/debree/bigdebree09.png": {"uv": [0.6865234375, 0.388671875, 0.7353515625, 0.33984375]},
+        "parts/fireLongExp.png": {"uv": [0.19921875, 0.3671875, 0.248046875, 0.318359375]},
+        "img/debree/bigdebree10.png": {"uv": [0.390625, 0.36328125, 0.439453125, 0.314453125]},
+        "img/debree/bigdebree11.png": {"uv": [0.443359375, 0.36328125, 0.4921875, 0.314453125]},
+        "img/debree/bigdebree01.png": {"uv": [0.6201171875, 0.361328125, 0.6689453125, 0.3125]},
+        "img/debree/bigdebree02.png": {"uv": [0.90234375, 0.3466796875, 0.951171875, 0.2978515625]},
+        "img/debree/bigdebree03.png": {"uv": [0.50390625, 0.3359375, 0.552734375, 0.287109375]},
+        "img/debree/bigdebree04.png": {"uv": [0.556640625, 0.3359375, 0.60546875, 0.287109375]},
+        "img/unitBar/rallyPoint.png": {"uv": [0.6865234375, 0.3359375, 0.7353515625, 0.287109375]},
+        "img/debree/bigdebree06.png": {"uv": [0.19921875, 0.314453125, 0.248046875, 0.265625]},
+        "img/debree/bigdebree12.png": {"uv": [0.390625, 0.310546875, 0.439453125, 0.26171875]},
+        "img/debree/bigdebree05.png": {"uv": [0.443359375, 0.310546875, 0.4921875, 0.26171875]},
+        "img/rocks/lrock03.png": {"uv": [0.6201171875, 0.30859375, 0.67578125, 0.26904296875]},
+        "img/map/slice02.png": {"uv": [0.751953125, 0.30859375, 0.814453125, 0.27734375]},
+        "img/debree/civ03.png": {"uv": [0.955078125, 0.3466796875, 0.98974609375, 0.293212890625]},
+        "img/tips/win@2x.png": {"uv": [0.818359375, 0.30859375, 0.892578125, 0.28515625]},
+        "parts/zap3.png": {"uv": [0, 0.30078125, 0.0234375, 0.2275390625]},
+        "parts/fireMD.png": {"uv": [0.02734375, 0.30078125, 0.05078125, 0.2275390625]},
+        "parts/zap4.png": {"uv": [0.0546875, 0.30078125, 0.078125, 0.2275390625]},
+        "parts/zap1.png": {"uv": [0.08203125, 0.30078125, 0.10546875, 0.2275390625]},
+        "parts/zap2.png": {"uv": [0.109375, 0.30078125, 0.1328125, 0.2275390625]},
+        "img/laser01.png": {"uv": [0.13671875, 0.30078125, 0.15234375, 0.194091796875]},
+        "parts/fireBeamLarge.png": {"uv": [0.15625, 0.30078125, 0.171875, 0.194091796875]},
+        "img/rocks/lrock04.png": {"uv": [0.2578125, 0.296875, 0.300537109375, 0.259033203125]},
+        "img/debree/civ01.png": {"uv": [0.304443359375, 0.296875, 0.339111328125, 0.255615234375]},
+        "img/rocks/lrock01.png": {"uv": [0.343017578125, 0.296875, 0.376953125, 0.257080078125]},
+        "parts/fireEnergyBallExp.png": {"uv": [0.90234375, 0.2939453125, 0.93896484375, 0.25732421875]},
+        "img/tips/healthBar@2x.png": {"uv": [0.50390625, 0.283203125, 0.578125, 0.267578125]},
+        "img/tips/energyBar@2x.png": {"uv": [0.818359375, 0.28125, 0.892578125, 0.265625]},
+        "img/rocks/lrock05.png": {"uv": [0.955078125, 0.289306640625, 0.99462890625, 0.2607421875]},
+        "img/rocks/lrock02.png": {"uv": [0.58203125, 0.283203125, 0.61181640625, 0.24755859375]},
+        "img/select01.png": {"uv": [0.6865234375, 0.283203125, 0.718505859375, 0.251220703125]},
+        "img/unitBar/target.png": {"uv": [0.751953125, 0.2734375, 0.783203125, 0.2421875]},
+        "img/arrow01.png": {"uv": [0.6201171875, 0.26513671875, 0.6513671875, 0.23388671875]},
+        "img/arrow02.png": {"uv": [0.50390625, 0.263671875, 0.53515625, 0.232421875]},
+        "img/unitBar/circle.png": {"uv": [0.5390625, 0.263671875, 0.5703125, 0.232421875]},
+        "img/unitBar/energy1.png": {"uv": [0.19921875, 0.26171875, 0.23046875, 0.23046875]},
+        "img/fire03.png": {"uv": [0.818359375, 0.26171875, 0.849609375, 0.23046875]},
+        "parts/fireFlackExp1.png": {"uv": [0.853515625, 0.26171875, 0.884765625, 0.23046875]},
+        "img/unitBar/flame.png": {"uv": [0.390625, 0.2578125, 0.421875, 0.2265625]},
+        "img/arrow.png": {"uv": [0.42578125, 0.2578125, 0.45703125, 0.2265625]},
+        "img/rocks/mrock04.png": {"uv": [0.4609375, 0.2578125, 0.493896484375, 0.228515625]},
+        "img/rocks/mrock03.png": {"uv": [0.955078125, 0.2568359375, 0.9833984375, 0.225830078125]},
+        "img/rocks/mrock02.png": {"uv": [0.2578125, 0.255126953125, 0.292236328125, 0.231201171875]},
+        "parts/fireBeamSmall.png": {"uv": [0.17578125, 0.30078125, 0.19140625, 0.249267578125]},
+        "img/debree/civ05.png": {"uv": [0.722412109375, 0.283203125, 0.74462890625, 0.250244140625]},
+        "parts/fireWavePush.png": {"uv": [0.90234375, 0.25341796875, 0.9365234375, 0.23388671875]},
+        "parts/fireWavePull.png": {"uv": [0.343017578125, 0.253173828125, 0.377197265625, 0.233642578125]},
+        "img/debree/civ04.png": {"uv": [0.787109375, 0.2734375, 0.810791015625, 0.24658203125]},
+        "img/rocks/mrock01.png": {"uv": [0.6552734375, 0.26513671875, 0.681396484375, 0.241455078125]},
+        "parts/zaphit2.png": {"uv": [0.304443359375, 0.251708984375, 0.328857421875, 0.227294921875]},
+        "parts/zaphit3.png": {"uv": [0.6865234375, 0.247314453125, 0.7109375, 0.222900390625]},
+        "parts/zaphit1.png": {"uv": [0.722412109375, 0.246337890625, 0.746826171875, 0.221923828125]},
+        "img/rocks/mrock06.png": {"uv": [0.58203125, 0.24365234375, 0.603271484375, 0.216064453125]},
+        "parts/zapcharge3.png": {"uv": [0.787109375, 0.24267578125, 0.810546875, 0.21923828125]},
+        "parts/fireHex2.png": {"uv": [0.751953125, 0.23828125, 0.775390625, 0.21484375]},
+        "parts/fireLong1.png": {"uv": [0.6552734375, 0.237548828125, 0.6787109375, 0.214111328125]},
+        "parts/fireMis1.png": {"uv": [0.6201171875, 0.22998046875, 0.6435546875, 0.20654296875]},
+        "parts/fireShot1.png": {"uv": [0.90234375, 0.22998046875, 0.92578125, 0.20654296875]},
+        "parts/fireTorp1.png": {"uv": [0.343017578125, 0.229736328125, 0.366455078125, 0.206298828125]},
+        "parts/turAutoCannon.png": {"uv": [0.50390625, 0.228515625, 0.52734375, 0.205078125]},
+        "parts/turCutterReload.png": {"uv": [0.53125, 0.228515625, 0.5546875, 0.205078125]},
+        "parts/turAutoCannonReload.png": {"uv": [0.2578125, 0.227294921875, 0.28125, 0.203857421875]},
+        "parts/turBeam1.png": {"uv": [0.19921875, 0.2265625, 0.22265625, 0.203125]},
+        "parts/turBeam1Reload.png": {"uv": [0.2265625, 0.2265625, 0.25, 0.203125]},
+        "parts/turFlame.png": {"uv": [0.818359375, 0.2265625, 0.841796875, 0.203125]},
+        "parts/turBeam2.png": {"uv": [0.845703125, 0.2265625, 0.869140625, 0.203125]},
+        "parts/turBeam2Reload.png": {"uv": [0.873046875, 0.2265625, 0.896484375, 0.203125]},
+        "parts/turBomb.png": {"uv": [0.4609375, 0.224609375, 0.484375, 0.201171875]},
+        "parts/turBombReload.png": {"uv": [0, 0.2236328125, 0.0234375, 0.2001953125]},
+        "parts/turCutter.png": {"uv": [0.02734375, 0.2236328125, 0.05078125, 0.2001953125]},
+        "parts/turEMP.png": {"uv": [0.0546875, 0.2236328125, 0.078125, 0.2001953125]},
+        "parts/turEMPReload.png": {"uv": [0.08203125, 0.2236328125, 0.10546875, 0.2001953125]},
+        "parts/turFizzleGun.png": {"uv": [0.109375, 0.2236328125, 0.1328125, 0.2001953125]},
+        "parts/turFizzleGunReload.png": {"uv": [0.304443359375, 0.223388671875, 0.327880859375, 0.199951171875]},
+        "parts/turFlameReload.png": {"uv": [0.390625, 0.22265625, 0.4140625, 0.19921875]},
+        "parts/turHex1.png": {"uv": [0.41796875, 0.22265625, 0.44140625, 0.19921875]},
+        "parts/turHex1Reload.png": {"uv": [0.955078125, 0.221923828125, 0.978515625, 0.198486328125]},
+        "parts/turHex2.png": {"uv": [0.6865234375, 0.218994140625, 0.7099609375, 0.195556640625]},
+        "parts/turFlack.png": {"uv": [0.722412109375, 0.218017578125, 0.745849609375, 0.194580078125]},
+        "parts/fireHex1.png": {"uv": [0.787109375, 0.21533203125, 0.810546875, 0.19189453125]},
+        "parts/zapcharge2.png": {"uv": [0.58203125, 0.212158203125, 0.60546875, 0.188720703125]},
+        "parts/zapcharge1.png": {"uv": [0.751953125, 0.2109375, 0.775390625, 0.1875]},
+        "parts/turWavePushReload.png": {"uv": [0.6552734375, 0.210205078125, 0.6787109375, 0.186767578125]},
+        "parts/turWavePush.png": {"uv": [0.6201171875, 0.20263671875, 0.6435546875, 0.17919921875]},
+        "parts/turWavePullReload.png": {"uv": [0.90234375, 0.20263671875, 0.92578125, 0.17919921875]},
+        "parts/turWavePull.png": {"uv": [0.343017578125, 0.202392578125, 0.366455078125, 0.178955078125]},
+        "parts/turTorpReload.png": {"uv": [0.50390625, 0.201171875, 0.52734375, 0.177734375]},
+        "parts/turTorp.png": {"uv": [0.53125, 0.201171875, 0.5546875, 0.177734375]},
+        "parts/turTeslaReload.png": {"uv": [0.2578125, 0.199951171875, 0.28125, 0.176513671875]},
+        "parts/turTesla.png": {"uv": [0.19921875, 0.19921875, 0.22265625, 0.17578125]},
+        "parts/turRingReload.png": {"uv": [0.2265625, 0.19921875, 0.25, 0.17578125]},
+        "parts/turRing.png": {"uv": [0.818359375, 0.19921875, 0.841796875, 0.17578125]},
+        "parts/turPlasmaReload.png": {"uv": [0.845703125, 0.19921875, 0.869140625, 0.17578125]},
+        "parts/turPlasma.png": {"uv": [0.873046875, 0.19921875, 0.896484375, 0.17578125]},
+        "parts/turMissileReload.png": {"uv": [0.4609375, 0.197265625, 0.484375, 0.173828125]},
+        "parts/turMissile.png": {"uv": [0, 0.1962890625, 0.0234375, 0.1728515625]},
+        "parts/turMineReload.png": {"uv": [0.02734375, 0.1962890625, 0.05078125, 0.1728515625]},
+        "parts/turMine.png": {"uv": [0.0546875, 0.1962890625, 0.078125, 0.1728515625]},
+        "parts/turLong1Reload.png": {"uv": [0.08203125, 0.1962890625, 0.10546875, 0.1728515625]},
+        "parts/turLong1.png": {"uv": [0.109375, 0.1962890625, 0.1328125, 0.1728515625]},
+        "parts/turHex2Reload.png": {"uv": [0.304443359375, 0.196044921875, 0.327880859375, 0.172607421875]},
+        "parts/turFlackReload.png": {"uv": [0.390625, 0.1953125, 0.4140625, 0.171875]},
+        "img/debree/civ02.png": {"uv": [0.9296875, 0.22998046875, 0.949951171875, 0.203125]},
+        "img/rocks/srock04.png": {"uv": [0.41796875, 0.1953125, 0.440185546875, 0.173095703125]},
+        "img/tips/money100.png": {"uv": [0.955078125, 0.194580078125, 0.986572265625, 0.178955078125]},
+        "img/tips/money10.png": {"uv": [0.6865234375, 0.191650390625, 0.718017578125, 0.176025390625]},
+        "img/tips/money1.png": {"uv": [0.13671875, 0.190185546875, 0.168212890625, 0.174560546875]},
+        "img/place01.png": {"uv": [0.722412109375, 0.190673828125, 0.744384765625, 0.168701171875]},
+        "img/place03.png": {"uv": [0.172119140625, 0.190185546875, 0.194091796875, 0.168212890625]},
+        "img/place02.png": {"uv": [0.787109375, 0.18798828125, 0.80908203125, 0.166015625]},
+        "parts/firePlasmaExp.png": {"uv": [0.58203125, 0.184814453125, 0.6064453125, 0.165283203125]},
+        "img/rocks/mrock05.png": {"uv": [0.6201171875, 0.17529296875, 0.652099609375, 0.1611328125]},
+        "img/map/spawnSlice.png": {"uv": [0.55859375, 0.228515625, 0.5771484375, 0.20654296875]},
+        "parts/fireFlame3.png": {"uv": [0.55859375, 0.20263671875, 0.578125, 0.18310546875]},
+        "parts/crystal1.png": {"uv": [0.9296875, 0.19921875, 0.94921875, 0.1796875]},
+        "parts/fireFlame2.png": {"uv": [0.751953125, 0.18359375, 0.771484375, 0.1640625]},
+        "parts/pad4x4.png": {"uv": [0.656005859375, 0.182861328125, 0.675537109375, 0.163330078125]},
+        "parts/fireFlame1.png": {"uv": [0.55859375, 0.17919921875, 0.578125, 0.15966796875]},
+        "parts/crystal2.png": {"uv": [0.370361328125, 0.229736328125, 0.385009765625, 0.205322265625]},
+        "parts/fireRing.png": {"uv": [0.9296875, 0.17578125, 0.947509765625, 0.157958984375]},
+        "img/rocks/srock08.png": {"uv": [0.90234375, 0.17529296875, 0.919921875, 0.1572265625]},
+        "img/rocks/srock06.png": {"uv": [0.343017578125, 0.175048828125, 0.36083984375, 0.158447265625]},
+        "img/rocks/srock01.png": {"uv": [0.370361328125, 0.201416015625, 0.386474609375, 0.18310546875]},
+        "img/rocks/srock03.png": {"uv": [0.36474609375, 0.175048828125, 0.382568359375, 0.160400390625]},
+        "parts/crystal3.png": {"uv": [0.28515625, 0.227294921875, 0.2998046875, 0.210205078125]},
+        "parts/shadow9.png": {"uv": [0.28515625, 0.206298828125, 0.2998046875, 0.189208984375]},
+        "parts/fizzleMinePart.png": {"uv": [0.955078125, 0.175048828125, 0.970703125, 0.1591796875]},
+        "parts/bombDormant.png": {"uv": [0.974609375, 0.175048828125, 0.990234375, 0.1591796875]},
+        "parts/fireMine.png": {"uv": [0.50390625, 0.173828125, 0.51953125, 0.157958984375]},
+        "parts/fizzleMine.png": {"uv": [0.5234375, 0.173828125, 0.5390625, 0.157958984375]},
+        "parts/bombActive.png": {"uv": [0.2578125, 0.172607421875, 0.2734375, 0.15673828125]},
+        "img/pip1.png": {"uv": [0.27734375, 0.172607421875, 0.29296875, 0.156982421875]},
+        "img/galaxy/admiral.png": {"uv": [0.6865234375, 0.172119140625, 0.7021484375, 0.156494140625]},
+        "img/galaxy/boss.png": {"uv": [0.19921875, 0.171875, 0.21484375, 0.15625]},
+        "img/galaxy/star.png": {"uv": [0.21875, 0.171875, 0.234375, 0.15625]},
+        "img/galaxy/captain.png": {"uv": [0.23828125, 0.171875, 0.25390625, 0.15625]},
+        "img/galaxy/commander.png": {"uv": [0.818359375, 0.171875, 0.833984375, 0.15625]},
+        "img/unitBar/energyPip.png": {"uv": [0.837890625, 0.171875, 0.853515625, 0.15625]},
+        "img/galaxy/lieutenant.png": {"uv": [0.857421875, 0.171875, 0.873046875, 0.15625]},
+        "img/galaxy/fort.png": {"uv": [0.876953125, 0.171875, 0.892578125, 0.15625]},
+        "img/galaxy/3v3.png": {"uv": [0.13671875, 0.170654296875, 0.15234375, 0.155029296875]},
+        "img/pip2.png": {"uv": [0.4609375, 0.169921875, 0.4765625, 0.154296875]},
+        "img/galaxy/2v2.png": {"uv": [0.48046875, 0.169921875, 0.49609375, 0.154296875]},
+        "parts/shadow4.png": {"uv": [0.41796875, 0.169189453125, 0.4326171875, 0.154541015625]},
+        "parts/hit4.png": {"uv": [0.4365234375, 0.169189453125, 0.451171875, 0.154541015625]},
+        "parts/hit1.png": {"uv": [0, 0.1689453125, 0.0146484375, 0.154296875]},
+        "parts/solar3x3.png": {"uv": [0.0185546875, 0.1689453125, 0.033203125, 0.154296875]},
+        "parts/shadow8.png": {"uv": [0.037109375, 0.1689453125, 0.0517578125, 0.154296875]},
+        "parts/droneBody.png": {"uv": [0.0556640625, 0.1689453125, 0.0703125, 0.154296875]},
+        "parts/hit5.png": {"uv": [0.07421875, 0.1689453125, 0.0888671875, 0.154296875]},
+        "parts/shadow7.png": {"uv": [0.0927734375, 0.1689453125, 0.107421875, 0.154296875]},
+        "parts/shadow6.png": {"uv": [0.111328125, 0.1689453125, 0.1259765625, 0.154296875]},
+        "parts/shadow5.png": {"uv": [0.304443359375, 0.168701171875, 0.319091796875, 0.154052734375]},
+        "parts/hit2.png": {"uv": [0.322998046875, 0.168701171875, 0.337646484375, 0.154052734375]},
+        "parts/shadow3.png": {"uv": [0.390625, 0.16796875, 0.4052734375, 0.1533203125]},
+        "parts/shadow2.png": {"uv": [0.722412109375, 0.164794921875, 0.737060546875, 0.150146484375]},
+        "parts/shadow1.png": {"uv": [0.172119140625, 0.164306640625, 0.186767578125, 0.149658203125]},
+        "parts/hit3.png": {"uv": [0.787109375, 0.162109375, 0.8017578125, 0.1474609375]},
+        "img/rocks/srock07.png": {"uv": [0.58203125, 0.161376953125, 0.595947265625, 0.147216796875]},
+        "parts/red-mount10.png": {"uv": [0.54296875, 0.173828125, 0.552734375, 0.154296875]},
+        "parts/mount10wide.png": {"uv": [0.751953125, 0.16015625, 0.771484375, 0.150390625]},
+        "parts/red-mount10wide.png": {"uv": [0.656005859375, 0.159423828125, 0.675537109375, 0.149658203125]},
+        "parts/mount10range.png": {"uv": [0.7060546875, 0.172119140625, 0.7158203125, 0.152587890625]},
+        "parts/mount10.png": {"uv": [0.15625, 0.170654296875, 0.166015625, 0.151123046875]},
+        "parts/red-mount10range.png": {"uv": [0.599853515625, 0.161376953125, 0.609619140625, 0.141845703125]},
+        "parts/gray-mount10.png": {"uv": [0.6201171875, 0.1572265625, 0.6298828125, 0.1376953125]},
+        "parts/gray-mount10range.png": {"uv": [0.6337890625, 0.1572265625, 0.6435546875, 0.1376953125]},
+        "parts/gray-mount10wide.png": {"uv": [0.36474609375, 0.156494140625, 0.38427734375, 0.146728515625]},
+        "img/rocks/srock02.png": {"uv": [0.55859375, 0.15576171875, 0.572265625, 0.141845703125]},
+        "img/rocks/srock05.png": {"uv": [0.955078125, 0.1552734375, 0.971435546875, 0.14404296875]},
+        "parts/fireAuto.png": {"uv": [0.975341796875, 0.1552734375, 0.985107421875, 0.140625]},
+        "parts/darkbeem1.png": {"uv": [0.343017578125, 0.154541015625, 0.357666015625, 0.144775390625]},
+        "parts/darkbeem2.png": {"uv": [0.50390625, 0.154052734375, 0.5185546875, 0.144287109375]},
+        "parts/darkbeem3.png": {"uv": [0.5224609375, 0.154052734375, 0.537109375, 0.144287109375]},
+        "parts/darkbeem4.png": {"uv": [0.9296875, 0.154052734375, 0.9443359375, 0.144287109375]},
+        "parts/darkbeem5.png": {"uv": [0.90234375, 0.1533203125, 0.9169921875, 0.1435546875]},
+        "parts/fireSpinPart3.png": {"uv": [0.27734375, 0.153076171875, 0.290283203125, 0.143310546875]},
+        "parts/HArmor2x2Angle.d1.png": {"uv": [0.2578125, 0.15283203125, 0.267578125, 0.14306640625]},
+        "parts/HArmor2x2Angle.d2.png": {"uv": [0.6865234375, 0.152587890625, 0.6962890625, 0.142822265625]},
+        "parts/HArmor2x2Angle.d3.png": {"uv": [0.19921875, 0.15234375, 0.208984375, 0.142578125]},
+        "parts/HArmor2x2Angle.png": {"uv": [0.212890625, 0.15234375, 0.22265625, 0.142578125]},
+        "parts/HArmor2x2AngleBack.d1.png": {"uv": [0.2265625, 0.15234375, 0.236328125, 0.142578125]},
+        "parts/HArmor2x2AngleBack.d2.png": {"uv": [0.240234375, 0.15234375, 0.25, 0.142578125]},
+        "parts/HArmor2x2AngleBack.d3.png": {"uv": [0.818359375, 0.15234375, 0.828125, 0.142578125]},
+        "parts/HArmor2x2AngleBack.png": {"uv": [0.83203125, 0.15234375, 0.841796875, 0.142578125]},
+        "parts/HArmor2x2Back1.d1.png": {"uv": [0.845703125, 0.15234375, 0.85546875, 0.142578125]},
+        "parts/HArmor2x2Back1.d2.png": {"uv": [0.859375, 0.15234375, 0.869140625, 0.142578125]},
+        "parts/HArmor2x2Back1.d3.png": {"uv": [0.873046875, 0.15234375, 0.8828125, 0.142578125]},
+        "parts/HArmor2x2Back1.png": {"uv": [0.88671875, 0.15234375, 0.896484375, 0.142578125]},
+        "parts/HArmor2x2Back2.d1.png": {"uv": [0.13671875, 0.151123046875, 0.146484375, 0.141357421875]},
+        "parts/HArmor2x2Back2.d2.png": {"uv": [0.41796875, 0.150634765625, 0.427734375, 0.140869140625]},
+        "parts/HArmor2x2Back2.d3.png": {"uv": [0.431640625, 0.150634765625, 0.44140625, 0.140869140625]},
+        "parts/HArmor2x2Back2.png": {"uv": [0.4453125, 0.150634765625, 0.455078125, 0.140869140625]},
+        "parts/HArmor2x2Curved.d1.png": {"uv": [0, 0.150390625, 0.009765625, 0.140625]},
+        "parts/HArmor2x2Curved.d2.png": {"uv": [0.013671875, 0.150390625, 0.0234375, 0.140625]},
+        "parts/HArmor2x2Curved.d3.png": {"uv": [0.02734375, 0.150390625, 0.037109375, 0.140625]},
+        "parts/HArmor2x2Curved.png": {"uv": [0.041015625, 0.150390625, 0.05078125, 0.140625]},
+        "parts/HArmor2x2Front1 Copy.png": {"uv": [0.0546875, 0.150390625, 0.064453125, 0.140625]},
+        "parts/HArmor2x2Front1.d1.png": {"uv": [0.068359375, 0.150390625, 0.078125, 0.140625]},
+        "parts/HArmor2x2Front1.d2.png": {"uv": [0.08203125, 0.150390625, 0.091796875, 0.140625]},
+        "parts/HArmor2x2Front1.d3.png": {"uv": [0.095703125, 0.150390625, 0.10546875, 0.140625]},
+        "parts/HArmor2x2Front1.png": {"uv": [0.109375, 0.150390625, 0.119140625, 0.140625]},
+        "parts/HArmor2x2Front2.d1.png": {"uv": [0.123046875, 0.150390625, 0.1328125, 0.140625]},
+        "parts/HArmor2x2Front2.d2.png": {"uv": [0.4609375, 0.150390625, 0.470703125, 0.140625]},
+        "parts/HArmor2x2Front2.d3.png": {"uv": [0.474609375, 0.150390625, 0.484375, 0.140625]},
+        "parts/HArmor2x2Front2.png": {"uv": [0.48828125, 0.150390625, 0.498046875, 0.140625]},
+        "parts/red-mount180.png": {"uv": [0.54296875, 0.150390625, 0.552734375, 0.140625]},
+        "parts/CamoArmor2x2.png": {"uv": [0.304443359375, 0.150146484375, 0.314208984375, 0.140380859375]},
+        "parts/red-mount10short.png": {"uv": [0.318115234375, 0.150146484375, 0.327880859375, 0.140380859375]},
+        "parts/CamoArmor2x2Angle.png": {"uv": [0.390625, 0.1494140625, 0.400390625, 0.1396484375]},
+        "parts/Reactor2x2.png": {"uv": [0.404296875, 0.1494140625, 0.4140625, 0.1396484375]},
+        "parts/ReloaderMod.png": {"uv": [0.7060546875, 0.148681640625, 0.7158203125, 0.138916015625]},
+        "parts/CamoArmor2x2AngleBack.png": {"uv": [0.15625, 0.147216796875, 0.166015625, 0.137451171875]},
+        "parts/red-focus.png": {"uv": [0.751953125, 0.146484375, 0.76171875, 0.13671875]},
+        "parts/red-engine09alt.png": {"uv": [0.765625, 0.146484375, 0.775390625, 0.13671875]},
+        "parts/red-engine09.png": {"uv": [0.722412109375, 0.146240234375, 0.732177734375, 0.136474609375]},
+        "parts/red-engine07alt.png": {"uv": [0.736083984375, 0.146240234375, 0.745849609375, 0.136474609375]},
+        "parts/red-engine07.png": {"uv": [0.172119140625, 0.145751953125, 0.181884765625, 0.135986328125]},
+        "parts/red-empmod.png": {"uv": [0.656005859375, 0.145751953125, 0.665771484375, 0.135986328125]},
+        "parts/red-deenergy.png": {"uv": [0.669677734375, 0.145751953125, 0.679443359375, 0.135986328125]},
+        "parts/red-dampener.png": {"uv": [0.787109375, 0.1435546875, 0.796875, 0.1337890625]},
+        "parts/ShadowNArmor2x2.png": {"uv": [0.80078125, 0.1435546875, 0.810546875, 0.1337890625]},
+        "parts/ShadowNArmor2x2Angle.png": {"uv": [0.58203125, 0.143310546875, 0.591796875, 0.133544921875]},
+        "parts/ShadowNArmor2x2Curve.png": {"uv": [0.36474609375, 0.142822265625, 0.37451171875, 0.133056640625]},
+        "parts/ShadowNArmor2x2Straight.png": {"uv": [0.343017578125, 0.140869140625, 0.352783203125, 0.131103515625]},
+        "parts/red-Wing2x2.png": {"uv": [0.50390625, 0.140380859375, 0.513671875, 0.130615234375]},
+        "parts/red-Wing2x2.d3.png": {"uv": [0.517578125, 0.140380859375, 0.52734375, 0.130615234375]},
+        "parts/red-Wing2x2.d2.png": {"uv": [0.9296875, 0.140380859375, 0.939453125, 0.130615234375]},
+        "parts/red-Wing2x2.d1.png": {"uv": [0.955078125, 0.14013671875, 0.96484375, 0.13037109375]},
+        "parts/red-TargetingMod.png": {"uv": [0.90234375, 0.1396484375, 0.912109375, 0.1298828125]},
+        "parts/red-ReloaderMod.png": {"uv": [0.916015625, 0.1396484375, 0.92578125, 0.1298828125]},
+        "parts/red-DamageMod.png": {"uv": [0.27734375, 0.139404296875, 0.287109375, 0.129638671875]},
+        "parts/red-BulletSpeedMod.png": {"uv": [0.2578125, 0.13916015625, 0.267578125, 0.12939453125]},
+        "parts/CamoArmor2x2Curved.png": {"uv": [0.6865234375, 0.138916015625, 0.6962890625, 0.129150390625]},
+        "parts/ShadowWArmor2x2 Copy.png": {"uv": [0.19921875, 0.138671875, 0.208984375, 0.12890625]},
+        "parts/ShadowWArmor2x2.png": {"uv": [0.212890625, 0.138671875, 0.22265625, 0.12890625]},
+        "parts/ShadowWArmor2x2Angle.png": {"uv": [0.2265625, 0.138671875, 0.236328125, 0.12890625]},
+        "parts/ShadowWArmor2x2Curve.png": {"uv": [0.240234375, 0.138671875, 0.25, 0.12890625]},
+        "parts/ShadowWArmor2x2Straight.png": {"uv": [0.818359375, 0.138671875, 0.828125, 0.12890625]},
+        "parts/pad2x2.png": {"uv": [0.83203125, 0.138671875, 0.841796875, 0.12890625]},
+        "parts/mount90.png": {"uv": [0.845703125, 0.138671875, 0.85546875, 0.12890625]},
+        "parts/ShapedWarhead.png": {"uv": [0.859375, 0.138671875, 0.869140625, 0.12890625]},
+        "parts/mount360short.png": {"uv": [0.873046875, 0.138671875, 0.8828125, 0.12890625]},
+        "parts/mount360.png": {"uv": [0.88671875, 0.138671875, 0.896484375, 0.12890625]},
+        "parts/Shield2x2.png": {"uv": [0.55859375, 0.137939453125, 0.568359375, 0.128173828125]},
+        "parts/StasisField.png": {"uv": [0.599853515625, 0.137939453125, 0.609619140625, 0.128173828125]},
+        "parts/TargetingMod.png": {"uv": [0.13671875, 0.137451171875, 0.146484375, 0.127685546875]},
+        "parts/mount300.png": {"uv": [0.41796875, 0.136962890625, 0.427734375, 0.127197265625]},
+        "parts/mount30.png": {"uv": [0.431640625, 0.136962890625, 0.44140625, 0.127197265625]},
+        "parts/mount200.png": {"uv": [0.4453125, 0.136962890625, 0.455078125, 0.127197265625]},
+        "parts/mount180.png": {"uv": [0, 0.13671875, 0.009765625, 0.126953125]},
+        "parts/CloakGenerator.png": {"uv": [0.013671875, 0.13671875, 0.0234375, 0.126953125]},
+        "parts/mount10short.png": {"uv": [0.02734375, 0.13671875, 0.037109375, 0.126953125]},
+        "parts/DamageMod.png": {"uv": [0.041015625, 0.13671875, 0.05078125, 0.126953125]},
+        "parts/EnergyTransfer.png": {"uv": [0.0546875, 0.13671875, 0.064453125, 0.126953125]},
+        "parts/hitAuto3.png": {"uv": [0.068359375, 0.13671875, 0.078125, 0.126953125]},
+        "parts/hitAuto2.png": {"uv": [0.08203125, 0.13671875, 0.091796875, 0.126953125]},
+        "parts/UArmor2x2.png": {"uv": [0.095703125, 0.13671875, 0.10546875, 0.126953125]},
+        "parts/hitAuto1.png": {"uv": [0.109375, 0.13671875, 0.119140625, 0.126953125]},
+        "img/debree/debree22.png": {"uv": [0.123046875, 0.13671875, 0.1328125, 0.126953125]},
+        "img/debree/debree21.png": {"uv": [0.4609375, 0.13671875, 0.470703125, 0.126953125]},
+        "img/debree/debree20.png": {"uv": [0.474609375, 0.13671875, 0.484375, 0.126953125]},
+        "img/debree/debree19.png": {"uv": [0.48828125, 0.13671875, 0.498046875, 0.126953125]},
+        "parts/decals/StripeDouble2x2.png": {"uv": [0.54296875, 0.13671875, 0.552734375, 0.126953125]},
+        "parts/gray-spread.png": {"uv": [0.975341796875, 0.13671875, 0.985107421875, 0.126953125]},
+        "parts/gray-mount90.png": {"uv": [0.304443359375, 0.136474609375, 0.314208984375, 0.126708984375]},
+        "parts/gray-mount360short.png": {"uv": [0.318115234375, 0.136474609375, 0.327880859375, 0.126708984375]},
+        "parts/gray-mount360.png": {"uv": [0.390625, 0.1357421875, 0.400390625, 0.1259765625]},
+        "parts/gray-mount300.png": {"uv": [0.404296875, 0.1357421875, 0.4140625, 0.1259765625]},
+        "parts/gray-mount30.png": {"uv": [0.7060546875, 0.135009765625, 0.7158203125, 0.125244140625]},
+        "parts/gray-mount200.png": {"uv": [0.6201171875, 0.1337890625, 0.6298828125, 0.1240234375]},
+        "parts/gray-mount180.png": {"uv": [0.6337890625, 0.1337890625, 0.6435546875, 0.1240234375]},
+        "img/debree/debree18.png": {"uv": [0.15625, 0.133544921875, 0.166015625, 0.123779296875]},
+        "parts/gray-mount10short.png": {"uv": [0.751953125, 0.1328125, 0.76171875, 0.123046875]},
+        "img/debree/debree17.png": {"uv": [0.765625, 0.1328125, 0.775390625, 0.123046875]},
+        "img/debree/debree16.png": {"uv": [0.722412109375, 0.132568359375, 0.732177734375, 0.122802734375]},
+        "parts/gray-focus.png": {"uv": [0.736083984375, 0.132568359375, 0.745849609375, 0.122802734375]},
+        "parts/gray-engine09alt.png": {"uv": [0.172119140625, 0.132080078125, 0.181884765625, 0.122314453125]},
+        "parts/gray-engine09.png": {"uv": [0.656005859375, 0.132080078125, 0.665771484375, 0.122314453125]},
+        "parts/gray-engine07alt.png": {"uv": [0.669677734375, 0.132080078125, 0.679443359375, 0.122314453125]},
+        "parts/gray-engine07.png": {"uv": [0.787109375, 0.1298828125, 0.796875, 0.1201171875]},
+        "parts/gray-empmod.png": {"uv": [0.80078125, 0.1298828125, 0.810546875, 0.1201171875]},
+        "parts/gray-deenergy.png": {"uv": [0.58203125, 0.129638671875, 0.591796875, 0.119873046875]},
+        "parts/gray-dampener.png": {"uv": [0.36474609375, 0.129150390625, 0.37451171875, 0.119384765625]},
+        "parts/gray-Wing2x2.png": {"uv": [0.343017578125, 0.127197265625, 0.352783203125, 0.117431640625]},
+        "parts/gray-Wing2x2.d3.png": {"uv": [0.50390625, 0.126708984375, 0.513671875, 0.116943359375]},
+        "parts/gray-Wing2x2.d2.png": {"uv": [0.517578125, 0.126708984375, 0.52734375, 0.116943359375]},
+        "parts/gray-Wing2x2.d1.png": {"uv": [0.9296875, 0.126708984375, 0.939453125, 0.116943359375]},
+        "parts/gray-TargetingMod.png": {"uv": [0.955078125, 0.12646484375, 0.96484375, 0.11669921875]},
+        "parts/gray-ReloaderMod.png": {"uv": [0.90234375, 0.1259765625, 0.912109375, 0.1162109375]},
+        "parts/gray-DamageMod.png": {"uv": [0.916015625, 0.1259765625, 0.92578125, 0.1162109375]},
+        "parts/gray-BulletSpeedMod.png": {"uv": [0.27734375, 0.125732421875, 0.287109375, 0.115966796875]},
+        "parts/focus.png": {"uv": [0.2578125, 0.12548828125, 0.267578125, 0.11572265625]},
+        "img/debree/debree15.png": {"uv": [0.6865234375, 0.125244140625, 0.6962890625, 0.115478515625]},
+        "parts/fizzleMineEnergy.png": {"uv": [0.19921875, 0.125, 0.208984375, 0.115234375]},
+        "parts/AOEWarhead.png": {"uv": [0.212890625, 0.125, 0.22265625, 0.115234375]},
+        "img/debree/debree06.png": {"uv": [0.2265625, 0.125, 0.236328125, 0.115234375]},
+        "img/debree/debree07.png": {"uv": [0.240234375, 0.125, 0.25, 0.115234375]},
+        "img/debree/debree01.png": {"uv": [0.818359375, 0.125, 0.828125, 0.115234375]},
+        "parts/spread.png": {"uv": [0.83203125, 0.125, 0.841796875, 0.115234375]},
+        "parts/fireSpinPart1.png": {"uv": [0.845703125, 0.125, 0.85546875, 0.115234375]},
+        "img/debree/debree25.png": {"uv": [0.859375, 0.125, 0.869140625, 0.115234375]},
+        "parts/solar2x2.png": {"uv": [0.873046875, 0.125, 0.8828125, 0.115234375]},
+        "img/debree/debree24.png": {"uv": [0.88671875, 0.125, 0.896484375, 0.115234375]},
+        "parts/Battery2x2.png": {"uv": [0.55859375, 0.124267578125, 0.568359375, 0.114501953125]},
+        "parts/BulletSpeedMod.png": {"uv": [0.599853515625, 0.124267578125, 0.609619140625, 0.114501953125]},
+        "img/debree/debree08.png": {"uv": [0.13671875, 0.123779296875, 0.146484375, 0.114013671875]},
+        "img/debree/debree09.png": {"uv": [0.41796875, 0.123291015625, 0.427734375, 0.113525390625]},
+        "img/debree/debree02.png": {"uv": [0.431640625, 0.123291015625, 0.44140625, 0.113525390625]},
+        "img/debree/debree03.png": {"uv": [0.4453125, 0.123291015625, 0.455078125, 0.113525390625]},
+        "img/debree/debree04.png": {"uv": [0, 0.123046875, 0.009765625, 0.11328125]},
+        "img/debree/debree05.png": {"uv": [0.013671875, 0.123046875, 0.0234375, 0.11328125]},
+        "img/debree/debree23.png": {"uv": [0.02734375, 0.123046875, 0.037109375, 0.11328125]},
+        "parts/CamoArmor2x2 Copy.png": {"uv": [0.041015625, 0.123046875, 0.05078125, 0.11328125]},
+        "img/debree/debree10.png": {"uv": [0.0546875, 0.123046875, 0.064453125, 0.11328125]},
+        "img/debree/debree11.png": {"uv": [0.068359375, 0.123046875, 0.078125, 0.11328125]},
+        "parts/fireEnergyBall.png": {"uv": [0.08203125, 0.123046875, 0.091796875, 0.11328125]},
+        "img/debree/debree12.png": {"uv": [0.095703125, 0.123046875, 0.10546875, 0.11328125]},
+        "img/debree/debree13.png": {"uv": [0.109375, 0.123046875, 0.119140625, 0.11328125]},
+        "parts/sel2x2.png": {"uv": [0.123046875, 0.123046875, 0.1328125, 0.11328125]},
+        "parts/factions/TKKA.png": {"uv": [0.4609375, 0.123046875, 0.470703125, 0.11328125]},
+        "parts/factions/SIEG.png": {"uv": [0.474609375, 0.123046875, 0.484375, 0.11328125]},
+        "parts/VArmor2x2.d1.png": {"uv": [0.48828125, 0.123046875, 0.498046875, 0.11328125]},
+        "parts/VArmor2x2.d2.png": {"uv": [0.54296875, 0.123046875, 0.552734375, 0.11328125]},
+        "parts/VArmor2x2.d3.png": {"uv": [0.975341796875, 0.123046875, 0.985107421875, 0.11328125]},
+        "parts/VArmor2x2.png": {"uv": [0.304443359375, 0.122802734375, 0.314208984375, 0.113037109375]},
+        "parts/VArmor2x2Angle.d1.png": {"uv": [0.318115234375, 0.122802734375, 0.327880859375, 0.113037109375]},
+        "parts/VArmor2x2Angle.d2.png": {"uv": [0.390625, 0.1220703125, 0.400390625, 0.1123046875]},
+        "parts/VArmor2x2Angle.d3.png": {"uv": [0.404296875, 0.1220703125, 0.4140625, 0.1123046875]},
+        "parts/VArmor2x2Angle.png": {"uv": [0.7060546875, 0.121337890625, 0.7158203125, 0.111572265625]},
+        "parts/VArmor2x2Curve.d1.png": {"uv": [0.6201171875, 0.1201171875, 0.6298828125, 0.1103515625]},
+        "parts/VArmor2x2Curve.d2.png": {"uv": [0.6337890625, 0.1201171875, 0.6435546875, 0.1103515625]},
+        "parts/VArmor2x2Curve.d3.png": {"uv": [0.15625, 0.119873046875, 0.166015625, 0.110107421875]},
+        "parts/VArmor2x2Curve.png": {"uv": [0.751953125, 0.119140625, 0.76171875, 0.109375]},
+        "parts/VArmor2x2Curved.d1.png": {"uv": [0.765625, 0.119140625, 0.775390625, 0.109375]},
+        "parts/VArmor2x2Curved.d2.png": {"uv": [0.722412109375, 0.118896484375, 0.732177734375, 0.109130859375]},
+        "parts/VArmor2x2Curved.d3.png": {"uv": [0.736083984375, 0.118896484375, 0.745849609375, 0.109130859375]},
+        "parts/VArmor2x2Curved.png": {"uv": [0.172119140625, 0.118408203125, 0.181884765625, 0.108642578125]},
+        "parts/factions/MOD.png": {"uv": [0.656005859375, 0.118408203125, 0.665771484375, 0.108642578125]},
+        "parts/factions/KC.png": {"uv": [0.669677734375, 0.118408203125, 0.679443359375, 0.108642578125]},
+        "parts/factions/ISOI.png": {"uv": [0.787109375, 0.1162109375, 0.796875, 0.1064453125]},
+        "parts/factions/DEV.png": {"uv": [0.80078125, 0.1162109375, 0.810546875, 0.1064453125]},
+        "parts/factions/AUTO.png": {"uv": [0.58203125, 0.115966796875, 0.591796875, 0.106201171875]},
+        "parts/engine09alt.png": {"uv": [0.36474609375, 0.115478515625, 0.37451171875, 0.105712890625]},
+        "parts/VShadowNArmor2x2.png": {"uv": [0.343017578125, 0.113525390625, 0.352783203125, 0.103759765625]},
+        "parts/VShadowNArmor2x2Angle.png": {"uv": [0.50390625, 0.113037109375, 0.513671875, 0.103271484375]},
+        "parts/VShadowNArmor2x2Curve.png": {"uv": [0.517578125, 0.113037109375, 0.52734375, 0.103271484375]},
+        "parts/engine09.png": {"uv": [0.9296875, 0.113037109375, 0.939453125, 0.103271484375]},
+        "parts/engine07alt.png": {"uv": [0.955078125, 0.11279296875, 0.96484375, 0.10302734375]},
+        "parts/engine07.png": {"uv": [0.90234375, 0.1123046875, 0.912109375, 0.1025390625]},
+        "parts/empmod.png": {"uv": [0.916015625, 0.1123046875, 0.92578125, 0.1025390625]},
+        "parts/empField.png": {"uv": [0.27734375, 0.112060546875, 0.287109375, 0.102294921875]},
+        "parts/scanner.png": {"uv": [0.2578125, 0.11181640625, 0.267578125, 0.10205078125]},
+        "parts/VShadowWArmor2x2.png": {"uv": [0.6865234375, 0.111572265625, 0.6962890625, 0.101806640625]},
+        "parts/VShadowWArmor2x2Angle.png": {"uv": [0.19921875, 0.111328125, 0.208984375, 0.1015625]},
+        "parts/VShadowWArmor2x2Curve.png": {"uv": [0.212890625, 0.111328125, 0.22265625, 0.1015625]},
+        "parts/deenergy.png": {"uv": [0.2265625, 0.111328125, 0.236328125, 0.1015625]},
+        "parts/decals/letterZ.png": {"uv": [0.240234375, 0.111328125, 0.25, 0.1015625]},
+        "parts/decals/letterY.png": {"uv": [0.818359375, 0.111328125, 0.828125, 0.1015625]},
+        "parts/decals/letterX.png": {"uv": [0.83203125, 0.111328125, 0.841796875, 0.1015625]},
+        "parts/decals/letterW.png": {"uv": [0.845703125, 0.111328125, 0.85546875, 0.1015625]},
+        "parts/decals/letterV.png": {"uv": [0.859375, 0.111328125, 0.869140625, 0.1015625]},
+        "img/debree/debree14.png": {"uv": [0.873046875, 0.111328125, 0.8828125, 0.1015625]},
+        "parts/decals/letterU.png": {"uv": [0.88671875, 0.111328125, 0.896484375, 0.1015625]},
+        "parts/decals/letterT.png": {"uv": [0.55859375, 0.110595703125, 0.568359375, 0.100830078125]},
+        "parts/decals/letterS.png": {"uv": [0.599853515625, 0.110595703125, 0.609619140625, 0.100830078125]},
+        "parts/decals/letterR.png": {"uv": [0.13671875, 0.110107421875, 0.146484375, 0.100341796875]},
+        "parts/decals/letterQ.png": {"uv": [0.41796875, 0.109619140625, 0.427734375, 0.099853515625]},
+        "parts/decals/letterPound.png": {"uv": [0.431640625, 0.109619140625, 0.44140625, 0.099853515625]},
+        "parts/decals/letterP.png": {"uv": [0.4453125, 0.109619140625, 0.455078125, 0.099853515625]},
+        "parts/decals/letterO.png": {"uv": [0, 0.109375, 0.009765625, 0.099609375]},
+        "parts/decals/letterN.png": {"uv": [0.013671875, 0.109375, 0.0234375, 0.099609375]},
+        "parts/decals/letterM.png": {"uv": [0.02734375, 0.109375, 0.037109375, 0.099609375]},
+        "parts/decals/letterL.png": {"uv": [0.041015625, 0.109375, 0.05078125, 0.099609375]},
+        "parts/decals/letterK.png": {"uv": [0.0546875, 0.109375, 0.064453125, 0.099609375]},
+        "parts/decals/letterJ.png": {"uv": [0.068359375, 0.109375, 0.078125, 0.099609375]},
+        "parts/Wing2x2.d1.png": {"uv": [0.08203125, 0.109375, 0.091796875, 0.099609375]},
+        "parts/Wing2x2.d2.png": {"uv": [0.095703125, 0.109375, 0.10546875, 0.099609375]},
+        "parts/Wing2x2.d3.png": {"uv": [0.109375, 0.109375, 0.119140625, 0.099609375]},
+        "parts/Wing2x2.png": {"uv": [0.123046875, 0.109375, 0.1328125, 0.099609375]},
+        "parts/red-spread.png": {"uv": [0.4609375, 0.109375, 0.470703125, 0.099609375]},
+        "parts/red-mount90.png": {"uv": [0.474609375, 0.109375, 0.484375, 0.099609375]},
+        "parts/cloak_area.png": {"uv": [0.48828125, 0.109375, 0.498046875, 0.099609375]},
+        "parts/red-mount360short.png": {"uv": [0.54296875, 0.109375, 0.552734375, 0.099609375]},
+        "parts/red-mount360.png": {"uv": [0.975341796875, 0.109375, 0.985107421875, 0.099609375]},
+        "parts/red-mount300.png": {"uv": [0.304443359375, 0.109130859375, 0.314208984375, 0.099365234375]},
+        "parts/dampener.png": {"uv": [0.318115234375, 0.109130859375, 0.327880859375, 0.099365234375]},
+        "parts/red-mount30.png": {"uv": [0.390625, 0.1083984375, 0.400390625, 0.0986328125]},
+        "parts/red-mount200.png": {"uv": [0.404296875, 0.1083984375, 0.4140625, 0.0986328125]},
+        "parts/HArmor2x2.d1.png": {"uv": [0.7060546875, 0.107666015625, 0.7158203125, 0.097900390625]},
+        "parts/HArmor2x2.d2.png": {"uv": [0.6201171875, 0.1064453125, 0.6298828125, 0.0966796875]},
+        "parts/HArmor2x2.d3.png": {"uv": [0.6337890625, 0.1064453125, 0.6435546875, 0.0966796875]},
+        "parts/decals/letterI.png": {"uv": [0.15625, 0.106201171875, 0.166015625, 0.096435546875]},
+        "parts/decals/letterH.png": {"uv": [0.751953125, 0.10546875, 0.76171875, 0.095703125]},
+        "parts/decals/letterG.png": {"uv": [0.765625, 0.10546875, 0.775390625, 0.095703125]},
+        "parts/decals/letterF.png": {"uv": [0.722412109375, 0.105224609375, 0.732177734375, 0.095458984375]},
+        "parts/decals/letterE.png": {"uv": [0.736083984375, 0.105224609375, 0.745849609375, 0.095458984375]},
+        "parts/decals/letterDot.png": {"uv": [0.172119140625, 0.104736328125, 0.181884765625, 0.094970703125]},
+        "parts/decals/letterD.png": {"uv": [0.656005859375, 0.104736328125, 0.665771484375, 0.094970703125]},
+        "parts/decals/letterC.png": {"uv": [0.669677734375, 0.104736328125, 0.679443359375, 0.094970703125]},
+        "parts/decals/letterB.png": {"uv": [0.787109375, 0.1025390625, 0.796875, 0.0927734375]},
+        "parts/decals/letterA.png": {"uv": [0.80078125, 0.1025390625, 0.810546875, 0.0927734375]},
+        "parts/decals/letter9.png": {"uv": [0.58203125, 0.102294921875, 0.591796875, 0.092529296875]},
+        "parts/decals/letter8.png": {"uv": [0.36474609375, 0.101806640625, 0.37451171875, 0.092041015625]},
+        "parts/decals/Stripe2x2.png": {"uv": [0.343017578125, 0.099853515625, 0.352783203125, 0.090087890625]},
+        "parts/decals/Stripe2x2Corner.png": {"uv": [0.50390625, 0.099365234375, 0.513671875, 0.089599609375]},
+        "parts/decals/Stripe2x2End.png": {"uv": [0.517578125, 0.099365234375, 0.52734375, 0.089599609375]},
+        "parts/decals/Stripe2x2Round.png": {"uv": [0.9296875, 0.099365234375, 0.939453125, 0.089599609375]},
+        "parts/decals/Stripe2x2Slash.png": {"uv": [0.955078125, 0.09912109375, 0.96484375, 0.08935546875]},
+        "parts/decals/letter7.png": {"uv": [0.90234375, 0.0986328125, 0.912109375, 0.0888671875]},
+        "parts/HArmor2x2.png": {"uv": [0.916015625, 0.0986328125, 0.92578125, 0.0888671875]},
+        "parts/decals/Symbol1.png": {"uv": [0.27734375, 0.098388671875, 0.287109375, 0.088623046875]},
+        "parts/decals/Symbol10.png": {"uv": [0.2578125, 0.09814453125, 0.267578125, 0.08837890625]},
+        "parts/decals/Symbol11.png": {"uv": [0.6865234375, 0.097900390625, 0.6962890625, 0.088134765625]},
+        "parts/decals/Symbol12.png": {"uv": [0.19921875, 0.09765625, 0.208984375, 0.087890625]},
+        "parts/decals/Symbol13.png": {"uv": [0.212890625, 0.09765625, 0.22265625, 0.087890625]},
+        "parts/decals/Symbol14.png": {"uv": [0.2265625, 0.09765625, 0.236328125, 0.087890625]},
+        "parts/decals/Symbol15.png": {"uv": [0.240234375, 0.09765625, 0.25, 0.087890625]},
+        "parts/decals/Symbol16.png": {"uv": [0.818359375, 0.09765625, 0.828125, 0.087890625]},
+        "parts/decals/Symbol17.png": {"uv": [0.83203125, 0.09765625, 0.841796875, 0.087890625]},
+        "parts/decals/Symbol18.png": {"uv": [0.845703125, 0.09765625, 0.85546875, 0.087890625]},
+        "parts/decals/Symbol19.png": {"uv": [0.859375, 0.09765625, 0.869140625, 0.087890625]},
+        "parts/decals/Symbol2.png": {"uv": [0.873046875, 0.09765625, 0.8828125, 0.087890625]},
+        "parts/decals/Symbol20.png": {"uv": [0.88671875, 0.09765625, 0.896484375, 0.087890625]},
+        "parts/decals/Symbol21.png": {"uv": [0.55859375, 0.096923828125, 0.568359375, 0.087158203125]},
+        "parts/decals/Symbol22.png": {"uv": [0.599853515625, 0.096923828125, 0.609619140625, 0.087158203125]},
+        "parts/decals/Symbol23.png": {"uv": [0.13671875, 0.096435546875, 0.146484375, 0.086669921875]},
+        "parts/decals/Symbol24.png": {"uv": [0.41796875, 0.095947265625, 0.427734375, 0.086181640625]},
+        "parts/decals/Symbol25.png": {"uv": [0.431640625, 0.095947265625, 0.44140625, 0.086181640625]},
+        "parts/decals/Symbol26.png": {"uv": [0.4453125, 0.095947265625, 0.455078125, 0.086181640625]},
+        "parts/decals/Symbol27.png": {"uv": [0, 0.095703125, 0.009765625, 0.0859375]},
+        "parts/decals/Symbol28.png": {"uv": [0.013671875, 0.095703125, 0.0234375, 0.0859375]},
+        "parts/decals/Symbol29.png": {"uv": [0.02734375, 0.095703125, 0.037109375, 0.0859375]},
+        "parts/decals/Symbol3.png": {"uv": [0.041015625, 0.095703125, 0.05078125, 0.0859375]},
+        "parts/decals/Symbol30.png": {"uv": [0.0546875, 0.095703125, 0.064453125, 0.0859375]},
+        "parts/decals/Symbol31.png": {"uv": [0.068359375, 0.095703125, 0.078125, 0.0859375]},
+        "parts/decals/Symbol32.png": {"uv": [0.08203125, 0.095703125, 0.091796875, 0.0859375]},
+        "parts/decals/Symbol33.png": {"uv": [0.095703125, 0.095703125, 0.10546875, 0.0859375]},
+        "parts/decals/Symbol34.png": {"uv": [0.109375, 0.095703125, 0.119140625, 0.0859375]},
+        "parts/decals/Symbol35.png": {"uv": [0.123046875, 0.095703125, 0.1328125, 0.0859375]},
+        "parts/decals/Symbol36.png": {"uv": [0.4609375, 0.095703125, 0.470703125, 0.0859375]},
+        "parts/decals/Symbol37.png": {"uv": [0.474609375, 0.095703125, 0.484375, 0.0859375]},
+        "parts/decals/Symbol38.png": {"uv": [0.48828125, 0.095703125, 0.498046875, 0.0859375]},
+        "parts/decals/Symbol39.png": {"uv": [0.54296875, 0.095703125, 0.552734375, 0.0859375]},
+        "parts/decals/Symbol4.png": {"uv": [0.975341796875, 0.095703125, 0.985107421875, 0.0859375]},
+        "parts/decals/Symbol40.png": {"uv": [0.304443359375, 0.095458984375, 0.314208984375, 0.085693359375]},
+        "parts/decals/Symbol5.png": {"uv": [0.318115234375, 0.095458984375, 0.327880859375, 0.085693359375]},
+        "parts/decals/Symbol6.png": {"uv": [0.390625, 0.0947265625, 0.400390625, 0.0849609375]},
+        "parts/decals/Symbol7.png": {"uv": [0.404296875, 0.0947265625, 0.4140625, 0.0849609375]},
+        "parts/decals/Symbol8.png": {"uv": [0.7060546875, 0.093994140625, 0.7158203125, 0.084228515625]},
+        "parts/decals/Symbol9.png": {"uv": [0.6201171875, 0.0927734375, 0.6298828125, 0.0830078125]},
+        "parts/decals/letter0.png": {"uv": [0.6337890625, 0.0927734375, 0.6435546875, 0.0830078125]},
+        "parts/decals/letter1.png": {"uv": [0.15625, 0.092529296875, 0.166015625, 0.082763671875]},
+        "parts/decals/letter2.png": {"uv": [0.751953125, 0.091796875, 0.76171875, 0.08203125]},
+        "parts/decals/letter3.png": {"uv": [0.765625, 0.091796875, 0.775390625, 0.08203125]},
+        "parts/decals/letter4.png": {"uv": [0.722412109375, 0.091552734375, 0.732177734375, 0.081787109375]},
+        "parts/decals/letter5.png": {"uv": [0.736083984375, 0.091552734375, 0.745849609375, 0.081787109375]},
+        "parts/decals/letter6.png": {"uv": [0.172119140625, 0.091064453125, 0.181884765625, 0.081298828125]},
+        "parts/fireFlack1.png": {"uv": [0.185791015625, 0.145751953125, 0.19482421875, 0.13525390625]},
+        "parts/gray-engine01alt.png": {"uv": [0.989013671875, 0.1552734375, 0.993896484375, 0.140625]},
+        "parts/engine01alt.png": {"uv": [0.294189453125, 0.153076171875, 0.299072265625, 0.138427734375]},
+        "parts/engine02.png": {"uv": [0.331787109375, 0.150146484375, 0.336669921875, 0.135498046875]},
+        "parts/engine02alt.png": {"uv": [0.37841796875, 0.142822265625, 0.38330078125, 0.128173828125]},
+        "parts/red-engine02alt.png": {"uv": [0.53125, 0.140380859375, 0.5361328125, 0.125732421875]},
+        "parts/gray-engine01.png": {"uv": [0.943359375, 0.140380859375, 0.9482421875, 0.125732421875]},
+        "parts/engine01.png": {"uv": [0.572265625, 0.137939453125, 0.5771484375, 0.123291015625]},
+        "parts/gray-engine02.png": {"uv": [0.989013671875, 0.13671875, 0.993896484375, 0.1220703125]},
+        "parts/gray-engine02alt.png": {"uv": [0.294189453125, 0.134521484375, 0.299072265625, 0.119873046875]},
+        "parts/red-engine01.png": {"uv": [0.331787109375, 0.131591796875, 0.336669921875, 0.116943359375]},
+        "parts/red-engine01alt.png": {"uv": [0.185791015625, 0.13134765625, 0.190673828125, 0.11669921875]},
+        "parts/red-engine02.png": {"uv": [0.37841796875, 0.124267578125, 0.38330078125, 0.109619140625]},
+        "img/favicon.png": {"uv": [0.53125, 0.121826171875, 0.5390625, 0.114013671875]},
+        "parts/Wing2x1.d3.png": {"uv": [0.656005859375, 0.091064453125, 0.665771484375, 0.086181640625]},
+        "parts/Wing2x1.d2.png": {"uv": [0.669677734375, 0.091064453125, 0.679443359375, 0.086181640625]},
+        "parts/engine03 copy.png": {"uv": [0.787109375, 0.0888671875, 0.796875, 0.083984375]},
+        "parts/engine03.png": {"uv": [0.943359375, 0.121826171875, 0.9482421875, 0.112060546875]},
+        "parts/engine03alt.png": {"uv": [0.572265625, 0.119384765625, 0.5771484375, 0.109619140625]},
+        "parts/engine03long.png": {"uv": [0.80078125, 0.0888671875, 0.810546875, 0.083984375]},
+        "parts/engine04 copy.png": {"uv": [0.58203125, 0.088623046875, 0.591796875, 0.083740234375]},
+        "parts/engine04.png": {"uv": [0.989013671875, 0.1181640625, 0.993896484375, 0.1083984375]},
+        "parts/engine04alt.png": {"uv": [0.294189453125, 0.115966796875, 0.299072265625, 0.106201171875]},
+        "parts/engine04long.png": {"uv": [0.36474609375, 0.088134765625, 0.37451171875, 0.083251953125]},
+        "parts/engine08.png": {"uv": [0.343017578125, 0.086181640625, 0.352783203125, 0.081298828125]},
+        "parts/engine08alt.png": {"uv": [0.50390625, 0.085693359375, 0.513671875, 0.080810546875]},
+        "parts/VShadowNArmor2x1.png": {"uv": [0.517578125, 0.085693359375, 0.52734375, 0.080810546875]},
+        "parts/engineJump.png": {"uv": [0.9296875, 0.085693359375, 0.939453125, 0.080810546875]},
+        "parts/engineJumpPip.png": {"uv": [0.955078125, 0.08544921875, 0.96484375, 0.08056640625]},
+        "parts/VShadowNArmor1x2.png": {"uv": [0.331787109375, 0.113037109375, 0.336669921875, 0.103271484375]},
+        "parts/VArmor2x1Curved.png": {"uv": [0.90234375, 0.0849609375, 0.912109375, 0.080078125]},
+        "parts/VArmor2x1Curved.d3.png": {"uv": [0.916015625, 0.0849609375, 0.92578125, 0.080078125]},
+        "parts/VArmor2x1Curved.d2.png": {"uv": [0.27734375, 0.084716796875, 0.287109375, 0.079833984375]},
+        "parts/VArmor2x1Curved.d1.png": {"uv": [0.2578125, 0.08447265625, 0.267578125, 0.07958984375]},
+        "parts/VArmor1x2SideBarFilled.png": {"uv": [0.185791015625, 0.11279296875, 0.190673828125, 0.10302734375]},
+        "parts/VArmor1x2SideBarFilled.d3.png": {"uv": [0.53125, 0.110107421875, 0.5361328125, 0.100341796875]},
+        "parts/VArmor1x2SideBarFilled.d2.png": {"uv": [0.943359375, 0.108154296875, 0.9482421875, 0.098388671875]},
+        "parts/Wing2x1.d1.png": {"uv": [0.6865234375, 0.084228515625, 0.6962890625, 0.079345703125]},
+        "parts/VArmor1x2SideBarFilled.d1.png": {"uv": [0.37841796875, 0.105712890625, 0.38330078125, 0.095947265625]},
+        "parts/VArmor1x2SideBar.png": {"uv": [0.572265625, 0.105712890625, 0.5771484375, 0.095947265625]},
+        "parts/VArmor1x2SideBar.d3.png": {"uv": [0.989013671875, 0.1044921875, 0.993896484375, 0.0947265625]},
+        "parts/VArmor1x2SideBar.d2.png": {"uv": [0.294189453125, 0.102294921875, 0.299072265625, 0.092529296875]},
+        "parts/VArmor1x2SideBar.d1.png": {"uv": [0.331787109375, 0.099365234375, 0.336669921875, 0.089599609375]},
+        "parts/VArmor1x2IBeam.png": {"uv": [0.185791015625, 0.09912109375, 0.190673828125, 0.08935546875]},
+        "parts/VArmor1x2IBeam.d3.png": {"uv": [0.53125, 0.096435546875, 0.5361328125, 0.086669921875]},
+        "parts/VArmor1x2IBeam.d2.png": {"uv": [0.943359375, 0.094482421875, 0.9482421875, 0.084716796875]},
+        "parts/VArmor1x2IBeam.d1.png": {"uv": [0.37841796875, 0.092041015625, 0.38330078125, 0.082275390625]},
+        "parts/VArmor1x2End.png": {"uv": [0.572265625, 0.092041015625, 0.5771484375, 0.082275390625]},
+        "parts/VArmor1x2End.d3.png": {"uv": [0.989013671875, 0.0908203125, 0.993896484375, 0.0810546875]},
+        "parts/VArmor1x2End.d2.png": {"uv": [0.294189453125, 0.088623046875, 0.299072265625, 0.078857421875]},
+        "parts/VArmor1x2End.d1.png": {"uv": [0.331787109375, 0.085693359375, 0.336669921875, 0.075927734375]},
+        "parts/VArmor1x2Curved.png": {"uv": [0.185791015625, 0.08544921875, 0.190673828125, 0.07568359375]},
+        "parts/VArmor1x2Curved.d3.png": {"uv": [0.19921875, 0.083984375, 0.2041015625, 0.07421875]},
+        "parts/Battery1x2.png": {"uv": [0.2080078125, 0.083984375, 0.212890625, 0.07421875]},
+        "parts/VArmor1x2Curved.d2.png": {"uv": [0.216796875, 0.083984375, 0.2216796875, 0.07421875]},
+        "parts/Battery2x1.png": {"uv": [0.2255859375, 0.083984375, 0.2353515625, 0.0791015625]},
+        "parts/VArmor1x2Curved.d1.png": {"uv": [0.2392578125, 0.083984375, 0.244140625, 0.07421875]},
+        "parts/VArmor1x2Corner4.png": {"uv": [0.248046875, 0.083984375, 0.2529296875, 0.07421875]},
+        "parts/VArmor1x2Corner4.d3.png": {"uv": [0.818359375, 0.083984375, 0.8232421875, 0.07421875]},
+        "parts/VArmor1x2Corner4.d2.png": {"uv": [0.8271484375, 0.083984375, 0.83203125, 0.07421875]},
+        "parts/VArmor1x2Corner4.d1.png": {"uv": [0.8359375, 0.083984375, 0.8408203125, 0.07421875]},
+        "parts/VArmor1x2.png": {"uv": [0.8447265625, 0.083984375, 0.849609375, 0.07421875]},
+        "parts/VArmor1x2.d3.png": {"uv": [0.853515625, 0.083984375, 0.8583984375, 0.07421875]},
+        "parts/VArmor1x2.d2.png": {"uv": [0.8623046875, 0.083984375, 0.8671875, 0.07421875]},
+        "parts/VArmor1x2.d1.png": {"uv": [0.87109375, 0.083984375, 0.8759765625, 0.07421875]},
+        "parts/VArmor1x1Hook.png": {"uv": [0.8798828125, 0.083984375, 0.884765625, 0.07421875]},
+        "parts/VArmor1x1Hook.d3.png": {"uv": [0.888671875, 0.083984375, 0.8935546875, 0.07421875]},
+        "parts/gray-Wing1x2.d1.png": {"uv": [0.55859375, 0.083251953125, 0.5634765625, 0.073486328125]},
+        "parts/gray-Wing1x2.d2.png": {"uv": [0.599853515625, 0.083251953125, 0.604736328125, 0.073486328125]},
+        "parts/gray-Wing1x2.d3.png": {"uv": [0.608642578125, 0.083251953125, 0.613525390625, 0.073486328125]},
+        "parts/gray-Wing1x2.png": {"uv": [0.13671875, 0.082763671875, 0.1416015625, 0.072998046875]},
+        "parts/gray-Wing2x1.d1.png": {"uv": [0.41796875, 0.082275390625, 0.427734375, 0.077392578125]},
+        "parts/gray-Wing2x1.d2.png": {"uv": [0.431640625, 0.082275390625, 0.44140625, 0.077392578125]},
+        "parts/gray-Wing2x1.d3.png": {"uv": [0.4453125, 0.082275390625, 0.455078125, 0.077392578125]},
+        "parts/gray-Wing2x1.png": {"uv": [0.656005859375, 0.082275390625, 0.665771484375, 0.077392578125]},
+        "parts/VArmor1x1Hook.d2.png": {"uv": [0.1455078125, 0.082763671875, 0.150390625, 0.072998046875]},
+        "parts/VArmor1x1Hook.d1.png": {"uv": [0.53125, 0.082763671875, 0.5361328125, 0.072998046875]},
+        "parts/VArmor1x1CornerBack.png": {"uv": [0.669677734375, 0.082275390625, 0.674560546875, 0.072509765625]},
+        "parts/Wing1x2.png": {"uv": [0, 0.08203125, 0.0048828125, 0.072265625]},
+        "parts/Wing1x2.d3.png": {"uv": [0.0087890625, 0.08203125, 0.013671875, 0.072265625]},
+        "parts/Wing1x2.d2.png": {"uv": [0.017578125, 0.08203125, 0.0224609375, 0.072265625]},
+        "parts/Wing1x2.d1.png": {"uv": [0.0263671875, 0.08203125, 0.03125, 0.072265625]},
+        "parts/gray-engine03 copy.png": {"uv": [0.03515625, 0.08203125, 0.044921875, 0.0771484375]},
+        "parts/gray-engine03.png": {"uv": [0.048828125, 0.08203125, 0.0537109375, 0.072265625]},
+        "parts/gray-engine03alt.png": {"uv": [0.0576171875, 0.08203125, 0.0625, 0.072265625]},
+        "parts/gray-engine03long.png": {"uv": [0.06640625, 0.08203125, 0.076171875, 0.0771484375]},
+        "parts/gray-engine04 copy.png": {"uv": [0.080078125, 0.08203125, 0.08984375, 0.0771484375]},
+        "parts/gray-engine04.png": {"uv": [0.09375, 0.08203125, 0.0986328125, 0.072265625]},
+        "parts/gray-engine04alt.png": {"uv": [0.1025390625, 0.08203125, 0.107421875, 0.072265625]},
+        "parts/gray-engine04long.png": {"uv": [0.111328125, 0.08203125, 0.12109375, 0.0771484375]},
+        "parts/VArmor1x1CornerBack.d3.png": {"uv": [0.125, 0.08203125, 0.1298828125, 0.072265625]},
+        "parts/VArmor1x1CornerBack.d2.png": {"uv": [0.4609375, 0.08203125, 0.4658203125, 0.072265625]},
+        "parts/gray-engine08.png": {"uv": [0.4697265625, 0.08203125, 0.4794921875, 0.0771484375]},
+        "parts/gray-engine08alt.png": {"uv": [0.4833984375, 0.08203125, 0.4931640625, 0.0771484375]},
+        "parts/VArmor1x1CornerBack.d1.png": {"uv": [0.54296875, 0.08203125, 0.5478515625, 0.072265625]},
+        "parts/decals/Stripe1x2.png": {"uv": [0.975341796875, 0.08203125, 0.980224609375, 0.072265625]},
+        "parts/gray-engineJump.png": {"uv": [0.304443359375, 0.081787109375, 0.314208984375, 0.076904296875]},
+        "parts/VArmor1x1Corner3.d3.png": {"uv": [0.318115234375, 0.081787109375, 0.322998046875, 0.072021484375]},
+        "parts/VArmor1x1Corner3.d2.png": {"uv": [0.390625, 0.0810546875, 0.3955078125, 0.0712890625]},
+        "parts/VArmor1x1Corner3.d1.png": {"uv": [0.3994140625, 0.0810546875, 0.404296875, 0.0712890625]},
+        "parts/decals/Stripe2x1.png": {"uv": [0.7060546875, 0.080322265625, 0.7158203125, 0.075439453125]},
+        "parts/UArmor2x1.png": {"uv": [0.787109375, 0.080078125, 0.796875, 0.0751953125]},
+        "parts/UArmor1x2Notch2.png": {"uv": [0.408203125, 0.0810546875, 0.4130859375, 0.0712890625]},
+        "parts/UArmor1x2Notch1.png": {"uv": [0.943359375, 0.080810546875, 0.9482421875, 0.071044921875]},
+        "parts/UArmor1x2.png": {"uv": [0.80078125, 0.080078125, 0.8056640625, 0.0703125]},
+        "parts/Shield2x1.png": {"uv": [0.58203125, 0.079833984375, 0.591796875, 0.074951171875]},
+        "parts/ShaodwWArmor1x2Curved.png": {"uv": [0.8095703125, 0.080078125, 0.814453125, 0.0703125]},
+        "parts/ShaodwNArmor2x1Curved.png": {"uv": [0.36474609375, 0.079345703125, 0.37451171875, 0.074462890625]},
+        "parts/ShadowWArmor2x1Curved.png": {"uv": [0.6201171875, 0.0791015625, 0.6298828125, 0.07421875]},
+        "parts/ShadowWArmor2x1.png": {"uv": [0.6337890625, 0.0791015625, 0.6435546875, 0.07421875]},
+        "parts/ShadowWArmor1x2Font1.png": {"uv": [0.15625, 0.078857421875, 0.166015625, 0.073974609375]},
+        "parts/ShadowWArmor1x2Curved.png": {"uv": [0.37841796875, 0.078369140625, 0.38330078125, 0.068603515625]},
+        "parts/ShadowWArmor1x2.png": {"uv": [0.572265625, 0.078369140625, 0.5771484375, 0.068603515625]},
+        "parts/red-Wing1x2.d1.png": {"uv": [0.751953125, 0.078125, 0.7568359375, 0.068359375]},
+        "parts/red-Wing1x2.d2.png": {"uv": [0.7607421875, 0.078125, 0.765625, 0.068359375]},
+        "parts/red-Wing1x2.d3.png": {"uv": [0.76953125, 0.078125, 0.7744140625, 0.068359375]},
+        "parts/red-Wing1x2.png": {"uv": [0.7783203125, 0.078125, 0.783203125, 0.068359375]},
+        "parts/red-Wing2x1.d1.png": {"uv": [0.722412109375, 0.077880859375, 0.732177734375, 0.072998046875]},
+        "parts/red-Wing2x1.d2.png": {"uv": [0.736083984375, 0.077880859375, 0.745849609375, 0.072998046875]},
+        "parts/red-Wing2x1.d3.png": {"uv": [0.172119140625, 0.077392578125, 0.181884765625, 0.072509765625]},
+        "parts/red-Wing2x1.png": {"uv": [0.343017578125, 0.077392578125, 0.352783203125, 0.072509765625]},
+        "parts/ShadowNArmor2x1Curved.png": {"uv": [0.50390625, 0.076904296875, 0.513671875, 0.072021484375]},
+        "parts/ShadowNArmor2x1.png": {"uv": [0.517578125, 0.076904296875, 0.52734375, 0.072021484375]},
+        "parts/ShadowNArmor1x2Font1.png": {"uv": [0.9296875, 0.076904296875, 0.939453125, 0.072021484375]},
+        "parts/VShadowWArmor2x1.png": {"uv": [0.955078125, 0.07666015625, 0.96484375, 0.07177734375]},
+        "parts/VShadowWArmor1x2.png": {"uv": [0.989013671875, 0.0771484375, 0.993896484375, 0.0673828125]},
+        "parts/decals/StripeDouble2x1.png": {"uv": [0.90234375, 0.076171875, 0.912109375, 0.0712890625]},
+        "parts/Wing2x1.png": {"uv": [0.916015625, 0.076171875, 0.92578125, 0.0712890625]},
+        "parts/red-engine03 copy.png": {"uv": [0.27734375, 0.075927734375, 0.287109375, 0.071044921875]},
+        "parts/red-engine03.png": {"uv": [0.2578125, 0.07568359375, 0.2626953125, 0.06591796875]},
+        "parts/red-engine03alt.png": {"uv": [0.2666015625, 0.07568359375, 0.271484375, 0.06591796875]},
+        "parts/red-engine03long.png": {"uv": [0.6865234375, 0.075439453125, 0.6962890625, 0.070556640625]},
+        "parts/red-engine04 copy.png": {"uv": [0.2255859375, 0.0751953125, 0.2353515625, 0.0703125]},
+        "parts/red-engine04.png": {"uv": [0.294189453125, 0.074951171875, 0.299072265625, 0.065185546875]},
+        "parts/red-engine04alt.png": {"uv": [0.41796875, 0.073486328125, 0.4228515625, 0.063720703125]},
+        "parts/red-engine04long.png": {"uv": [0.4267578125, 0.073486328125, 0.4365234375, 0.068603515625]},
+        "parts/ShadowNArmor1x2Curved.png": {"uv": [0.4404296875, 0.073486328125, 0.4453125, 0.063720703125]},
+        "parts/ShadowNArmor1x2.png": {"uv": [0.44921875, 0.073486328125, 0.4541015625, 0.063720703125]},
+        "parts/red-engine08.png": {"uv": [0.656005859375, 0.073486328125, 0.665771484375, 0.068603515625]},
+        "parts/red-engine08alt.png": {"uv": [0.03515625, 0.0732421875, 0.044921875, 0.068359375]},
+        "parts/red-engineJump.png": {"uv": [0.06640625, 0.0732421875, 0.076171875, 0.068359375]},
+        "parts/Reactor2x1.png": {"uv": [0.080078125, 0.0732421875, 0.08984375, 0.068359375]},
+        "parts/Reactor1x2.png": {"uv": [0.111328125, 0.0732421875, 0.1162109375, 0.0634765625]},
+        "parts/HArmor2x1Decorative4.png": {"uv": [0.4697265625, 0.0732421875, 0.4794921875, 0.068359375]},
+        "parts/HArmor2x1Decorative3.png": {"uv": [0.4833984375, 0.0732421875, 0.4931640625, 0.068359375]},
+        "parts/HArmor2x1Decorative2.png": {"uv": [0.304443359375, 0.072998046875, 0.314208984375, 0.068115234375]},
+        "parts/HArmor2x1Decorative1.png": {"uv": [0.7060546875, 0.071533203125, 0.7158203125, 0.066650390625]},
+        "parts/HArmor2x1Curved.png": {"uv": [0.787109375, 0.0712890625, 0.796875, 0.06640625]},
+        "parts/HArmor2x1Curved.d3.png": {"uv": [0.58203125, 0.071044921875, 0.591796875, 0.066162109375]},
+        "parts/HArmor2x1Curved.d2.png": {"uv": [0.36474609375, 0.070556640625, 0.37451171875, 0.065673828125]},
+        "parts/HArmor2x1Curved.d1.png": {"uv": [0.19921875, 0.0703125, 0.208984375, 0.0654296875]},
+        "parts/sel1x2.png": {"uv": [0.331787109375, 0.072021484375, 0.336669921875, 0.062255859375]},
+        "parts/sel2x1.png": {"uv": [0.2392578125, 0.0703125, 0.2490234375, 0.0654296875]},
+        "parts/HArmor2x1.png": {"uv": [0.6201171875, 0.0703125, 0.6298828125, 0.0654296875]},
+        "parts/HArmor2x1.d3.png": {"uv": [0.6337890625, 0.0703125, 0.6435546875, 0.0654296875]},
+        "parts/HArmor2x1.d2.png": {"uv": [0.818359375, 0.0703125, 0.828125, 0.0654296875]},
+        "parts/HArmor2x1.d1.png": {"uv": [0.83203125, 0.0703125, 0.841796875, 0.0654296875]},
+        "parts/HArmor1x2Front2.png": {"uv": [0.845703125, 0.0703125, 0.85546875, 0.0654296875]},
+        "parts/HArmor1x2Front2.d3.png": {"uv": [0.859375, 0.0703125, 0.869140625, 0.0654296875]},
+        "parts/HArmor1x2Front2.d2.png": {"uv": [0.873046875, 0.0703125, 0.8828125, 0.0654296875]},
+        "parts/HArmor1x2Front2.d1.png": {"uv": [0.88671875, 0.0703125, 0.896484375, 0.0654296875]},
+        "parts/HArmor1x2Font1.png": {"uv": [0.15625, 0.070068359375, 0.166015625, 0.065185546875]},
+        "parts/HArmor1x2Font1.d3.png": {"uv": [0.55859375, 0.069580078125, 0.568359375, 0.064697265625]},
+        "parts/HArmor1x2Font1.d2.png": {"uv": [0.599853515625, 0.069580078125, 0.609619140625, 0.064697265625]},
+        "parts/HArmor1x2Font1.d1.png": {"uv": [0.13671875, 0.069091796875, 0.146484375, 0.064208984375]},
+        "parts/HArmor1x2Font1 Copy.png": {"uv": [0.722412109375, 0.069091796875, 0.732177734375, 0.064208984375]},
+        "parts/HArmor1x2Font1 Copy 2.png": {"uv": [0.736083984375, 0.069091796875, 0.745849609375, 0.064208984375]},
+        "parts/HArmor1x2Curved.png": {"uv": [0.185791015625, 0.07177734375, 0.190673828125, 0.06201171875]},
+        "parts/HArmor1x2Curved.d3.png": {"uv": [0.212890625, 0.0703125, 0.2177734375, 0.060546875]},
+        "parts/HArmor1x2Curved.d2.png": {"uv": [0.53125, 0.069091796875, 0.5361328125, 0.059326171875]},
+        "parts/HArmor1x2Curved.d1.png": {"uv": [0.172119140625, 0.068603515625, 0.177001953125, 0.058837890625]},
+        "parts/HArmor1x2Back2.png": {"uv": [0.343017578125, 0.068603515625, 0.352783203125, 0.063720703125]},
+        "parts/HArmor1x2Back2.d3.png": {"uv": [0.669677734375, 0.068603515625, 0.679443359375, 0.063720703125]},
+        "parts/HArmor1x2Back2.d2.png": {"uv": [0, 0.068359375, 0.009765625, 0.0634765625]},
+        "parts/HArmor1x2Back2.d1.png": {"uv": [0.013671875, 0.068359375, 0.0234375, 0.0634765625]},
+        "parts/HArmor1x2Back1.png": {"uv": [0.048828125, 0.068359375, 0.05859375, 0.0634765625]},
+        "parts/HArmor1x2Back1.d3.png": {"uv": [0.09375, 0.068359375, 0.103515625, 0.0634765625]},
+        "parts/HArmor1x2Back1.d2.png": {"uv": [0.54296875, 0.068359375, 0.552734375, 0.0634765625]},
+        "parts/HArmor1x2Back1.d1.png": {"uv": [0.975341796875, 0.068359375, 0.985107421875, 0.0634765625]},
+        "parts/HArmor1x2Back1 Copy.png": {"uv": [0.318115234375, 0.068115234375, 0.327880859375, 0.063232421875]},
+        "parts/HArmor1x2.png": {"uv": [0.125, 0.068359375, 0.1298828125, 0.05859375]},
+        "parts/HArmor1x2.d3.png": {"uv": [0.4609375, 0.068359375, 0.4658203125, 0.05859375]},
+        "parts/HArmor1x2.d2.png": {"uv": [0.50390625, 0.068115234375, 0.5087890625, 0.058349609375]},
+        "parts/HArmor1x2.d1.png": {"uv": [0.5126953125, 0.068115234375, 0.517578125, 0.058349609375]},
+        "parts/CamoArmor1x2Back1.png": {"uv": [0.9296875, 0.068115234375, 0.939453125, 0.063232421875]},
+        "parts/CamoArmor1x2.png": {"uv": [0.521484375, 0.068115234375, 0.5263671875, 0.058349609375]},
+        "parts/CamoAarmor1x2Curved.png": {"uv": [0.955078125, 0.06787109375, 0.96484375, 0.06298828125]},
+        "parts/VArmor1x1Corner3.png": {"uv": [0.390625, 0.0673828125, 0.3955078125, 0.0576171875]},
+        "parts/fireSpinPart4.png": {"uv": [0.3994140625, 0.0673828125, 0.406494140625, 0.061279296875]},
+        "parts/fireSpinPart2.png": {"uv": [0.90234375, 0.0673828125, 0.909423828125, 0.061279296875]},
+        "parts/red-Wing1x1Notch.png": {"uv": [0.913330078125, 0.0673828125, 0.918212890625, 0.0625]},
+        "parts/red-Wing1x1Round.d1.png": {"uv": [0.27734375, 0.067138671875, 0.2822265625, 0.062255859375]},
+        "parts/red-Wing1x1Round.d2.png": {"uv": [0.943359375, 0.067138671875, 0.9482421875, 0.062255859375]},
+        "parts/red-Wing1x1Round.d3.png": {"uv": [0.6865234375, 0.066650390625, 0.69140625, 0.061767578125]},
+        "parts/red-Wing1x1Round.png": {"uv": [0.6953125, 0.066650390625, 0.7001953125, 0.061767578125]},
+        "parts/decals/Stripe1x1Fill5.png": {"uv": [0.2255859375, 0.06640625, 0.23046875, 0.0615234375]},
+        "parts/decals/Stripe1x1Fill4.png": {"uv": [0.80078125, 0.06640625, 0.8056640625, 0.0615234375]},
+        "parts/decals/Stripe1x1Fill3.png": {"uv": [0.8095703125, 0.06640625, 0.814453125, 0.0615234375]},
+        "parts/decals/Stripe1x1Fill2.png": {"uv": [0.37841796875, 0.064697265625, 0.38330078125, 0.059814453125]},
+        "parts/Wing1x1Round.png": {"uv": [0.4267578125, 0.064697265625, 0.431640625, 0.059814453125]},
+        "parts/Wing1x1Round.d3.png": {"uv": [0.572265625, 0.064697265625, 0.5771484375, 0.059814453125]},
+        "parts/Wing1x1Round.d2.png": {"uv": [0.656005859375, 0.064697265625, 0.660888671875, 0.059814453125]},
+        "parts/VArmor1x1Curve.png": {"uv": [0.03515625, 0.064453125, 0.0400390625, 0.0595703125]},
+        "parts/ShadowWArmor1x1CornerInner.png": {"uv": [0.06640625, 0.064453125, 0.0712890625, 0.0595703125]},
+        "parts/ShadowWArmor1x1Corner.png": {"uv": [0.0751953125, 0.064453125, 0.080078125, 0.0595703125]},
+        "parts/ShadowWArmor1x1Angle.png": {"uv": [0.083984375, 0.064453125, 0.0888671875, 0.0595703125]},
+        "parts/ShadowWArmor1x1.png": {"uv": [0.4697265625, 0.064453125, 0.474609375, 0.0595703125]},
+        "parts/VArmor1x1Curve.d3.png": {"uv": [0.478515625, 0.064453125, 0.4833984375, 0.0595703125]},
+        "parts/VArmor1x1Curve.d2.png": {"uv": [0.4873046875, 0.064453125, 0.4921875, 0.0595703125]},
+        "parts/VArmor1x1Curve.d1.png": {"uv": [0.751953125, 0.064453125, 0.7568359375, 0.0595703125]},
+        "parts/VShadowWArmor1x1Corner.png": {"uv": [0.7607421875, 0.064453125, 0.765625, 0.0595703125]},
+        "parts/VShadowWArmor1x1Angle.png": {"uv": [0.76953125, 0.064453125, 0.7744140625, 0.0595703125]},
+        "parts/Wing1x1Round.d1.png": {"uv": [0.7783203125, 0.064453125, 0.783203125, 0.0595703125]},
+        "parts/Wing1x1Notch.png": {"uv": [0.304443359375, 0.064208984375, 0.309326171875, 0.059326171875]},
+        "parts/VShadowWArmor1x1.png": {"uv": [0.989013671875, 0.0634765625, 0.993896484375, 0.05859375]},
+        "parts/Wing1x1Notch.d2.png": {"uv": [0.7060546875, 0.062744140625, 0.7109375, 0.057861328125]},
+        "parts/Wing1x1Notch.d1.png": {"uv": [0.787109375, 0.0625, 0.7919921875, 0.0576171875]},
+        "parts/Wing1x1Angle.png": {"uv": [0.58203125, 0.062255859375, 0.5869140625, 0.057373046875]},
+        "parts/Wing1x1Angle.d3.png": {"uv": [0.5908203125, 0.062255859375, 0.595703125, 0.057373046875]},
+        "parts/VShadowNArmor1x1CornerInner.png": {"uv": [0.2578125, 0.06201171875, 0.2626953125, 0.05712890625]},
+        "parts/VShadowNArmor1x1Corner.png": {"uv": [0.2666015625, 0.06201171875, 0.271484375, 0.05712890625]},
+        "parts/VShadowNArmor1x1Angle.png": {"uv": [0.36474609375, 0.061767578125, 0.36962890625, 0.056884765625]},
+        "parts/VShadowNArmor1x1.png": {"uv": [0.19921875, 0.0615234375, 0.2041015625, 0.056640625]},
+        "parts/Wing1x1Angle.d2.png": {"uv": [0.2392578125, 0.0615234375, 0.244140625, 0.056640625]},
+        "parts/Wing1x1Angle.d1.png": {"uv": [0.248046875, 0.0615234375, 0.2529296875, 0.056640625]},
+        "parts/decals/Stripe1x1Fill1.png": {"uv": [0.6201171875, 0.0615234375, 0.625, 0.056640625]},
+        "parts/ShadowNArmor1x1CornerInner.png": {"uv": [0.62890625, 0.0615234375, 0.6337890625, 0.056640625]},
+        "parts/ShadowNArmor1x1Corner.png": {"uv": [0.6376953125, 0.0615234375, 0.642578125, 0.056640625]},
+        "parts/decals/Stripe1x1Corner.png": {"uv": [0.646484375, 0.0615234375, 0.6513671875, 0.056640625]},
+        "parts/ShadowNArmor1x1Angle.png": {"uv": [0.818359375, 0.0615234375, 0.8232421875, 0.056640625]},
+        "parts/ShadowNArmor1x1.png": {"uv": [0.8271484375, 0.0615234375, 0.83203125, 0.056640625]},
+        "parts/VShadowWArmor1x1CornerInner.png": {"uv": [0.8359375, 0.0615234375, 0.8408203125, 0.056640625]},
+        "parts/gray-OverKillAi.png": {"uv": [0.8447265625, 0.0615234375, 0.849609375, 0.056640625]},
+        "parts/Reactor1x1.png": {"uv": [0.853515625, 0.0615234375, 0.8583984375, 0.056640625]},
+        "parts/OverKillAi.png": {"uv": [0.8623046875, 0.0615234375, 0.8671875, 0.056640625]},
+        "parts/decals/Stripe1x1.png": {"uv": [0.87109375, 0.0615234375, 0.8759765625, 0.056640625]},
+        "parts/Wing1x1Notch.d3.png": {"uv": [0.8798828125, 0.0615234375, 0.884765625, 0.056640625]},
+        "parts/gray-Wing1x1Angle.d1.png": {"uv": [0.888671875, 0.0615234375, 0.8935546875, 0.056640625]},
+        "parts/gray-Wing1x1Angle.d2.png": {"uv": [0.15625, 0.061279296875, 0.1611328125, 0.056396484375]},
+        "parts/VArmor1x1Corner2.png": {"uv": [0.294189453125, 0.061279296875, 0.299072265625, 0.056396484375]},
+        "parts/VArmor1x1Corner2.d3.png": {"uv": [0.55859375, 0.060791015625, 0.5634765625, 0.055908203125]},
+        "parts/VArmor1x1Corner2.d2.png": {"uv": [0.599853515625, 0.060791015625, 0.604736328125, 0.055908203125]},
+        "parts/VArmor1x1Corner2.d1.png": {"uv": [0.608642578125, 0.060791015625, 0.613525390625, 0.055908203125]},
+        "parts/sel1x1.png": {"uv": [0.13671875, 0.060302734375, 0.1416015625, 0.055419921875]},
+        "parts/VArmor1x1Corner1.png": {"uv": [0.1455078125, 0.060302734375, 0.150390625, 0.055419921875]},
+        "parts/VArmor1x1Corner1.d3.png": {"uv": [0.722412109375, 0.060302734375, 0.727294921875, 0.055419921875]},
+        "parts/VArmor1x1Corner1.d2.png": {"uv": [0.731201171875, 0.060302734375, 0.736083984375, 0.055419921875]},
+        "parts/VArmor1x1Corner1.d1.png": {"uv": [0.739990234375, 0.060302734375, 0.744873046875, 0.055419921875]},
+        "parts/gray-Wing1x1Angle.d3.png": {"uv": [0.343017578125, 0.059814453125, 0.347900390625, 0.054931640625]},
+        "parts/VArmor1x1Angle.d3.png": {"uv": [0.351806640625, 0.059814453125, 0.356689453125, 0.054931640625]},
+        "parts/VArmor1x1Angle.d2.png": {"uv": [0.41796875, 0.059814453125, 0.4228515625, 0.054931640625]},
+        "parts/VArmor1x1Angle.d1.png": {"uv": [0.4404296875, 0.059814453125, 0.4453125, 0.054931640625]},
+        "parts/VArmor1x1.png": {"uv": [0.44921875, 0.059814453125, 0.4541015625, 0.054931640625]},
+        "parts/VArmor1x1.d3.png": {"uv": [0.669677734375, 0.059814453125, 0.674560546875, 0.054931640625]},
+        "parts/VArmor1x1.d2.png": {"uv": [0, 0.0595703125, 0.0048828125, 0.0546875]},
+        "parts/VArmor1x1.d1.png": {"uv": [0.0087890625, 0.0595703125, 0.013671875, 0.0546875]},
+        "parts/solar1x1.png": {"uv": [0.017578125, 0.0595703125, 0.0224609375, 0.0546875]},
+        "parts/gray-Wing1x1Angle.png": {"uv": [0.0263671875, 0.0595703125, 0.03125, 0.0546875]},
+        "parts/gray-Wing1x1Notch.d1.png": {"uv": [0.048828125, 0.0595703125, 0.0537109375, 0.0546875]},
+        "parts/gray-Wing1x1Notch.d2.png": {"uv": [0.0576171875, 0.0595703125, 0.0625, 0.0546875]},
+        "parts/gray-Wing1x1Notch.d3.png": {"uv": [0.09375, 0.0595703125, 0.0986328125, 0.0546875]},
+        "parts/UArmor1x1Spike.png": {"uv": [0.1025390625, 0.0595703125, 0.107421875, 0.0546875]},
+        "parts/UArmor1x1Notch2.png": {"uv": [0.111328125, 0.0595703125, 0.1162109375, 0.0546875]},
+        "parts/UArmor1x1Notch1.png": {"uv": [0.54296875, 0.0595703125, 0.5478515625, 0.0546875]},
+        "parts/UArmor1x1AngleBack.png": {"uv": [0.975341796875, 0.0595703125, 0.980224609375, 0.0546875]},
+        "parts/UArmor1x1Angle.png": {"uv": [0.318115234375, 0.059326171875, 0.322998046875, 0.054443359375]},
+        "parts/UArmor1x1.png": {"uv": [0.9296875, 0.059326171875, 0.9345703125, 0.054443359375]},
+        "parts/gray-Wing1x1Notch.png": {"uv": [0.955078125, 0.05908203125, 0.9599609375, 0.05419921875]},
+        "parts/Shield1x1.png": {"uv": [0.9638671875, 0.05908203125, 0.96875, 0.05419921875]},
+        "parts/gray-Wing1x1Round.d1.png": {"uv": [0.913330078125, 0.05859375, 0.918212890625, 0.0537109375]},
+        "parts/gray-Wing1x1Round.d2.png": {"uv": [0.27734375, 0.058349609375, 0.2822265625, 0.053466796875]},
+        "parts/gray-Wing1x1Round.d3.png": {"uv": [0.331787109375, 0.058349609375, 0.336669921875, 0.053466796875]},
+        "parts/gray-Wing1x1Round.png": {"uv": [0.943359375, 0.058349609375, 0.9482421875, 0.053466796875]},
+        "parts/decals/Stripe1x1SlashInside.png": {"uv": [0.185791015625, 0.05810546875, 0.190673828125, 0.05322265625]},
+        "parts/red-OverKillAi.png": {"uv": [0.6865234375, 0.057861328125, 0.69140625, 0.052978515625]},
+        "parts/decals/Stripe1x1Slash.png": {"uv": [0.6953125, 0.057861328125, 0.7001953125, 0.052978515625]},
+        "parts/decals/Stripe1x1Fill6.png": {"uv": [0.2255859375, 0.0576171875, 0.23046875, 0.052734375]},
+        "parts/red-Wing1x1Angle.d1.png": {"uv": [0.80078125, 0.0576171875, 0.8056640625, 0.052734375]},
+        "parts/HArmor1x1Decorative4.png": {"uv": [0.8095703125, 0.0576171875, 0.814453125, 0.052734375]},
+        "parts/HArmor1x1Decorative3.png": {"uv": [0.3994140625, 0.057373046875, 0.404296875, 0.052490234375]},
+        "parts/HArmor1x1Decorative2.png": {"uv": [0.408203125, 0.057373046875, 0.4130859375, 0.052490234375]},
+        "parts/HArmor1x1Decorative1.png": {"uv": [0.90234375, 0.057373046875, 0.9072265625, 0.052490234375]},
+        "parts/HArmor1x1Curved.png": {"uv": [0.212890625, 0.056640625, 0.2177734375, 0.0517578125]},
+        "parts/HArmor1x1Curved.d3.png": {"uv": [0.37841796875, 0.055908203125, 0.38330078125, 0.051025390625]},
+        "parts/HArmor1x1Curved.d2.png": {"uv": [0.4267578125, 0.055908203125, 0.431640625, 0.051025390625]},
+        "parts/HArmor1x1Curved.d1.png": {"uv": [0.572265625, 0.055908203125, 0.5771484375, 0.051025390625]},
+        "parts/HArmor1x1AngleBack.png": {"uv": [0.656005859375, 0.055908203125, 0.660888671875, 0.051025390625]},
+        "parts/HArmor1x1AngleBack.d3.png": {"uv": [0.03515625, 0.0556640625, 0.0400390625, 0.05078125]},
+        "parts/HArmor1x1AngleBack.d2.png": {"uv": [0.06640625, 0.0556640625, 0.0712890625, 0.05078125]},
+        "parts/HArmor1x1AngleBack.d1.png": {"uv": [0.0751953125, 0.0556640625, 0.080078125, 0.05078125]},
+        "parts/HArmor1x1Angle.png": {"uv": [0.083984375, 0.0556640625, 0.0888671875, 0.05078125]},
+        "parts/HArmor1x1Angle.d3.png": {"uv": [0.4697265625, 0.0556640625, 0.474609375, 0.05078125]},
+        "parts/HArmor1x1Angle.d2.png": {"uv": [0.478515625, 0.0556640625, 0.4833984375, 0.05078125]},
+        "parts/HArmor1x1Angle.d1.png": {"uv": [0.4873046875, 0.0556640625, 0.4921875, 0.05078125]},
+        "parts/HArmor1x1Angle Copy.png": {"uv": [0.751953125, 0.0556640625, 0.7568359375, 0.05078125]},
+        "parts/HArmor1x1.png": {"uv": [0.7607421875, 0.0556640625, 0.765625, 0.05078125]},
+        "parts/HArmor1x1.d3.png": {"uv": [0.76953125, 0.0556640625, 0.7744140625, 0.05078125]},
+        "parts/HArmor1x1.d2.png": {"uv": [0.7783203125, 0.0556640625, 0.783203125, 0.05078125]},
+        "parts/HArmor1x1.d1.png": {"uv": [0.304443359375, 0.055419921875, 0.309326171875, 0.050537109375]},
+        "parts/red-Wing1x1Angle.d2.png": {"uv": [0.53125, 0.055419921875, 0.5361328125, 0.050537109375]},
+        "parts/red-Wing1x1Angle.d3.png": {"uv": [0.172119140625, 0.054931640625, 0.177001953125, 0.050048828125]},
+        "parts/CamoArmor1x1Curved.png": {"uv": [0.125, 0.0546875, 0.1298828125, 0.0498046875]},
+        "parts/CamoArmor1x1.png": {"uv": [0.4609375, 0.0546875, 0.4658203125, 0.0498046875]},
+        "parts/red-Wing1x1Angle.png": {"uv": [0.989013671875, 0.0546875, 0.993896484375, 0.0498046875]},
+        "parts/red-Wing1x1Notch.d1.png": {"uv": [0.50390625, 0.054443359375, 0.5087890625, 0.049560546875]},
+        "parts/red-Wing1x1Notch.d2.png": {"uv": [0.5126953125, 0.054443359375, 0.517578125, 0.049560546875]},
+        "parts/Battery1x1.png": {"uv": [0.521484375, 0.054443359375, 0.5263671875, 0.049560546875]},
+        "parts/red-Wing1x1Notch.d3.png": {"uv": [0.7060546875, 0.053955078125, 0.7109375, 0.049072265625]},
+        "parts/VArmor1x1Angle.png": {"uv": [0.390625, 0.0537109375, 0.3955078125, 0.048828125]},
+        "img/empty.png": {"uv": [0.360595703125, 0.140869140625, 0.36083984375, 0.140625]}
+    }
+};

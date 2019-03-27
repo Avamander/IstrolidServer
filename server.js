@@ -9,7 +9,7 @@ global.sim = new Sim();
 Sim.prototype.cheatSimInterval = -12;
 Sim.prototype.lastSimInterval = 0;
 
-global.Server = function() {
+global.Server = function () {
 
     var wss = new WebSocket.Server({port: config.port});
     var root = null;
@@ -21,7 +21,7 @@ global.Server = function() {
     this.send = (player, data) => {
         let packet = sim.zJson.dumpDv(data);
         let client = player.ws;
-        if(client && client.readyState === WebSocket.OPEN) {
+        if (client && client.readyState === WebSocket.OPEN) {
             client.send(packet);
         }
     };
@@ -65,7 +65,7 @@ global.Server = function() {
         });
 
         root.sendData = data => {
-            if(root.readyState === WebSocket.OPEN) {
+            if (root.readyState === WebSocket.OPEN) {
                 root.send(JSON.stringify(data));
             }
         }
@@ -77,11 +77,13 @@ global.Server = function() {
             name: config.name,
             address: "ws://" + config.addr + ":" + config.port,
             observers: sim.players.filter(p => p.connected).length,
-            players: sim.players.filter(p => p.connected && !p.ai).map(p => { return {
-                name: p.name,
-                side: p.side,
-                ai: false
-            }}),
+            players: sim.players.filter(p => p.connected && !p.ai).map(p => {
+                return {
+                    name: p.name,
+                    side: p.side,
+                    ai: false
+                }
+            }),
             type: sim.serverType,
             version: VERSION,
             state: sim.state
@@ -100,18 +102,18 @@ global.Server = function() {
             let packet = new DataView(new Uint8Array(msg).buffer);
             let data = sim.zJson.loadDv(packet);
             //console.log(data);
-            if(data[0] === 'playerJoin') {
+            if (data[0] === 'playerJoin') {
                 let player = sim.playerJoin(...data);
                 player.ws = ws;
                 players[id] = player;
                 sim.clearNetState();
-            } else if(allowedCmds.includes(data[0])) {
-                sim[data[0]].apply(sim, [players[id],...data.slice(1)]);
+            } else if (allowedCmds.includes(data[0])) {
+                sim[data[0]].apply(sim, [players[id], ...data.slice(1)]);
             }
         });
 
         ws.on('close', e => {
-            if(players[id]) {
+            if (players[id]) {
                 players[id].connected = false;
                 delete players[id];
             }
@@ -120,10 +122,10 @@ global.Server = function() {
 
     var interval = setInterval(() => {
         let rightNow = now();
-        if(sim.lastSimInterval + 1000 / 16 + sim.cheatSimInterval <= rightNow) {
+        if (sim.lastSimInterval + 1000 / 16 + sim.cheatSimInterval <= rightNow) {
             sim.lastSimInterval = rightNow;
 
-            if(!sim.paused) {
+            if (!sim.paused) {
                 sim.simulate();
             } else {
                 sim.startingSim();
@@ -131,12 +133,12 @@ global.Server = function() {
 
             let packet = sim.send();
             wss.clients.forEach(client => {
-                if(client.readyState === WebSocket.OPEN) {
+                if (client.readyState === WebSocket.OPEN) {
                     client.send(packet);
                 }
             });
         }
-        if(rightNow - lastInfoTime > 15000) {
+        if (rightNow - lastInfoTime > 15000) {
             sendInfo();
             lastInfoTime = rightNow;
         }
