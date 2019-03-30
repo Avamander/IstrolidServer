@@ -10,15 +10,30 @@ Sim.prototype.cheatSimInterval = -12;
 Sim.prototype.lastSimInterval = 0;
 
 global.Server = function () {
+    const wss = new WebSocket.Server({
+        port: 5053,
+        perMessageDeflateOptions: {
+            chunkSize: 256,
+            memLevel: 9,
+            level: 5
+        },
+        zlibInflateOptions: {
+            chunkSize: 256
+        },
+        clientNoContextTakeover: true,
+        serverNoContextTakeover: true,
+        serverMaxWindowBits: 10,
+        concurrencyLimit: 5,
+        threshold: 512
+    });
 
-    var wss = new WebSocket.Server({port: config.port});
     var root = null;
 
     var players = {};
 
     var lastInfoTime = 0;
 
-    this.send = (player, data) => {
+    this.send = function (player, data) {
         let packet = sim.zJson.dumpDv(data);
         let client = player.ws;
         if (client && client.readyState === WebSocket.OPEN) {
@@ -26,58 +41,105 @@ global.Server = function () {
         }
     };
 
-    this.sendToRoot = (data) => {
+    this.sendToRoot = function (data) {
         root.sendData(data);
     };
 
-    this.stop = () => {
+    this.stop = function () {
         console.log("stopping server");
         wss.close();
         clearInterval(interval);
     };
 
-    this.say = msg => {
+    this.say = function (msg) {
         root.sendData(["message", {
             text: msg,
             channel: config.name,
             color: "FFFFFF",
-            name: "Server",
+            name: "Avama",
             server: true
         }]);
     };
 
-    var connectToRoot = () => {
+    var connectToRoot = function () {
         root = new WebSocket(config.root_addr);
 
         root.on("open", () => {
             console.log("connected to root");
             sendInfo();
+            root.sendData(["registerBot"]);
             lastInfoTime = now();
         });
 
-        root.on("close", () => {
+        root.on("message", function (msg) {
+            let data = JSON.parse(msg);
+            if (data[0] === "message") {
+                if (data[1].channel === config.name && data[1].text.startsWith("!")) {
+                    p = sim.players.filter(function (p) {
+                        return p.name === data[1].name;
+                    })[0];
+                    if (p != null) {
+                        cmds = data[1].text.slice(1).split(" ");
+                        return processCommand(p, cmds);
+                    }
+                } /*else if (data[1].channel === config.name && data[1].text.startsWith("#")) {
+                    text = data[1].text.slice(1);
+                    switch (text.toLowerCase().replace(" ", "")) {
+                        case "muhahahahaha":
+                        case "muhahahaha":
+                        case "muhahaha":
+                        case "muhaha":
+                            return runText(text, [255, 0, 0, 255]);
+                        case "lol":
+                        case "lool":
+                        case "loool":
+                            return runText(text, [255, 255, 0, 255]);
+                        case "gg":
+                        case "ggnore":
+                            return runText(text, [0, 255, 0, 255]);
+                        case "gl":
+                        case "glhf":
+                            return runText(text, [80, 80, 180, 255]);
+                        case "rip":
+                        case "oof":
+                            return runText(text, [255, 165, 0, 255]);
+                        case "petri":
+                            return runText("ISTROLID IS PETRI DISH", [40, 40, 255, 255]);
+                        case "gtg":
+                        case "bye":
+                        case "cya":
+                        case "cyu":
+                            return runText(text, [85, 26, 139, 255]);
+                        default:
+                            return runText(text);
+                    }
+                }*/
+            }
+        });
+
+        root.on("close", function () {
             console.log("cannot connect to root, retrying");
             setTimeout(connectToRoot, 5000);
         });
 
-        root.on("error", e => {
-            console.log("connection to root failed");
+        root.on("error", function (e) {
+            console.log("connection to root failed", e);
         });
 
-        root.sendData = data => {
+        root.sendData = function (data) {
             if (root.readyState === WebSocket.OPEN) {
                 root.send(JSON.stringify(data));
             }
         }
     };
 
-    var sendInfo = () => {
+    var sendInfo = function () {
         // Send server info
         let info = {
             name: config.name,
-            address: "ws://" + config.addr + ":" + config.port,
-            observers: sim.players.filter(p => p.connected).length,
-            players: sim.players.filter(p => p.connected && !p.ai).map(p => {
+            address: "wss://" + config.addr + ":" + config.port,
+            observers: sim.players.filter(p => p.connected && !p.ai).length,
+            players: sim.players.filter(p => p.connected).map(function (p) {
                 return {
                     name: p.name,
                     side: p.side,
@@ -93,12 +155,12 @@ global.Server = function () {
 
     connectToRoot();
 
-    wss.on("connection", (ws, req) => {
-        console.log("connection from", req.connection.remoteAddress);
+    wss.on("connection", function (ws, req) {
+        console.log("connection from", req.headers["x-forwarded-for"]);
 
         let id = req.headers["sec-websocket-key"];
 
-        ws.on("message", msg => {
+        ws.on("message", function (msg) {
             let packet = new DataView(new Uint8Array(msg).buffer);
             let data = sim.zJson.loadDv(packet);
             //console.log(data);
@@ -112,7 +174,7 @@ global.Server = function () {
             }
         });
 
-        ws.on("close", e => {
+        ws.on("close", function (e) {
             if (players[id]) {
                 players[id].connected = false;
                 delete players[id];
@@ -120,7 +182,7 @@ global.Server = function () {
         });
     });
 
-    var interval = setInterval(() => {
+    var interval = setInterval(function () {
         let rightNow = now();
         if (sim.lastSimInterval + 1000 / 16 + sim.cheatSimInterval <= rightNow) {
             sim.lastSimInterval = rightNow;
@@ -143,7 +205,8 @@ global.Server = function () {
             lastInfoTime = rightNow;
         }
     }, 17);
-};
+}
+;
 
 global.server = new Server();
 
@@ -156,4 +219,4 @@ net.createServer(function (socket) {
         output: socket,
         terminal: true
     }).on("exit", () => socket.end());
-}).listen(5001, "localhost");
+}).listen(5003, "localhost");

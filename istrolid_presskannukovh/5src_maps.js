@@ -4,7 +4,7 @@
     var blue, bluebrown, chooseNumber, chooseOne, darkness, fadered, genBox, genCTF, genClouds, genDebree, genDodads,
         genFFA, genRocks, genSurvival, genSymetrical, genTTT, grayblue, greenbrown, greenpurple, lemondarkred, main,
         moonyellow, orange, pinkpurple, randomVector, redgreen, space, tanslate, tealorange, tealwhite, whitepurple,
-        yellowcyan, yellowpuce;
+        yellowcyan, yellowpuce, ghostly;
 
     window.mapping = {};
 
@@ -148,7 +148,13 @@
         fillColor: [0, 0, 50, 255]
     };
 
-    mapping.themes = [main, main, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
+    ghostly = {
+        rockColor: [255, 255, 255, 50],
+        spotColor: [-50, -50, -50, 50],
+        fillColor: [-50, -50, -50, 50]
+    };
+
+    mapping.themes = [main, main, ghostly, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
 
     mapping.generate = function (seed) {
         var fns, r;
