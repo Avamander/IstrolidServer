@@ -198,16 +198,22 @@
         });
 
         let beta_sum = 1;
-        for (let beta_player in beta_players) {
-            beta_sum += findRank(beta_player.name);
+        for (let i = 0; i < beta_players.length; i++) {
+            beta_sum += findRank(beta_players[i].name);
         }
 
         let alpha_sum = 1;
-        for (let alpha_player in alpha_players) {
-            alpha_sum += findRank(alpha_player.name);
+        for (let i = 0; i < alpha_players.length; i++) {
+            alpha_sum += findRank(alpha_players[i].name);
         }
 
-        return alpha_sum / beta_sum;
+        if (alpha_sum > beta_sum) {
+            return (alpha_sum / beta_sum).toFixed(4);
+        } else if (alpha_sum < beta_sum) {
+            return (beta_sum / alpha_sum).toFixed(4);
+        } else {
+            return "perfect! :O";
+        }
     };
 
     window.processCommand = function (player, cmds) {
@@ -218,7 +224,8 @@
         switch (cmds[0].toLowerCase()) {
             case "belence":
                 if (checkRunning()) {
-                    server.say("Game is running!");
+                    server.say("Game is running, not making things unfair!");
+                    server.say("Current (im)balance index is " + get_balance_index());
                     break;
                 }
 
@@ -250,7 +257,8 @@
                 break;
             case "shuffle":
                 if (checkRunning()) {
-                    server.say("Game is running!");
+                    server.say("Game is running, not shuffling!");
+                    server.say("Current (im)balance index is " + get_balance_index());
                     break;
                 }
 
@@ -272,7 +280,7 @@
                 }
 
                 playing_players = playing_players.sort(function (a, b) {
-                    return Math.random();
+                    return Math.random() - 0.5;
                 });
 
 
@@ -288,6 +296,7 @@
                 break;
             case "balance":
                 if (checkRunning()) {
+                    server.say("Game is running, not balancing!");
                     server.say("Current (im)balance index is " + get_balance_index());
                     break;
                 }
@@ -322,6 +331,31 @@
 
                 server.say("Balanced!");
                 server.say("Current (im)balance index is " + get_balance_index());
+                break;
+            case "gethost":
+                if (!(checkHost(player))) {
+                    break;
+                }
+                player.host = true;
+                server.say("Host given");
+                break;
+            case "sethost":
+                if (!(checkHost(player))) {
+                    break;
+                }
+                player.host = false;
+
+                let target_player = sim.players.filter(function (filter_players) {
+                return filter_players.connected &&
+                    (filter_players.side === "alpha" || filter_players.side === "beta") &&
+                    filter_players.name === cmds[1];
+                });
+
+                if (target_player.length > 0){
+                    target_player.host = true;
+                } else {
+                    server.say("No such player was found on either of the teams!");
+                }
                 break;
             case "m":
             case "mode":
@@ -365,9 +399,11 @@
                 if (checkRunning()) {
                     break;
                 }
+
                 if (!checkHost(player)) {
                     break;
                 }
+
                 return sim.startGame(player);
             case "j":
             case "join":
@@ -494,8 +530,7 @@
                 for (n in diffStats) {
                     p = diffStats[n];
                     results.push((function () {
-                        var results1;
-                        results1 = [];
+                        let results1 = [];
                         for (k in p) {
                             v = p[k];
                             results1.push(server.say(n + "." + k + " = " + (typeof v === "function" ? v.name : v)));
@@ -544,8 +579,8 @@
             case "fw":
             case "firework":
             case "fireworks":
-                if (player.name !== "Avamander") {
-                    server.say("only Avamander can do that");
+                if (player.name !== "Avamander" || (!checkHost(player) && !checkRunning())) {
+                    server.say("You need to be the host and the game must not be running to do that!");
                     break;
                 }
                 ref4 = sim.things;
@@ -651,8 +686,18 @@
                 return "!end - end the game";
             case "restart":
                 return "!restart - restart the server";
+            case "balance":
+                return "!balance - balances the teams";
+            case "belence":
+                return "!belence - absolutely doesn't balance the teams";
+            case "shuffle":
+                return "!shuffle - shuffles the teams randomly";
+            case "abstain":
+                return "!abstain - undoes host repick vote";
+            case "shuffle":
+                return "!givehost <name> - gives host to the specified user currently playing";
             default:
-                return "available commands: mode start join addai repick set changes reset export import end restart help";
+                return "available commands: abstain givehost belence balance shuffle mode start join addai repick set changes reset export import end restart help";
         }
     };
 

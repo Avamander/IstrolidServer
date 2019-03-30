@@ -607,6 +607,7 @@
             if (!this.canStart(true)) {
                 return;
             }
+
             this.say("Game is about to start!");
             return this.countDown = 16 * 6;
         };
@@ -1590,18 +1591,16 @@
                     data.perf = {
                         numbers: {
                             things: ((function () {
-                                var results;
-                                results = [];
-                                for (t in this.things) {
+                                let results = [];
+                                for (t in sim.things) {
                                     results.push(t);
                                 }
                                 return results;
                             }).call(this)).length,
                             sthings: sthings.length,
                             players: ((function () {
-                                var i1, len9, ref14, results;
-                                ref14 = this.players;
-                                results = [];
+                                let i1, len9, ref14 = sim.players;
+                                let results = [];
                                 for (i1 = 0, len9 = ref14.length; i1 < len9; i1++) {
                                     p = ref14[i1];
                                     results.push(p);
@@ -1610,9 +1609,8 @@
                             }).call(this)).length,
                             splayers: splayers.length,
                             units: ((function () {
-                                var ref14, results;
-                                ref14 = this.things;
-                                results = [];
+                                let ref14 = sim.things;
+                                let results = [];
                                 for (_ in ref14) {
                                     t = ref14[_];
                                     if (t.unit) {
@@ -1622,9 +1620,8 @@
                                 return results;
                             }).call(this)).length,
                             bullets: ((function () {
-                                var ref14, results;
-                                ref14 = this.things;
-                                results = [];
+                                let ref14 = sim.things;
+                                let results = [];
                                 for (_ in ref14) {
                                     t = ref14[_];
                                     if (t.bullet) {
@@ -1634,9 +1631,8 @@
                                 return results;
                             }).call(this)).length,
                             others: ((function () {
-                                var ref14, results;
-                                ref14 = this.things;
-                                results = [];
+                                let ref14 = sim.things;
+                                let results = [];
                                 for (_ in ref14) {
                                     t = ref14[_];
                                     if (!t.bullet && !t.unit) {

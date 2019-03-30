@@ -3,7 +3,7 @@ var WebSocket = require("ws");
 require("./fix");
 var Istrolid = require("./istrolid.js");
 
-const allowedCmds = ["playerJoin", "alpha", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "configGame", "startGame", "addAi", "switchSide", "kickPlayer", "surrender"]
+const allowedCmds = ["playerJoin", "alpha", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "configGame", "startGame", "addAi", "switchSide", "kickPlayer", "surrender"];
 
 global.sim = new Sim();
 Sim.prototype.cheatSimInterval = -12;
@@ -171,6 +171,10 @@ global.Server = function () {
                         if (player === null) {
                             delete sim.chat.players[name];
                         } else {
+                            if (sim.chat.players === undefined){
+                                console.log("Player diff without sim.chat.players");
+                                break;
+                            }
                             if (sim.chat.players[name] == null) {
                                 sim.chat.players[name] = {};
                             }
