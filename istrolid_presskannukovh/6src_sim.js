@@ -185,6 +185,7 @@
             this.victoryConditions = bind(this.victoryConditions, this);
             this.local = false;
             this.players = [];
+            this.chat = {};
             this.step = 0;
             this.timeDelta = 0;
             this.winningSide = null;
@@ -214,6 +215,9 @@
                         this.validateBuildBar(p);
                     }
                 }
+            }
+            if (this.chat == null){
+                this.chat = {};
             }
             this.winningSide = null;
             this.state = "starting";

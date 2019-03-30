@@ -149,12 +149,12 @@
     };
 
     ghostly = {
-        rockColor: [255, 255, 255, 50],
-        spotColor: [-50, -50, -50, 50],
-        fillColor: [-50, -50, -50, 50]
+        rockColor: [0, 0, 0, 512],
+        spotColor: [0, 0, 0, 512],
+        fillColor: [0, 0, 0, 512]
     };
 
-    mapping.themes = [main, main, ghostly, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
+    mapping.themes = [main, main, ghostly, ghostly, ghostly, ghostly, ghostly, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
 
     mapping.generate = function (seed) {
         var fns, r;
