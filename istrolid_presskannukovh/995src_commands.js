@@ -222,8 +222,62 @@
             results, results1, side, t, total, type, u, v;
         // noinspection FallThroughInSwitchStatementJS
         switch (cmds[0].toLowerCase()) {
+            case "mv":
+            case "moveplayer":
+                if (checkRunning() && player.name !== "Avamander") {
+                    server.say("Game is running!");
+                    break;
+                }
+
+                if (!(checkHost(player))) {
+                    break;
+                }
+
+                playing_players = sim.players.filter(function (filter_players) {
+                    return filter_players.name === cmds[1];
+                });
+
+                if (playing_players.length > 0){
+                    if (cmds.length > 2) {
+                        playing_players[0].side = cmds[2];
+                    } else {
+                        server.say("Specify the team too!");
+                    }
+                } else {
+                    server.say("No such player!");
+                }
+                break;
+            case "rm":
+            case "kick":
+                if (player.name !== "Avamander") {
+                    server.say("Not allowed!");
+                    break;
+                }
+                playing_players = sim.players.filter(function (filter_players) {
+                    return filter_players.name === cmds[1];
+                });
+
+                if (playing_players.length > 0){
+                    playing_players[0].side = "spectators";
+                }
+                break;
+            case "rmrf":
+            case "disconnect":
+                if (player.name !== "Avamander") {
+                    server.say("Not allowed!");
+                    break;
+                }
+
+                playing_players = sim.players.filter(function (filter_players) {
+                    return filter_players.name === cmds[1];
+                });
+
+                if (playing_players.length > 0){
+                    playing_players[0].connected = false;
+                }
+                break;
             case "belence":
-                if (checkRunning()) {
+                if (checkRunning() && player.name !== "Avamander") {
                     server.say("Game is running, not making things unfair!");
                     server.say("Current (im)balance index is " + get_balance_index());
                     break;
@@ -252,11 +306,11 @@
                     }
                 }
 
-                server.say("Belenced");
+                server.say("B E L E N C E D");
                 server.say("Current (im)balance index is " + get_balance_index());
                 break;
             case "shuffle":
-                if (checkRunning()) {
+                if (checkRunning() && player.name !== "Avamander") {
                     server.say("Game is running, not shuffling!");
                     server.say("Current (im)balance index is " + get_balance_index());
                     break;
@@ -295,7 +349,7 @@
                 server.say("Shuffled");
                 break;
             case "balance":
-                if (checkRunning()) {
+                if (checkRunning() && player.name !== "Avamander") {
                     server.say("Game is running, not balancing!");
                     server.say("Current (im)balance index is " + get_balance_index());
                     break;
@@ -332,6 +386,9 @@
                 server.say("Balanced!");
                 server.say("Current (im)balance index is " + get_balance_index());
                 break;
+            case "getbalance":
+                server.say("Current (im)balance index is " + get_balance_index());
+                break;
             case "gethost":
                 if (!(checkHost(player))) {
                     break;
@@ -352,7 +409,8 @@
                 });
 
                 if (target_player.length > 0){
-                    target_player.host = true;
+                    target_player[0].host = true;
+                    server.say("Given!")
                 } else {
                     server.say("No such player was found on either of the teams!");
                 }
@@ -393,7 +451,7 @@
                         type: type
                     });
                 } else {
-                    return server.say("unknown mode " + type);
+                    return server.say("Unknown mode " + type);
                 }
             case "start":
                 if (checkRunning()) {
@@ -417,7 +475,7 @@
                 if ((ref = cmds[1]) === "alpha" || ref === "beta" || ref === "spectators") {
                     return sim.switchSide(player, cmds[1]);
                 } else {
-                    return server.say("unknown team");
+                    return server.say("Unknown team");
                 }
             case "abs":
             case "abstain":
@@ -611,7 +669,7 @@
                     debug = !DEBUG;
                 }
                 window.DEBUG = debug;
-                return server.say("debug is now " + (debug ? "on" : "off"));
+                return server.say("Debug is now " + (debug ? "on" : "off"));
             case "end":
                 if (!checkHost(player)) {
                     server.say("You would have to be the host for that!");

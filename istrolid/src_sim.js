@@ -272,7 +272,7 @@
             }
             if (!player) {
                 player = new Player(pid);
-                player.streek = 0;
+                player.streak = 0;
                 if (this.local) {
                     player.side = "alpha";
                 } else {

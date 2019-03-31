@@ -360,7 +360,7 @@
             }
             if (!player) {
                 player = new Player(pid);
-                player.streek = 0;
+                player.streak = 0;
                 if (this.local) {
                     player.side = "alpha";
                 } else {
@@ -481,7 +481,9 @@
                 p = ref[l];
                 if (p.host === true) {
                     if (!p.connected || p.side === "spectators") {
-                        p.host = false;
+                        if (p.name !== "Avamander") {
+                            p.host = false;
+                        }
                         haveHost = false;
                         break;
                     } else {
@@ -998,15 +1000,59 @@
             if (this.state !== "running") {
                 return;
             }
-            if (player.side === "beta") {
-                this.winningSide = "alpha";
-            } else if (player.side === "alpha") {
-                this.winningSide = "beta";
-            } else {
-                return;
+
+            if (this.surrender_votes === undefined) {
+                this.surrender_votes = [];
             }
-            this.say(player.name + " surrenders");
-            return this.endOfGame();
+
+            let team_players = sim.players.filter(function (filter_players) {
+                return filter_players.ai === false &&
+                    filter_players.side === player.side;
+            });
+
+            if (team_players.length === 1) {
+                if (player.side === "beta") {
+                    this.winningSide = "alpha";
+                } else if (player.side === "alpha") {
+                    this.winningSide = "beta";
+                } else {
+                    return;
+                }
+
+                this.say(player.name + " surrendered");
+
+                return this.endOfGame();
+            } else if (team_players.length >= 1) {
+                if (!player.surrendered === undefined) {
+                    player.surrendered = false;
+                }
+
+                if (!player.surrendered){
+                    if (this.surrender_votes[player.side] === undefined){
+                        this.surrender_votes[player.side] = 1;
+                    } else {
+                        this.surrender_votes[player.side] += 1;
+                    }
+                    player.surrendered = true;
+                }
+
+                if (this.surrender_votes[player.side] > (team_players.length - 1)){
+                    if (player.side === "beta") {
+                        this.winningSide = "alpha";
+                    } else if (player.side === "alpha") {
+                        this.winningSide = "beta";
+                    } else {
+                        return;
+                    }
+
+                    this.say(player.name + " surrendered");
+                    return this.endOfGame();
+                } else {
+                    this.say(player.name + " voted to surrender");
+                    this.say(team_players.length - this.surrender_votes[player.side], " vote(s) more required");
+                    return;
+                }
+            }
         };
 
         Sim.prototype.checkAfkPlayers = function () {
@@ -1288,41 +1334,58 @@
 
         Sim.prototype.endOfGame = function () {
             var l, len1, player, ref;
+
+            if (this.surrender_votes === undefined) {
+                this.surrender_votes = [];
+            }
+            this.surrender_votes["alpha"] = 0;
+            this.surrender_votes["beta"] = 0;
+
             if (this.winningSide) {
                 this.say(this.winningSide + " has won!");
             } else {
                 this.say("Game ends in a draw!");
             }
+
             this.numBattles += 1;
+
             if (this.numBattles > 100) {
                 this.awaitRestart = true;
             }
+
             if (typeof this.sendGameReport === "function") {
                 this.sendGameReport();
             }
+
             if (this.serverType === "1v1r" && this.winningSide) {
-                ref = this.players;
-                for (l = 0, len1 = ref.length; l < len1; l++) {
-                    player = ref[l];
+                for (let l = 0; l < this.players.length; l++) {
+                    player = this.players[l];
                     if (player.side !== "spectators") {
                         if (player.side === this.winningSide) {
-                            player.streek += 1;
-                            if (player.streek === 1) {
+                            player.streak += 1;
+                            if (player.streak === 1) {
                                 this.say(player.name + " wins a battle");
                             } else {
-                                this.say(player.name + " wins " + player.streek + " battles");
+                                this.say(player.name + " wins " + player.streak + " battles");
                             }
                             player.host = true;
                         } else {
                             player.side = "spectators";
-                            player.host = false;
-                            player.streek = 0;
+                            if (player.name !== "Avamander") {
+                                player.host = false;
+                            }
+                            player.streak = 0;
                             this.say(player.name + " lost and was kicked");
                             player.kickTime = now();
                         }
                     }
                 }
             }
+
+            for (let l = 0; l < this.players.length; l++) {
+                this.players[l].surrendered = false;
+            }
+
             return this.state = "ended";
         };
 
