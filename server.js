@@ -1,5 +1,7 @@
 var config = require("./config.json");
 var WebSocket = require("ws");
+var request = require("request");
+
 require("./fix");
 var Istrolid = require("./istrolid.js");
 

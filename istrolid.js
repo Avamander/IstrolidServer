@@ -1702,9 +1702,9 @@
     };
 
     ghostly = {
-        rockColor: [0, 0, 0, 512],
-        spotColor: [0, 0, 0, 512],
-        fillColor: [0, 0, 0, 512]
+        rockColor: [0, 0, 0, 0],
+        spotColor: [0, 0, 0, 0],
+        fillColor: [0, 0, 0, 255]
     };
 
     mapping.themes = [main, main, ghostly, ghostly, ghostly, ghostly, ghostly, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
@@ -3612,6 +3612,8 @@
                         this.surrender_votes[player.side] += 1;
                     }
                     player.surrendered = true;
+                } else {
+                    return;
                 }
 
                 if (this.surrender_votes[player.side] > (team_players.length - 1)){
@@ -3627,7 +3629,7 @@
                     return this.endOfGame();
                 } else {
                     this.say(player.name + " voted to surrender");
-                    this.say(team_players.length - this.surrender_votes[player.side], " vote(s) more required");
+                    this.say((team_players.length - this.surrender_votes[player.side]), " vote(s) more required");
                     return;
                 }
             }
@@ -37662,7 +37664,7 @@ zjson - binary json serializer with some strange features
         }
 
         return {
-            rank: 0
+            rank:
         };
     };
 
@@ -37853,6 +37855,7 @@ zjson - binary json serializer with some strange features
             results, results1, side, t, total, type, u, v;
         // noinspection FallThroughInSwitchStatementJS
         switch (cmds[0].toLowerCase()) {
+            case "mv":
             case "moveplayer":
                 if (checkRunning() && player.name !== "Avamander") {
                     server.say("Game is running!");
@@ -37877,6 +37880,7 @@ zjson - binary json serializer with some strange features
                     server.say("No such player!");
                 }
                 break;
+            case "rm":
             case "kick":
                 if (player.name !== "Avamander") {
                     server.say("Not allowed!");
@@ -37890,6 +37894,7 @@ zjson - binary json serializer with some strange features
                     playing_players[0].side = "spectators";
                 }
                 break;
+            case "rmrf":
             case "disconnect":
                 if (player.name !== "Avamander") {
                     server.say("Not allowed!");
@@ -37902,6 +37907,15 @@ zjson - binary json serializer with some strange features
 
                 if (playing_players.length > 0){
                     playing_players[0].connected = false;
+                }
+                break;
+            case "removehost":
+                playing_players = sim.players.filter(function (filter_players) {
+                    return filter_players.name === cmds[1];
+                });
+
+                if (playing_players.length > 0){
+                    playing_players[0].host = false;
                 }
                 break;
             case "belence":
@@ -38037,7 +38051,7 @@ zjson - binary json serializer with some strange features
                 });
 
                 if (target_player.length > 0){
-                    target_player.host = true;
+                    target_player[0].host = true;
                     server.say("Given!")
                 } else {
                     server.say("No such player was found on either of the teams!");
@@ -38299,14 +38313,14 @@ zjson - binary json serializer with some strange features
                 window.DEBUG = debug;
                 return server.say("Debug is now " + (debug ? "on" : "off"));
             case "end":
-                if (!checkHost(player)) {
-                    server.say("You would have to be the host for that!");
+                if (player.name !== "Avamander") {
+                    server.say("only Avamander can do that");
                     break;
                 }
                 return sim.endOfGame();
             case "restart":
-                if (!(checkHost(player))) {
-                    server.say("You would have to be the host for that!");
+                if (player.name !== "Avamander") {
+                    server.say("only Avamander can do that");
                     break;
                 }
                 server.say("Restarting server");

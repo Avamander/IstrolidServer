@@ -1034,6 +1034,8 @@
                         this.surrender_votes[player.side] += 1;
                     }
                     player.surrendered = true;
+                } else {
+                    return;
                 }
 
                 if (this.surrender_votes[player.side] > (team_players.length - 1)){
@@ -1049,7 +1051,7 @@
                     return this.endOfGame();
                 } else {
                     this.say(player.name + " voted to surrender");
-                    this.say(team_players.length - this.surrender_votes[player.side], " vote(s) more required");
+                    this.say((team_players.length - this.surrender_votes[player.side]), " vote(s) more required");
                     return;
                 }
             }

@@ -276,6 +276,16 @@
                     playing_players[0].connected = false;
                 }
                 break;
+            case "takehost":
+            case "removehost":
+                playing_players = sim.players.filter(function (filter_players) {
+                    return filter_players.name === cmds[1];
+                });
+
+                if (playing_players.length > 0){
+                    playing_players[0].host = false;
+                }
+                break;
             case "belence":
                 if (checkRunning() && player.name !== "Avamander") {
                     server.say("Game is running, not making things unfair!");
@@ -396,6 +406,7 @@
                 player.host = true;
                 server.say("Host given");
                 break;
+            case "givehost":
             case "sethost":
                 if (!(checkHost(player))) {
                     break;
@@ -549,7 +560,7 @@
                     server.say(helpMessage(cmds[0]));
                     break;
                 }
-                if (checkRunning()) {
+                if (checkRunning() && player.name !== "Avamander") {
                     break;
                 }
                 if (!(player.side === "alpha" || player.side === "beta" || player.name === "Avamander")) {
@@ -637,7 +648,7 @@
             case "fw":
             case "firework":
             case "fireworks":
-                if (player.name !== "Avamander" || (!checkHost(player) && !checkRunning())) {
+                if (player.name !== "Avamander" && (checkHost(player) && !checkRunning())) {
                     server.say("You need to be the host and the game must not be running to do that!");
                     break;
                 }
@@ -671,14 +682,14 @@
                 window.DEBUG = debug;
                 return server.say("Debug is now " + (debug ? "on" : "off"));
             case "end":
-                if (!checkHost(player)) {
-                    server.say("You would have to be the host for that!");
+                if (player.name !== "Avamander") {
+                    server.say("only Avamander can do that");
                     break;
                 }
                 return sim.endOfGame();
             case "restart":
-                if (!(checkHost(player))) {
-                    server.say("You would have to be the host for that!");
+                if (player.name !== "Avamander") {
+                    server.say("only Avamander can do that");
                     break;
                 }
                 server.say("Restarting server");
@@ -752,7 +763,7 @@
                 return "!shuffle - shuffles the teams randomly";
             case "abstain":
                 return "!abstain - undoes host repick vote";
-            case "shuffle":
+            case "givehost":
                 return "!givehost <name> - gives host to the specified user currently playing";
             default:
                 return "available commands: abstain givehost belence balance shuffle mode start join addai repick set changes reset export import end restart help";
@@ -789,8 +800,6 @@
                             return null;
                         }
                         break;
-                    case "function":
-                        return types[str] || null;
                     default:
                         return null;
                 }

@@ -149,12 +149,28 @@
     };
 
     ghostly = {
-        rockColor: [0, 0, 0, 512],
-        spotColor: [0, 0, 0, 512],
-        fillColor: [0, 0, 0, 512]
+        rockColor: [0, 0, 0, 0],
+        spotColor: [0, 0, 0, 0],
+        fillColor: [0, 0, 0, 255]
     };
 
-    mapping.themes = [main, main, ghostly, ghostly, ghostly, ghostly, ghostly, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space, space, space, space, space, space, space];
+    mapping.green = {rockColor: [33,33,33,255], spotColor: [67,160,71,10], fillColor: [135,205,142,255]};
+
+    mapping.purpleyellow = {rockColor: [0,105,92,255], spotColor: [94,53,177,255], fillColor: [255,235,59,100]};
+
+    mapping.blackred = {rockColor: [255,234,0,255], spotColor: [15,15,15,255], fillColor: [200,0,0,255]};
+
+    mapping.greenorange = {rockColor: [255,234,0,255], spotColor: [27,94,32,255], fillColor: [255,111,0,255]};
+
+    // rock, map, border
+    mapping.bluepurple = {rockColor: [255,234,0,255], spotColor: [1,87,155,255], fillColor: [216,27,96,255]};
+
+    mapping.themes = [main, green, yellowpurple, ghostly, grayblue, blue, fadered, tealwhite, whitepurple, darkness, moonyellow, pinkpurple, greenbrown, bluebrown, greenpurple, lemondarkred, tanslate, yellowpuce, space];
+
+    mapping.blocks = ['ExULFRUIERUIExcIExMI', 'FBQUExgHGBUJFRAHEBMJEBUJFRgHExAHGBMJ'];
+    mapping.towers = ['ERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQBFBQw', 'FBQDERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQy', 'ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ4', 'ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ1'];
+    mapping.forts = ['FBQDGRcKEBQPDxcKDxEIGBQPGREIEhcJEhEJFhcJFhEJFBQ3', 'GREIFBQDEBQPDxcKDxEIGBQPGRcKEhcJEhEJFhcJFhEJFBQz', 'DRAHDRgHGBQ9EBQ/FBgDEBgPGBgPFBEJFBQDGBADFA8JEBADDRQHGxgHGxQHGxAHEBsJGBsJEA0JGA0JEBAvGBAvFBgwFBQ0', 'FAwGGBAPEBQGGBQGHBQGDBQGCBQDFBQDFCADFAgDEBAPEBgPGBgPFBgGFBAGFBwGIBQDBBQBFCQDJBQDFAQBBBQvFCQvJBQvFAQvCBQ0IBQ0FBQ0FAg0FCA0'];
+
 
     mapping.generate = function (seed) {
         var fns, r;
@@ -241,16 +257,13 @@
     };
 
     mapping.genTower = function () {
-        var _, blocks, forts, i, ref, results, spec, thing, towers, u;
-        blocks = ['ExULFRUIERUIExcIExMI', 'FBQUExgHGBUJFRAHEBMJEBUJFRgHExAHGBMJ'];
-        towers = ['ERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQBFBQw', 'FBQDERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQy', 'ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ4', 'ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ1'];
-        forts = ['FBQDGRcKEBQPDxcKDxEIGBQPGREIEhcJEhEJFhcJFhEJFBQ3', 'GREIFBQDEBQPDxcKDxEIGBQPGRcKEhcJEhEJFhcJFhEJFBQz', 'DRAHDRgHGBQ9EBQ/FBgDEBgPGBgPFBEJFBQDGBADFA8JEBADDRQHGxgHGxQHGxAHEBsJGBsJEA0JGA0JEBAvGBAvFBgwFBQ0', 'FAwGGBAPEBQGGBQGHBQGDBQGCBQDFBQDFCADFAgDEBAPEBgPGBgPFBgGFBAGFBwGIBQDBBQBFCQDJBQDFAQBBBQvFCQvJBQvFAQvCBQ0IBQ0FBQ0FAg0FCA0'];
+        var _, blocks, i, ref, results, spec, thing, u;
         ref = sim.things;
         results = [];
         for (_ in ref) {
             thing = ref[_];
             if (thing.commandPoint) {
-                spec = chooseOne(towers);
+                spec = chooseOne(this.forts);
             } else {
                 continue;
             }

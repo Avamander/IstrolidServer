@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 outputfile = None
-inputfilename = "istrolid_r26.js"
+inputfilename = "server_r26.js"
 
 with open(inputfilename) as inputfile:
     for line in inputfile:
