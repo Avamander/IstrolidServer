@@ -20,8 +20,6 @@
 
     allowedSim = ["mapScale", "numComPoints", "defaultMoney", "costLimit", "makeRocks", "awaitRestart", "tickTime", "moneyRatio", "unitLimit", "victoryGoal", "NxN", "enableAi", "check", "numFlags"];
 
-    const current_teams = ["alpha", "beta"];
-
     findChatPlayer = function (name) {
         if (sim.chat.players) {
             let player = sim.chat.players[name];
@@ -432,7 +430,7 @@
                     server.say(helpMessage(cmds[0]));
                     break;
                 }
-                if (!(checkHost(player))) {
+                if (!checkHost(player)) {
                     break;
                 }
 
@@ -446,13 +444,15 @@
                         case "Surv":
                         case "survival":
                             return "Survival";
-                        case "ffa":
-                            return "FFA";
+                        case "io":
+                            return "IO";
                         case "ctf":
                             return "CTF";
                         case "ttt":
                         case "TTT":
                             return "TicTacToe";
+                        case "ffa":
+                            return "FFA";
                         default:
                             return cmds[1];
                     }
@@ -462,8 +462,9 @@
                         type: type
                     });
                 } else {
-                    return server.say("Unknown mode " + type);
+                    return server.say("unknown mode " + type);
                 }
+                break;
             case "start":
                 if (checkRunning()) {
                     break;
@@ -645,7 +646,6 @@
                 server.say("Loading stats from " + player.name + "'s slot: " + i);
                 window.diffStats = statFromSpec(player.buildBar[i - 1]);
                 return applyDiff(diffStats);
-            case "fw":
             case "firework":
             case "fireworks":
                 if (player.name !== "Avamander" && (checkHost(player) && !checkRunning())) {
@@ -722,7 +722,7 @@
     };
 
     helpMessage = function (cmd) {
-        var t;
+        let t;
         switch (cmd) {
             case "mode":
                 return "!mode <mode> - switch gamemode. available modes: " + ((function () {
@@ -771,12 +771,12 @@
     };
 
     parseStat = function (t, str) {
-        var v, value;
+        let v, value;
         if (typeof stat === t) {
             value = str;
         } else {
             value = (function () {
-                var j, len, ref, results;
+                let j, len, ref, results;
                 switch (t) {
                     case "number":
                         return Number(str);
@@ -828,7 +828,7 @@
             aiRules: [
                 [
                     "Code Block", JSON.stringify(stats, function (k, v) {
-                    var name;
+                    let name;
                     if (v === 2e308) {
                         return "Infinity";
                     } else if (typeof v === "function") {
@@ -845,7 +845,7 @@
     };
 
     window.statFromSpec = function (spec) {
-        var e, json, ref, ref1;
+        let e, json, ref, ref1;
         if (spec == null) {
             return {
                 sim: {}
@@ -870,7 +870,7 @@
     };
 
     window.applyDiff = function (diff, quiet) {
-        var k, n, p, results, v;
+        let k, n, p, results, v;
         if (quiet == null) {
             quiet = false;
         }
@@ -891,7 +891,7 @@
     };
 
     window.changeStat = function (type, field, stat, quiet) {
-        var ns, part, ref, ref1, ref2, ref3, stats, t, universalButNo, value;
+        let ns, part, ref, ref1, ref2, ref3, stats, t, universalButNo, value;
         if (quiet == null) {
             quiet = false;
         }
@@ -1028,7 +1028,7 @@
     };
 
     window.resetStats = function () {
-        var k, ref, ref1, ref2, stat, type, v;
+        let k, ref, ref1, ref2, stat, type, v;
         ref = defStats.parts;
         for (type in ref) {
             stat = ref[type];
@@ -1056,7 +1056,7 @@
     };
 
     window.runText = function (text, color) {
-        var j, muha, results, x, y;
+        let j, muha, results, x, y;
         if (!sim.things) {
             return;
         }

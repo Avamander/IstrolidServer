@@ -4,11 +4,11 @@
     var closestPointOnLine, closestPointToOrigin, furthestPoint, support;
 
     furthestPoint = function (points, d) {
-        var k, len, maxProduct, p, product, rst;
+        var i, len, maxProduct, p, product, rst;
         maxProduct = -2e308;
         rst = null;
-        for (k = 0, len = points.length; k < len; k++) {
-            p = points[k];
+        for (i = 0, len = points.length; i < len; i++) {
+            p = points[i];
             product = v2.dot(d, p);
             if (product > maxProduct) {
                 rst = p;
@@ -20,8 +20,8 @@
 
     closestPointOnLine = function (a, b, p) {
         var ab, ap, d, l, t;
-        ap = v2.sub(p, a, []);
-        ab = v2.sub(b, a, []);
+        ap = [p[0] - a[0], p[1] - a[1]];
+        ab = [b[0] - a[0], b[1] - a[1]];
         d = v2.dot(ab, ab);
         if (d === 0) {
             return a;
@@ -68,26 +68,8 @@
         return 0;
     };
 
-    window.closestPointOnPolygon = function (point, points) {
-        var closest, dist, i, j, k, minDist, p, ref;
-        if (points.length === 1) {
-            return points[0];
-        }
-        minDist = 2e308;
-        closest = null;
-        for (i = k = 0, ref = points.length; 0 <= ref ? k < ref : k > ref; i = 0 <= ref ? ++k : --k) {
-            j = (i + 1) % points.length;
-            p = closestPointOnLine(points[i], points[j], point);
-            dist = v2.distanceSq(p, point);
-            if (dist < minDist) {
-                closest = p;
-                minDist = dist;
-            }
-        }
-        return closest;
-    };
-
 }).call(this);
 ;
+  
 
 

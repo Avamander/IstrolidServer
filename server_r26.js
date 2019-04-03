@@ -2975,7 +2975,7 @@
       }
       if (!player) {
         player = new Player(pid);
-        player.streek = 0;
+        player.streak = 0;
         if (this.local) {
           player.side = "alpha";
         } else {
@@ -3921,10 +3921,10 @@
           if (player.side !== "spectators") {
             if (player.side === this.winningSide) {
               player.streek += 1;
-              if (player.streek === 1) {
+              if (player.streak === 1) {
                 this.say(player.name + " wins a battle");
               } else {
-                this.say(player.name + " wins " + player.streek + " battles");
+                this.say(player.name + " wins " + player.streak + " battles");
               }
               player.host = true;
             } else {

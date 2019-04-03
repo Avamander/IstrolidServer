@@ -7,7 +7,7 @@
             };
         },
         extend = function (child, parent) {
-            for (var key in parent) {
+            for (let key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
             }
 
@@ -35,13 +35,12 @@
         Survival.prototype.numComPoints = 12;
 
         Survival.prototype.start = function () {
-            var key, p, ref, results;
+            let p, results;
             Survival.__super__.start.call(this);
             this.waveNum = 0;
-            ref = this.players;
             results = [];
-            for (key in ref) {
-                p = ref[key];
+            for (let key in this.players) {
+                p = this.players[key];
                 if (p && p.connected) {
                     if (p.side === 'beta') {
                         p.money = 1;
@@ -57,20 +56,19 @@
         };
 
         Survival.prototype.endOfGame = function () {
-            var id, key, object, p, ref, ref1, results;
+            let key, object, p, results;
             Survival.__super__.endOfGame.call(this);
             this.say("The survivors survived " + this.waveNum + " waves!");
-            ref = this.things;
-            for (id in ref) {
-                object = ref[id];
+            for (let id in this.things) {
+                object = this.things[id];
                 if (object.unit) {
                     object.selfDestruct();
                 }
             }
-            ref1 = this.players;
+
             results = [];
-            for (key in ref1) {
-                p = ref1[key];
+            for (let key in this.players) {
+                p = this.players[key];
                 if (p && p.connected) {
                     if (p.moneyRatio === 0) {
                         results.push(p.moneyRatio = 1);
@@ -89,7 +87,7 @@
         };
 
         Survival.prototype.simulate = function () {
-            var betaCount, i, len, p, ref, results;
+            let betaCount, i, len, p, ref, results;
             Survival.__super__.simulate.call(this);
             if (this.state === 'running') {
                 if ((this.step / 16) % this.waveFreq === 0 && this.step !== 0) {
@@ -114,7 +112,7 @@
         };
 
         Survival.prototype.victoryConditions = function () {
-            var capped, cappedArr, i, id, k, len, player, ref, ref1, stillThere, thing;
+            let capped, cappedArr, i, id, k, len, player, ref, ref1, stillThere, thing;
             if (this.state !== "running") {
                 return;
             }
@@ -127,7 +125,7 @@
                 }
             }
             cappedArr = (function () {
-                var results;
+                let results;
                 results = [];
                 for (k in capped) {
                     results.push(k);
@@ -188,5 +186,3 @@
 
 }).call(this);
 ;
-
-

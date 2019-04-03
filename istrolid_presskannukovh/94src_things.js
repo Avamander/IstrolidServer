@@ -28,11 +28,18 @@ General Game Objects live here
     _vec = v2.create();
 
     window.drawAllArcs = function (unit) {
-        var arc, cur, i, j, l, len, n, pos, range, ref, ref1, ref2, results, th, w, x, y;
+        let arc, cur, i, j, l, len, n, pos, range, ref, ref1, ref2, results, th, w, x, y;
+        unit = sim.things[unit.id];
+        if (!unit) {
+            return;
+        }
         ref = unit.weapons;
         results = [];
         for (j = 0, len = ref.length; j < len; j++) {
             w = ref[j];
+            if (w.projector) {
+                continue;
+            }
             range = w.range;
             arc = w.arc;
             cur = Math.PI * range * 2;
@@ -48,7 +55,7 @@ General Game Objects live here
                 cur = Math.PI * w.minRange * 2;
                 n = Math.floor(cur / 40 * arc / 360);
                 results.push((function () {
-                    var m, ref3, ref4, results1;
+                    let m, ref3, ref4, results1;
                     results1 = [];
                     for (i = m = ref3 = -n, ref4 = n; ref3 <= ref4 ? m < ref4 : m > ref4; i = ref3 <= ref4 ? ++m : --m) {
                         th = i / (n * 2) * arc / 180 * Math.PI + unit.rot + Math.PI;
@@ -100,7 +107,6 @@ General Game Objects live here
         }
 
         Player.prototype.reset = function () {
-            var n;
             this.money = sim.defaultMoney;
             this.maxMoney = 2e308;
             this.mouse = [0, 0];
@@ -108,9 +114,9 @@ General Game Objects live here
             this.selection = [];
             this.buildQ = [];
             this.validBar = (function () {
-                var j, results;
+                let results;
                 results = [];
-                for (n = j = 0; j < 10; n = ++j) {
+                for (let j = 0; j < 10; j++) {
                     results.push(true);
                 }
                 return results;
@@ -126,21 +132,18 @@ General Game Objects live here
         };
 
         Player.prototype.earnMoney = function (amount) {
-            amount *= this.moneyRatio * sim.moneyRatio;
+            amount = Math.round(amount * this.moneyRatio * sim.moneyRatio);
             this.money += amount;
             return this.moneyEarned += amount;
         };
 
         Player.prototype.tick = function () {
-            var _, toEarn, u;
-            this.gainsMoney = sim.serverType !== "FFA" || ((function () {
-                var ref, results;
-                ref = sim.things;
-                results = [];
-                for (_ in ref) {
-                    u = ref[_];
-                    if (u.unit && u.owner === this.number) {
-                        results.push(u);
+            let toEarn;
+            this.gainsMoney = sim.serverType !== "IO" || ((function () {
+                let results = [];
+                for (let element in sim.things) {
+                    if (sim.things[element].unit && sim.things[element].owner === this.number) {
+                        results.push(sim.things[element]);
                     }
                 }
                 return results;
@@ -163,11 +166,11 @@ General Game Objects live here
         };
 
         Player.prototype.wave = function () {
-            var build, i, j, len, n, ref, slot, waitTime;
+            let build, i, j, len, n, ref, slot, waitTime;
             waitTime = 16 * 2;
             if (sim.step > waitTime && sim.step % 16 === 0) {
                 build = false;
-                if (sim.serverType === "FFA") {
+                if (sim.serverType === "IO") {
                     if ((this.buildQ[0] != null) && this.rqUnit(this.buildQ[0])) {
                         this.buildQ[0] = null;
                         build = true;
@@ -186,7 +189,7 @@ General Game Objects live here
                 }
                 if (build) {
                     return this.buildQ = (function () {
-                        var l, len1, ref1, results;
+                        let l, len1, ref1, results;
                         ref1 = this.buildQ;
                         results = [];
                         for (l = 0, len1 = ref1.length; l < len1; l++) {
@@ -202,27 +205,23 @@ General Game Objects live here
         };
 
         Player.prototype.rqUnit = function (slot) {
-            var _, pos, spawn, th, u, unit, units, upgraded;
-            if (sim.serverType === 'Survival' && this.side === 'beta') {
-                th = Math.random() * Math.PI * 2;
-                pos = v2.scale(v2.pointTo([], th), 2000 * sim.mapScale);
+            if (sim.serverType === "Survival" && this.side === "beta") {
+                let pos = v2.scale(v2.pointTo([], Math.random() * Math.PI * 2), 2000 * sim.mapScale);
                 return sim.buildUnit(this.number, slot, pos);
             }
-            if (sim.serverType === "FFA") {
-                units = (function () {
-                    var ref, results;
-                    ref = sim.things;
-                    results = [];
-                    for (_ in ref) {
-                        u = ref[_];
-                        if (u.unit && u.owner === this.number) {
-                            results.push(u);
+            if (sim.serverType === "IO") {
+                let units = (function () {
+                    let results = [];
+                    for (let element in sim.things) {
+                        if (sim.things[element].unit && sim.things[element].owner === this.number) {
+                            results.push(sim.things[element]);
                         }
                     }
                     return results;
                 }).call(this);
+
                 if (units.length > 0) {
-                    upgraded = sim.buildUnit(this.number, slot, units[0].pos);
+                    let upgraded = sim.buildUnit(this.number, slot, units[0].pos);
                     if (upgraded != null) {
                         upgraded.rot = units[0].rot;
                         upgraded.orders = units[0].orders;
@@ -233,9 +232,10 @@ General Game Objects live here
                     return upgraded;
                 }
             }
-            spawn = sim.findSpawnPoint(this.side, this);
+
+            let spawn = sim.findSpawnPoint(this);
             if (spawn) {
-                unit = sim.buildUnit(this.number, slot, spawn.pos);
+                let unit = sim.buildUnit(this.number, slot, spawn.pos);
                 if (unit) {
                     v2.random(unit.pos);
                     v2.scale(unit.pos, 100 + Math.random() * (spawn.radius - 100));
@@ -255,66 +255,72 @@ General Game Objects live here
         };
 
         Player.prototype.draw = function () {
-            var angle, arc, arcRad, color, cur, drawIt, i, j, len, n, other, range, ref, ref1, ref2, results, t, th, x,
-                y;
             if (!ui.show) {
                 return;
             }
-            if ((ref = sim.galaxyStar) != null) {
-                if (typeof ref.draw === "function") {
-                    ref.draw();
+
+            if (sim.galaxyStar != null) {
+                if (typeof sim.galaxyStar.draw === "function") {
+                    sim.galaxyStar.draw();
                 }
             }
+
             if (battleMode.rallyPlacing) {
                 baseAtlas.drawSprite("img/unitBar/rallyPoint.png", battleMode.mouse, [1, 1], 0);
             } else if (commander.rallyPoint && commander.rallyPoint[0] !== 0 && commander.rallyPoint[1] !== 0) {
                 baseAtlas.drawSprite("img/unitBar/rallyPoint.png", commander.rallyPoint, [1, 1], 0);
             }
+
             if (!this.selection) {
                 return;
             }
-            ref1 = this.selection;
-            results = [];
-            for (j = 0, len = ref1.length; j < len; j++) {
-                t = ref1[j];
-                if (t.dead) {
+
+            let results = [];
+            for (let j = 0; j < this.selection.length; j++) {
+                if (this.selection[j].dead) {
                     continue;
                 }
-                color = this.color;
-                if (typeof t.drawSelection === "function") {
-                    t.drawSelection(color);
+                let color = this.color;
+                if (typeof this.selection[j].drawSelection === "function") {
+                    this.selection[j].drawSelection(color);
                 }
                 if (this.selection.length === 1) {
-                    if (t.weapons) {
-                        results.push(drawAllArcs(t));
+                    if (this.selection[j].weapons) {
+                        results.push(drawAllArcs(this.selection[j]));
                     } else {
                         results.push(void 0);
                     }
                 } else {
-                    if (((ref2 = t.weapons) != null ? ref2.length : void 0) > 0) {
-                        range = t.weaponRange;
-                        arc = t.weaponArc;
-                        cur = Math.PI * range * 2;
-                        n = Math.floor(cur / 80 * arc / 360);
+                    if (this.selection[j].weapons != null && this.selection[j].weapons.length > 0) {
+                        let range = this.selection[j].weaponRange;
+                        let arc = this.selection[j].weaponArc;
+                        let cur = Math.PI * range * 2;
+                        let n = Math.floor(cur / 80 * arc / 360);
+
                         results.push((function () {
-                            var l, len1, m, ref3, ref4, ref5, results1;
-                            results1 = [];
-                            for (i = l = ref3 = -n, ref4 = n; ref3 <= ref4 ? l < ref4 : l > ref4; i = ref3 <= ref4 ? ++l : --l) {
+                            let results1 = [];
+                            let th, x, y;
+                            for (let i = -n; i !== 0; i++) {
                                 th = i / (n * 2) * arc / 180 * Math.PI + t.rot + Math.PI;
                                 x = Math.sin(-th) * range;
                                 y = Math.cos(-th) * range;
-                                _pos[0] = t.pos[0] + x;
-                                _pos[1] = t.pos[1] + y;
-                                drawIt = true;
-                                ref5 = this.selection;
-                                for (m = 0, len1 = ref5.length; m < len1; m++) {
-                                    other = ref5[m];
-                                    if (other.unit && other.id !== t.id && other.owner === t.owner) {
+                                _pos[0] = this.selection[j].pos[0] + x;
+                                _pos[1] = this.selection[j].pos[1] + y;
+
+
+                                let other, drawIt = true;
+
+                                for (let m = 0; m < this.selection.length; m++) {
+                                    other = this.selection[m];
+                                    if (other.unit
+                                        && other.id !== this.selection[j].id
+                                        && other.owner === this.selection[j].owner) {
                                         if ((other.weapons != null) && other.weapons.length > 0) {
-                                            v2.sub(_pos, other.pos, _vec);
+                                            _pos[0] = other.pos[0] - _vec[0];
+                                            _pos[1] = other.pos[1] - _vec[1];
                                             if (v2.mag(_vec) < other.weaponRange) {
-                                                angle = v2.angle(_vec);
-                                                arcRad = other.weaponArc / 180 * Math.PI;
+                                                let angle = v2.angle(_vec);
+                                                let arcRad = other.weaponArc / 180 * Math.PI;
                                                 if (Math.abs(angleBetween(angle, other.rot)) < arcRad / 2) {
                                                     drawIt = false;
                                                     break;
@@ -323,6 +329,7 @@ General Game Objects live here
                                         }
                                     }
                                 }
+
                                 if (drawIt) {
                                     results1.push(baseAtlas.drawSprite("img/arrow02.png", _pos, [.5, .5], th + Math.PI, [255, 0, 0, 255]));
                                 } else {
@@ -353,12 +360,12 @@ General Game Objects live here
         }
 
         Trail.prototype.draw = function (pos, unit) {
-            var alive, j, len, p, ref, ref1, results, s, t;
             if (v2.mag(unit.vel) > 1) {
                 if (this.trail.length === 0 || v2.distance(this.trail[this.trail.length - 1][0], pos) > 2) {
                     this.trail.push([[pos[0], pos[1]], intp.t]);
                 }
             }
+
             while (this.trail.length > 0 && intp.t - this.trail[0][1] > this.trailTime) {
                 this.trail.shift();
             }
@@ -366,18 +373,22 @@ General Game Objects live here
             _color[1] = 155 + unit.color[1] / 255 * 100;
             _color[2] = 155 + unit.color[2] / 255 * 100;
             _color[3] = 0;
-            s = this.trailSize;
-            ref = this.trail;
-            results = [];
-            for (j = 0, len = ref.length; j < len; j++) {
-                ref1 = ref[j], p = ref1[0], t = ref1[1];
-                alive = (intp.t - t) / this.trailTime;
+
+            let results = [], alive;
+            for (let j = 0; j < this.trail.length; j++) {
+                alive = (intp.t - this.trail[j][1]) / this.trailTime;
                 if (alive < 1) {
                     _color[3] = 255 - 255 * alive;
                 } else {
                     _color[3] = 0;
                 }
-                results.push(baseAtlas.drawSprite("img/fire02.png", p, [s, s], 0, _color));
+
+                results.push(baseAtlas.drawSprite("img/fire02.png",
+                    this.trail[j][0],
+                    [this.trailSize, this.trailSize],
+                    0,
+                    _color)
+                );
             }
             return results;
         };
@@ -451,12 +462,11 @@ General Game Objects live here
         Explosion.prototype.soundVolume = .1;
 
         Explosion.prototype.draw = function () {
-            var fade, s;
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
-            s = .1 + fade * fade * this.radius;
+            let fade = this.life / this.maxLife;
+            let s = 0.1 + fade * fade * this.radius;
             this.color[3] = (1 - fade) * 255;
             return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
         };
@@ -506,7 +516,6 @@ General Game Objects live here
         };
 
         Bullet.prototype.tick = function () {
-            var exp;
             if (this.life > this.maxLife) {
                 this.dead = true;
                 return;
@@ -517,7 +526,7 @@ General Game Objects live here
             }
             this.scan();
             if (this.dead) {
-                exp = new types[this.hitExplosion]();
+                let exp = new types[this.hitExplosion]();
                 exp.z = 1000;
                 exp.pos = [this.pos[0], this.pos[1]];
                 if (this.t !== null) {
@@ -535,10 +544,7 @@ General Game Objects live here
                 return function (unit) {
                     if (_this.collide(unit)) {
                         _this.hitUnit(unit);
-                        if (_this.hitsMultiple) {
-                            return false;
-                        }
-                        return true;
+                        return !_this.hitsMultiple;
                     }
                     return false;
                 };
@@ -548,10 +554,7 @@ General Game Objects live here
                     return function (missle) {
                         if (missle.missile && _this.collide(missle)) {
                             _this.hitMissle(missle);
-                            if (_this.hitsMultiple) {
-                                return false;
-                            }
-                            return true;
+                            return !_this.hitsMultiple;
                         }
                         return false;
                     };
@@ -573,11 +576,10 @@ General Game Objects live here
         };
 
         Bullet.prototype.collide = function (thing) {
-            var dist;
             if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
                 return false;
             }
-            if (sim.serverType === "FFA") {
+            if (sim.ffa) {
                 if (this.owner === thing.owner) {
                     return false;
                 }
@@ -587,7 +589,8 @@ General Game Objects live here
                 }
             }
             if (thing.unit) {
-                dist = closestDistance(thing.getBoundPoints(), [this.pos, v2.add(v2.sub(this.vel, thing.vel, []), this.pos)]);
+                let this_pos = [this.vel[0] - thing.vel[0], this.vel[1] - thing.vel[1]];
+                let dist = closestDistance(thing.getBoundPoints(), [this.pos, v2.add(this_pos, this.pos)]);
                 this.t = 0;
                 return dist < this.radius;
             }
@@ -595,14 +598,13 @@ General Game Objects live here
         };
 
         Bullet.prototype._collide = function (thing) {
-            var distance, speed;
-            distance = v2.distance(this.pos, thing.pos);
-            speed = v2.mag(thing.vel) + v2.mag(this.vel);
+            let distance = v2.distance(this.pos, thing.pos);
+            //let speed = v2.mag(thing.vel) + v2.mag(this.vel);
             return distance < thing.radius;
         };
 
         Bullet.prototype.collideCircles = function (thing) {
-            var c, distance, r, speed, t1, t2, ta, tb, tc, v;
+            let c, distance, r, speed, t1, t2, ta, tb, tc, v;
             if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
                 return false;
             }
@@ -638,18 +640,21 @@ General Game Objects live here
         };
 
         Bullet.prototype.__collide = function (thing) {
-            var distance, j, len, part, ref, speed;
+            let part, ref;
             if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
                 return false;
             }
-            speed = v2.mag(thing.vel) + v2.mag(this.vel);
+            let speed = v2.mag(thing.vel) + v2.mag(this.vel);
+            let distance = v2.distance(this.pos, thing.pos);
+
             if (distance > thing.radius + this.radius + speed) {
                 return false;
             }
-            distance = v2.distance(this.pos, thing.pos);
+
             if (distance < thing.radius + this.radius) {
                 ref = thing.parts;
-                for (j = 0, len = ref.length; j < len; j++) {
+                let len = ref.length;
+                for (let j = 0; j < len; j++) {
                     part = ref[j];
                     distance = v2.distance(this.pos, part.worldPos) - this.radius - 10;
                     if (distance < 0) {
@@ -701,7 +706,7 @@ General Game Objects live here
         };
 
         LaserBullet.prototype.draw = function () {
-            var d, pos, rot, w;
+            let d, pos, rot, w;
             if (this.origin) {
                 w = this.origin.weapons[this.turretNum || 0];
                 if (w) {
@@ -712,7 +717,7 @@ General Game Objects live here
                 pos = this.target.unit ? closestPointOnPolygon(this.pos, this.target.getBoundPoints()) : this.target.pos;
                 v2.set(pos, this.targetPos);
             }
-            v2.sub(this.targetPos, this.pos, _offset);
+            _offset = [this.targetPos[0] - this.pos[0], this.targetPos[1] - this.pos[1]];
             rot = v2.angle(_offset);
             d = v2.mag(_offset) / this.drawLength;
             v2.scale(_offset, .5);
@@ -745,12 +750,11 @@ General Game Objects live here
         FlackExplosion.prototype.soundVolume = .1;
 
         FlackExplosion.prototype.draw = function () {
-            var fade, s;
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
-            s = this.radius / 2;
+            let fade = this.life / this.maxLife;
+            let s = this.radius / 2;
             this.color[3] = (1 - Math.pow(fade, 2)) * 80;
             return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
         };
@@ -792,12 +796,11 @@ General Game Objects live here
         };
 
         AoeBullet.prototype.tick = function () {
-            var exp;
             this.life += 1;
             if (this.life > this.maxLife) {
                 this.dead = true;
                 if (this.explode) {
-                    exp = new types[this.explodeClass]();
+                    let exp = new types[this.explodeClass]();
                     exp.z = 1000;
                     exp.owner = this.owner;
                     exp.pos = [this.hitPos[0], this.hitPos[1]];
@@ -882,7 +885,6 @@ General Game Objects live here
         };
 
         TrackingMissile.prototype.tick = function () {
-            var exp;
             if (this.life > this.maxLife) {
                 this.dead = true;
                 return;
@@ -896,8 +898,9 @@ General Game Objects live here
                     return false;
                 };
             })(this));
+
             if (this.dead) {
-                exp = new types.HitExplosion();
+                let exp = new types.HitExplosion();
                 exp.z = 1000;
                 exp.pos = [this.pos[0], this.pos[1]];
                 exp.vel = [0, 0];
@@ -931,11 +934,10 @@ General Game Objects live here
         };
 
         Debree.prototype.draw = function () {
-            var fade;
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
+            let fade = this.life / this.maxLife;
             this.color[3] = Math.floor((1 - fade) * 255);
             return baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot, this.color);
         };
@@ -966,12 +968,11 @@ General Game Objects live here
         }
 
         HitExplosion.prototype.draw = function () {
-            var fade, s;
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
-            s = .1 + fade * fade * this.radius;
+            let fade = this.life / this.maxLife;
+            let s = 0.1 + fade * fade * this.radius;
             this.color[3] = (1 - fade) * 255;
             baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
             if (this.frame < 4) {
@@ -1000,12 +1001,11 @@ General Game Objects live here
         }
 
         SmallHitExplosion.prototype.draw = function () {
-            var s;
             if (this.dead) {
                 return;
             }
             if (this.frame < 4) {
-                s = 1;
+                let s = 1;
                 this.color[3] = 255 / (1 + this.frame);
                 baseAtlas.drawSprite(this.hitImage, this.pos, [s, s], this.rot, this.color);
             }
@@ -1029,13 +1029,12 @@ General Game Objects live here
         }
 
         RingHitExplosion.prototype.draw = function () {
-            var deb, j, n;
             RingHitExplosion.__super__.draw.call(this);
             if (this.frame === 0) {
-                for (n = j = 1; j < 5; n = ++j) {
-                    deb = new types.Debree();
-                    deb.image = "parts/fireSpinPart" + n + ".png";
-                    deb.z = this.z + rand() * .01;
+                for (let j = 1; j < 5; j++) {
+                    let deb = new types.Debree();
+                    deb.image = "parts/fireSpinPart" + j + ".png";
+                    deb.z = this.z + rand() * 0.01;
                     deb.pos = [0, 0];
                     deb.vel = [0, 0];
                     v2.set(this.pos, deb.pos);
@@ -1046,7 +1045,6 @@ General Game Objects live here
                     deb.maxLife = 16;
                     deb._pos = v2.create(deb.pos);
                     deb._pos2 = v2.create(deb.pos);
-                    deb.rot = deb.rot;
                     deb._rot = deb.rot;
                     deb._rot2 = deb.rot;
                     intp.particles[deb.id] = deb;
@@ -1078,12 +1076,11 @@ General Game Objects live here
         }
 
         ShipExplosion.prototype.draw = function () {
-            var fade, s;
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
-            s = Math.pow(this.radius, 1.3) / 100;
+            let fade = this.life / this.maxLife;
+            let s = Math.pow(this.radius, 1.3) / 100;
             this.color[3] = (1 - fade) * 255;
             return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
         };
@@ -1118,13 +1115,12 @@ General Game Objects live here
                 this.damaged = true;
                 return sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.aoe + sim.maxRadius[otherSide(this.side)], (function (_this) {
                     return function (unit) {
-                        var distance, fallOff;
                         if (unit.owner === _this.owner) {
                             return false;
                         }
-                        distance = Math.max(closestDistance(unit.getBoundPoints(), [_this.pos]), 0);
+                        let distance = Math.max(closestDistance(unit.getBoundPoints(), [_this.pos]), 0);
                         if (distance < _this.aoe) {
-                            fallOff = 1 - distance / _this.aoe;
+                            let fallOff = 1 - distance / _this.aoe;
                             if (typeof unit.applyDamage === "function") {
                                 unit.applyDamage(_this.damage * fallOff, _this);
                             }
@@ -1146,12 +1142,11 @@ General Game Objects live here
         };
 
         AoeExplosion.prototype.draw = function () {
-            var fade, s;
             if (this.dead) {
                 return;
             }
-            fade = Math.min(1, this.life / this.maxLife);
-            s = this.aoe / 512 * this.radius;
+            let fade = Math.min(1, this.life / this.maxLife);
+            let s = this.aoe / 512 * this.radius;
             this.color[3] = (1 - fade) * 50;
             return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
         };
@@ -1180,24 +1175,23 @@ General Game Objects live here
         }
 
         FrameExplosion.prototype.draw = function () {
-            var fade, frame, image, intFrame, s, tweenFrame;
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
-            s = 3;
+            //let fade = this.life / this.maxLife;
+            let s = 3;
             this.color = [255, 255, 255, 210];
             if (this.loopFrames) {
-                frame = this.life % this.nFrames + 1;
-                intFrame = Math.floor(frame);
-                image = this.image.replace("#", intFrame);
+                let frame = this.life % this.nFrames + 1;
+                let intFrame = Math.floor(frame);
+                let image = this.image.replace("#", intFrame);
                 return baseAtlas.drawSprite(image, this.pos, [s, s], this.rot, this.color);
             } else {
-                frame = (this.life / this.maxLife) * this.nFrames + 1;
-                intFrame = Math.floor(frame);
+                let frame = (this.life / this.maxLife) * this.nFrames + 1;
+                let intFrame = Math.floor(frame);
                 if (intFrame < this.nFrames) {
-                    tweenFrame = frame - intFrame;
-                    image = this.image.replace("#", intFrame);
+                    //let tweenFrame = frame - intFrame;
+                    let image = this.image.replace("#", intFrame);
                     return baseAtlas.drawSprite(image, this.pos, [s, s], this.rot, this.color);
                 }
             }
@@ -1246,11 +1240,8 @@ General Game Objects live here
     })();
 
     sideColor = function (side) {
-        var color, mySide;
-        mySide = typeof commander !== "undefined" && commander !== null ? commander.side : void 0;
-        if (mySide !== "beta") {
-            mySide = "alpha";
-        }
+        var color;
+        let mySide = typeof commander !== "undefined" && commander !== null ? commander.side : void 0;
         if (mySide === side) {
             color = [230, 230, 230, 255];
         } else {
@@ -1260,8 +1251,8 @@ General Game Objects live here
     };
 
     anitSideColor = function (side) {
-        var color, mySide;
-        mySide = typeof commander !== "undefined" && commander !== null ? commander.side : void 0;
+        var color;
+        let mySide = typeof commander !== "undefined" && commander !== null ? commander.side : void 0;
         if (mySide === "spectators") {
             mySide = "alpha";
         }
@@ -1308,8 +1299,6 @@ General Game Objects live here
         }
 
         CommandPoint.prototype.tick = function () {
-            var _, distance, i, id, j, k, l, len, p, player, playerOnPoint, ref, ref1, ref2, results, sides, t, thing,
-                tooClose;
             if (sim.state !== "running") {
                 return;
             }
@@ -1318,54 +1307,45 @@ General Game Objects live here
             }
             if (sim.step % 16 === 0) {
                 if (this.side !== null) {
-                    ref = sim.players;
-                    for (_ in ref) {
-                        p = ref[_];
-                        if (p && p.side === this.side) {
-                            if (p.gainsMoney && sim.gainsMoney) {
-                                p.earnMoney(1);
+                    for (let curr_player in sim.players) {
+                        if (sim.players[curr_player]
+                            && sim.players[curr_player].side === this.side) {
+                            if (sim.players[curr_player].gainsMoney && sim.gainsMoney) {
+                                sim.players[curr_player].earnMoney(this.value);
                             }
                         }
                     }
                 }
-                sides = {};
-                playerOnPoint = [];
-                ref1 = sim.things;
-                for (id in ref1) {
-                    thing = ref1[id];
-                    if (thing.unit && thing.canCapture) {
-                        distance = v2.distance(this.pos, thing.pos);
-                        if (distance < this.radius) {
-                            sides[thing.side] = true;
-                            player = sim.players[thing.owner];
-                            if (player) {
-                                playerOnPoint.push(player);
+
+                let sides = {};
+                let playerOnPoint = [];
+                for (let thing_id in sim.things) {
+                    if (sim.things[thing_id].unit && sim.things[thing_id].canCapture) {
+                        if (v2.distance(this.pos, sim.things[thing_id].pos) < this.radius) {
+                            sides[sim.things[thing_id].side] = true;
+                            if (sim.players[sim.things[thing_id].owner]) {
+                                playerOnPoint.push(sim.players[sim.things[thing_id].owner]);
                             }
                         }
                     }
                 }
-                sides = (function () {
-                    var results;
-                    results = [];
-                    for (k in sides) {
-                        results.push(k);
-                    }
-                    return results;
-                })();
-                if (sides.length === 1 && (this.side !== sides[0] || sim.serverType === "FFA")) {
+
+                if (sides.length === 1 && (this.side !== sides[0] || sim.serverType === "IO")) {
                     this.capping += 1 / this.value;
                     if (this.capping >= this.maxCapp) {
-                        if (sim.serverType !== "FFA") {
+                        if (sim.serverType !== "IO") {
                             this.side = sides[0];
                             this.bonus(this.side, 100);
+                            if (this.linkedSpawn) {
+                                this.linkedSpawn.side = this.linkedSpawn.spawn = this.side;
+                            }
                         } else {
-                            for (i = j = 0; j < 50; i = ++j) {
-                                tooClose = false;
+                            for (let j = 0; j < 50; j++) {
+                                let tooClose = false;
                                 this.pos = [(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000];
-                                ref2 = sim.things;
-                                for (_ in ref2) {
-                                    t = ref2[_];
-                                    if ((t.spawn || t.commandPoint) && v2.distance(t.pos, this.pos) < (t.radius + this.radius + 100)) {
+                                for (let thing_id in sim.things) {
+                                    if ((sim.things[thing_id].spawn || sim.things[thing_id].commandPoint)
+                                        && v2.distance(sim.things[thing_id].pos, this.pos) < (sim.things[thing_id].radius + this.radius + 100)) {
                                         tooClose = true;
                                         break;
                                     }
@@ -1377,13 +1357,12 @@ General Game Objects live here
                         }
                         sim.captures += 1;
                         this.capping = 0;
-                        results = [];
-                        for (l = 0, len = playerOnPoint.length; l < len; l++) {
-                            p = playerOnPoint[l];
-                            p.capps += 1;
-                            if (sim.serverType === "FFA") {
-                                p.earnMoney(Math.round(sim.moneyInc * this.value));
-                                results.push(p.maxMoney = Math.max(p.maxMoney, p.money));
+                        let results = [];
+                        for (let l = 0; l < playerOnPoint.length; l++) {
+                            playerOnPoint[l].capps += 1;
+                            if (sim.serverType === "IO") {
+                                playerOnPoint[l].earnMoney(Math.round(sim.moneyInc * this.value));
+                                results.push(playerOnPoint[l].maxMoney = Math.max(playerOnPoint[l].maxMoney, playerOnPoint[l].money));
                             } else {
                                 results.push(void 0);
                             }
@@ -1399,14 +1378,11 @@ General Game Objects live here
         };
 
         CommandPoint.prototype.bonus = function (side, amount) {
-            var _, p, ref, results;
-            ref = sim.players;
-            results = [];
-            for (_ in ref) {
-                p = ref[_];
-                if (p.side === this.side) {
-                    if (p.gainsMoney) {
-                        results.push(p.earnMoney(amount));
+            let results = [];
+            for (let player in sim.players) {
+                if (sim.players[player].side === this.side) {
+                    if (sim.players[player].gainsMoney) {
+                        results.push(sim.players[player].earnMoney(amount));
                     } else {
                         results.push(void 0);
                     }
@@ -1418,20 +1394,19 @@ General Game Objects live here
         };
 
         CommandPoint.prototype.draw = function () {
-            var color, i, j, ref, results, th, x, y;
             if (sim.theme) {
-                color = sideColor(this.side);
+                let color = sideColor(this.side);
                 baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot, color);
                 if (this.capping > 0) {
                     color = anitSideColor(this.side);
-                    results = [];
-                    for (i = j = 0, ref = this.maxCapp; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+                    let results = [];
+                    for (let i = 0; i < this.maxCapp; i++) {
                         if (this.capping < i) {
                             break;
                         }
-                        th = (i / this.maxCapp) * 2 * Math.PI;
-                        x = this.pos[0] + Math.sin(th) * (this.radius + 50);
-                        y = this.pos[1] + Math.cos(th) * (this.radius + 50);
+                        let th = (i / this.maxCapp) * 2 * Math.PI;
+                        let x = this.pos[0] + Math.sin(th) * (this.radius + 50);
+                        let y = this.pos[1] + Math.cos(th) * (this.radius + 50);
                         results.push(baseAtlas.drawSprite(this.sliceImage, [x, y], [1, 1], Math.PI - th, color));
                     }
                     return results;
@@ -1475,19 +1450,21 @@ General Game Objects live here
         }
 
         SpawnPoint.prototype.draw = function () {
-            var color, i, j, max, ref, results, th, to, x, y;
             if (!sim.theme) {
                 return;
             }
-            color = sideColor(this.side);
-            max = 20;
-            to = ((sim.step - 8) / (16 * 2)) * 20;
-            results = [];
-            for (i = j = 0, ref = max; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+
+            let color = sideColor(this.side);
+            let to = ((sim.step - 8) / (16 * 2)) * 20;
+            let results = [];
+
+            let x, y, th;
+            for (let i = 0; i < 20; i++) {
                 if (to < i) {
                     break;
                 }
-                th = (i / max) * 2 * Math.PI;
+
+                th = (i / 20) * 2 * Math.PI;
                 x = this.pos[0] + Math.sin(th) * (this.radius + 50);
                 y = this.pos[1] + Math.cos(th) * (this.radius + 50);
                 results.push(baseAtlas.drawSprite(this.sliceImage, [x, y], [1, 1], Math.PI / 2 - th, color));
@@ -1501,5 +1478,3 @@ General Game Objects live here
 
 }).call(this);
 ;
-
-

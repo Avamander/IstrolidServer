@@ -28,9 +28,9 @@
             }
 
             /*
-      if unit.parts.length > 800
-          return "Too many parts"
-       */
+            if unit.parts.length > 800
+                return "Too many parts"
+             */
             if (unit.name.length > 50) {
                 return "Name too long";
             }
@@ -390,5 +390,6 @@
 
 }).call(this);
 ;
+  
 
 

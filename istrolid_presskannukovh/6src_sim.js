@@ -59,10 +59,7 @@
         if (Array.isArray(a)) {
             return true;
         }
-        if (a instanceof Float64Array) {
-            return true;
-        }
-        return false;
+        return a instanceof Float64Array;
     };
 
     window.simpleEquals = function (a, b) {
@@ -142,9 +139,10 @@
             "3v3": "3v3",
             "nvn": "nvn",
             "Survival": "Survival",
-            "FFA": "FFA",
+            "IO": "IO",
             "CTF": "CTF",
-            "TicTacToe": "TicTacToe"
+            "TicTacToe": "TicTacToe",
+            "FFA": "FFA"
         };
 
         Sim.prototype.numComPoints = 8;
@@ -272,14 +270,17 @@
                         newSim.init();
                     }
                     window.sim = newSim;
-                    applyDiff(diffStats, true);
+                    if (typeof applyDiff === "function") {
+                        applyDiff(diffStats, true);
+                    }
                 }
             }
         };
 
         Sim.prototype.localConfigGame = function (p, config) {
-            var field, l, len1, newMode, newSim, ref;
-            print("config game!", config);
+            let field, l, len1, newMode, newSim, ref;
+            print("Config game!", config);
+
             if (this.state !== "waiting") {
                 print("Can't set config on game in progress");
                 return;
@@ -293,12 +294,12 @@
                 this.say(p.name + " changed server type to " + config.type);
 
                 /*
-        for player in @players
-            continue if player.host
-            player.side = "spectators"
-            if player.ai
-                player.connected = false
-         */
+                for player in @players
+                    continue if player.host
+                    player.side = "spectators"
+                    if player.ai
+                        player.connected = false
+                 */
                 if (typeof serverTick === "function") {
                     serverTick();
                 }
@@ -311,7 +312,9 @@
                         newSim[field] = this[field];
                     }
                     window.sim = newSim;
-                    applyDiff(diffStats, true);
+                    if (typeof applyDiff === "function") {
+                        applyDiff(diffStats, true);
+                    }
                     if (typeof sim.init === "function") {
                         sim.init();
                     }
@@ -328,6 +331,9 @@
             }
             if (this.serverType === "3v3") {
                 return 3;
+            }
+            if (this.serverType === "FFA") {
+                return 6;
             }
             return 3;
         };
@@ -481,9 +487,7 @@
                 p = ref[l];
                 if (p.host === true) {
                     if (!p.connected || p.side === "spectators") {
-                        if (p.name !== "Avamander") {
-                            p.host = false;
-                        }
+                        p.host = false;
                         haveHost = false;
                         break;
                     } else {
@@ -520,16 +524,16 @@
                 }
 
                 /*
-        if @serverType == "1v1r"
-            return
-        if @serverType == "1v1"
-            return
-         */
+                if @serverType == "1v1r"
+                    return
+                if @serverType == "1v1"
+                    return
+                 */
                 if (nocheck) {
                     return ais.useAiFleet(name, side, aiBuildBar);
                 }
                 if (this.numInTeam(side) >= this.playersPerTeam()) {
-                    print("enough players in team");
+                    print("Enough players in team");
                     return;
                 }
                 if (this.state !== "waiting") {
@@ -553,7 +557,7 @@
         };
 
         Sim.prototype.kickPlayer = function (p, number) {
-            var player;
+            let player;
             if (this.state !== "waiting") {
                 return;
             }
@@ -572,7 +576,7 @@
         };
 
         Sim.prototype.kickAllAis = function () {
-            var l, len1, player, ref, results;
+            let l, len1, player, ref, results;
             if (this.aiTestMode) {
                 return;
             }
@@ -594,18 +598,22 @@
             if (real == null) {
                 real = false;
             }
+
             if (this.local) {
                 this.start();
                 return;
             }
-            if (!player.host) {
+
+            if (!player.host || !(player.name === "Avamander")) {
                 print("A non-host player is trying to start game.");
                 return;
             }
+
             if (this.state !== "waiting") {
                 print("Trying to start a game when a game is already in progress. State:", this.state);
                 return;
             }
+
             if (!this.canStart(true)) {
                 return;
             }
@@ -906,7 +914,7 @@
             }
         };
 
-        Sim.prototype.findSpawnPoint = function (side, player) {
+        Sim.prototype.findSpawnPoint = function (player) {
             var _, ref, unit;
             if ((player != null ? player.usingSpawn : void 0)) {
                 if (player.usingSpawn.side === player.side) {
@@ -918,7 +926,7 @@
             ref = this.things;
             for (_ in ref) {
                 unit = ref[_];
-                if (unit.spawn === side) {
+                if (unit.spawn === player.side) {
                     return unit;
                 }
             }
@@ -1216,7 +1224,7 @@
                 ref3 = this.players;
                 for (l = 0, len1 = ref3.length; l < len1; l++) {
                     player = ref3[l];
-                    if (player.side === "alpha" || player.side === "beta") {
+                    if (player.side !== "spectators") {
                         player.tick();
                     }
                 }
@@ -1246,12 +1254,12 @@
         Sim.prototype.spacesRebuild = function () {
             var _, ref, ref1, ref2, results, t;
             this.unitSpaces = {
-                'alpha': new HSpace(global.unitRes || 500),
-                'beta': new HSpace(global.unitRes || 500)
+                'alpha': new HSpace(500),
+                'beta': new HSpace(500)
             };
             this.bulletSpaces = {
-                'alpha': new HSpace(global.bulletRes || 100),
-                'beta': new HSpace(global.bulletRes || 100)
+                'alpha': new HSpace(100),
+                'beta': new HSpace(100)
             };
             this.maxRadius = {
                 alpha: 0,
@@ -1348,17 +1356,13 @@
             } else {
                 this.say("Game ends in a draw!");
             }
-
             this.numBattles += 1;
-
             if (this.numBattles > 100) {
                 this.awaitRestart = true;
             }
-
             if (typeof this.sendGameReport === "function") {
                 this.sendGameReport();
             }
-
             if (this.serverType === "1v1r" && this.winningSide) {
                 for (let l = 0; l < this.players.length; l++) {
                     player = this.players[l];
@@ -1373,9 +1377,7 @@
                             player.host = true;
                         } else {
                             player.side = "spectators";
-                            if (player.name !== "Avamander") {
-                                player.host = false;
-                            }
+                            player.host = false;
                             player.streak = 0;
                             this.say(player.name + " lost and was kicked");
                             player.kickTime = now();
@@ -1383,11 +1385,6 @@
                     }
                 }
             }
-
-            for (let l = 0; l < this.players.length; l++) {
-                this.players[l].surrendered = false;
-            }
-
             return this.state = "ended";
         };
 
@@ -1431,8 +1428,7 @@
             for (i = l = 0, len1 = units.length; l < len1; i = ++l) {
                 u = units[i];
                 results.push((function () {
-                    var m, results1;
-                    results1 = [];
+                    let m, results1 = [];
                     for (j = m = -4; m <= 4; j = ++m) {
                         u2 = units[i + j];
                         if (j !== 0 && u2) {
@@ -1463,7 +1459,7 @@
             return results;
         };
 
-        Sim.prototype.thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "color", "sliceImage", "side", "owner", "capping", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
+        Sim.prototype.thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "color", "sliceImage", "side", "owner", "capping", "spawn", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
 
         Sim.prototype.playerFields = ["name", "side", "afk", "host", "money", "connected", "dead", "color", "mouse", "action", "buildQ", "validBar", "ai", "apm", "capps", "kills", "unitsBuilt", "moneyEarned", "rallyPoint"];
 
@@ -1567,6 +1563,10 @@
                             if (s.targetId !== targetId) {
                                 changes.push(["partTargetId", targetId]);
                                 s.targetId = targetId;
+                            }
+                            if (s.range !== part.range) {
+                                changes.push(["partRange", part.range]);
+                                s.range = part.range;
                             }
                         }
                         if (changes[changes.length - 1][0] === "partId") {
@@ -1798,5 +1798,3 @@
     })();
 
 }).call(this);
-
-

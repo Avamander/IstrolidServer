@@ -3,7 +3,7 @@
 (function () {
     var AiPart, Battery, Faction, HArmor, ModPart, ShadowArmor, UArmor, VArmor, VShadowArmor, Wing, _a, _b, _wave,
         extend = function (child, parent) {
-            for (var key in parent) {
+            for (let key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
             }
 
@@ -18,8 +18,10 @@
         },
         hasProp = {}.hasOwnProperty,
         indexOf = [].indexOf || function (item) {
-            for (var i = 0, l = this.length; i < l; i++) {
-                if (i in this && this[i] === item) return i;
+            for (let i = 0, l = this.length; i < l; i++) {
+                if (i in this && this[i] === item) {
+                    return i;
+                }
             }
             return -1;
         },
@@ -8095,7 +8097,151 @@
 
     })(Turret);
 
+    parts.ModProjector = (function (superClass) {
+        extend(ModProjector, superClass);
+
+        function ModProjector() {
+            return ModProjector.__super__.constructor.apply(this, arguments);
+        }
+
+        ModProjector.prototype.name = "Mod Effect Projector";
+
+        ModProjector.prototype.desc = "Projects mod effects to nearby ships. -15% effect on each armed ship. -40% effect overall";
+
+        ModProjector.prototype.hp = 10;
+
+        ModProjector.prototype.cost = 30;
+
+        ModProjector.prototype.mass = 60;
+
+        ModProjector.prototype.image = "focus.png";
+
+        ModProjector.prototype.size = [2, 2];
+
+        ModProjector.prototype.tab = "weapons";
+
+        ModProjector.prototype.range = 500;
+
+        ModProjector.prototype.reductionRatio = .2;
+
+        ModProjector.prototype.splitRatio = .95;
+
+        ModProjector.prototype.useEnergy = 50 / 16;
+
+        ModProjector.prototype.projector = true;
+
+        ModProjector.prototype.disable = true;
+
+        ModProjector.prototype.shotEnergy = 10;
+
+        ModProjector.prototype.instant = true;
+
+        ModProjector.prototype.bulletCls = LaserBullet;
+
+        ModProjector.prototype.gimble = false;
+
+        ModProjector.prototype.arc = 360;
+
+        ModProjector.prototype.weaponRange = 1;
+
+        ModProjector.prototype.weaponRangeFlat = 0;
+
+        ModProjector.prototype.weaponDamage = 1;
+
+        ModProjector.prototype.weaponSpeed = 0;
+
+        ModProjector.prototype.weaponReload = 1;
+
+        ModProjector.prototype.weaponEnergy = 1;
+
+        ModProjector.prototype.noOverkill = false;
+
+        ModProjector.prototype.init = function () {
+            return this.unit.projector = {
+                weaponRange: 1,
+                weaponRangeFlat: 0,
+                weaponDamage: 1,
+                weaponEnergyDamage: 1,
+                weaponSpeed: 1,
+                weaponReload: 1,
+                weaponEnergy: 1,
+                noOverkill: false
+            };
+        };
+
+        ModProjector.prototype.tick = function () {
+            var distance, giveTo, i, len, ref, thing, w, weapons;
+            this.working = false;
+            giveTo = 0;
+            ref = this.unit.closestFriends;
+            for (i = 0, len = ref.length; i < len; i++) {
+                thing = ref[i];
+                weapons = (function () {
+                    var j, len1, ref1, results;
+                    ref1 = thing.weapons;
+                    results = [];
+                    for (j = 0, len1 = ref1.length; j < len1; j++) {
+                        w = ref1[j];
+                        if (!w.projector) {
+                            results.push(w);
+                        }
+                    }
+                    return results;
+                })();
+                if (weapons.length > 0) {
+                    distance = v2.distance(this.unit.pos, thing.pos);
+                    if (distance < this.range) {
+                        giveTo += weapons.length;
+                    }
+                }
+            }
+            if (this.unit.energy < this.useEnergy * giveTo) {
+                this.unit.effect = 0;
+                return;
+            }
+            if (giveTo > 0) {
+                this.unit.effect = (1 / this.splitRatio) * (Math.pow(this.splitRatio, giveTo));
+                this.unit.energy -= this.useEnergy * giveTo;
+                return this.working = true;
+            }
+        };
+
+        ModProjector.prototype.applyBuffs = function () {
+            var applyEffect;
+            applyEffect = function (n, effect) {
+                return 1 + (n - 1) * effect;
+            };
+            this.unit.projector.weaponRange *= applyEffect(this.weaponRange, this.reductionRatio);
+            this.unit.projector.weaponRangeFlat += this.weaponRangeFlat * this.reductionRatio;
+            this.unit.projector.weaponDamage *= applyEffect(this.weaponDamage, this.reductionRatio);
+            this.unit.projector.weaponEnergyDamage *= applyEffect(this.weaponEnergyDamage, this.reductionRatio);
+            this.unit.projector.weaponSpeed += this.weaponSpeed * this.reductionRatio;
+            this.unit.projector.weaponReload *= applyEffect(this.weaponReload, this.reductionRatio);
+            this.unit.projector.weaponEnergy *= applyEffect(this.weaponEnergy, this.reductionRatio);
+            return this.unit.projector.noOverkill |= this.noOverkill;
+        };
+
+        ModProjector.prototype.applyAdditionalBuffs = function (buffs) {
+        };
+
+        ModProjector.prototype.preDraw = function () {
+            var r;
+            if (this.working) {
+                r = (this.range + 40) / 255;
+                return baseAtlas.drawSprite("img/point02.png", this.unit.pos, [r, r], 0, [255, 128, 128, 30]);
+            }
+        };
+
+        ModProjector.prototype.draw = function () {
+            return Part.prototype.draw.call(this);
+        };
+
+        return ModProjector;
+
+    })(Turret);
+
 }).call(this);
 ;
+  
 
 

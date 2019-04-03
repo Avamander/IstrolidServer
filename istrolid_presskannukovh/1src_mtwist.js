@@ -9,7 +9,7 @@
 
     window.MTwist = (function () {
         function MTwist(seed) {
-            var k, mti, uint32mul;
+            let k, mti, uint32mul;
             if (seed == null) {
                 seed = Math.random() * 4294967295;
             }
@@ -18,11 +18,11 @@
             this.random = bind(this.random, this);
             this.randomUint32 = bind(this.randomUint32, this);
             uint32mul = function (n1, n2) {
-                var n1High16, n1Low16, n2High16, n2Low16;
-                n1Low16 = n1 & 0x0000ffff;
-                n1High16 = n1 >>> 16;
-                n2Low16 = n2 & 0x0000ffff;
-                n2High16 = n2 >>> 16;
+                //let n1High16, n1Low16, n2High16, n2Low16;
+                //n1Low16 = n1 & 0x0000ffff;
+                //n1High16 = n1 >>> 16;
+                //n2Low16 = n2 & 0x0000ffff;
+                //n2High16 = n2 >>> 16;
                 return ((((n1 & 0xffff0000) * n2) >>> 0) + (((n1 & 0x0000ffff) * n2) >>> 0)) >>> 0;
             };
             this.mt = new Array(624);
@@ -34,7 +34,7 @@
         }
 
         MTwist.prototype.randomUint32 = function () {
-            var i, k, l, y;
+            let i, k, l, y;
             if (this.mti >= 624) {
                 for (i = k = 0; k < 227; i = ++k) {
                     y = ((this.mt[i] & 0x80000000) | (this.mt[i + 1] & 0x7fffffff)) >>> 0;
@@ -61,7 +61,7 @@
         };
 
         MTwist.prototype.randomIntBelow = function (maxPlusOne) {
-            var bitMask, bitsNeeded, int;
+            let bitMask, bitsNeeded, int;
             if (maxPlusOne < 1) {
                 throw "Upper bound must be greater than or equal to 1";
             }
@@ -83,7 +83,7 @@
         };
 
         MTwist.test = function () {
-            var i, iterationFactor, iterations, j, k, l, mtwist, ref, seed;
+            let i, iterationFactor, iterations, j, k, l, mtwist, ref, seed;
             seed = 1234567890;
             iterationFactor = 10000;
             for (i = k = 0; k < 1000; i = ++k) {
@@ -103,5 +103,3 @@
 
 }).call(this);
 ;
-
-

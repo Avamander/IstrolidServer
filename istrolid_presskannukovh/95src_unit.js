@@ -9,7 +9,7 @@
         },
         slice = [].slice,
         extend1 = function (child, parent) {
-            for (var key in parent) {
+            for (let key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
             }
 
@@ -27,9 +27,7 @@
     window.thumb_cache = {};
 
     window.turnAngle = function (a, b, speed) {
-        var turn;
-        speed = speed;
-        turn = b - a;
+        let turn = b - a;
         if (turn > Math.PI) {
             a += 2 * Math.PI;
         } else if (turn < -Math.PI) {
@@ -49,8 +47,7 @@
     };
 
     window.angleBetween = function (a, b) {
-        var turn;
-        turn = b - a;
+        let turn = b - a;
         while (turn > Math.PI) {
             turn -= 2 * Math.PI;
         }
@@ -153,8 +150,7 @@
         }
 
         Unit.prototype.fromSpec = function (spec) {
-            var data, i, j, l, len, len1, len2, len3, len4, len5, n, o, p, part, partNum, q, reachRange, ref, ref1,
-                ref2, ref3, ref4, ref5, results, stasisRange, thrust, w, x;
+            let data, p, part, reachRange, results, stasisRange, thrust, w;
             this.cost = 0;
             this.hp = 5;
             this.jumpDistance = 0;
@@ -177,9 +173,9 @@
             data = fromShort(spec);
             this.name = data.name || "";
             this.aiRules = data.aiRules || [];
-            ref = data.parts;
-            for (partNum = j = 0, len = ref.length; j < len; partNum = ++j) {
-                p = ref[partNum];
+
+            for (let i = 0; i < data.parts.length; i++) {
+                p = data.parts[i];
                 if (!window.parts[p.type]) {
                     continue;
                 }
@@ -187,17 +183,20 @@
                 part.unit = this;
                 part.pos = v2.create(p.pos);
                 part.dir = p.dir || 0;
-                part.partNum = partNum;
+                part.partNum = i;
                 if (part.weapon) {
                     this.weapons.push(part);
                 }
                 if (p.ghostCopy) {
                     part.ghostCopy = true;
                 }
+
                 this.parts.push(part);
                 this.cost += part.cost || 0;
                 this.hp += part.hp || 0;
+
                 thrust += part.thrust || 0;
+
                 this.mass += part.mass;
                 this.turnSpeed += part.turnSpeed || 0;
                 this.genEnergy += part.genEnergy || 0;
@@ -206,24 +205,29 @@
                 this.shield += part.shield || 0;
                 this.jumpCount += part.jumpCount || 0;
                 this.limitBonus += part.limitBonus || 0;
+
                 if (part.arc && this.weaponArc < part.arc) {
                     this.weaponArc = part.arc;
                 }
+
                 if (part.arc && (this.minArc === 0 || this.minArc > part.arc)) {
                     this.minArc = part.arc;
                 }
+
                 if (p.type === "EnergyTransfer") {
                     if (part.range > this.maxRange) {
                         this.maxRange = part.range;
                     }
                 }
+
                 if (p.type === "StasisField") {
-                    stasisRange = part.range + v2.distance(part.pos, this.center) + 100;
+                    stasisRange = part.range + Math.sqrt(part.pos*part.pos + this.center*this.center) + 100;
                     if (stasisRange > this.maxRange) {
                         this.maxRange = stasisRange;
                     }
                 }
             }
+
             this.maxHP = this.hp;
             this.energy = this.storeEnergy;
             this.turnSpeed = this.turnSpeed / this.mass;
@@ -232,21 +236,22 @@
             this.damageRatio = 1;
             this.jumpDistance = this.jump = Math.min(this.maxJump / 500, 41 * this.jumpCount / this.mass) * 500;
             this.computeCenter();
-            ref1 = this.parts;
-            for (l = 0, len1 = ref1.length; l < len1; l++) {
-                part = ref1[l];
+
+            for (let i = 0; i < this.parts.length; i++) {
+                part = this.parts[i];
                 if (typeof part.init === "function") {
                     part.init();
                 }
             }
+
             this.computeRadius();
             this.computeBoundary();
             this.weaponRange = 0;
             this.weaponDPS = 0;
             this.weaponDamage = 0;
-            ref2 = this.weapons;
-            for (n = 0, len2 = ref2.length; n < len2; n++) {
-                w = ref2[n];
+
+            for (let i = 0; i < this.weapons.length; i++) {
+                w = this.weapons[i];
                 w.applyBuffs();
                 w.reloadTime = Math.ceil(w.reloadTime);
                 if (w.reloadTime < 1) {
@@ -263,28 +268,30 @@
                 this.weaponDamage += w.damage;
                 this.weaponDPS += w.dps;
             }
+
             this.weapons.sort(function (a, b) {
                 return b.dps - a.dps;
             });
             this.mainWeapon = this.weapons[0];
-            ref3 = this.weapons;
-            for (i = o = 0, len3 = ref3.length; o < len3; i = ++o) {
-                w = ref3[i];
+
+            for (let i = 0; i < this.weapons.length; i++) {
+                w = this.weapons[i];
                 w.turretNum = i;
             }
             this.moveEnergy = 0;
-            ref4 = this.parts;
-            for (q = 0, len4 = ref4.length; q < len4; q++) {
-                part = ref4[q];
+
+            for (let i = 0; i < this.parts.length; i++) {
+                part = this.parts[i];
                 if (part.thrust > 0) {
                     this.moveEnergy += part.useEnergy;
                 }
             }
+
             this.fireEnergy = 0;
-            ref5 = this.parts;
             results = [];
-            for (x = 0, len5 = ref5.length; x < len5; x++) {
-                part = ref5[x];
+
+            for (let i = 0; i < this.parts.length; i++) {
+                part = this.parts[i];
                 if (part.fireEnergy > 0) {
                     results.push(this.fireEnergy += part.fireEnergy);
                 } else {
@@ -295,7 +302,7 @@
         };
 
         Unit.prototype.toSpecObj = function () {
-            var j, len, part, partSpec, ref, specParts;
+            let j, len, part, partSpec, ref, specParts;
             specParts = [];
             ref = this.parts;
             for (j = 0, len = ref.length; j < len; j++) {
@@ -325,7 +332,7 @@
         };
 
         Unit.prototype.computeCenter = function () {
-            var ix, iy, j, len, mass, part, ref;
+            let ix, iy, j, len, mass, part, ref;
             ix = 0;
             iy = 0;
             mass = 0;
@@ -346,7 +353,7 @@
         };
 
         Unit.prototype.computeRadius = function () {
-            var j, len, part, radius, ref, results, v;
+            let j, len, part, radius, ref, results, v;
             v = v2.create();
             ref = this.parts;
             results = [];
@@ -368,12 +375,12 @@
         };
 
         Unit.prototype.computeBoundary = function () {
-            var diffCross, extend, findPartPoints, left, max, min, points, right, split, u, v;
+            let diffCross, extend, findPartPoints, left, max, min, points, right, split, u, v;
             findPartPoints = (function (_this) {
                 return function () {
-                    var fn1, j, l, len, len1, p, part, partPoints, ref, rst;
+                    let fn1, j, l, len, len1, p, part, partPoints, ref, rst;
                     partPoints = function (part) {
-                        var size;
+                        let size;
                         if (part.dir % 2 === 0) {
                             size = [part.size[0], part.size[1]];
                         } else {
@@ -414,7 +421,7 @@
                 })[0];
             };
             split = function (u, v, points) {
-                var p;
+                let p;
                 return (function () {
                     var j, len, results;
                     results = [];
@@ -428,7 +435,7 @@
                 })();
             };
             extend = function (u, v, points) {
-                var p1, p2, w;
+                let p1, p2, w;
                 if (!(points != null ? points.length : void 0)) {
                     return [];
                 }
@@ -452,7 +459,7 @@
         };
 
         Unit.prototype.computeBoundPoints = function () {
-            var p, toWorld;
+            let p, toWorld;
             sim.timeStart("computeBoundPoints");
             toWorld = (function (_this) {
                 return function (from) {
@@ -463,7 +470,7 @@
                 };
             })(this);
             this.boundPoints = (function () {
-                var j, len, ref, results;
+                let j, len, ref, results;
                 ref = this.boundPointsLocal;
                 results = [];
                 for (j = 0, len = ref.length; j < len; j++) {
@@ -508,7 +515,7 @@
         };
 
         Unit.prototype.postDeath = function () {
-            var j, len, part, ref;
+            let j, len, part, ref;
             ref = this.parts;
             for (j = 0, len = ref.length; j < len; j++) {
                 part = ref[j];
@@ -520,7 +527,7 @@
         };
 
         Unit.prototype.createDebree = function () {
-            var exp, j, len, part, ref, results;
+            let exp, j, len, part, ref, results;
             ref = this.parts;
             results = [];
             for (j = 0, len = ref.length; j < len; j++) {
@@ -569,7 +576,7 @@
         };
 
         Unit.prototype.tick = function () {
-            var burnTick, cloakOn, cloakRange, exp, j, killer, l, len, len1, len2, n, p, part, penalty, ref, ref1, ref2,
+            let burnTick, cloakOn, cloakRange, exp, j, killer, l, len, len1, len2, o, p, part, penalty, ref, ref1, ref2,
                 ref3, ref4, speed, target;
             ref = this.parts;
             for (j = 0, len = ref.length; j < len; j++) {
@@ -653,7 +660,7 @@
                     this.cloak = 0;
                 }
             }
-            if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && (sim.serverType === "FFA" && sim.things[this.orders[0].targetId].side !== this.side || sim.things[this.orders[0].targetId].owner !== this.owner)) {
+            if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && (sim.ffa && sim.things[this.orders[0].targetId].side !== this.side || sim.things[this.orders[0].targetId].owner !== this.owner)) {
                 this.target = sim.things[this.orders[0].targetId];
             }
             if (this.energy < -this.genEnergy * 16 * 3) {
@@ -668,8 +675,8 @@
                 }
             }
             ref3 = this.parts;
-            for (n = 0, len2 = ref3.length; n < len2; n++) {
-                part = ref3[n];
+            for (o = 0, len2 = ref3.length; o < len2; o++) {
+                part = ref3[o];
                 part.tick();
             }
             if (this.energy > this.storeEnergy) {
@@ -705,7 +712,7 @@
                 if (this.building) {
                     this.building.dead = true;
                 }
-                if (sim.serverType === "FFA") {
+                if (sim.serverType === "IO") {
                     p = sim.players[this.owner];
                     penalty = Math.round(p.maxMoney * sim.deathPenalty);
                     p.maxMoney = Math.max(p.maxMoney - penalty, sim.defaultMoney);
@@ -714,11 +721,52 @@
                         killer = sim.players[this.lastDamager.owner];
                         if (killer != null) {
                             killer.earnMoney(Math.round(this.cost * .5));
-                            return killer.maxMoney = Math.max(killer.maxMoney, killer.money);
+                            killer.maxMoney = Math.max(killer.maxMoney, killer.money);
                         }
                     }
                 }
             }
+            if (this.weapons.length > 0) {
+                return this.applyNearbyBuffs();
+            }
+        };
+
+        Unit.prototype.applyNearbyBuffs = function () {
+            let applyEffect, buffs, j, l, len, len1, ref, ref1, results, u, w;
+            buffs = {
+                weaponRange: 1,
+                weaponRangeFlat: 0,
+                weaponDamage: 1,
+                weaponEnergyDamage: 1,
+                weaponSpeed: 1,
+                weaponReload: 1,
+                weaponEnergy: 1,
+                noOverkill: false
+            };
+            applyEffect = function (n, effect) {
+                return 1 + (n - 1) * effect;
+            };
+            ref = this.closestFriends;
+            for (j = 0, len = ref.length; j < len; j++) {
+                u = ref[j];
+                if (u.projector && v2.distance(this.pos, u.pos) < parts.ModProjector.prototype.range) {
+                    buffs.weaponRange *= applyEffect(u.projector.weaponRange, u.effect);
+                    buffs.weaponRangeFlat += u.projector.weaponRangeFlat * u.effect;
+                    buffs.weaponDamage *= applyEffect(u.projector.weaponDamage, u.effect);
+                    buffs.weaponEnergyDamage *= applyEffect(u.projector.weaponDamage, u.effect);
+                    buffs.weaponSpeed *= applyEffect(u.projector.weaponSpeed, u.effect);
+                    buffs.weaponReload *= applyEffect(u.projector.weaponReload, u.effect);
+                    buffs.weaponEnergy *= applyEffect(u.projector.weaponEnergy, u.effect);
+                    buffs.noOverkill |= u.projector.noOverkill;
+                }
+            }
+            ref1 = this.weapons;
+            results = [];
+            for (l = 0, len1 = ref1.length; l < len1; l++) {
+                w = ref1[l];
+                results.push(w.applyAdditionalBuffs(buffs));
+            }
+            return results;
         };
 
         Unit.prototype.canBuildHere = function () {
@@ -733,11 +781,11 @@
         };
 
         Unit.prototype.movement = function () {
-            var curspeed, s;
+            let current_speed, s;
             this.runOrders();
             v2.scale(this.vel, this.stopFriction);
-            curspeed = v2.mag(this.vel);
-            if (curspeed < .01) {
+            current_speed = v2.mag(this.vel);
+            if (current_speed < .01) {
                 this.vel[0] = 0;
                 this.vel[1] = 0;
             } else {
@@ -759,7 +807,7 @@
         };
 
         Unit.prototype.lookAt = function (goto) {
-            var rot;
+            let rot;
             v2.sub(goto, this.pos, _where);
             rot = v2.angle(_where);
             if (rot != null) {
@@ -768,7 +816,7 @@
         };
 
         Unit.prototype.moveTo = function (goto, noStop) {
-            var arriveIn, c, curspeed, force, j, len, part, ratio, ref, rot, stopSpeed, turnIn;
+            let arriveIn, c, curspeed, force, j, len, part, ratio, ref, rot, stopSpeed, turnIn;
             if (noStop == null) {
                 noStop = false;
             }
@@ -819,7 +867,7 @@
         };
 
         Unit.prototype.closestEnemy = function () {
-            var enemy, j, len, ref, u;
+            let enemy, j, len, ref, u;
             enemy = null;
             ref = this.closestEnemies;
             for (j = 0, len = ref.length; j < len; j++) {
@@ -833,7 +881,7 @@
         };
 
         Unit.prototype.closestUncloaked = function (range) {
-            var enemyC, j, len, ref, u;
+            let enemyC, j, len, ref, u;
             enemyC = null;
             ref = this.closestEnemies;
             for (j = 0, len = ref.length; j < len; j++) {
@@ -850,7 +898,7 @@
         };
 
         Unit.prototype.idleAI = function () {
-            var dist, lookAt, rot, target;
+            let dist, lookAt, rot, target;
             if (this.target) {
                 this.softTarget = this.target;
             } else if (sim.step % 16 === 0) {
@@ -861,7 +909,7 @@
                 }
             }
             if (this.softTarget && this.minArc < 360) {
-                lookAt = this.softTarget.unit ? closestPointOnPolygon(this.pos, this.softTarget.getBoundPoints()) : this.softTarget.pos;
+                lookAt = this.softTarget.pos;
                 v2.sub(lookAt, this.pos, _where);
                 rot = v2.angle(_where);
                 if (Math.abs(this.rot - rot) > .02) {
@@ -872,7 +920,7 @@
         };
 
         Unit.prototype.draw = function () {
-            var a, color, j, l, len, len1, part, partNum, r, ref, ref1, s, t, value;
+            let a, color, j, l, len, len1, part, partNum, r, ref, ref1, s, t, value;
             if (this.dead) {
                 return;
             }
@@ -886,19 +934,19 @@
             }
 
             /*
-      drawLine = (from, to) ->
-          offset = v2.create()
-          v2.sub(to, from, offset)
-          rot = v2.angle(offset)
-          d = v2.mag(offset) / 380
-          v2.scale(offset, .5)
-          v2.add(offset, from)
-          baseAtlas.drawSpirte("img/laser01.png", offset, [.2, d], rot, [0, 255, 0, 255]);
+            drawLine = (from, to) ->
+                offset = v2.create()
+                v2.sub(to, from, offset)
+                rot = v2.angle(offset)
+                d = v2.mag(offset) / 380
+                v2.scale(offset, .5)
+                v2.add(offset, from)
+                baseAtlas.drawSpirte("img/laser01.png", offset, [.2, d], rot, [0, 255, 0, 255]);
 
-      for i in [0 ... @boundPoints.length]
-          j = (i + 1) % @boundPoints.length
-          drawLine(@boundPoints[i], @boundPoints[j])
-       */
+            for i in [0 ... @boundPoints.length]
+                j = (i + 1) % @boundPoints.length
+                drawLine(@boundPoints[i], @boundPoints[j])
+             */
             if (this.maxShield > 0) {
                 s = this.warpIn * 2 - 1;
                 if (s > 0) {
@@ -919,7 +967,7 @@
                 } else if (value > -0.2) {
                     a = -Math.sin(value / Math.PI * 50);
                     baseAtlas.drawSprite("img/unitBar/fire02.png", part.worldPos, [1, 1], 0, [255, 255, 255, 255 * a]);
-                    continue;
+
                 }
             }
             if (this.energy / this.storeEnergy < .05) {
@@ -960,7 +1008,6 @@
                 exp.maxLife = 100;
                 exp._pos = v2.create(exp.pos);
                 exp._pos2 = v2.create(exp.pos);
-                exp.rot = exp.rot;
                 exp._rot = exp.rot;
                 exp._rot2 = exp.rot;
                 return intp.particles[exp.id] = exp;
@@ -968,7 +1015,7 @@
         };
 
         Unit.prototype.clientTick = function () {
-            var cloakOn, cloakRange, j, len, ref, w;
+            let cloakOn, cloakRange, j, len, ref, w;
             ref = this.weapons;
             for (j = 0, len = ref.length; j < len; j++) {
                 w = ref[j];
@@ -990,7 +1037,7 @@
         };
 
         Unit.prototype.thumb = function () {
-            var image_data_url, j, k, len, part, ref, ref1, scale;
+            let image_data_url, j, k, len, part, ref, ref1, scale;
             k = JSON.stringify(this.spec) + this.color;
             if (!thumb_cache[k]) {
                 baseAtlas.startOffscreenFrame();
@@ -1017,7 +1064,7 @@
         };
 
         Unit.prototype.drawSelection = function () {
-            var alpha, angle, distance, i, j, len, order, orders, prev, results, target;
+            let alpha, angle, distance, i, j, len, order, orders, prev, results, target;
             this.drawHPBar();
             this.drawEnergyBar();
             if (this.holdPosition) {
@@ -1068,7 +1115,7 @@
         };
 
         Unit.prototype.drawEnergyBar = function () {
-            var color, healthScale, i, j, max, number, pipScale, ref, results, s;
+            let color, healthScale, i, j, max, number, pipScale, ref, results, s;
             max = this.storeEnergy;
             if (max < 30000) {
                 healthScale = 1000;
@@ -1095,7 +1142,7 @@
         };
 
         Unit.prototype.drawHPBar = function () {
-            var burnColor, color, healthScale, i, j, max, number, pipScale, ref, results, s;
+            let burnColor, color, healthScale, i, j, max, number, pipScale, ref, results, s;
             burnColor = colors.blackOrWhite(this.color);
             max = this.maxHP + this.maxShield;
             if (max < 300) {
@@ -1168,7 +1215,7 @@
         };
 
         Unit.prototype.hasHumanOrder = function () {
-            var j, len, order, ref;
+            let j, len, order, ref;
             ref = this.orders;
             for (j = 0, len = ref.length; j < len; j++) {
                 order = ref[j];
@@ -1192,7 +1239,7 @@
         };
 
         Unit.prototype.runOrders = function () {
-            var running, topOrder;
+            let running, topOrder;
             if (this.dead || this.orders.length === 0) {
                 return;
             }
@@ -1209,7 +1256,7 @@
         };
 
         Unit.prototype.runOrder = function (order) {
-            var canTarget, dest, dist, pos, range, ref, target;
+            let canTarget, dest, dist, pos, range, ref, target;
             switch (order.type) {
                 case "Follow":
                     target = sim.things[order.targetId];
@@ -1217,7 +1264,7 @@
                         this.target = null;
                         return false;
                     }
-                    canTarget = target.side !== this.side || sim.serverType === "FFA" && target.owner !== this.owner;
+                    canTarget = target.side !== this.side || sim.ffa && target.owner !== this.owner;
                     if (canTarget) {
                         this.target = target;
                     }
@@ -1280,7 +1327,7 @@
         };
 
         Unit.prototype.selfDestruct = function () {
-            if (sim.serverType === "FFA") {
+            if (sim.serverType === "IO") {
                 this.cooldown = 16 * (this.cost / 300 + 2);
             }
             return this.hp = 0;
@@ -1300,7 +1347,7 @@
         };
 
         Unit.prototype.moveWithinRange = function (pos, range, noStop) {
-            var dist, jumpDist, jumpVec, needDist;
+            let dist, jumpDist, jumpVec, needDist;
             dist = v2.distance(this.pos, pos);
             if (dist < range || (noStop && dist <= this.maxSpeed)) {
                 if (noStop || !this.shouldLookAt(pos)) {
@@ -1336,7 +1383,7 @@
         };
 
         Unit.prototype.shouldLookAt = function (pos) {
-            var dif, rot;
+            let dif, rot;
             dif = v2.create();
             v2.sub(pos, this.pos, dif);
             if (v2.mag(dif) < 0.1) {
@@ -1375,7 +1422,7 @@
         Part.prototype.opacity = 1;
 
         Part.prototype.flippedSize = function () {
-            var xsize, ysize;
+            let xsize, ysize;
             xsize = this.size[0];
             ysize = this.size[1];
             if (this.dir % 2 === 0) {
@@ -1399,7 +1446,7 @@
         };
 
         Part.prototype.draw = function () {
-            var alpha, angle, c, flip, id, num, numParts, rot, showDamage, t;
+            let alpha, angle, c, flip, id, num, numParts, rot, showDamage, t;
             if (this.pos[0] < 0 && this.flip) {
                 flip = -1;
             } else {
@@ -1550,12 +1597,13 @@
             this.pos = v2.create();
             this.worldPos = v2.create();
             this.orignalImage = this.image;
+            this.baseStats = {};
             this._rot = 0;
             this._rot2 = 0;
         }
 
         Turret.prototype.init = function () {
-            var j, len, part, ref, results;
+            let j, len, part, ref, results;
             ref = this.unit.parts;
             results = [];
             for (j = 0, len = ref.length; j < len; j++) {
@@ -1572,6 +1620,7 @@
         };
 
         Turret.prototype.applyBuffs = function () {
+            let j, len, ref, results, s;
             this.range *= this.weaponRange;
             this.range += this.weaponRangeFlat;
             this.damage *= this.weaponDamage;
@@ -1581,11 +1630,31 @@
             this.shotEnergy *= this.weaponEnergy;
             this.reloadTime = Math.ceil(this.reloadTime);
             this.fireEnergy = this.shotEnergy / this.reloadTime;
+            this.dps = this.damage / this.reloadTime;
+            ref = ["range", "damage", "energyDamage", "bulletSpeed", "reloadTime", "shotEnergy", "noOverkill"];
+            results = [];
+            for (j = 0, len = ref.length; j < len; j++) {
+                s = ref[j];
+                results.push(this.baseStats[s] = this[s]);
+            }
+            return results;
+        };
+
+        Turret.prototype.applyAdditionalBuffs = function (buffs) {
+            this.range = this.baseStats.range * buffs.weaponRange + buffs.weaponRangeFlat;
+            this.damage = this.baseStats.damage * buffs.weaponDamage;
+            this.energyDamage = this.baseStats.energyDamage * buffs.weaponDamage;
+            this.bulletSpeed = this.baseStats.bulletSpeed * buffs.weaponSpeed;
+            this.reloadTime = this.baseStats.reloadTime * buffs.weaponReload;
+            this.shotEnergy = this.baseStats.shotEnergy * buffs.weaponEnergy;
+            this.noOverkill = buffs.noOverkill;
+            this.reloadTime = Math.ceil(this.reloadTime);
+            this.fireEnergy = this.shotEnergy / this.reloadTime;
             return this.dps = this.damage / this.reloadTime;
         };
 
         Turret.prototype.tick = function () {
-            var angle, halfArc;
+            let angle, halfArc;
             if (this.reload > 0) {
                 this.reload -= 1;
             }
@@ -1627,10 +1696,11 @@
         };
 
         Turret.prototype.clientTick = function () {
-            var ditance, ref, target, th;
+            let distance, ref, target, th;
             target = intp.things[this.targetId];
             if (target) {
-                ref = this.aim(target), th = ref[0], ditance = ref[1];
+                ref = this.aim(target), th = ref[0];
+                distance = ref[1];
                 this._rot = th;
             } else {
                 return this._rot = turnAngle(this._rot, this.unit.rot, 0.075);
@@ -1638,31 +1708,27 @@
         };
 
         Turret.prototype.aim = function (thing) {
-            var aimPos, c, check, current_time, d, do_pos, j, max_time, mdown, miss, mup, p, predicted_pos, radius, th;
+            let c, check, current_time, d, do_pos, j, max_time, mdown, miss, mup, p, predicted_pos, radius, th;
             if (thing.unit) {
-                aimPos = closestPointOnPolygon(this.worldPos, thing.getBoundPoints());
                 radius = 0;
-            }
-            if (!aimPos) {
-                aimPos = thing.pos;
+            } else {
                 radius = thing.radius;
             }
             if (this.instant) {
-                p = aimPos;
+                p = thing.pos;
                 predicted_pos = [p[0] - this.worldPos[0], p[1] - this.worldPos[1]];
                 th = v2.angle(predicted_pos);
                 return [th, v2.mag(predicted_pos) - radius];
             }
             do_pos = (function (_this) {
                 return function (t) {
-                    var v;
-                    v = thing.vel;
-                    return [aimPos[0] - _this.worldPos[0] + v[0] * t, aimPos[1] - _this.worldPos[1] + v[1] * t];
+                    let v = thing.vel;
+                    return [thing.pos[0] - _this.worldPos[0] + v[0] * t, thing.pos[1] - _this.worldPos[1] + v[1] * t];
                 };
             })(this);
             check = (function (_this) {
                 return function (t) {
-                    var miss, predicted_range;
+                    let miss, predicted_range;
                     predicted_pos = do_pos(t);
                     predicted_range = v2.mag(predicted_pos) - radius;
                     miss = Math.abs(predicted_range - _this.bulletSpeed * t);
@@ -1708,7 +1774,7 @@
             if (this.unit.id === other.id) {
                 return false;
             }
-            if (this.unit.side === other.side && (sim.serverType !== "FFA" || this.unit.owner === other.owner)) {
+            if (this.unit.side === other.side && (!sim.ffa || this.unit.owner === other.owner)) {
                 return false;
             }
             if (other.missile && other.explode === false) {
@@ -1727,6 +1793,9 @@
                 }
             }
             ref = this.aim(other), th = ref[0], aimDistance = ref[1];
+            if (other.unit) {
+                aimDistance = closestDistance(other.getBoundPoints(), [this.worldPos]);
+            }
             if (aimDistance < this.minRange || aimDistance > this.range) {
                 return false;
             }
@@ -1736,15 +1805,13 @@
             }
             if (this.noOverkill) {
                 if (this.unit.target) {
-                    if (this.unit.target.id === other.id) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return this.unit.target.id === other.id;
                 }
+
                 if (other.maxHP * 2 < this.damage) {
                     return false;
                 }
+
                 if (this.energyDamage && other.storeEnergy * 2 < this.energyDamage) {
                     return false;
                 }
@@ -1753,7 +1820,7 @@
         };
 
         Turret.prototype.findTarget = function () {
-            var j, l, len, len1, m, ref, ref1, results, u;
+            let j, l, len, len1, m, ref, ref1, results, u;
             if (this.unit.target && !this.hitsMissiles) {
                 this.target = this.unit.target;
                 return;
@@ -1787,7 +1854,7 @@
         };
 
         Turret.prototype.fire = function () {
-            var angleLeft, dist, ref, rot;
+            let angleLeft, dist, ref, rot;
             ref = this.aim(this.target), rot = ref[0], dist = ref[1];
             this.rot = turnAngle(this.rot, rot, 1);
             angleLeft = angleBetween(this.rot, rot);
@@ -1800,7 +1867,7 @@
         };
 
         Turret.prototype.makeBullet = function (distance) {
-            var exp, particle;
+            let exp, particle;
             this.unit.cloak = 0;
             particle = new this.bulletCls();
             sim.things[particle.id] = particle;
@@ -1864,7 +1931,7 @@
     legacyParts = [null, "Mount360", "Mount180", "Mount270", "Mount90", "Mount30", "HArmor2x2", "HArmor1x2", "HArmor1x1", "HArmor2x1", "HArmor1x1Angle", "UArmor1x1", "UArmor1x2", "UArmor2x1", "UArmor1x1Angle", "Reactor2x2", "Reactor1x2", "Reactor1x1", "Reactor2x1", "EnergyTransfer", "ShieldGen2x2", "ShieldGen2x1", "Battery1x2", "Battery1x1", "Battery2x1", "Battery2x2", "Engine01", "Engine02", "Engine03", "Engine04", "Engine05", "Engine06", "Engine07", "HArmor2x2Front1", "HArmor2x2Front2", "HArmor1x2Font1", "HArmor1x2Front2", "HArmor2x2Back1", "HArmor2x2Back2", "HArmor1x2Back1", "HArmor1x2Back2", "Wing1x2", "Wing2x2", "Wing2x1", "Wing1x1Notch", "Wing1x1Angle", "Wing1x1Round", "PDTurret", "HeavyPDTurret", "RingTurret", "TorpTurret", "MissileTurret", "ArtilleryTurret", "PlasmaTurret", "LightBeamTurret", "HeavyBeamTurret", "FlackTurret", "SniperGun", "EMPGun", "AOEWarhead", "TargetingMod", "DamageMod", "ReloaderMod", "BulletSpeedMod", "Ai1", "OverKillAi", "Ai3", "Ai4", "ShapedWarhead", "BombGun", "HArmor1x1AngleBack", "UArmor1x1AngleBack", "HArmor2x2Angle", "HArmor2x2AngleBack", "VArmor1x2SideBar", "VArmor1x2SideBarFilled", "VArmor1x2IBeam", "VArmor1x2Corner4", "VArmor1x2End", "VArmor1x1Corner1", "VArmor1x1Corner2", "VArmor1x1Corner3", "VArmor1x1Hook", "VArmor1x1CornerBack", "Mount360Micro", "AutoTurret", "TeslaTurret", "WavePullTurret", "ShieldGen1x1", "WavePushTurret", "CloakGenerator", "SymbolDecal1", "SymbolDecal2", "SymbolDecal3", "SymbolDecal4", "SymbolDecal5", "SymbolDecal6", "SymbolDecal7", "SymbolDecal8", "SymbolDecal9", "SymbolDecal10", "SymbolDecal11", "SymbolDecal12", "SymbolDecal13", "SymbolDecal14", "SymbolDecal15", "SymbolDecal16", "SymbolDecal17", "SymbolDecal18", "SymbolDecal19", "SymbolDecal20", "SymbolDecal21", "SymbolDecal22", "SymbolDecal23", "SymbolDecal24", null, null, null, null, null, "UArmor2x2", "UArmor1x2Notch1", "UArmor1x2Notch2", "UArmor1x1Notch1", "UArmor1x1Notch2", "UArmor1x1Spike", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "VArmor2x2", "VArmor1x2", "VArmor1x1", "VArmor1x1Angle", "VArmor2x2Angle", "VArmor2x2Curve", "VArmor1x1Curve", null, null, null, "HAarmor1x2Curved", "HArmor2x2Curved", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "Stripe1x1", "Stripe1x1Corner", "Stripe1x2", "Stripe2x1", "Stripe2x2", "Stripe2x2Corner", "Stripe2x2Round", "StripeDouble2x1", "StripeDouble2x2", null, null, null, null, null, null, null, null, null, null, null, "LetterA", "LetterB", "LetterC", "LetterD", "LetterE", "LetterF", "LetterG", "LetterH", "LetterI", "LetterJ", "LetterK", "LetterL", "LetterM", "LetterN", "LetterO", "LetterP", "LetterQ", "LetterR", "LetterS", "LetterT", "LetterU", "LetterV", "LetterW", "LetterX", "LetterY", "LetterZ", "LetterPound", "LetterDot", null, null, "Letter0", "Letter1", "Letter2", "Letter3", "Letter4", "Letter5", "Letter6", "Letter7", "Letter8", "Letter9", "DroneBody", "Mount10Range", "FlameTurret", "StasisField", "Faction2", "Faction3", "Faction4", "Faction5", "Faction6", "Faction7", "Faction1", null, null, null, null];
 
     window.fromShort = function (rawShort) {
-        var bin, e, i, j, ref, short, spec, type;
+        let bin, e, i, j, ref, short, spec, type;
         if (!rawShort) {
             return {
                 parts: []
@@ -1913,7 +1980,7 @@
     };
 
     window.specCost = function (spec) {
-        var cost, j, len, part, partCls, ref;
+        let cost, j, len, part, partCls, ref;
         cost = 0;
         if (!Array.isArray(spec)) {
             spec = fromShort(spec);
@@ -1930,6 +1997,3 @@
     };
 
 }).call(this);
-;
-
-

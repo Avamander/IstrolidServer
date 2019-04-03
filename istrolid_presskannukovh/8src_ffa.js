@@ -22,7 +22,7 @@
         },
         hasProp = {}.hasOwnProperty;
 
-    window.modes.FFA = (function (superClass) {
+    modes.FFA = (function (superClass) {
         extend(FFA, superClass);
 
         function FFA() {
@@ -30,19 +30,9 @@
             return FFA.__super__.constructor.apply(this, arguments);
         }
 
-        FFA.prototype.defaultMoney = 80;
+        FFA.prototype.ffa = true;
 
-        FFA.prototype.moneyInc = 100;
-
-        FFA.prototype.serverType = "FFA";
-
-        FFA.prototype.victoryGoal = 2000;
-
-        FFA.prototype.deathPenalty = 0.2;
-
-        FFA.prototype.numComPoints = 16;
-
-        FFA.prototype.mapScale = 1.2;
+        FFA.prototype.numComPoints = 13;
 
         FFA.prototype.init = function () {
             var i, len, p, ref, results;
@@ -57,66 +47,52 @@
             return results;
         };
 
-        FFA.prototype.start = function () {
-            var _, i, len, p, ref, results, spawns, t;
-            FFA.__super__.start.call(this);
-            ref = this.players;
-            results = [];
-            for (i = 0, len = ref.length; i < len; i++) {
-                p = ref[i];
-                p.maxMoney = this.defaultMoney;
-                spawns = (function () {
-                    var ref1, results1;
-                    ref1 = this.things;
-                    results1 = [];
-                    for (_ in ref1) {
-                        t = ref1[_];
-                        if (t.spawn === p.side) {
-                            results1.push(t);
-                        }
-                    }
-                    return results1;
-                }).call(this);
-                if (spawns.length > 0) {
-                    results.push(p.usingSpawn = spawns[Math.floor(Math.random() * spawns.length)]);
-                } else {
-                    results.push(void 0);
-                }
-            }
-            return results;
+        FFA.prototype.surrender = function (player) {
         };
 
         FFA.prototype.spacesRebuild = function () {
-            var _, ref, results, t;
-            this.unitSpaces = {
-                'alpha': new HSpace(500),
-                'beta': new HSpace(500)
-            };
-            this.bulletSpaces = {
-                'alpha': new HSpace(100),
-                'beta': new HSpace(100)
-            };
-            this.maxRadius = 0;
+            var _, bspace, i, len, maxr, p, ref, ref1, results, t, uspace;
+            uspace = new HSpace(500);
+            bspace = new HSpace(100);
+            maxr = 0;
             ref = this.things;
-            results = [];
             for (_ in ref) {
                 t = ref[_];
                 if (t.dead) {
                     continue;
                 }
                 if (t.unit) {
-                    this.unitSpaces["alpha"].insert(t);
-                    this.unitSpaces["beta"].insert(t);
-                    if (t.radius > this.maxRadius) {
-                        this.maxRadius = t.radius;
+                    uspace.insert(t);
+                    if (t.radius > maxr) {
+                        maxr = t.radius;
                     }
                 }
                 if (t.bullet) {
-                    this.bulletSpaces["alpha"].insert(t);
-                    results.push(this.bulletSpaces["beta"].insert(t));
-                } else {
-                    results.push(void 0);
+                    bspace.insert(t);
                 }
+            }
+            this.unitSpaces = {
+                alpha: uspace,
+                beta: uspace
+            };
+            this.bulletSpaces = {
+                alpha: bspace,
+                beta: uspace
+            };
+            this.maxRadius = {
+                alpha: maxr,
+                beta: maxr
+            };
+            ref1 = this.players;
+            results = [];
+            for (i = 0, len = ref1.length; i < len; i++) {
+                p = ref1[i];
+                if (p.side === "spectators") {
+                    continue;
+                }
+                this.unitSpaces[p.side] = uspace;
+                this.bulletSpaces[p.side] = bspace;
+                results.push(this.maxRadius[p.side] = maxr);
             }
             return results;
         };
@@ -145,53 +121,112 @@
             return player.lastActiveTime = Date.now();
         };
 
-        FFA.prototype.canStart = function (sayStyff) {
-            if (sayStyff == null) {
-                sayStyff = false;
+        FFA.prototype.startGame = function (player, real) {
+            if (real == null) {
+                real = false;
             }
-            if (this.numInTeam("alpha") >= 1) {
+            if (FFA.__super__.startGame.call(this, player, real)) {
+                this.say("For better gameplay either install the FFA UI script");
+                this.say("or use https://presskannuk.ovh (if you're in the EU)");
+                this.say("https://gist.github.com/Rio6/df4b990ddd0d25f9ad3b48e0fc8d0f35");
+                return;
+            }
+        };
+
+        FFA.prototype.start = function () {
+            let i, len, p, ref;
+            ref = this.players;
+            for (i = 0, len = ref.length; i < len; i++) {
+                p = ref[i];
+                if (p.side === "alpha") {
+                    p.side = p.name;
+                }
+            }
+            return FFA.__super__.start.call(this);
+        };
+
+        FFA.prototype.canStart = function (sayStuff) {
+            if (sayStuff == null) {
+                sayStuff = false;
+            }
+
+            if (this.numInTeam("alpha") > 1) {
                 return true;
             }
+
             this.say("Not enough players");
             return false;
         };
 
-        FFA.prototype.surrender = function (player) {
-        };
-
         FFA.prototype.victoryConditions = function () {
-            var i, j, len, len1, player, ref, ref1, stillThere;
+            let _, i, len, p, players, ref, spawns, t;
             if (this.state !== "running") {
                 return;
             }
+            players = [];
             ref = this.players;
             for (i = 0, len = ref.length; i < len; i++) {
-                player = ref[i];
-                if (player.connected && !player.afk && player.side !== "spectators" && player.money >= this.victoryGoal) {
-                    this.winningSide = player.name;
-                    this.endOfGame();
+                p = ref[i];
+                if (p.side === "spectators") {
+                    continue;
+                }
+                spawns = (function () {
+                    var ref1, results;
+                    ref1 = this.things;
+                    results = [];
+                    for (_ in ref1) {
+                        t = ref1[_];
+                        if (t.spawn === p.side) {
+                            results.push(t);
+                        }
+                    }
+                    return results;
+                }).call(this);
+                if (spawns.length !== p.lastSpawnCount) {
+                    if (spawns.length === 0) {
+                        this.say(p.name + " lost their spawn");
+                    }
+                    p.lastSpawnCount = spawns.length;
+                }
+                if (spawns.length > 0) {
+                    players.push(p);
                 }
             }
-            if (!this.local && !this.aiTestMode) {
-                stillThere = false;
-                ref1 = this.players;
-                for (j = 0, len1 = ref1.length; j < len1; j++) {
-                    player = ref1[j];
-                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
-                        stillThere = true;
-                    }
-                }
-                if (!stillThere) {
+            if (players.length === 1) {
+                this.winningSide = players[0].side;
+            } else if (players.length === 0) {
+                if (!this.local && !this.aiTestMode) {
+                    this.say("Every one left. Ending game.");
                     this.winningSide = false;
                     this.endOfGame();
+                    return;
                 }
             }
+            if (this.winningSide) {
+                this.endOfGame();
+            } else if (this.step > 16 * 60 * 30) {
+                this.winningSide = false;
+                this.endOfGame();
+            }
+        };
+
+        FFA.prototype.endOfGame = function () {
+            let i, len, p, ref, results;
+            FFA.__super__.endOfGame.call(this);
+            ref = this.players;
+            results = [];
+            for (i = 0, len = ref.length; i < len; i++) {
+                p = ref[i];
+                if (p.side === "spectators") {
+                    continue;
+                }
+                results.push(p.side = "alpha");
+            }
+            return results;
         };
 
         return FFA;
 
-    })(window.Sim);
+    })(Sim);
 
 }).call(this);
-
-

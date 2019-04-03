@@ -22,7 +22,7 @@
     v2.created = 0;
 
     v2.create = function (a) {
-        var d;
+        let d;
         v2.created += 1;
         d = new nums(2);
         if (a != null) {
@@ -81,7 +81,7 @@
     };
 
     v2.norm = function (a, d) {
-        var len, x, y;
+        let len, x, y;
         if (d == null) {
             d = a;
         }
@@ -122,7 +122,7 @@
     };
 
     v2.mag = function (v) {
-        var x, y;
+        let x, y;
         x = v[0];
         y = v[1];
         return Math.sqrt(x * x + y * y);
@@ -149,7 +149,7 @@
     };
 
     v2.distanceSq = function (from, to) {
-        var x, y;
+        let x, y;
         x = to[0] - from[0];
         y = to[1] - from[1];
         return x * x + y * y;
@@ -171,7 +171,7 @@
     };
 
     v2.rotate = function (v, th, d) {
-        var cos, sin, v0, v1;
+        let cos, sin, v0, v1;
         if (d == null) {
             d = v;
         }
@@ -197,8 +197,7 @@
     window.v3 = v3 = {};
 
     v3.create = function (a) {
-        var d;
-        d = new nums(3);
+        let d = new nums(3);
         if (a != null) {
             d[0] = a[0];
             d[1] = a[1];
@@ -262,7 +261,7 @@
     };
 
     v3.norm = function (a, d) {
-        var len, x, y, z;
+        let len, x, y, z;
         if (d == null) {
             d = a;
         }
@@ -288,7 +287,7 @@
     };
 
     v3.cross = function (a, b, d) {
-        var x, y, z;
+        let x, y, z;
         if (d == null) {
             d = a;
         }
@@ -302,7 +301,7 @@
     };
 
     v3.angle = function (a, b) {
-        var cosa, cross, mg, sina, th;
+        let cosa, cross, mg, sina, th;
         mg = v3.mag(a) * v3.mag(b);
         cross = v3.cross(a, b, v3.create());
         sina = v3.mag(cross);
@@ -314,7 +313,7 @@
     };
 
     v3.mag = function (v) {
-        var x, y, z;
+        let x, y, z;
         x = v[0];
         y = v[1];
         z = v[2];
@@ -335,7 +334,7 @@
     };
 
     v3.distance = function (from, to) {
-        var x, y, z;
+        let x, y, z;
         x = to[0] - from[0];
         y = to[1] - from[1];
         z = to[2] - from[2];
@@ -366,7 +365,7 @@
     window.v4 = v4 = {};
 
     v4.create = function (a) {
-        var d;
+        let d;
         d = new nums(4);
         if (a != null) {
             d[0] = a[0];
@@ -384,7 +383,7 @@
     window.m3 = m3 = {};
 
     m3.create = function (m) {
-        var d;
+        let d;
         d = new nums(9);
         if (m) {
             d[0] = m[0];
@@ -427,7 +426,7 @@
     };
 
     m3.transpose = function (m, d) {
-        var a01, a02, a12;
+        let a01, a02, a12;
         if ((d == null) || m === d) {
             a01 = m[1];
             a02 = m[2];
@@ -482,7 +481,7 @@
     window.m4 = m4 = {};
 
     m4.create = function (m) {
-        var d;
+        let d;
         d = new nums(16);
         if (m) {
             d[0] = m[0];
@@ -546,7 +545,7 @@
     };
 
     m4.transpose = function (m, d) {
-        var a01, a02, a03, a12, a13, a23;
+        let a01, a02, a03, a12, a13, a23;
         if (!d || m === d) {
             a01 = m[1];
             a02 = m[2];
@@ -588,7 +587,7 @@
     };
 
     m4.determinant = function (m) {
-        var a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33;
+        let a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33;
         a00 = m[0];
         a01 = m[1];
         a02 = m[2];
@@ -609,7 +608,7 @@
     };
 
     m4.inverse = function (m, d) {
-        var a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33, b00, b01, b02, b03, b04,
+        let a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33, b00, b01, b02, b03, b04,
             b05, b06, b07, b08, b09, b10, b11, invDet;
         if (d == null) {
             d = m;
@@ -702,7 +701,7 @@
     };
 
     m4.to_inv_m3 = function (m, d) {
-        var a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21, det, id;
+        let a00, a01, a02, a10, a11, a12, a20, a21, a22, b01, b11, b21, det, id;
         a00 = m[0];
         a01 = m[1];
         a02 = m[2];
@@ -736,7 +735,7 @@
     };
 
     m4.mul = function (m, m2, d) {
-        var a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33, b00, b01, b02, b03, b10,
+        let a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33, b00, b01, b02, b03, b10,
             b11, b12, b13, b20, b21, b22, b23, b30, b31, b32, b33;
         if (d == null) {
             d = m;
@@ -793,7 +792,7 @@
     };
 
     m4.mul_v3 = function (m, v, d) {
-        var x, y, z;
+        let x, y, z;
         if (d == null) {
             d = v;
         }
@@ -834,7 +833,7 @@
     };
 
     m4.distance = function (a, b) {
-        var x, y, z;
+        let x, y, z;
         x = a[12] - b[12];
         y = a[13] - b[13];
         z = a[14] - b[14];
@@ -842,7 +841,7 @@
     };
 
     m4.translate = function (m, v, d) {
-        var a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, x, y, z;
+        let a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, x, y, z;
         x = v[0];
         y = v[1];
         z = v[2];
@@ -885,7 +884,7 @@
     };
 
     m4.scale = function (mat, vec, dest) {
-        var x, y, z;
+        let x, y, z;
         x = vec[0];
         y = vec[1];
         z = vec[2];
@@ -924,7 +923,7 @@
     };
 
     m4.create_rot = function (d, angle, axis) {
-        var W, X, Y, Z, cosa, sina, xw, xx, xy, xz, yw, yy, yz, zw, zz;
+        let W, X, Y, Z, cosa, sina, xw, xx, xy, xz, yw, yy, yz, zw, zz;
         sina = Math.sin(angle / 2);
         cosa = Math.cos(angle / 2);
         X = axis[0] * sina;
@@ -955,7 +954,7 @@
     };
 
     m4.set_rot_only = function (d, angle, axis) {
-        var W, X, Y, Z, cosa, sina, xw, xx, xy, xz, yw, yy, yz, zw, zz;
+        let W, X, Y, Z, cosa, sina, xw, xx, xy, xz, yw, yy, yz, zw, zz;
         sina = Math.sin(angle / 2);
         cosa = Math.cos(angle / 2);
         X = axis[0] * sina;
@@ -986,7 +985,7 @@
     };
 
     m4.rotate = function (mat, angle, axis, dest) {
-        var a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, b00, b01, b02, b10, b11, b12, b20, b21, b22, c,
+        let a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, b00, b01, b02, b10, b11, b12, b20, b21, b22, c,
             len, s, t, x, y, z;
         x = axis[0];
         y = axis[1];
@@ -1032,7 +1031,6 @@
             dest[14] = mat[14];
             dest[15] = mat[15];
         }
-        print;
         dest[0] = a00 * b00 + a10 * b01 + a20 * b02;
         dest[1] = a01 * b00 + a11 * b01 + a21 * b02;
         dest[2] = a02 * b00 + a12 * b01 + a22 * b02;
@@ -1049,7 +1047,7 @@
     };
 
     m4.rotateX = function (mat, angle, dest) {
-        var a10, a11, a12, a13, a20, a21, a22, a23, c, s;
+        let a10, a11, a12, a13, a20, a21, a22, a23, c, s;
         s = Math.sin(angle);
         c = Math.cos(angle);
         a10 = mat[4];
@@ -1084,7 +1082,7 @@
     };
 
     m4.rotateY = function (mat, angle, dest) {
-        var a00, a01, a02, a03, a20, a21, a22, a23, c, s;
+        let a00, a01, a02, a03, a20, a21, a22, a23, c, s;
         s = Math.sin(angle);
         c = Math.cos(angle);
         a00 = mat[0];
@@ -1119,7 +1117,7 @@
     };
 
     m4.rotateZ = function (mat, angle, dest) {
-        var a00, a01, a02, a03, a10, a11, a12, a13, c, s;
+        let a00, a01, a02, a03, a10, a11, a12, a13, c, s;
         s = Math.sin(angle);
         c = Math.cos(angle);
         a00 = mat[0];
@@ -1154,7 +1152,7 @@
     };
 
     m4.get_hpr = function (m, v) {
-        var heading, pitch, roll;
+        let heading, pitch, roll;
         if (v == null) {
             v = v3.create();
         }
@@ -1178,7 +1176,7 @@
     };
 
     m4.set_quat = function (dest, w, x, y, z) {
-        var xw, xx, xy, xz, yw, yy, yz, zw, zz;
+        let xw, xx, xy, xz, yw, yy, yz, zw, zz;
         xx = x * x;
         xy = x * y;
         xz = x * z;
@@ -1201,7 +1199,7 @@
     };
 
     m4.frustum = function (left, right, bottom, top, near, far, dest) {
-        var fn, rl, tb;
+        let fn, rl, tb;
         if (dest == null) {
             dest = m4.create();
         }
@@ -1228,14 +1226,14 @@
     };
 
     m4.perspective = function (fovy, aspect, near, far, dest) {
-        var right, top;
+        let right, top;
         top = near * Math.tan(fovy * Math.PI / 360.0);
         right = top * aspect;
         return m4.frustum(-right, right, -top, top, near, far, dest);
     };
 
     m4.ortho = function (left, right, bottom, top, near, far, dest) {
-        var fn, rl, tb;
+        let fn, rl, tb;
         if (dest == null) {
             dest = m4.create();
         }
@@ -1262,7 +1260,7 @@
     };
 
     m4.lookAt = function (eye, center, up, dest) {
-        var centerx, centery, centerz, eyex, eyey, eyez, len, upx, upy, upz, x0, x1, x2, y0, y1, y2, z0, z1, z2;
+        let centerx, centery, centerz, eyex, eyey, eyez, len, upx, upy, upz, x0, x1, x2, y0, y1, y2, z0, z1, z2;
         if (!dest) {
             dest = m4.create();
         }
@@ -1344,5 +1342,3 @@
 
 }).call(this);
 ;
-
-

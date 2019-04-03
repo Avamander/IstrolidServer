@@ -76,7 +76,7 @@
         };
 
         Interpolator.prototype.focusMap = function () {
-            var _, dist, maxDist, ref, thing;
+            let _, dist, maxDist, ref, thing;
             maxDist = 0;
             ref = sim.things;
             for (_ in ref) {
@@ -175,15 +175,15 @@
             }
 
             /*  * uncomment this to debug
-      for _, t of intp.things
-          #baseAtlas.drawSprite("img/pip1.png", t._pos2,  [1,1], 0, [0,255,0,100])
-          #baseAtlas.drawSprite("img/pip1.png", t._pos, [1,1], 0, [255,0,0,100])
-          if t.unit
-              for p in t.testIntp
-                  baseAtlas.drawSprite("img/pip1.png", p, [.2,.2], 0, [255,0,0,100])
-              #for p in t.testStep
-               *    baseAtlas.drawSprite("img/pip1.png", p, [.4,.4], 0, [0,255,0,100])
-       */
+            for _, t of intp.things
+                #baseAtlas.drawSprite("img/pip1.png", t._pos2,  [1,1], 0, [0,255,0,100])
+                #baseAtlas.drawSprite("img/pip1.png", t._pos, [1,1], 0, [255,0,0,100])
+                if t.unit
+                    for p in t.testIntp
+                        baseAtlas.drawSprite("img/pip1.png", p, [.2,.2], 0, [255,0,0,100])
+                    #for p in t.testStep
+                     *    baseAtlas.drawSprite("img/pip1.png", p, [.4,.4], 0, [0,255,0,100])
+             */
         };
 
         Interpolator.prototype.advance = function () {
@@ -195,7 +195,7 @@
         };
 
         Interpolator.prototype.advanceSnap = function () {
-            var i, id, j, len, ref, ref1, thing, weapon;
+            let i, id, j, len, ref, ref1, thing, weapon;
             this.t = now();
             this.smoothFactor = 1;
             ref = this.things;
@@ -215,14 +215,14 @@
         };
 
         Interpolator.prototype.advanceSmooth = function () {
-            var a, angleDiff, difference, expectedLastStep, i, id, j, len, part, ref, ref1, ref2, thing, timeLastStep;
+            let a, angleDiff, difference, expectedLastStep, i, id, j, len, part, ref, ref1, ref2, thing, timeLastStep;
             this.t = now();
 
             /*  * uncomment this to debug
-       * instant
-      if @dataQ.length > 0
-          @process(@dataQ.pop())
-       */
+             * instant
+            if @dataQ.length > 0
+                @process(@dataQ.pop())
+             */
             if (this.dataQ.length > 0) {
                 timeLastStep = this.t - this.stepTime;
                 expectedLastStep = 1000 / 16;
@@ -233,17 +233,17 @@
             }
 
             /*  * uncomment this to debug
-       * high jitter
-      if @dataQ.length > 16
-          timeLastStep = @t - @stepTime
-          expectedLastStep = 1000/16
-          faster = 0
-          if @dataQ.length > 16
-              faster = (@dataQ.length-16)
-          console.log "difference", timeLastStep, expectedLastStep, @dataQ.length, faster
-          if timeLastStep > expectedLastStep - faster
-              @process(@dataQ.pop())
-       */
+             * high jitter
+            if @dataQ.length > 16
+                timeLastStep = @t - @stepTime
+                expectedLastStep = 1000/16
+                faster = 0
+                if @dataQ.length > 16
+                    faster = (@dataQ.length-16)
+                console.log "difference", timeLastStep, expectedLastStep, @dataQ.length, faster
+                if timeLastStep > expectedLastStep - faster
+                    @process(@dataQ.pop())
+             */
             this.lastFrame += 1;
             a = this.lastFrame / this.avgFrame;
             this.smoothFactor = a;
@@ -291,7 +291,7 @@
         };
 
         Interpolator.prototype.uploadReplay = function () {
-            var data, frame;
+            let data, frame;
             if (this.replay === "recording") {
                 this.replay = "off";
                 data = JSON.stringify((function () {
@@ -309,7 +309,7 @@
         };
 
         Interpolator.prototype.playReplay = function () {
-            var data, frame;
+            let data, frame;
             this.players = [];
             this.things = {};
             this.particles = {};
@@ -318,7 +318,7 @@
             this.replayStep = 0;
             data = localStorage.replay;
             this.replayFrames = (function () {
-                var j, len, ref, results;
+                let j, len, ref, results;
                 ref = JSON.parse(data);
                 results = [];
                 for (j = 0, len = ref.length; j < len; j++) {
@@ -342,7 +342,7 @@
         };
 
         Interpolator.prototype.debugDraw = function () {
-            var j, l, ref, ref1, results, x;
+            let j, l, ref, ref1, results, x;
             for (x = j = 0, ref = this.prevWait; 0 <= ref ? j < ref : j > ref; x = 0 <= ref ? ++j : --j) {
                 baseAtlas.drawSprite("img/pip1.png", [20 + x * 40 - window.innerWidth, window.innerHeight - 120], [1, 1], 0, [0, 0, 0, 255]);
             }
@@ -354,7 +354,7 @@
         };
 
         Interpolator.prototype.process = function (data) {
-            var _, dt, id, j, k, kv, l, len, len1, len2, len3, len4, len5, len6, len7, len8, n, newObj, newThing,
+            let _, dt, id, j, k, kv, l, len, len1, len2, len3, len4, len5, len6, len7, len8, n, newObj, newThing,
                 number, o, p, part, player, q, r, ref, ref1, ref10, ref11, ref12, ref13, ref2, ref3, ref4, ref5, ref6,
                 ref7, ref8, ref9, s, selection, t, thing, u, unit, v, w, y, z;
             if (this.replay === "recording") {
@@ -446,7 +446,8 @@
                     newObj = false;
                     for (q = 0, len3 = t.length; q < len3; q++) {
                         kv = t[q];
-                        k = kv[0], v = kv[1];
+                        k = kv[0];
+                        v = kv[1];
                         switch (k) {
                             case "thingId":
                                 thing = intp.things[v];
@@ -518,6 +519,9 @@
                                 break;
                             case "partTargetId":
                                 part.targetId = v;
+                                break;
+                            case "partRange":
+                                part.range = v;
                                 break;
                             case "orders":
                                 thing.orders = v;
@@ -685,5 +689,3 @@
 
 }).call(this);
 ;
-
-

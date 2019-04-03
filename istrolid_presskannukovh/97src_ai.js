@@ -867,21 +867,21 @@
             return function (b) {
 
                 /*
-         * insta hit weapons
-        if b.unit and b.side != unit.side
-            for w in b.weapons
-                if w.instant
-                    if w.damage < avoidDamage
-                        continue
-                    if w.target and w.target != unit
-                         * weapon is targeting other unit
-                        continue
-                    v2.sub(unit.pos, w.worldPos, _avec)
-                    if v2.mag(_avec) < w.range * 1.2
-                         * avoid insta hit weapon
-                        v2.norm(_avec)
-                        v2.add(_avoidVec, _avec)
-         */
+                 * insta hit weapons
+                if b.unit and b.side != unit.side
+                    for w in b.weapons
+                        if w.instant
+                            if w.damage < avoidDamage
+                                continue
+                            if w.target and w.target != unit
+                                 * weapon is targeting other unit
+                                continue
+                            v2.sub(unit.pos, w.worldPos, _avec)
+                            if v2.mag(_avec) < w.range * 1.2
+                                 * avoid insta hit weapon
+                                v2.norm(_avec)
+                                v2.add(_avoidVec, _avec)
+                 */
                 var i, l, ref, ref1, results;
                 if (b.damage < avoidDamage) {
                     return;
@@ -1579,5 +1579,6 @@
 
 }).call(this);
 ;
+  
 
 

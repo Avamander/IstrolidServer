@@ -16,7 +16,7 @@
     };
 
     overlapRectCircle = function (point, radius, x, y, w, h) {
-        var dx, dy;
+        let dx, dy;
         dx = point[0] - clamp(point[0], x, x + w);
         dy = point[1] - clamp(point[1], y, y + h);
         return (dx * dx + dy * dy) <= (radius * radius);
@@ -33,7 +33,7 @@
         };
 
         HSpace.prototype.insert = function (thing) {
-            var posKey, things;
+            let posKey, things;
             posKey = this.key(thing.pos);
             things = this.hash.get(posKey);
             if (things == null) {
@@ -44,7 +44,7 @@
         };
 
         HSpace.prototype.findInRange = function (point, range, cb) {
-            var d, i, j, k, len, posKey, px, py, ref, ref1, ref2, ref3, rx, ry, thing, things, x, y;
+            let d, i, j, k, len, posKey, px, py, ref, ref1, ref2, ref3, rx, ry, thing, things, x, y;
             sim.timeStart("findInRange");
             d = Math.floor(range / this.resolution) + 1;
             px = Math.floor(point[0] / this.resolution);
@@ -77,5 +77,3 @@
 
 }).call(this);
 ;
-
-
