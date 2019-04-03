@@ -617,10 +617,9 @@ General Game Objects live here
                 return false;
             }
             this.t = null;
-            c = [0, 0];
-            v2.sub(this.pos, thing.pos, c);
-            v = [0, 0];
-            v2.sub(this.vel, thing.vel, v);
+
+            c = [this.pos[0] - thing.pos[0], this.pos[1] - thing.pos[1]];
+            v = [this.vel[0] - thing.vel[0], this.vel[1] - thing.vel[1]];
             r = this.radius + thing.radius;
             ta = -(c[0] * v[0] + c[1] * v[1]);
             tb = Math.sqrt(r * r * (v[0] * v[0] + v[1] * v[1]) - Math.pow(c[0] * v[1] - c[1] * v[0], 2));
@@ -875,7 +874,7 @@ General Game Objects live here
                 return;
             }
             if (this.target && !this.target.dead && !this.target.cloaked()) {
-                v2.sub(this.target.pos, this.pos, this.vel);
+                this.vel = [this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]];
                 v2.norm(this.vel);
                 v2.scale(this.vel, this.speed);
             }

@@ -37,7 +37,10 @@
     };
 
     support = function (points1, points2, d) {
-        return v2.sub(furthestPoint(points1, d), furthestPoint(points2, v2.neg(d, [])), []);
+
+        return [
+            furthestPoint(points1, d)[0] - furthestPoint(points2, v2.neg(d, []))[0],
+            furthestPoint(points1, d)[1] - furthestPoint(points2, v2.neg(d, []))[1]];
     };
 
     window.closestDistance = function (points1, points2) {

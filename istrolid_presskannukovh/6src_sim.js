@@ -860,8 +860,7 @@
                 }
             }
             if (player.rallyPoint != null) {
-                _where = [0, 0];
-                v2.sub(player.rallyPoint, unit.pos, _where);
+                _where = [player.rallyPoint[0] - unit.pos[0], player.rallyPoint[1] - unit.pos[1]];
                 unit.rot = v2.angle(_where);
             }
             return unit;
@@ -1432,7 +1431,7 @@
                     for (j = m = -4; m <= 4; j = ++m) {
                         u2 = units[i + j];
                         if (j !== 0 && u2) {
-                            v2.sub(u.pos, u2.pos, _offset);
+                            _offset = [u.pos[0] - u2.pos[0], u.pos[1] - u2.pos[1]];
                             distance = v2.mag(_offset);
                             if (distance < .001) {
                                 _offset = [0, -1];

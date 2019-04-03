@@ -136,7 +136,8 @@
         if (d == null) {
             d = from;
         }
-        v2.sub(from, to, d);
+        d[0] = from[0] - to[0];
+        d[1] = from[1] - to[1];
         v2.norm(d);
         return d;
     };

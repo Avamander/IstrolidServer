@@ -621,7 +621,8 @@
             flag.move = function () {
                 let s;
                 if (this.target) {
-                    v2.scale(v2.norm(v2.sub(this.target.pos, this.pos, this.vel)), v2.distance(this.pos, this.target.pos) / (types.Flag.prototype.range - 10) * this.target.maxSpeed);
+                    this.vel = [this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]];
+                    v2.scale(v2.norm(this.vel), v2.distance(this.pos, this.target.pos) / (types.Flag.prototype.range - 10) * this.target.maxSpeed);
                 } else {
                     v2.scale(this.vel, types.Flag.prototype.stopFriction);
                 }

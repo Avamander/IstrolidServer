@@ -3887,7 +3887,7 @@
             }
             if (this.target && !this.target.dead && !this.target.cloaked()) {
                 this.dist = v2.distance(this.target.pos, this.pos);
-                v2.sub(this.target.pos, this.pos, this.vel);
+                this.vel = [this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]];
             }
             v2.norm(this.vel);
             this.rot = v2.angle(this.vel);
