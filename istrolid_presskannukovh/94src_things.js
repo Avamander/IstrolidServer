@@ -1295,7 +1295,14 @@ General Game Objects live here
             this.color = [255, 255, 255, 255];
             this.side = "neutral";
             this.capping = 0;
-        }
+            this.object_to_array = function (sides) {
+                let results = [];
+                for (let side in sides) {
+                    results.push(side);
+                }
+                return results;
+            };
+        };
 
         CommandPoint.prototype.tick = function () {
             if (sim.state !== "running") {
@@ -1329,14 +1336,7 @@ General Game Objects live here
                     }
                 }
 
-
-                sides = (function () {
-                    let results = [];
-                    for (let side in sides) {
-                        results.push(side);
-                    }
-                    return results;
-                });
+                sides = this.object_to_array(sides);
 
                 if (sides.length === 1 && (this.side !== sides[0] || sim.serverType === "IO")) {
                     this.capping += 1 / this.value;
