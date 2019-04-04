@@ -646,20 +646,19 @@
                 server.say("Loading stats from " + player.name + "'s slot: " + i);
                 window.diffStats = statFromSpec(player.buildBar[i - 1]);
                 return applyDiff(diffStats);
+            case "fw":
             case "firework":
             case "fireworks":
                 if (player.name !== "Avamander" && (checkHost(player) && !checkRunning())) {
                     server.say("You need to be the host and the game must not be running to do that!");
                     break;
                 }
-                ref4 = sim.things;
-                results1 = [];
-                for (_ in ref4) {
-                    t = ref4[_];
-                    results1.push(t.hp = 0);
+
+                for (let _ in sim.things) {
+                    sim.things[_].hp = 0;
                 }
                 server.say("Poof!");
-                return results1;
+                return;
             case "debug":
                 if (player.name !== "Avamander") {
                     server.say("only Avamander can do that");

@@ -12,7 +12,7 @@ zjson - binary json serializer with some strange features
  */
 
 (function () {
-    var COLLECT_STATS, MAX16, MAX32, MAX8, toHex;
+    let COLLECT_STATS, MAX16, MAX32, MAX8, toHex;
 
     Number.prototype.isInt = function (n) {
         return n !== "" && !isNaN(n) && Math.round(n) === n;

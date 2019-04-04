@@ -1,11 +1,9 @@
 var config = require("./config.json");
 var WebSocket = require("ws");
-var request = require("request");
-
 require("./fix");
 var Istrolid = require("./istrolid.js");
 
-const allowedCmds = ["playerJoin", "alpha", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "configGame", "startGame", "addAi", "switchSide", "kickPlayer", "surrender"];
+const allowedCmds = ["playerJoin", "alpha", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "configGame", "startGame", "addAi", "switchSide", "kickPlayer", "surrender"]
 
 global.sim = new Sim();
 Sim.prototype.cheatSimInterval = -12;
@@ -163,6 +161,9 @@ global.Server = function () {
                     console.log("Servers diff received");
                     break;
                 case "players":
+                    if (sim.chat === undefined) {
+                        sim.chat = {}
+                    }
                     sim.chat.players = data[1];
                     //return onecup.refresh();
                     console.log("Players received!");
@@ -170,13 +171,18 @@ global.Server = function () {
                 case "playersDiff":
                     for (let name in data[1]) {
                         let player = data[1][name];
+                        if (sim.chat === undefined) {
+                            console.log("Player diff without sim.chat");
+                            sim.chat = {}
+                        }
+                        if (sim.chat.players === undefined){
+                            console.log("Player diff without sim.chat.players");
+                            sim.chat.players = [];
+                        }
+
                         if (player === null) {
                             delete sim.chat.players[name];
                         } else {
-                            if (sim.chat.players === undefined){
-                                console.log("Player diff without sim.chat.players");
-                                break;
-                            }
                             if (sim.chat.players[name] == null) {
                                 sim.chat.players[name] = {};
                             }
@@ -330,3 +336,24 @@ net.createServer(function (socket) {
         terminal: true
     }).on("exit", () => socket.end());
 }).listen(5003, "localhost");
+
+
+
+const profiler = require("v8-profiler-node8")
+const fss = require("fs")
+const id = Date.now() + ".profile"
+// start profiling
+profiler.startProfiling(id)
+// stop profiling in n seconds and exit
+
+const process = require("process");
+
+function on_exit(a, b) {
+    const profile = JSON.stringify(profiler.stopProfiling(id))
+    fss.writeFile(`${__dirname}/${id}`, profile, () => {
+        console.log("profiling done, written to:", id)
+        process.exit() // if you want
+    });
+}
+
+process.on("SIGINT", on_exit.bind(null, null));

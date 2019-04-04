@@ -6,7 +6,7 @@ General Game Objects live here
  */
 
 (function () {
-    var Explosion, _color, _focus, _offset, _pos, _size, _vec, anitSideColor, sideColor,
+    var Explosion, _color, _focus, _offset, _pos, _size, _vec, antiSideColor, sideColor,
         extend = function (child, parent) {
             for (var key in parent) {
                 if (hasProp.call(parent, key)) child[key] = parent[key];
@@ -1239,7 +1239,7 @@ General Game Objects live here
     })();
 
     sideColor = function (side) {
-        var color;
+        let color;
         let mySide = typeof commander !== "undefined" && commander !== null ? commander.side : void 0;
         if (mySide === side) {
             color = [230, 230, 230, 255];
@@ -1249,8 +1249,8 @@ General Game Objects live here
         return color;
     };
 
-    anitSideColor = function (side) {
-        var color;
+    antiSideColor = function (side) {
+        let color;
         let mySide = typeof commander !== "undefined" && commander !== null ? commander.side : void 0;
         if (mySide === "spectators") {
             mySide = "alpha";
@@ -1329,6 +1329,15 @@ General Game Objects live here
                     }
                 }
 
+
+                sides = (function () {
+                    let results = [];
+                    for (let side in sides) {
+                        results.push(side);
+                    }
+                    return results;
+                });
+
                 if (sides.length === 1 && (this.side !== sides[0] || sim.serverType === "IO")) {
                     this.capping += 1 / this.value;
                     if (this.capping >= this.maxCapp) {
@@ -1339,17 +1348,10 @@ General Game Objects live here
                                 this.linkedSpawn.side = this.linkedSpawn.spawn = this.side;
                             }
                         } else {
-                            for (let j = 0; j < 50; j++) {
-                                let tooClose = false;
-                                this.pos = [(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000];
-                                for (let thing_id in sim.things) {
-                                    if ((sim.things[thing_id].spawn || sim.things[thing_id].commandPoint)
-                                        && v2.distance(sim.things[thing_id].pos, this.pos) < (sim.things[thing_id].radius + this.radius + 100)) {
-                                        tooClose = true;
-                                        break;
-                                    }
-                                }
-                                if (!tooClose) {
+                            this.pos = [(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000];
+                            for (let thing_id in sim.things) {
+                                if ((sim.things[thing_id].spawn || sim.things[thing_id].commandPoint)
+                                    && v2.distance(sim.things[thing_id].pos, this.pos) < (sim.things[thing_id].radius + this.radius + 100)) {
                                     break;
                                 }
                             }
@@ -1397,7 +1399,7 @@ General Game Objects live here
                 let color = sideColor(this.side);
                 baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot, color);
                 if (this.capping > 0) {
-                    color = anitSideColor(this.side);
+                    color = antiSideColor(this.side);
                     let results = [];
                     for (let i = 0; i < this.maxCapp; i++) {
                         if (this.capping < i) {
