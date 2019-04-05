@@ -578,7 +578,7 @@
 
         Unit.prototype.tick = function () {
             sim.timeStart("unittick");
-            let burnTick, cloakOn, cloakRange, exp, killer, l, len1, p, part, penalty, ref1, ref2, ref4, speed, target;
+            let burnTick, cloakOn, cloakRange, exp, killer, l, len1, p, part, penalty, ref2, ref4, speed, target;
 
             this.closestEnemies = [];
             this.closestFriends = [];
@@ -1726,11 +1726,12 @@
         };
 
         Turret.prototype.clientTick = function () {
-            let distance, ref, target, th;
+            let ref, target, th;
             target = intp.things[this.targetId];
             if (target) {
-                ref = this.aim(target), th = ref[0];
-                distance = ref[1];
+                ref = this.aim(target);
+                th = ref[0];
+                //distance = ref[1];
                 this._rot = th;
             } else {
                 return this._rot = turnAngle(this._rot, this.unit.rot, 0.075);
@@ -1794,7 +1795,7 @@
         };
 
         Turret.prototype.canShoot = function (other) {
-            var aimDistance, arcAngle, distance, ref, th;
+            let aimDistance, arcAngle, distance, ref, th;
             if (!other.unit && !(other.missile && this.hitsMissiles)) {
                 return false;
             }
