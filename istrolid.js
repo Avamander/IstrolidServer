@@ -149,13 +149,13 @@
         };
 
         HSpace.prototype.findInRange = function (point, range, cb) {
-            let d, i, j, k, len, posKey, px, py, ref, ref1, ref2, ref3, rx, ry, thing, things, x, y;
+            let d, k, len, posKey, px, py, rx, ry, thing, things, x, y;
             sim.timeStart("findInRange");
             d = Math.floor(range / this.resolution) + 1;
             px = Math.floor(point[0] / this.resolution);
             py = Math.floor(point[1] / this.resolution);
-            for (x = i = ref = -d, ref1 = d + 1; ref <= ref1 ? i < ref1 : i > ref1; x = ref <= ref1 ? ++i : --i) {
-                for (y = j = ref2 = -d, ref3 = d + 1; ref2 <= ref3 ? j < ref3 : j > ref3; y = ref2 <= ref3 ? ++j : --j) {
+            for (x = -d; x < d; x++) {
+                for (y = -d; y < d; y++) {
                     rx = px + x;
                     ry = py + y;
                     if (overlapRectCircle(point, range, rx * this.resolution, ry * this.resolution, this.resolution, this.resolution)) {
@@ -3977,12 +3977,9 @@
                     }
                 }
                 if (t.bullet) {
-                    results.push((ref2 = this.bulletSpaces[t.side]) != null ? ref2.insert(t) : void 0);
-                } else {
-                    results.push(void 0);
+                    this.bulletSpaces[t.side].insert(t);
                 }
             }
-            return results;
         };
 
         Sim.prototype.victoryConditions = function () {
@@ -7920,33 +7917,32 @@ General Game Objects live here
                 };
             })(this));
 
+            sim.unitSpaces[this.side].findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
+                return function (u) {
+                    if (u.id !== _this.id) {
+                        _this.closestFriends.push(u);
+                    }
+                    return false;
+                };
+            })(this));
+
+
+            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
+                return function (b) {
+                    _this.closestEnemyBullets.push(b);
+                    return false;
+                };
+            })(this));
+
             this.closestEnemies.sort((function (_this) {
                 return function (a, b) {
                     return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
                 };
             })(this));
 
-            if ((ref1 = sim.unitSpaces[this.side]) != null) {
-                ref1.findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
-                    return function (u) {
-                        if (u.id !== _this.id) {
-                            _this.closestFriends.push(u);
-                        }
-                        return false;
-                    };
-                })(this));
-            }
-
             this.closestFriends.sort((function (_this) {
                 return function (a, b) {
                     return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-                };
-            })(this));
-
-            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
-                return function (b) {
-                    _this.closestEnemyBullets.push(b);
-                    return false;
                 };
             })(this));
 
@@ -7964,6 +7960,7 @@ General Game Objects live here
             }
             sim.timeEnd("sorts");
 
+            sim.timeStart("untilparts");
             if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && (sim.ffa && sim.things[this.orders[0].targetId].side !== this.side || sim.things[this.orders[0].targetId].owner !== this.owner)) {
                 this.target = sim.things[this.orders[0].targetId];
             }
@@ -8005,6 +8002,8 @@ General Game Objects live here
             }
             this.energy += this.baseGenEnergy;
 
+            sim.timeEnd("untilparts");
+            sim.timeStart("parts");
             ref2 = this.parts;
             for (l = 0, len1 = ref2.length; l < len1; l++) {
                 part = ref2[l];
@@ -8014,6 +8013,7 @@ General Game Objects live here
                 }
                 part.tick();
             }
+            sim.timeEnd("parts");
 
             if (this.energy > this.storeEnergy) {
                 this.energy = this.storeEnergy;

@@ -44,13 +44,13 @@
         };
 
         HSpace.prototype.findInRange = function (point, range, cb) {
-            let d, i, j, k, len, posKey, px, py, ref, ref1, ref2, ref3, rx, ry, thing, things, x, y;
+            let d, k, len, posKey, px, py, rx, ry, thing, things, x, y;
             sim.timeStart("findInRange");
             d = Math.floor(range / this.resolution) + 1;
             px = Math.floor(point[0] / this.resolution);
             py = Math.floor(point[1] / this.resolution);
-            for (x = i = ref = -d, ref1 = d + 1; ref <= ref1 ? i < ref1 : i > ref1; x = ref <= ref1 ? ++i : --i) {
-                for (y = j = ref2 = -d, ref3 = d + 1; ref2 <= ref3 ? j < ref3 : j > ref3; y = ref2 <= ref3 ? ++j : --j) {
+            for (x = -d; x < d; x++) {
+                for (y = -d; y < d; y++) {
                     rx = px + x;
                     ry = py + y;
                     if (overlapRectCircle(point, range, rx * this.resolution, ry * this.resolution, this.resolution, this.resolution)) {

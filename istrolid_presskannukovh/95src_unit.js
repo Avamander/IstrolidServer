@@ -595,33 +595,32 @@
                 };
             })(this));
 
+            sim.unitSpaces[this.side].findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
+                return function (u) {
+                    if (u.id !== _this.id) {
+                        _this.closestFriends.push(u);
+                    }
+                    return false;
+                };
+            })(this));
+
+
+            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
+                return function (b) {
+                    _this.closestEnemyBullets.push(b);
+                    return false;
+                };
+            })(this));
+
             this.closestEnemies.sort((function (_this) {
                 return function (a, b) {
                     return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
                 };
             })(this));
 
-            if ((ref1 = sim.unitSpaces[this.side]) != null) {
-                ref1.findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
-                    return function (u) {
-                        if (u.id !== _this.id) {
-                            _this.closestFriends.push(u);
-                        }
-                        return false;
-                    };
-                })(this));
-            }
-
             this.closestFriends.sort((function (_this) {
                 return function (a, b) {
                     return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-                };
-            })(this));
-
-            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
-                return function (b) {
-                    _this.closestEnemyBullets.push(b);
-                    return false;
                 };
             })(this));
 
@@ -682,6 +681,7 @@
             this.energy += this.baseGenEnergy;
 
             sim.timeEnd("untilparts");
+
             sim.timeStart("parts");
             ref2 = this.parts;
             for (l = 0, len1 = ref2.length; l < len1; l++) {
@@ -694,6 +694,7 @@
             }
             sim.timeEnd("parts");
 
+            sim.timeStart("cooldown");
             if (this.energy > this.storeEnergy) {
                 this.energy = this.storeEnergy;
             }
@@ -748,9 +749,11 @@
 
             //sim.timeEnd("cooldowntick");
             if (this.weapons.length > 0) {
+                sim.timeEnd("cooldown");
                 sim.timeEnd("unittick");
                 return this.applyNearbyBuffs();
             }
+            sim.timeEnd("cooldown");
             sim.timeEnd("unittick");
         };
 

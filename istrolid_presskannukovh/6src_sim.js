@@ -1300,12 +1300,9 @@
                     }
                 }
                 if (t.bullet) {
-                    results.push((ref2 = this.bulletSpaces[t.side]) != null ? ref2.insert(t) : void 0);
-                } else {
-                    results.push(void 0);
+                    this.bulletSpaces[t.side].insert(t);
                 }
             }
-            return results;
         };
 
         Sim.prototype.victoryConditions = function () {
