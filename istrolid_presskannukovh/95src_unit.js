@@ -375,6 +375,7 @@
         };
 
         Unit.prototype.computeBoundary = function () {
+            sim.timeStart("computeBoundary");
             let diffCross, extend, findPartPoints, left, max, min, points, right, split, u, v;
             findPartPoints = (function (_this) {
                 return function () {
@@ -423,7 +424,7 @@
             split = function (u, v, points) {
                 let p;
                 return (function () {
-                    var j, len, results;
+                    let j, len, results;
                     results = [];
                     for (j = 0, len = points.length; j < len; j++) {
                         p = points[j];
@@ -455,6 +456,7 @@
             });
             left = split(u, v, points);
             right = split(v, u, points);
+            sim.timeEnd("computeBoundary");
             return this.boundPointsLocal = [v].concat(slice.call(extend(u, v, left)), [u], slice.call(extend(v, u, right)));
         };
 
@@ -463,8 +465,7 @@
             sim.timeStart("computeBoundPoints");
             toWorld = (function (_this) {
                 return function (from) {
-                    var p;
-                    p = v2.create(from);
+                    let p = v2.create(from);
                     v2.rotate(p, _this.rot + Math.PI);
                     return v2.add(p, _this.pos);
                 };
@@ -576,13 +577,73 @@
         };
 
         Unit.prototype.tick = function () {
-            let burnTick, cloakOn, cloakRange, exp, j, killer, l, len, len1, len2, o, p, part, penalty, ref, ref1, ref2,
-                ref3, ref4, speed, target;
-            ref = this.parts;
-            for (j = 0, len = ref.length; j < len; j++) {
-                part = ref[j];
-                part.computeWorldPos();
+            sim.timeStart("unittick");
+            let burnTick, cloakOn, cloakRange, exp, killer, l, len1, p, part, penalty, ref1, ref2, ref4, speed, target;
+
+            this.closestEnemies = [];
+            this.closestFriends = [];
+            this.closestEnemyBullets = [];
+
+            sim.timeStart("sorts");
+
+            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + sim.maxRadius[otherSide(this.side)] + 500, (function (_this) {
+                return function (u) {
+                    if (u.id !== _this.id) {
+                        _this.closestEnemies.push(u);
+                    }
+                    return false;
+                };
+            })(this));
+
+            this.closestEnemies.sort((function (_this) {
+                return function (a, b) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+
+            if ((ref1 = sim.unitSpaces[this.side]) != null) {
+                ref1.findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
+                    return function (u) {
+                        if (u.id !== _this.id) {
+                            _this.closestFriends.push(u);
+                        }
+                        return false;
+                    };
+                })(this));
             }
+
+            this.closestFriends.sort((function (_this) {
+                return function (a, b) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+
+            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
+                return function (b) {
+                    _this.closestEnemyBullets.push(b);
+                    return false;
+                };
+            })(this));
+
+            this.closestEnemyBullets.sort((function (_this) {
+                return function (a, b) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+
+            if (this.cloak > 0) {
+                target = this.closestEnemy();
+                if ((target != null) && closestDistance(this.getBoundPoints(), target.getBoundPoints()) < 100) {
+                    this.cloak = 0;
+                }
+            }
+            sim.timeEnd("sorts");
+
+            sim.timeStart("untilparts");
+            if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && (sim.ffa && sim.things[this.orders[0].targetId].side !== this.side || sim.things[this.orders[0].targetId].owner !== this.owner)) {
+                this.target = sim.things[this.orders[0].targetId];
+            }
+
             this.boundPoints = null;
             if (this.cooldown > 0) {
                 this.cooldown -= 1;
@@ -591,12 +652,14 @@
                 this.energy = this.storeEnergy;
                 this.cooldown = 0 / 0;
             }
+
             this.slowed = false;
             if (this.warpIn < 1) {
                 this.warpIn += 1 / 16;
             } else {
                 this.warpIn = 1;
             }
+
             this.cloakFade = 0;
             if (this.cloak > 0) {
                 speed = v2.mag(this.vel);
@@ -612,75 +675,24 @@
                     this.cloakFade = (this.cloak - cloakOn) / cloakRange;
                 }
             }
-            this.closestEnemies = [];
-            this.closestFriends = [];
-            this.closestEnemyBullets = [];
-            sim.unitSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + sim.maxRadius[otherSide(this.side)] + 500, (function (_this) {
-                return function (u) {
-                    if (u.id !== _this.id) {
-                        _this.closestEnemies.push(u);
-                    }
-                    return false;
-                };
-            })(this));
-            this.closestEnemies.sort((function (_this) {
-                return function (a, b) {
-                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-                };
-            })(this));
-            if ((ref1 = sim.unitSpaces[this.side]) != null) {
-                ref1.findInRange(this.pos, this.maxRange + sim.maxRadius[this.side] + 500, (function (_this) {
-                    return function (u) {
-                        if (u.id !== _this.id) {
-                            _this.closestFriends.push(u);
-                        }
-                        return false;
-                    };
-                })(this));
-            }
-            this.closestFriends.sort((function (_this) {
-                return function (a, b) {
-                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-                };
-            })(this));
-            sim.bulletSpaces[otherSide(this.side)].findInRange(this.pos, this.maxRange + 100, (function (_this) {
-                return function (b) {
-                    _this.closestEnemyBullets.push(b);
-                    return false;
-                };
-            })(this));
-            this.closestEnemyBullets.sort((function (_this) {
-                return function (a, b) {
-                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-                };
-            })(this));
-            if (this.cloak > 0) {
-                target = this.closestEnemy();
-                if ((target != null) && closestDistance(this.getBoundPoints(), target.getBoundPoints()) < 100) {
-                    this.cloak = 0;
-                }
-            }
-            if (this.topOrderIs("Follow") && (sim.things[this.orders[0].targetId] != null) && (sim.ffa && sim.things[this.orders[0].targetId].side !== this.side || sim.things[this.orders[0].targetId].owner !== this.owner)) {
-                this.target = sim.things[this.orders[0].targetId];
-            }
+
             if (this.energy < -this.genEnergy * 16 * 3) {
                 this.energy = -this.genEnergy * 16 * 3;
             }
             this.energy += this.baseGenEnergy;
+
+            sim.timeEnd("untilparts");
+            sim.timeStart("parts");
             ref2 = this.parts;
             for (l = 0, len1 = ref2.length; l < len1; l++) {
                 part = ref2[l];
+                part.computeWorldPos();
                 if (part.genEnergy) {
                     this.energy += part.genEnergy;
                 }
-            }
-
-            ref3 = this.parts;
-
-            for (o = 0, len2 = ref3.length; o < len2; o++) {
-                part = ref3[o];
                 part.tick();
             }
+            sim.timeEnd("parts");
 
             if (this.energy > this.storeEnergy) {
                 this.energy = this.storeEnergy;
@@ -704,6 +716,8 @@
                     this.burn = 0;
                 }
             }
+
+            //sim.timeStart("cooldowntick");
             if (isNaN(this.cooldown) && this.hp <= 0) {
                 exp = new types.ShipExplosion();
                 exp.z = 1000;
@@ -731,9 +745,13 @@
                     }
                 }
             }
+
+            //sim.timeEnd("cooldowntick");
             if (this.weapons.length > 0) {
+                sim.timeEnd("unittick");
                 return this.applyNearbyBuffs();
             }
+            sim.timeEnd("unittick");
         };
 
         Unit.prototype.applyNearbyBuffs = function () {
@@ -1659,6 +1677,8 @@
         };
 
         Turret.prototype.tick = function () {
+            //sim.timeStart("turrettick");
+
             let angle, halfArc;
             if (this.reload > 0) {
                 this.reload -= 1;
@@ -1689,6 +1709,8 @@
                     })(this));
                 }
             }
+
+            //sim.timeEnd("turrettick");
         };
 
         Turret.prototype.draw = function () {

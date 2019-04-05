@@ -1142,6 +1142,8 @@
                     return _this.spacesRebuild();
                 };
             })(this));
+
+            this.timeStart("units");
             this.units = [
                 (function () {
                     let ref, results;
@@ -1156,6 +1158,9 @@
                     return results;
                 }).call(this)
             ];
+            this.timeEnd("units");
+
+            this.timeStart("bullets");
             this.bullets = [
                 (function () {
                     let ref, results;
@@ -1170,6 +1175,9 @@
                     return results;
                 }).call(this)
             ];
+            this.timeEnd("bullets");
+
+            this.timeStart("commandPoint");
             this.commandPoint = [
                 (function () {
                     let ref, results;
@@ -1184,6 +1192,8 @@
                     return results;
                 }).call(this)
             ];
+            this.timeEnd("commandPoint");
+
             this.timeStart("death");
             ref = this.things;
             for (id in ref) {
@@ -1196,6 +1206,7 @@
                 }
             }
             this.timeEnd("death");
+
             this.timeStart("tick");
             ref1 = this.things;
             for (id in ref1) {
@@ -1205,6 +1216,7 @@
                 }
             }
             this.timeEnd("tick");
+
             this.timeStart("move");
             ref2 = this.things;
             for (id in ref2) {
@@ -1214,11 +1226,15 @@
                 }
             }
             this.timeEnd("move");
+
             this.timeIt("unitsCollide", (function (_this) {
                 return function () {
                     return _this.unitsCollide();
                 };
             })(this));
+
+
+            this.timeStart("players");
             if (this.state === "running" || this.serverType === "sandbox") {
                 ref3 = this.players;
                 for (l = 0, len1 = ref3.length; l < len1; l++) {
@@ -1238,6 +1254,8 @@
                     player.side = "spectators";
                 }
             }
+            this.timeEnd("players");
+
             this.victoryConditions();
             if (typeof this.extra === "function") {
                 this.extra();

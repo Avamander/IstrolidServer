@@ -138,6 +138,7 @@ General Game Objects live here
         };
 
         Player.prototype.tick = function () {
+            sim.timeStart("playertick");
             let toEarn;
             this.gainsMoney = sim.serverType !== "IO" || ((function () {
                 let results = [];
@@ -162,6 +163,7 @@ General Game Objects live here
                     };
                 })(this));
             }
+            sim.timeEnd("playertick");
             return this.wave();
         };
 
@@ -1305,10 +1307,13 @@ General Game Objects live here
         };
 
         CommandPoint.prototype.tick = function () {
+            sim.timeStart("commandPoint");
             if (sim.state !== "running") {
+                sim.timeEnd("commandPoint");
                 return;
             }
             if (sim.serverType === "CTF") {
+                sim.timeEnd("commandPoint");
                 return;
             }
             if (sim.step % 16 === 0) {
@@ -1368,14 +1373,17 @@ General Game Objects live here
                                 results.push(void 0);
                             }
                         }
+                        sim.timeEnd("commandPoint");
                         return results;
                     }
                 } else {
                     if (this.capping > 0) {
+                        sim.timeEnd("commandPoint");
                         return this.capping -= 1 / this.value;
                     }
                 }
             }
+            sim.timeEnd("commandPoint");
         };
 
         CommandPoint.prototype.bonus = function (side, amount) {
