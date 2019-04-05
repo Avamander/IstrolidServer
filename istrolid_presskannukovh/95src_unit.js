@@ -674,11 +674,14 @@
                     this.energy += part.genEnergy;
                 }
             }
+
             ref3 = this.parts;
+
             for (o = 0, len2 = ref3.length; o < len2; o++) {
                 part = ref3[o];
                 part.tick();
             }
+
             if (this.energy > this.storeEnergy) {
                 this.energy = this.storeEnergy;
             }
@@ -688,6 +691,7 @@
             if ((ref4 = this.target) != null ? ref4.dead : void 0) {
                 this.target = null;
             }
+
             if (sim.step % 16 === 0) {
                 if (this.burn > 4) {
                     if (this.hp < 4) {
@@ -712,6 +716,7 @@
                 if (this.building) {
                     this.building.dead = true;
                 }
+
                 if (sim.serverType === "IO") {
                     p = sim.players[this.owner];
                     penalty = Math.round(p.maxMoney * sim.deathPenalty);

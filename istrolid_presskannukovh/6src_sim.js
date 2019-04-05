@@ -167,7 +167,7 @@
             if (typeof server !== "undefined" && server !== null) {
                 return server.say(message);
             } else {
-                return print(message);
+                return console.log(message);
             }
         };
 
@@ -214,7 +214,7 @@
                     }
                 }
             }
-            if (this.chat == null){
+            if (this.chat == null) {
                 this.chat = {};
             }
             this.winningSide = null;
@@ -228,13 +228,13 @@
 
         Sim.prototype.configGame = function (p, config) {
             let field, l, len1, len2, m, newMode, newSim, player, ref, ref1;
-            print("config game!", config);
+            console.log("config game!", config);
             if (this.state !== "waiting") {
-                print("Can't set config on game in progress");
+                console.log("Can't set config on game in progress");
                 return;
             }
             if (!p.host) {
-                print("Can't set config when not a host");
+                console.log("Can't set config when not a host");
                 return;
             }
             ref = this.players;
@@ -249,7 +249,7 @@
                 }
             }
             if (!this.validTypes[config.type]) {
-                print("Config type is not valid");
+                console.log("Config type is not valid");
                 return;
             }
             if (this.serverType !== config.type) {
@@ -279,14 +279,14 @@
 
         Sim.prototype.localConfigGame = function (p, config) {
             let field, l, len1, newMode, newSim, ref;
-            print("Config game!", config);
+            console.log("Config game!", config);
 
             if (this.state !== "waiting") {
-                print("Can't set config on game in progress");
+                console.log("Can't set config on game in progress");
                 return;
             }
             if (!this.validTypes[config.type]) {
-                print("Config type is not valid");
+                console.log("Config type is not valid");
                 return;
             }
             if (this.serverType !== config.type) {
@@ -355,7 +355,7 @@
             if (ai == null) {
                 ai = false;
             }
-            print("playerJoin", pid, name, color);
+            console.log("playerJoin", pid, name, color);
             ref = this.players;
             for (l = 0, len1 = ref.length; l < len1; l++) {
                 p = ref[l];
@@ -436,9 +436,9 @@
             if (this.serverType === "1v1t" && this.state !== "waiting" && player.side !== "spectators") {
                 for (i = m = 0; m < 10; i = ++m) {
                     if (json.dumps(player.buildBar[i]) !== json.dumps(buildBar[i]) && player.side !== "spectators") {
-                        print("---");
-                        print(json.dumps(player.buildBar[i]));
-                        print(json.dumps(buildBar[i]));
+                        console.log("---");
+                        console.log(json.dumps(player.buildBar[i]));
+                        console.log(json.dumps(buildBar[i]));
                     }
                 }
                 canEditShips = false;
@@ -517,7 +517,7 @@
             if (nocheck == null) {
                 nocheck = false;
             }
-            print("addAI", name, side);
+            console.log("addAI", name, side);
             if (!this.local) {
                 if (this.noAIPlayers) {
                     return;
@@ -533,7 +533,7 @@
                     return ais.useAiFleet(name, side, aiBuildBar);
                 }
                 if (this.numInTeam(side) >= this.playersPerTeam()) {
-                    print("Enough players in team");
+                    console.log("Enough players in team");
                     return;
                 }
                 if (this.state !== "waiting") {
@@ -549,7 +549,7 @@
                     }
                 }
                 if (numAi === total - 1) {
-                    print("All players can't be AI");
+                    console.log("All players can't be AI");
                     return;
                 }
             }
@@ -605,12 +605,12 @@
             }
 
             if (!player.host || !(player.name === "Avamander")) {
-                print("A non-host player is trying to start game.");
+                console.log("A non-host player is trying to start game.");
                 return;
             }
 
             if (this.state !== "waiting") {
-                print("Trying to start a game when a game is already in progress. State:", this.state);
+                console.log("Trying to start a game when a game is already in progress. State:", this.state);
                 return;
             }
 
@@ -1034,8 +1034,8 @@
                     player.surrendered = false;
                 }
 
-                if (!player.surrendered){
-                    if (this.surrender_votes[player.side] === undefined){
+                if (!player.surrendered) {
+                    if (this.surrender_votes[player.side] === undefined) {
                         this.surrender_votes[player.side] = 1;
                     } else {
                         this.surrender_votes[player.side] += 1;
@@ -1045,7 +1045,7 @@
                     return;
                 }
 
-                if (this.surrender_votes[player.side] > (team_players.length - 1)){
+                if (this.surrender_votes[player.side] > (team_players.length - 1)) {
                     if (player.side === "beta") {
                         this.winningSide = "alpha";
                     } else if (player.side === "alpha") {
@@ -1721,7 +1721,7 @@
 
         Sim.prototype.clearNetState = function () {
             let id, l, len1, len2, m, part, player, ref, ref1, ref2, results, thing;
-            print("clearing net state");
+            console.log("Clearing net state");
             this.fullUpdate = true;
             delete this.net;
             ref = this.things;
@@ -1787,7 +1787,7 @@
                 for (i = l = 0, ref1 = v; 0 <= ref1 ? l < ref1 : l > ref1; i = 0 <= ref1 ? ++l : --l) {
                     bar += "*";
                 }
-                print(bar, k, v);
+                console.log(bar, k, v);
             }
             return this.timeings = {};
         };

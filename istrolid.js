@@ -2844,7 +2844,7 @@
             if (typeof server !== "undefined" && server !== null) {
                 return server.say(message);
             } else {
-                return print(message);
+                return console.log(message);
             }
         };
 
@@ -2868,6 +2868,80 @@
             this.unitSpaces = {};
             this.projSpaces = {};
             this.zJson = new window.ZJson(prot.commonWords);
+
+
+            this.unitSpaces = {
+                "alpha": new HSpace(500),
+                "beta": new HSpace(500)
+            };
+
+            this.bulletSpaces = {
+                "alpha": new HSpace(100),
+                "beta": new HSpace(100)
+            };
+
+            this.maxRadius = {
+                alpha: 0,
+                beta: 0
+            };
+
+            this.get_movable_units = function () {
+                let results = [];
+                for (let k in this.things) {
+                    if (this.things[k].unit && !this.things[k].fixed && this.things[k].active) {
+                        results.push(this.things[k]);
+                    }
+                }
+                return results;
+            };
+
+            this.get_missiles = function () {
+                let results = [];
+                for (let k in this.things) {
+                    if (this.things[k].missile) {
+                        results.push(this.things[k]);
+                    }
+                }
+                return results;
+            };
+
+            this.calculate_shit = function (units, i, unit) {
+                let distance, _offset, unit_2, results = [];
+                for (let j = -4; j < 4; j++) {
+                    unit_2 = units[i + j];
+                    if (j !== 0 && unit_2) {
+                        _offset = [unit.pos[0] - unit_2.pos[0], unit.pos[1] - unit_2.pos[1]];
+                        distance = v2.mag(_offset);
+                        if (distance < 0.001) {
+                            _offset = [0, -1];
+                            distance = 1;
+                        }
+
+                        if ((unit.radius + unit_2.radius) > distance) {
+                            let force = (unit.radius + unit_2.radius) - distance;
+                            let ratio = unit_2.mass / (unit.mass + unit_2.mass);
+                            let _push = v2.create();
+                            v2.scale(_offset, ratio * force / distance * .02, _push);
+                            v2.add(unit.pos, _push);
+                            v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
+                            results.push(v2.add(unit_2.pos, _push));
+                        } else {
+                            results.push(void 0);
+                        }
+                    } else {
+                        results.push(void 0);
+                    }
+                }
+                return results;
+            };
+
+            this.object_to_array = function (sides) {
+                let results = [];
+                for (let side in sides) {
+                    results.push(side);
+                }
+                return results;
+            };
         }
 
         Sim.prototype.start = function () {
@@ -2891,7 +2965,7 @@
                     }
                 }
             }
-            if (this.chat == null){
+            if (this.chat == null) {
                 this.chat = {};
             }
             this.winningSide = null;
@@ -2905,13 +2979,13 @@
 
         Sim.prototype.configGame = function (p, config) {
             let field, l, len1, len2, m, newMode, newSim, player, ref, ref1;
-            print("config game!", config);
+            console.log("config game!", config);
             if (this.state !== "waiting") {
-                print("Can't set config on game in progress");
+                console.log("Can't set config on game in progress");
                 return;
             }
             if (!p.host) {
-                print("Can't set config when not a host");
+                console.log("Can't set config when not a host");
                 return;
             }
             ref = this.players;
@@ -2926,7 +3000,7 @@
                 }
             }
             if (!this.validTypes[config.type]) {
-                print("Config type is not valid");
+                console.log("Config type is not valid");
                 return;
             }
             if (this.serverType !== config.type) {
@@ -2956,14 +3030,14 @@
 
         Sim.prototype.localConfigGame = function (p, config) {
             let field, l, len1, newMode, newSim, ref;
-            print("Config game!", config);
+            console.log("Config game!", config);
 
             if (this.state !== "waiting") {
-                print("Can't set config on game in progress");
+                console.log("Can't set config on game in progress");
                 return;
             }
             if (!this.validTypes[config.type]) {
-                print("Config type is not valid");
+                console.log("Config type is not valid");
                 return;
             }
             if (this.serverType !== config.type) {
@@ -3032,7 +3106,7 @@
             if (ai == null) {
                 ai = false;
             }
-            print("playerJoin", pid, name, color);
+            console.log("playerJoin", pid, name, color);
             ref = this.players;
             for (l = 0, len1 = ref.length; l < len1; l++) {
                 p = ref[l];
@@ -3113,9 +3187,9 @@
             if (this.serverType === "1v1t" && this.state !== "waiting" && player.side !== "spectators") {
                 for (i = m = 0; m < 10; i = ++m) {
                     if (json.dumps(player.buildBar[i]) !== json.dumps(buildBar[i]) && player.side !== "spectators") {
-                        print("---");
-                        print(json.dumps(player.buildBar[i]));
-                        print(json.dumps(buildBar[i]));
+                        console.log("---");
+                        console.log(json.dumps(player.buildBar[i]));
+                        console.log(json.dumps(buildBar[i]));
                     }
                 }
                 canEditShips = false;
@@ -3194,7 +3268,7 @@
             if (nocheck == null) {
                 nocheck = false;
             }
-            print("addAI", name, side);
+            console.log("addAI", name, side);
             if (!this.local) {
                 if (this.noAIPlayers) {
                     return;
@@ -3210,7 +3284,7 @@
                     return ais.useAiFleet(name, side, aiBuildBar);
                 }
                 if (this.numInTeam(side) >= this.playersPerTeam()) {
-                    print("Enough players in team");
+                    console.log("Enough players in team");
                     return;
                 }
                 if (this.state !== "waiting") {
@@ -3226,7 +3300,7 @@
                     }
                 }
                 if (numAi === total - 1) {
-                    print("All players can't be AI");
+                    console.log("All players can't be AI");
                     return;
                 }
             }
@@ -3282,12 +3356,12 @@
             }
 
             if (!player.host || !(player.name === "Avamander")) {
-                print("A non-host player is trying to start game.");
+                console.log("A non-host player is trying to start game.");
                 return;
             }
 
             if (this.state !== "waiting") {
-                print("Trying to start a game when a game is already in progress. State:", this.state);
+                console.log("Trying to start a game when a game is already in progress. State:", this.state);
                 return;
             }
 
@@ -3711,8 +3785,8 @@
                     player.surrendered = false;
                 }
 
-                if (!player.surrendered){
-                    if (this.surrender_votes[player.side] === undefined){
+                if (!player.surrendered) {
+                    if (this.surrender_votes[player.side] === undefined) {
                         this.surrender_votes[player.side] = 1;
                     } else {
                         this.surrender_votes[player.side] += 1;
@@ -3722,7 +3796,7 @@
                     return;
                 }
 
-                if (this.surrender_votes[player.side] > (team_players.length - 1)){
+                if (this.surrender_votes[player.side] > (team_players.length - 1)) {
                     if (player.side === "beta") {
                         this.winningSide = "alpha";
                     } else if (player.side === "alpha") {
@@ -3807,223 +3881,161 @@
         };
 
         Sim.prototype.simulate = function () {
-            let id, l, len1, len2, m, player, ref, ref1, ref2, ref3, ref4, ref5, t, thing;
+            let player;
+
             this.timeStart("sim");
             this.step += 1;
             this.startingSim();
             this.checkAfkPlayers();
             this.whoIsHost();
+
             window.NxN = this.NxN;
-            this.timeIt("spacesRebuild", (function (_this) {
-                return function () {
-                    return _this.spacesRebuild();
-                };
-            })(this));
-            this.units = [
-                (function () {
-                    let ref, results;
-                    ref = this.things;
-                    results = [];
-                    for (id in ref) {
-                        t = ref[id];
-                        if (t.unit) {
-                            results.push(t);
-                        }
-                    }
-                    return results;
-                }).call(this)
-            ];
-            this.bullets = [
-                (function () {
-                    let ref, results;
-                    ref = this.things;
-                    results = [];
-                    for (id in ref) {
-                        t = ref[id];
-                        if (t.bullet) {
-                            results.push(t);
-                        }
-                    }
-                    return results;
-                }).call(this)
-            ];
-            this.commandPoint = [
-                (function () {
-                    let ref, results;
-                    ref = this.things;
-                    results = [];
-                    for (id in ref) {
-                        t = ref[id];
-                        if (t.bullet) {
-                            results.push(t);
-                        }
-                    }
-                    return results;
-                }).call(this)
-            ];
+
+            this.commandPoint = [];
+            this.bullets = [];
+            this.units = [];
+
+            let capped = {};
+
             this.timeStart("death");
-            ref = this.things;
-            for (id in ref) {
-                thing = ref[id];
+            for (let id in this.things) {
+                let thing = this.things[id];
                 if (thing.dead) {
                     if (typeof thing.postDeath === "function") {
                         thing.postDeath();
                     }
                     delete this.things[id];
+                    continue;
                 }
             }
             this.timeEnd("death");
-            this.timeStart("tick");
-            ref1 = this.things;
-            for (id in ref1) {
-                thing = ref1[id];
-                if (typeof thing.tick === "function") {
-                    thing.tick();
-                }
-            }
-            this.timeEnd("tick");
-            this.timeStart("move");
-            ref2 = this.things;
-            for (id in ref2) {
-                thing = ref2[id];
-                if (typeof thing.move === "function") {
-                    thing.move();
-                }
-            }
-            this.timeEnd("move");
-            this.timeIt("unitsCollide", (function (_this) {
-                return function () {
-                    return _this.unitsCollide();
-                };
-            })(this));
-            if (this.state === "running" || this.serverType === "sandbox") {
-                ref3 = this.players;
-                for (l = 0, len1 = ref3.length; l < len1; l++) {
-                    player = ref3[l];
-                    if (player.side !== "spectators") {
-                        player.tick();
-                    }
-                }
-            }
-            ref4 = this.players;
-            for (m = 0, len2 = ref4.length; m < len2; m++) {
-                player = ref4[m];
-                if (this.state === "waiting" && player.afk) {
-                    player.side = "spectators";
-                }
-                if (player.side === null) {
-                    player.side = "spectators";
-                }
-            }
-            this.victoryConditions();
-            if (typeof this.extra === "function") {
-                this.extra();
-            }
-            if ((ref5 = sim.galaxyStar) != null) {
-                if (typeof ref5.tick === "function") {
-                    ref5.tick();
-                }
-            }
-            return this.timeEnd("sim");
-        };
 
-        Sim.prototype.spacesRebuild = function () {
-            let _, ref, ref1, ref2, results, t;
-            this.unitSpaces = {
-                "alpha": new HSpace(500),
-                "beta": new HSpace(500)
-            };
-            this.bulletSpaces = {
-                "alpha": new HSpace(100),
-                "beta": new HSpace(100)
-            };
-            this.maxRadius = {
-                alpha: 0,
-                beta: 0
-            };
-            ref = this.things;
-            results = [];
-            for (_ in ref) {
-                t = ref[_];
-                if (t.dead) {
-                    continue;
-                }
-                if (t.unit) {
-                    if ((ref1 = this.unitSpaces[t.side]) != null) {
-                        ref1.insert(t);
+            this.timeStart("isbullet");
+            for (let id in this.things) {
+                let thing = this.things[id];
+                if (thing.bullet) {
+                    this.commandPoint.push(thing);
+                    this.bullets.push(thing);
+
+                    if (this.bulletSpaces[thing.side] != null) {
+                        this.bulletSpaces[thing.side].insert(thing);
                     }
-                    if (this.maxRadius[t.side] != null) {
-                        if (t.radius > this.maxRadius[t.side]) {
-                            this.maxRadius[t.side] = t.radius;
+                }
+            }
+            this.timeEnd("isbullet");
+
+            this.timeStart("isunit");
+            for (let id in this.things) {
+                let thing = this.things[id];
+
+                if (thing.unit) {
+                    this.units.push(thing);
+
+                    if (this.unitSpaces[thing.side] != null) {
+                        this.unitSpaces[thing.side].insert(thing);
+                    }
+
+                    if (this.maxRadius[thing.side] != null) {
+                        if (thing.radius > this.maxRadius[thing.side]) {
+                            this.maxRadius[thing.side] = thing.radius;
                         }
                     }
                 }
-                if (t.bullet) {
-                    results.push((ref2 = this.bulletSpaces[t.side]) != null ? ref2.insert(t) : void 0);
-                } else {
-                    results.push(void 0);
-                }
             }
-            return results;
-        };
+            this.timeEnd("isunit");
 
-        Sim.prototype.victoryConditions = function () {
-            let capped, cappedArr, id, k, l, len1, player, ref, ref1, stillThere, thing;
-            if (this.state !== "running") {
-                return;
-            }
-            capped = {};
-            ref = sim.things;
-            for (id in ref) {
-                thing = ref[id];
+            this.timeStart("iscommandpoint");
+            for (let id in this.things) {
+                let thing = this.things[id];
+
                 if (thing.commandPoint) {
                     capped[thing.side] = (capped[thing.side] || 0) + 1;
                 }
             }
-            cappedArr = (function () {
-                let results;
-                results = [];
-                for (k in capped) {
-                    results.push(k);
+            this.timeEnd("iscommandpoint");
+
+            this.timeStart("istick");
+            for (let id in this.things) {
+                let thing = this.things[id];
+
+                if (typeof thing.tick === "function") {
+                    thing.tick();
                 }
-                return results;
-            })();
-            if (cappedArr.length === 0) {
-                return;
             }
-            if (cappedArr.length === 1 && cappedArr[0] !== "neutral") {
-                this.winningSide = cappedArr[0];
+            this.timeEnd("istick");
+
+            this.timeStart("ismove");
+            for (let id in this.things) {
+                let thing = this.things[id];
+
+                if (typeof thing.move === "function") {
+                    thing.move();
+                }
             }
-            if (this.winningSide) {
-                this.endOfGame();
-                return;
-            }
-            if (!this.local && !this.aiTestMode) {
-                stillThere = false;
-                ref1 = this.players;
-                for (l = 0, len1 = ref1.length; l < len1; l++) {
-                    player = ref1[l];
-                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
-                        stillThere = true;
+            this.timeEnd("ismove");
+
+            this.timeStart("checkCaps");
+            let cappedArr = this.object_to_array(capped); // Check if everything has been capped
+            if (this.state === "running") {
+                if (cappedArr.length !== 0) {
+                    if (cappedArr.length === 1 && cappedArr[0] !== "neutral") {
+                        this.winningSide = cappedArr[0];
+                        console.log("Game ended because everything was capped");
+                        this.endOfGame();
                     }
                 }
-                if (!stillThere) {
+            }
+            this.timeEnd("checkCaps");
+
+            this.timeStart("unitsCollide");
+            this.unitsCollide();
+            this.timeEnd("unitsCollide");
+
+
+            let someone_is_connected = false;
+            for (let l = 0; l < this.players.length; l++) {
+                player = this.players[l];
+                if (player.side === null) {
+                    player.side = "spectators";
+                } else if (this.state === "waiting" && player.afk) {
+                    player.side = "spectators";
+                } else if (this.state === "running" || this.serverType === "sandbox") {
+                    player.tick();
+                    if (player.connected && !(player.afk || player.side === "spectators" || player.ai)) {
+                        someone_is_connected = true;
+                    }
+                }
+            }
+
+            if (!someone_is_connected) {
+                if (!(this.local || this.aiTestMode) && this.state === "running") {
                     this.say("Every one left. Ending game.");
                     this.winningSide = false;
                     this.endOfGame();
+                } else if (this.step > 16 * 60 * 30) {
+                    this.winningSide = false;
+                    this.endOfGame();
                 }
-            } else if (this.step > 16 * 60 * 30) {
-                this.winningSide = false;
-                this.endOfGame();
             }
+
+            if (typeof this.extra === "function") {
+                this.extra();
+            }
+
+            if (sim.galaxyStar !== undefined && sim.galaxyStar !== null) {
+                if (sim.galaxyStar.tick && typeof sim.galaxyStar.tick === "function") {
+                    sim.galaxyStar.tick();
+                }
+            }
+
+            return this.timeEnd("sim");
         };
 
         Sim.prototype.endOfGame = function () {
-            let l, len1, player, ref;
-
             if (this.surrender_votes === undefined) {
                 this.surrender_votes = [];
             }
+
             this.surrender_votes["alpha"] = 0;
             this.surrender_votes["beta"] = 0;
 
@@ -4039,9 +4051,10 @@
             if (typeof this.sendGameReport === "function") {
                 this.sendGameReport();
             }
+
             if (this.serverType === "1v1r" && this.winningSide) {
                 for (let l = 0; l < this.players.length; l++) {
-                    player = this.players[l];
+                    let player = this.players[l];
                     if (player.side !== "spectators") {
                         if (player.side === this.winningSide) {
                             player.streak += 1;
@@ -4065,74 +4078,31 @@
         };
 
         Sim.prototype.unitsCollide = function () {
-            let _push, distance, force, i, j, k, l, len1, missles, n, ratio, results, t, u, u2, units;
+            let i, missiles, n, units;
             n = sim.step % 2;
-            units = (function () {
-                let ref, results;
-                ref = this.things;
-                results = [];
-                for (k in ref) {
-                    t = ref[k];
-                    if (t.unit && !t.fixed && t.active) {
-                        results.push(t);
-                    }
-                }
-                return results;
-            }).call(this);
+
+            units = this.get_movable_units();
             units.sort(function (a, b) {
                 return a.pos[n] - b.pos[n];
             });
+
             this.axisSort = n;
             this.axisSortedUnits = units;
-            missles = (function () {
-                let ref, results;
-                ref = this.things;
-                results = [];
-                for (k in ref) {
-                    t = ref[k];
-                    if (t.missile) {
-                        results.push(t);
-                    }
-                }
-                return results;
-            }).call(this);
-            missles.sort(function (a, b) {
+
+            missiles = this.get_missiles();
+
+            missiles.sort(function (a, b) {
                 return a.pos[n] - b.pos[n];
             });
-            this.axisSortedMissles = missles;
-            results = [];
-            for (i = l = 0, len1 = units.length; l < len1; i = ++l) {
-                u = units[i];
-                results.push((function () {
-                    let m, results1 = [];
-                    for (j = m = -4; m <= 4; j = ++m) {
-                        u2 = units[i + j];
-                        if (j !== 0 && u2) {
-                            _offset = [u.pos[0] - u2.pos[0], u.pos[1] - u2.pos[1]];
-                            distance = v2.mag(_offset);
-                            if (distance < .001) {
-                                _offset = [0, -1];
-                                distance = 1;
-                            }
-                            if (distance < u.radius + u2.radius) {
-                                force = (u.radius + u2.radius) - distance;
-                                ratio = u2.mass / (u.mass + u2.mass);
-                                _push = v2.create();
-                                v2.scale(_offset, ratio * force / distance * .02, _push);
-                                v2.add(u.pos, _push);
-                                v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
-                                results1.push(v2.add(u2.pos, _push));
-                            } else {
-                                results1.push(void 0);
-                            }
-                        } else {
-                            results1.push(void 0);
-                        }
-                    }
-                    return results1;
-                })());
+
+            this.axisSortedMissles = missiles;
+
+            //results = [];
+            for (i = 0; i < units.length; i++) {
+                //results.push(this.calculate_shit(units, i, units[i]));
+                this.calculate_shit(units, i, units[i]);
             }
-            return results;
+            //return results;
         };
 
         Sim.prototype.thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "color", "sliceImage", "side", "owner", "capping", "spawn", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
@@ -4398,7 +4368,7 @@
 
         Sim.prototype.clearNetState = function () {
             let id, l, len1, len2, m, part, player, ref, ref1, ref2, results, thing;
-            print("clearing net state");
+            console.log("Clearing net state");
             this.fullUpdate = true;
             delete this.net;
             ref = this.things;
@@ -4464,7 +4434,7 @@
                 for (i = l = 0, ref1 = v; 0 <= ref1 ? l < ref1 : l > ref1; i = 0 <= ref1 ? ++l : --l) {
                     bar += "*";
                 }
-                print(bar, k, v);
+                console.log(bar, k, v);
             }
             return this.timeings = {};
         };
@@ -5494,7 +5464,7 @@
             this.avgFrame = this.avgFrame * .9 + this.lastFrame * .1;
             this.lastFrame = 0;
             if (intp.players.length === 0 && !data.fullUpdate && commander) {
-                print("waiting for full update");
+                console.log("waiting for full update");
                 return;
             }
             if (data.fullUpdate) {
@@ -5503,7 +5473,7 @@
                 if (intp.step + 1 === data.step) {
                     intp.step += 1;
                 } else {
-                    print("Over step, what about full update?");
+                    console.log("Over step, what about full update?");
                     return;
                 }
             }
@@ -7973,11 +7943,14 @@ General Game Objects live here
                     this.energy += part.genEnergy;
                 }
             }
+
             ref3 = this.parts;
+
             for (o = 0, len2 = ref3.length; o < len2; o++) {
                 part = ref3[o];
                 part.tick();
             }
+
             if (this.energy > this.storeEnergy) {
                 this.energy = this.storeEnergy;
             }
@@ -7987,6 +7960,7 @@ General Game Objects live here
             if ((ref4 = this.target) != null ? ref4.dead : void 0) {
                 this.target = null;
             }
+
             if (sim.step % 16 === 0) {
                 if (this.burn > 4) {
                     if (this.hp < 4) {
@@ -7999,6 +7973,8 @@ General Game Objects live here
                     this.burn = 0;
                 }
             }
+
+            sim.timeStart("cooldowntick");
             if (isNaN(this.cooldown) && this.hp <= 0) {
                 exp = new types.ShipExplosion();
                 exp.z = 1000;
@@ -8025,6 +8001,8 @@ General Game Objects live here
                     }
                 }
             }
+
+            sim.timeEnd("cooldowntick");
             if (this.weapons.length > 0) {
                 return this.applyNearbyBuffs();
             }
@@ -8953,6 +8931,8 @@ General Game Objects live here
         };
 
         Turret.prototype.tick = function () {
+            sim.timeStart("turrettick");
+
             let angle, halfArc;
             if (this.reload > 0) {
                 this.reload -= 1;
@@ -8983,6 +8963,8 @@ General Game Objects live here
                     })(this));
                 }
             }
+
+            sim.timeEnd("turrettick");
         };
 
         Turret.prototype.draw = function () {

@@ -367,7 +367,7 @@
             this.avgFrame = this.avgFrame * .9 + this.lastFrame * .1;
             this.lastFrame = 0;
             if (intp.players.length === 0 && !data.fullUpdate && commander) {
-                print("waiting for full update");
+                console.log("waiting for full update");
                 return;
             }
             if (data.fullUpdate) {
@@ -376,7 +376,7 @@
                 if (intp.step + 1 === data.step) {
                     intp.step += 1;
                 } else {
-                    print("Over step, what about full update?");
+                    console.log("Over step, what about full update?");
                     return;
                 }
             }
