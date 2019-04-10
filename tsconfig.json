@@ -43,7 +43,7 @@
     "./istrolid_presskannukovh/994src_zjson.ts",
     //"./istrolid_presskannukovh/995src_commands.ts",
     //"./istrolid_presskannukovh/996src_io.ts",
-    "../../../../.WebStorm2019.1/config/javascript/nodejs/8.10.0/node-typings/node_modules/@types/node/globals.d.ts",
-    "server.js"
+    //"../../../../.WebStorm2019.1/config/javascript/nodejs/8.10.0/node-typings/node_modules/@types/node/globals.d.ts",
+    "server.ts"
   ]
 }
