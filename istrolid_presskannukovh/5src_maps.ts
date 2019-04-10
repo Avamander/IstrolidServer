@@ -1,7 +1,7 @@
 import {v2} from "./4src_maths";
 import {MTwist} from "./1src_mtwist";
 import {Sim} from "./6src_sim";
-import {CommandPoint, SpawnPoint} from "./94src_things";
+import {CommandPoint, SpawnPoint, Thing} from "./94src_things";
 import {Unit} from "./95src_unit";
 import {Server} from "../server";
 
@@ -201,7 +201,7 @@ export class Mapping {
     static blocks = ["ExULFRUIERUIExcIExMI", "FBQUExgHGBUJFRAHEBMJEBUJFRgHExAHGBMJ"];
     static towers = ["ERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQBFBQw", "FBQDERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQy", "ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ4", "ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ1"];
     static forts = ["FBQDGRcKEBQPDxcKDxEIGBQPGREIEhcJEhEJFhcJFhEJFBQ3", "GREIFBQDEBQPDxcKDxEIGBQPGRcKEhcJEhEJFhcJFhEJFBQz", "DRAHDRgHGBQ9EBQ/FBgDEBgPGBgPFBEJFBQDGBADFA8JEBADDRQHGxgHGxQHGxAHEBsJGBsJEA0JGA0JEBAvGBAvFBgwFBQ0", "FAwGGBAPEBQGGBQGHBQGDBQGCBQDFBQDFCADFAgDEBAPEBgPGBgPFBgGFBAGFBwGIBQDBBQBFCQDJBQDFAQBBBQvFCQvJBQvFAQvCBQ0IBQ0FBQ0FAg0FCA0"];
-    mr: MTwist;
+    static mr: MTwist;
 
     static chooseNumber(n: number) {
         let i, j;
@@ -261,8 +261,8 @@ export class Mapping {
         return [Math.floor(pos[0]), Math.floor(pos[1])];
     }
 
-    generate(seed: number) {
-        this.mr = new MTwist(seed);
+    static generate(seed: number) {
+        Mapping.mr = new MTwist(seed);
         Sim.Instance.things = [];
 
         /*
@@ -297,7 +297,7 @@ export class Mapping {
                 Server.Instance.say("Other gamemodes are currently not migrated");
                 break;
             default:
-                this.genSymmetrical();
+                Mapping.genSymmetrical();
         }
         /* // TODO:
         if (Sim.Instance.makeRocks) {
@@ -318,14 +318,14 @@ export class Mapping {
         }*/
     };
 
-    genSymmetrical() {
-        let _, i, m, o, ref, tooClose;
+    static genSymmetrical() {
+        let i, m, ref, tooClose;
 
         let alpha_spawn = new SpawnPoint();
         alpha_spawn.side = "alpha";
         alpha_spawn.spawn = "alpha";
         alpha_spawn.pos[0] = -Sim.Instance.mapScale * 3000;
-        alpha_spawn.pos[1] = this.mr.random() * 3000 - 1500;
+        alpha_spawn.pos[1] = Mapping.mr.random() * 3000 - 1500;
         Sim.Instance.things[alpha_spawn.id] = alpha_spawn;
 
         let beta_spawn = new SpawnPoint();
@@ -336,7 +336,7 @@ export class Mapping {
 
         Sim.Instance.things[beta_spawn.id] = beta_spawn;
         let results = [];
-        for (i = m = 0, ref = Sim.Instance.numComPoints / 2; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
+        for (let i = 0; i < Sim.Instance.numComPoints / 2; i++) {
             let commandPoint = new CommandPoint();
             commandPoint.z = -.01;
             if (i === 0) {
@@ -344,14 +344,14 @@ export class Mapping {
                 let from_center = v2.mag(commandPoint.pos);
                 v2.scale(commandPoint.pos, (from_center - 1500) / from_center, null);
             } else {
-                for (i = o = 0; o < 10; i = ++o) {
+                for (let o = 0; o < 10; o++) {
                     tooClose = false;
                     Mapping.randomVector(commandPoint.pos);
                     v2.scale(commandPoint.pos, (300 + this.mr.random() * 2000) * Sim.Instance.mapScale, null);
-                    let ref1 = Sim.Instance.things;
-                    for (_ in ref1) {
-                        let t = ref1[_];
-                        if (v2.distance(t.pos, commandPoint.pos) < (t.radius + commandPoint.radius + 100)) {
+
+                    for (let id in Sim.Instance.things) {
+                        let thing: Thing = Sim.Instance.things[id];
+                        if (v2.distance(thing.pos, commandPoint.pos) < (thing.radius + commandPoint.radius + 100)) {
                             tooClose = true;
                             break;
                         }

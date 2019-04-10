@@ -2,12 +2,6 @@
 General Game Objects live here
  */
 
-import {Sim} from "./6src_sim";
-import {v2} from "./4src_maths";
-import {Unit, UnitUtils} from "./95src_unit";
-import {actionMixer, baseAtlas, battleMode, commander, intp, ui} from "./0dummy";
-import {CollisionUtils} from "./991src_collision";
-
 export class ThingUtil {
     hasProp = {}.hasOwnProperty;
 
@@ -125,7 +119,7 @@ export class Player {
 
     constructor(id1: number) {
         this.id = id1;
-        this.color = [255, 255, 255, 255];//randColor(200);
+        this.color = [255, 255, 255, 255]; //randColor(200); // TODO:
         this.reset();
     }
 
@@ -184,7 +178,7 @@ export class Player {
         if (this.aiRules) {
             Sim.Instance.timeIt("ai", (function (_this) {
                 return function () {
-                    //return doPlayerAIRules(_this);
+                    //return doPlayerAIRules(_this); // TODO:
                 };
             })(this));
         }
@@ -1048,7 +1042,7 @@ export class SmallHitExplosion extends Explosion {
 
     constructor() {
         super();
-        this.hitImage = "parts/hitAuto1.png" // TODO: + (choose([1, 2, 3])) + ".png";
+        this.hitImage = "parts/hitAuto1.png"; // TODO: + (choose([1, 2, 3])) + ".png";
         actionMixer.action += .5;
     }
 
@@ -1207,20 +1201,20 @@ export class FrameExplosion extends Explosion {
         if (this.dead) {
             return;
         }
-        //let fade = this.life / this.maxLife;
+        //let fade = this.life / this.maxLife; // TODO:
         let s = 3;
         this.color = [255, 255, 255, 210];
         if (this.loopFrames) {
             let frame = this.life % this.nFrames + 1;
             let intFrame = Math.floor(frame);
-            //let image = this.image.replace("#", intFrame);
+            //let image = this.image.replace("#", intFrame); //TODO:
             return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
         } else {
             let frame = (this.life / this.maxLife) * this.nFrames + 1;
             let intFrame = Math.floor(frame);
             if (intFrame < this.nFrames) {
-                //let tweenFrame = frame - intFrame;
-                //let image = this.image.replace("#", intFrame);
+                //let tweenFrame = frame - intFrame; // TODO:
+                //let image = this.image.replace("#", intFrame); //TODO:
                 return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
             }
         }
@@ -1488,3 +1482,9 @@ export class SpawnPoint extends Thing {
         return results;
     };
 }
+
+import {Sim} from "./6src_sim";
+import {v2} from "./4src_maths";
+import {Unit} from "./95src_unit";
+import {actionMixer, baseAtlas, battleMode, commander, intp, ui} from "./0dummy";
+import {CollisionUtils} from "./991src_collision";

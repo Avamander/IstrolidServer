@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "system",
+    "module": "commonjs",
     "noImplicitAny": true,
     //"no-any": true,
     //"no-unsafe-any": true,
@@ -8,7 +8,8 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "moduleResolution": "node",
-    "outFile": "./istrolid.ts.js",
+    //"outFile": "./istrolid.ts.js",
+    "outDir": "./istrolid_ts",
     "lib": [
       "dom",
       "es7",

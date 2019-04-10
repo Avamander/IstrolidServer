@@ -7,8 +7,9 @@ import {HSpace} from "./2src_hspace";
 import {Utils} from "./993src_utils";
 import {Bullet, Particle, Player, Thing,} from "./94src_things";
 import {Server} from "../server";
-import {Unit, UnitUtils} from "./95src_unit";
+import {Unit} from "./95src_unit";
 import {Grid} from "./99src_grid";
+import {UnitUtils} from "./95unitutils";
 
 export class Sim {
     static defaultBattleType = "3v3";
@@ -62,7 +63,7 @@ export class Sim {
     cheatSimInterval: number;
     particles: Particle[];
     bullets: Bullet[];
-    _pos: Float64Array;
+    _pos: Float64Array = new Float64Array([0, 0]);
     ffa: boolean;
     mapping: Mapping;
     deathPenalty: number;
@@ -76,7 +77,19 @@ export class Sim {
     costLimit = 1000;
     aiTestMode = false;
     nGamesPlayed = 0;
-    validTypes: { [x: string]: any; };
+    validTypes: { [x: string]: any; } = {
+        "1v1": "1v1",
+        "1v1r": "1v1r",
+        "1v1t": "1v1t",
+        "2v2": "2v2",
+        "3v3": "3v3",
+        //"nvn": "nvn",
+        //"Survival": "Survival",
+        //"IO": "IO",
+        //"CTF": "CTF",
+        //"TicTacToe": "TicTacToe",
+        //"FFA": "FFA"
+    };
     numComPoints = 8;
     mapScale = 1.5;
     moneyRatio = 1;
@@ -90,14 +103,14 @@ export class Sim {
     playerFields = ["name", "side", "afk", "host", "money", "connected", "dead", "color", "mouse", "action", "buildQ", "validBar", "ai", "apm", "capps", "kills", "unitsBuilt", "moneyEarned", "rallyPoint"];
     simFields = ["serverType", "step", "theme", "state", "winningSide", "countDown"];
     data: {};
-    timeings: { [x: string]: any; };
-    timeStarts: { [x: string]: number; };
-    timePath: string[];
+    timeings: { [x: string]: any; } = {};
+    timeStarts: { [x: string]: number; } = {};
+    timePath: string[] = [];
     moneyInc: number;
 
     constructor(battleType: string) {
         this.battleType = battleType;
-        this.victoryConditions = this.victoryConditions.prototype.bind(this);
+        this.victoryConditions.bind(this);
         this.local = false;
         this.players = [];
         this.chat = {players: {}};
@@ -125,8 +138,8 @@ export class Sim {
     };
 
     static say(message: string) {
-        if (typeof Server !== "undefined" && Server.Instance !== null) {
-            Sim.say(message);
+        if (typeof Server.Instance !== "undefined" && Server.Instance !== null) {
+            Server.Instance.say(message);
         } else {
             console.log(message);
         }
@@ -155,7 +168,7 @@ export class Sim {
         }
         player.lastActiveTime = Date.now();
         v2.set(pos, player.mouse);
-        return player.action = action;
+        player.action = action;
     };
 
     static rand() {
@@ -405,7 +418,7 @@ export class Sim {
     };
 
     regenerateMap() {
-        return this.mapping.generate(this.mapSeed);
+        return Mapping.generate(this.mapSeed);
     };
 
     playerJoin(_: any, pid: any, name: any, color: any, buildBar: any, aiRules: any, ai: boolean) {
@@ -571,7 +584,7 @@ export class Sim {
                 return
              */
             if (nocheck) {
-                return this.ais.useAiFleet(name, side, aiBuildBar);
+                // return this.ais.useAiFleet(name, side, aiBuildBar); // TODO:
             }
             if (this.numInTeam(side) >= this.playersPerTeam()) {
                 console.log("Enough players in team");
@@ -594,7 +607,7 @@ export class Sim {
                 return;
             }
         }
-        return this.ais.useAiFleet(name, side, aiBuildBar);
+        //return this.ais.useAiFleet(name, side, aiBuildBar); // TODO:
     };
 
     kickPlayer(p: Player, number: number) {
@@ -1499,7 +1512,7 @@ export class Sim {
     send() {
         let _, changes, e, f, i, id, l, len1, len2, len3, len4, len5, len6, len8, m, o, p, packet, part,
             partId, player, predictable, q, r, ref1, ref10, ref11, ref13, ref2, ref3, ref4, ref5, ref6,
-            ref7, ref8, ref9, s, send, splayers, sthings, t, targetId, thing, v, x, y, z;
+            ref7, ref8, ref9, send, splayers, sthings, t, targetId, thing, v, x, y, z;
 
         this.timeStart("send");
         this.timeStart("things");
@@ -1508,6 +1521,7 @@ export class Sim {
             thing = this.things[id];
             changes = [];
             changes.push(["thingId", thing.id]);
+            let s;
             if (thing.net == null) {
                 thing.net = s = {};
                 changes.push(["name", thing.constructor.name]);
@@ -1617,12 +1631,15 @@ export class Sim {
         this.timeStart("players");
         splayers = [];
         ref10 = this.players;
+        let s;
         for (q = 0, len4 = ref10.length; q < len4; q++) {
             player = ref10[q];
             changes = [];
             changes.push(["playerNumber", player.number]);
             if (player.net == null) {
-                player.net = {};
+                player.net = s = {};
+            } else {
+                s = player.net;
             }
 
             ref11 = this.playerFields;
@@ -1630,17 +1647,17 @@ export class Sim {
                 f = ref11[r];
                 // @ts-ignore
                 v = player[f];
-                if ((v != null) && !this.simpleEquals(player.net[f], v)) {
+                if ((v != null) && !this.simpleEquals(s[f], v)) {
                     if (Sim.isArray(v)) {
-                        if (player.net.length !== v.length) {
-                            player.net[f] = new Array(v.length);
+                        if (s.length !== v.length) {
+                            s[f] = new Array(v.length);
                         }
                         for (i = x = 0, len6 = v.length; x < len6; i = ++x) {
                             e = v[i];
-                            player.net[f][i] = e;
+                            s[f][i] = e;
                         }
                     } else {
-                        player.net[f] = v;
+                        s[f] = v;
                     }
                     changes.push([f, v]);
                 }
@@ -1652,28 +1669,33 @@ export class Sim {
         this.timeEnd("players");
         this.timeStart("other");
 
-        player.net = this.net;
+        let data = {};
+        s = this.net;
+        if (!s) {
+            this.net = s = {};
+        }
         for (y = 0; y < this.simFields.length; y++) {
             f = this.simFields[y];
+
             // @ts-ignore
-            if (!this.simpleEquals(player.net[f], this[f])) {
+            if (!this.simpleEquals(s[f], this[f])) {
                 // @ts-ignore
-                this.data[f] = this[f];
+                data[f] = this[f];
                 // @ts-ignore
-                player.net[f] = this[f];
+                s[f] = this[f];
             }
         }
         if (splayers.length > 0) {
             // @ts-ignore
-            this.data.players = splayers;
+            data.players = splayers;
         }
         if (sthings.length > 0) {
             // @ts-ignore
-            this.data.things = sthings;
+            data.things = sthings;
         }
         if (this.fullUpdate) {
             // @ts-ignore
-            this.data.fullUpdate = true;
+            data.fullUpdate = true;
             this.fullUpdate = false;
         }
 
@@ -1692,7 +1714,7 @@ export class Sim {
             }
             if (send) {
                 // @ts-ignore
-                this.data.perf = {
+                data.perf = {
                     numbers: {
                         things: ((function () {
                             let results = [];
@@ -1754,7 +1776,7 @@ export class Sim {
         this.timeEnd("other");
         this.timeStart("zJson");
         // @ts-ignore
-        packet = this.zJson.dumpDv(this.data);
+        packet = this.zJson.dumpDv(data);
         this.timeEnd("zJson");
         this.timeEnd("send");
         return packet;

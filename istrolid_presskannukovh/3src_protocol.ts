@@ -1,5 +1,6 @@
 export class prot {
-    static commonWords: string[] = ["1v1",
+    static commonWords: string[] = [
+        "1v1",
         "1v1r",
         "2v2",
         "3v3",

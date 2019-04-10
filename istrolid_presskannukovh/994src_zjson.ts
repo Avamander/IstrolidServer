@@ -19,8 +19,8 @@ export class ZJson {
     MAX16: number = 256 * 256;
     MAX32: number = 256 * 256 * 256 * 256;
     COLLECT_STATS: boolean = true;
-    commonZJsonStrings: { [x: string]: number; };
-    commonZJsonBytePatterns: { [x: string]: any; };
+    commonZJsonStrings: { [x: string]: number; } = {};
+    commonZJsonBytePatterns: { [x: string]: any; } = {};
     JSON_MARK = 90;
     JSON_DIFF_MARK = 91;
     OBJECT_MARK8 = 0x10;
@@ -54,6 +54,10 @@ export class ZJson {
         this.str2num = new Map();
         this.num2str = new Map();
         if (strTable) {
+            for (let i = 0; i < strTable.length; i++) {
+                this.str2num.set(strTable[i], i);
+                this.num2str.set(i, strTable[i]);
+            }
             if (strTable.length > this.MAX16) {
                 throw "Too many strings in the string table";
             }

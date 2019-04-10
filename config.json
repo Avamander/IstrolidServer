@@ -2,5 +2,9 @@
     "name": "Avama (EU)",
     "port": 443,
     "addr": "presskannuk.ovh/wss/presskannuk.ovh",
-    "root_addr": "ws://198.199.109.223:88"
+    "root_addr": "ws://198.199.109.223:88",
+    "user_token": "9703d921791bad0571f0c78cfa62284136dc51f8",
+    "user_steam_id": "STEAM_0:0:52998691",
+    "user_fingerprint": "299ad9fc522ffa86eb43e32ba5230aaf",
+    "user_email": "avamander@gmail.com"
 }

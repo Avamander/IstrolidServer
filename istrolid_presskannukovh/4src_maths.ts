@@ -6,7 +6,7 @@ export class v2 {
     Y = [0, 1, 0];
     Z = [0, 0, 1];
 
-    static create(a: Float64Array | null) {
+    static create(a: Float64Array) {
         this.created += 1;
         let d = new Float64Array(2);
         if (a != null) {
@@ -28,7 +28,7 @@ export class v2 {
         return d;
     };
 
-    static add(a: Float64Array, b: Float64Array, d: Float64Array | null) {
+    static add(a: Float64Array, b: Float64Array, d: Float64Array) {
         if (d == null) {
             d = a;
         }
@@ -37,7 +37,7 @@ export class v2 {
         return d;
     };
 
-    static sub(a: Float64Array, b: Float64Array, d: Float64Array | null) {
+    static sub(a: Float64Array, b: Float64Array, d: Float64Array) {
         if (d == null) {
             d = a;
         }
@@ -46,7 +46,7 @@ export class v2 {
         return d;
     };
 
-    static neg(a: Float64Array, d: Float64Array | null) {
+    static neg(a: Float64Array, d: Float64Array) {
         if (d == null) {
             d = a;
         }
@@ -55,7 +55,7 @@ export class v2 {
         return d;
     };
 
-    static scale(v: Float64Array, n: number, d: Float64Array | null) {
+    static scale(v: Float64Array, n: number, d: Float64Array) {
         if (d == null) {
             d = v;
         }
@@ -64,7 +64,7 @@ export class v2 {
         return d;
     };
 
-    static norm(a: Float64Array, d: Float64Array | null) {
+    static norm(a: Float64Array, d: Float64Array) {
         let len, x, y;
         if (d == null) {
             d = a;
@@ -127,9 +127,8 @@ export class v2 {
     };
 
     static distance(from: Float64Array, to: Float64Array) {
-        let x: number, y: number;
-        x = to[0] - from[0];
-        y = to[1] - from[1];
+        let x = to[0] - from[0];
+        let y = to[1] - from[1];
         return Math.sqrt(x * x + y * y);
     };
 

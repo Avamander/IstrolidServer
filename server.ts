@@ -4,10 +4,9 @@ import {Utils} from "./istrolid_presskannukovh/993src_utils";
 import Timeout = NodeJS.Timeout;
 //import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
 
-
 let ws = require("ws");
-require("./fix");
-let istrolid = require("./istrolid.js");
+//require("./fix"); // Enable DLC when server and replace window with global
+//let istrolid = require("./istrolid.js");
 
 const allowedCmds = [
     "playerJoin",
@@ -51,10 +50,10 @@ export class Server {
     players: Player[];
     lastInfoTime = 0;
     interval: Timeout;
-    static _instance: Server;
+    static _instance: Server = null;
 
     public static get Instance(){
-        return this._instance || (this._instance = new this());
+        return this._instance;
     }
 
     constructor () {
@@ -77,8 +76,15 @@ export class Server {
                     Sim.Instance.players[id] = player;
                     Sim.Instance.clearNetState();
                 } else if (allowedCmds.includes(data[0])) {
+                    // @ts-ignore Look up function in simulation and execute it with arguments given
+                    if (typeof Sim.Instance[data[0]] === "function") {
+                        // @ts-ignore
+                        Sim.Instance[data[0]].apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
                     // @ts-ignore
-                    Sim.Instance[data[0]].apply(Sim.Instance, [Sim.Instance.Players[id], ...data.slice(1)]);
+                    } else if (typeof Sim[data[0]] === "function") {
+                        // @ts-ignore
+                        Sim[data[0]].apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                    }
                 }
             });
 
@@ -104,7 +110,7 @@ export class Server {
                 let packet = Sim.Instance.send();
 
                 Server.Instance.wss.clients.forEach((client: { readyState: any; send: (arg0: DataView) => void; }) => {
-                    if (client.readyState === WebSocket.OPEN) {
+                    if (client.readyState === ws.OPEN) {
                         client.send(packet);
                     }
                 });
@@ -115,12 +121,14 @@ export class Server {
                 Server.Instance.lastInfoTime = rightNow;
             }
         }, 17);
+
+        Server._instance = this;
     }
 
     send (player: Player, data: any) {
         let packet = Sim.Instance.zJson.dumpDv(data);
         let client = player.ws;
-        if (client && client.readyState === WebSocket.OPEN) {
+        if (client && client.readyState === ws.OPEN) {
             client.send(packet);
         }
     };
@@ -138,7 +146,7 @@ export class Server {
     say (msg: any) {
         this.rootsendData(["message", {
             text: msg,
-            channel: this.config.name,
+            channel: Server.config.name,
             color: "FFFFFF",
             name: "Avama",
             server: true
@@ -146,19 +154,19 @@ export class Server {
     };
 
     root: any;
-    config = require("./config.json");
+    private static readonly config = require("./config.json");
 
     connectToRoot () {
-        this.root = new ws(this.config.root_addr);
+        this.root = new ws(Server.config.root_addr);
 
         this.root.on("open", function () {
-            console.log("connected to root");
+            console.log("Connected to root!");
             Server.Instance.sendInfo();
             let account_info = {
-                email: "avamander@gmail.com",
-                fingerprint: "299ad9fc522ffa86eb43e32ba5230aaf",
-                steamid: "STEAM_0:0:52998691",
-                token: "9703d921791bad0571f0c78cfa62284136dc51f8"
+                email: Server.config.user_email,
+                fingerprint: Server.config.user_fingerprint,
+                steamid: Server.config.user_steam_id,
+                token: Server.config.user_token,
             };
             Server.Instance.rootsendData(["authSignIn", account_info]);
             Server.Instance.rootsendData(["registerBot"]);
@@ -169,7 +177,7 @@ export class Server {
             let data = JSON.parse(msg);
             switch (data[0]) {
                 case "message":
-                    if (data[1].channel === this.config.name && data[1].text.startsWith("!")) {
+                    if (data[1].channel === Server.config.name && data[1].text.startsWith("!")) {
                         let p = Sim.Instance.players.filter(function (p) {
                             return p.name === data[1].name;
                         })[0];
@@ -331,7 +339,7 @@ export class Server {
     };
 
     rootsendData (data: any) {
-        if (this.root.readyState === WebSocket.OPEN) {
+        if (this.root.readyState === ws.OPEN) {
             this.root.send(JSON.stringify(data));
         }
     };
@@ -339,16 +347,23 @@ export class Server {
     sendInfo () {
         // Send server info
         let info = {
-            name: this.config.name,
-            address: "wss://" + this.config.addr + ":" + this.config.port,
-            observers: Sim.Instance.players.filter(player => player.connected && !player.ai).length,
-            players: Sim.Instance.players.filter(player => player.connected).map(function (player: Player) {
+            name: Server.config.name,
+            address: "wss://" + Server.config.addr + ":" + Server.config.port,
+
+            observers: Sim.Instance.players.filter(function (player: Player) {
+                return player.connected && !player.ai;
+            }).length,
+
+            players: Sim.Instance.players.filter(function (player: Player) {
+                return player.connected;
+            }).map(function (player: Player) {
                 return {
                     name: player.name,
                     side: player.side,
                     ai: false
                 }
             }),
+
             type: Sim.Instance.serverType,
             version: Sim.Instance.VERSION,
             state: Sim.Instance.state
@@ -357,7 +372,7 @@ export class Server {
     };
 }
 
-let server = Server.Instance;
+let server = new Server();
 Sim.Instance.cheatSimInterval = -12;
 Sim.Instance.lastSimInterval = 0;
 
