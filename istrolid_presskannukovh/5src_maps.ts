@@ -319,8 +319,6 @@ export class Mapping {
     };
 
     static genSymmetrical() {
-        let i, m, ref, tooClose;
-
         let alpha_spawn = new SpawnPoint();
         alpha_spawn.side = "alpha";
         alpha_spawn.spawn = "alpha";
@@ -345,7 +343,7 @@ export class Mapping {
                 v2.scale(commandPoint.pos, (from_center - 1500) / from_center, null);
             } else {
                 for (let o = 0; o < 10; o++) {
-                    tooClose = false;
+                    let tooClose = false;
                     Mapping.randomVector(commandPoint.pos);
                     v2.scale(commandPoint.pos, (300 + this.mr.random() * 2000) * Sim.Instance.mapScale, null);
 
@@ -374,11 +372,10 @@ export class Mapping {
     };
 
     genTower() {
-        let _, i, ref, results, spec, thing, u;
-        ref = Sim.Instance.things;
+        let results, spec, thing, u;
         results = [];
-        for (_ in ref) {
-            thing = ref[_];
+        for (let _ in Sim.Instance.things) {
+            thing = Sim.Instance.things[_];
             if (thing.commandPoint) {
                 spec = Mapping.chooseOne(Mapping.forts);
             } else {
@@ -390,9 +387,8 @@ export class Mapping {
             u.rot = v2.angle(u.pos) + Math.PI;
             Sim.Instance.things[u.id] = u;
             results.push((function () {
-                let m, results1;
-                results1 = [];
-                for (i = m = 0; m < 6; i = ++m) {
+                let results1 = [];
+                for (let i =  0; i < 6; i++) {
                     if (thing.commandPoint) {
                         spec = Mapping.blocks[0];
                     } else {

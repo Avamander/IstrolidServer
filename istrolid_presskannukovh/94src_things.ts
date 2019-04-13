@@ -2,6 +2,8 @@
 General Game Objects live here
  */
 
+import {Part} from "./95part";
+
 export class ThingUtil {
     hasProp = {}.hasOwnProperty;
 
@@ -30,7 +32,7 @@ export class ThingUtil {
         return color;
     };
 
-     static drawAllArcs(unit_id: { id: number }) {
+    static drawAllArcs(unit_id: { id: number }) {
         let arc, cur, i, j, l, len, n, pos, range, ref, ref1, ref2, results, th, w, x, y;
         // @ts-ignore
         let unit: Unit = Sim.Instance.things[unit_id.id];
@@ -99,10 +101,10 @@ export class Player {
     color: number[];
     maxMoney: number;
     money: number;
-    rallyPoint: number[] | Float64Array;
+    rallyPoint: Float64Array;
     selection: any[] | Thing[] | { owner: any; }[];
-    buildQ: any[] | number[];
-    validBar: any[] | boolean[];
+    buildQ: number[];
+    validBar: boolean[];
     mouseTrail: any[];
     usingSpawn: Thing;
     side: string;
@@ -127,7 +129,7 @@ export class Player {
         this.money = Sim.Instance.defaultMoney;
         this.maxMoney = 2e308;
         this.mouse = [0, 0];
-        this.rallyPoint = [0, 0];
+        this.rallyPoint = new Float64Array([0, 0]);
         this.selection = [];
         this.buildQ = [];
         this.validBar = (function () {
@@ -209,21 +211,20 @@ export class Player {
                 }
             }
             if (build) {
-                return this.buildQ = (function (passed_this: Player) {
-                    let l, len1, ref1, results;
-                    ref1 = passed_this.buildQ;
-                    results = [];
-                    for (l = 0, len1 = ref1.length; l < len1; l++) {
-                        n = ref1[l];
-                        if (n !== null) {
-                            results.push(n);
-                        }
-                    }
-                    return results;
-                }).call(this);
+                return this.buildQ = this.get_build_q();
             }
         }
-    };
+    }
+
+    get_build_q() {
+        let results = [];
+        for (let l = 0; l < this.buildQ.length; l++) {
+            if (this.buildQ[l] !== null) {
+                results.push(this.buildQ[l]);
+            }
+        }
+        return results;
+    }
 
     rqUnit(slot: number) {
         if (Sim.Instance.serverType === "Survival" && this.side === "beta") {
@@ -236,6 +237,7 @@ export class Player {
             );
             return Sim.Instance.buildUnit(this.number, slot, pos);
         }
+
         if (Sim.Instance.serverType === "IO") {
             let units = (function (passed_this: Player) {
                 let results = [];
@@ -436,17 +438,16 @@ export class Thing {
     dead: boolean;
     storeEnergy: number;
     maxHP: number;
-    postDeath: any;
-    spawn: any;
-    spec: any;
-    net: any;
-    target: any;
+    spawn: string;
+    spec: string | any[];
+    net: {};
+    target: Thing | Unit;
     message: any;
     follow: any;
-    origin: any;
-    z: any;
-    color: any;
-    parts: any;
+    origin: Unit;
+    z: number;
+    color: number[];
+    parts: Part[];
     active: boolean;
     fixed: any;
     canCapture: any;
@@ -456,17 +457,23 @@ export class Thing {
     missile: boolean = false;
     life: number;
     maxLife: number;
-    vel: any;
-    unit: any;
+    vel: Float64Array;
+    unit: boolean = false; // Is unit
     side: string;
     owner: Player;
     explode: boolean = false;
     bullet: boolean = false;
     pos: Float64Array;
     cloak: number;
+    lastDamager: Thing;
+    energyCaster: boolean;
 
     constructor() {
         this.id = Sim.Instance.nid();
+    }
+
+    postDeath() {
+
     }
 
     getBoundPoints(): any {
@@ -477,7 +484,7 @@ export class Thing {
 
     }
 
-    applyDamage(damage: number, to_what: this) {
+    applyDamage(damage: number, damager: Thing) {
 
     }
 
@@ -594,12 +601,14 @@ export class Bullet extends Particle {
     hitsCloak: boolean = false;
     life: number;
     t: number;
-    energyDamage: number;
-    explode: boolean;
-    hitsMissiles: any;
+    energyDamage: number = 0;
+    explode: boolean = false;
+    hitsMissiles: boolean = false;
     soundVolume: number = .1;
     owner: Player;
     target: Unit;
+    aoe: number = 0;
+    hitPos: Float64Array;
 
     constructor() {
         super();
@@ -608,7 +617,7 @@ export class Bullet extends Particle {
     }
 
     applyDamage() {
-        return this.dead = true;
+        this.dead = true;
     };
 
     move(): void {
@@ -656,7 +665,9 @@ export class Bullet extends Particle {
         if (this.hitsMissiles) {
             return Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + 100, (function (_this) {
                 return function (missile: Bullet) {
+                    // @ts-ignore
                     if (missile.missile && _this.collide(missile)) {
+                        // @ts-ignore
                         _this.hitMissle(missile);
                         return !_this.hitsMultiple;
                     }
@@ -846,7 +857,7 @@ export class FlackExplosion extends Explosion {
 }
 
 export class AoeBullet extends Bullet {
-    owner: any;
+    owner: Player;
     image = "img/unitBar/pip1.png";
     size = [1, 1];
     color = [100, 100, 100, 255];
@@ -855,7 +866,7 @@ export class AoeBullet extends Bullet {
     damage = 3;
     explode = true;
     explodeClass = AoeExplosion;
-    hitPos = [0, 0];
+    hitPos = new Float64Array([0, 0]);
 
     constructor() {
         super();
@@ -1122,7 +1133,7 @@ export class ShipExplosion extends Explosion {
 }
 
 export class AoeExplosion extends Explosion {
-    owner: any;
+    owner: Player;
     side: string;
     image = "img/point02.png";
     maxLife = 10;
@@ -1281,7 +1292,7 @@ export class CommandPoint extends Thing {
     id: any;
     color: number[];
     rot: number;
-    vel: number[];
+    vel: Float64Array;
     hp: number;
     dead: boolean;
     linkedSpawn: any;
@@ -1293,7 +1304,7 @@ export class CommandPoint extends Thing {
         this.z = .01;
         this.hp = this.maxHP;
         this.pos = new Float64Array([0, 0]);
-        this.vel = [0, 0];
+        this.vel = new Float64Array([0, 0]);
         this.rot = 0;
         this.color = [255, 255, 255, 255];
         this.side = "neutral";
@@ -1406,10 +1417,10 @@ export class CommandPoint extends Thing {
 
     draw() {
         if (Sim.Instance.theme) {
-            let color = [255,255,255,255]; // TODO: Sim.sideColor(this.side);
+            let color = [255, 255, 255, 255]; // TODO: Sim.sideColor(this.side);
             baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot, color);
             if (this.capping > 0) {
-                color = [255,255,255,255]; // TODO: Sim.antiSideColor(this.side);
+                color = [255, 255, 255, 255]; // TODO: Sim.antiSideColor(this.side);
                 let results = [];
                 for (let i = 0; i < this.maxCapp; i++) {
                     if (this.capping < i) {
@@ -1433,13 +1444,13 @@ export class SpawnPoint extends Thing {
     size: number[] = [1, 1];
     static: boolean = true;
     radius: number = 400;
-    spawn: boolean | string = true;
+    spawn: string = "";
     side: string;
     id: number;
     pos: Float64Array;
     dead: boolean;
     z: number;
-    vel: number[];
+    vel: Float64Array;
     rot: number;
     hp: number;
     color: number[];
@@ -1453,7 +1464,7 @@ export class SpawnPoint extends Thing {
         this.z = .01;
         this.hp = this.maxHP;
         this.pos = new Float64Array([0, 0]);
-        this.vel = [0, 0];
+        this.vel = new Float64Array([0, 0]);
         this.rot = 0;
         this.color = [255, 255, 255, 255];
         this.side = "neutral";

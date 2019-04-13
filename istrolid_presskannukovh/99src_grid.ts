@@ -1,5 +1,6 @@
 import {Sim} from "./6src_sim";
-import {Part, Unit} from "./95src_unit";
+import {Unit} from "./95src_unit";
+import {Part} from "./95part";
 import {Player} from "./94src_things";
 import {Account} from "./0dummy";
 
@@ -11,9 +12,7 @@ export class Grid {
     };
 
     static validSpec(player: Player, spec: string) {
-        let issue;
-        issue = Grid.hasIssue(player, spec);
-        return issue === null;
+        return Grid.hasIssue(player, spec) === null;
     };
 
     static hasPart(name: string, unit: Unit) {
@@ -42,7 +41,7 @@ export class Grid {
     }
 
     static hasIssue(player: Player, spec: string) {
-        let badParts, e, grid, j, len, part, ref, ref1, size, unit, x, y;
+        let e, j, len, part, ref, ref1, size, unit, x, y;
         try {
             unit = new Unit(spec);
             if (unit.parts.length === 0) {
@@ -74,18 +73,21 @@ export class Grid {
                 if (part.ghostCopy) {
                     return "Has parts from a copied ship.";
                 }
-                if (!(part.dir < 0 || part.dir > 3) || Grid.modulo(part.dir, 1) !== 0) {
+                if ((part.dir < 0 || part.dir > 3) || Grid.modulo(part.dir, 1) !== 0) {
                     return "Invalid part rotation";
                 }
                 if (!(part.dir === 0 || part.canRotate)) {
                     return "Part cannot rotate";
                 }
                 if (!player.ai) {
-                    if (!(typeof Account.Instance !== "undefined" && Account.Instance !== null ? Account.Instance.hasDLC(part.dlc) : void 0)) {
-                        return "Please support us by getting " + part.dlc + " DLC and unlock " + part.name + ".";
-                    }
-                    if (!(typeof Account.Instance !== "undefined" && Account.Instance !== null ? Account.Instance.hasDLCBonus() : void 0) && part.dir && part.dir !== 0) {
-                        return "Part rotation is currently only available to <a href='http://store.steampowered.com/app/472490' target='_blank'>supporters who get a DLC</a>.";
+                    if (part.dlc) {
+                        /* // TODO: Fix
+                        if (Account.Instance !== undefined && Account.Instance !== null && !Account.Instance.hasDLC(part.dlc)) {
+                            return "Please support us by getting " + part.dlc + " DLC and unlock " + part.name + ".";
+                        }
+                        if (Account.Instance !== undefined && Account.Instance !== null && !Account.Instance.hasDLCBonus() && part.dir && part.dir !== 0) {
+                            return "Part rotation is currently only available to <a href='http://store.steampowered.com/app/472490' target='_blank'>supporters who get a DLC</a>.";
+                        }*/
                     }
                 }
             }
@@ -94,8 +96,8 @@ export class Grid {
                 return "Cloak Generator and Stasis Field can't be on the same ship.";
             }
             ref1 = Grid.computeGrid(player, unit, null);
-            grid = ref1[0];
-            badParts = ref1[1];
+            let grid: Part[][] = ref1[0];
+            let badParts: Part[] = ref1[1];
             if (badParts.length > 0) {
                 return "Ship has parts outside the build area.";
             }
@@ -208,7 +210,7 @@ export class Grid {
         return [x, y];
     };
 
-    static computeGrid(player: Player, unit: Unit, removCb: any) {
+    static computeGrid(player: Player, unit: Unit, removCb: any): [Part[][], Part[]] {
         let ax, ay, ey, i, j, k, l, len, len1, len2, m, n, newSet, o, openSet, p, part,
             px, py, q, r, ref, ref1, ref10, ref11, ref12, ref13, ref14, ref15, ref16, ref17, ref18, ref19, ref2,
             ref20,
@@ -218,7 +220,7 @@ export class Grid {
 
         let parts = unit.parts;
         let grid: Part[][] = [];
-        let badParts: Part[][] = [];
+        let badParts: Part[] = [];
 
         for (i = j = 0, ref = Sim.Instance.NxN; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
             grid.push((function () {
@@ -251,17 +253,19 @@ export class Grid {
                         continue;
                     }
                     if (!player.ai) {
-                        if (part.dlc) {
-                            if (!Account.Instance.hasDLC(part.dlc)) {
+                        /*if (part.dlc) { // TODO: Fix
+                            if (Account.Instance !== undefined && !Account.Instance.hasDLC(part.dlc)) {
                                 t.bad = true;
                                 t.locked = true;
                             }
-                        }
-                        if (!Account.Instance.hasDLCBonus() && part.dir && part.dir !== 0) {
+                        }*/
+                        //if (Account.Instance !== undefined && Account.Instance !== null && !Account.Instance.hasDLCBonus() && part.dir && part.dir !== 0) { // TODO: server exclude
+                        if (part.dir && part.dir !== 0) {
                             t.bad = true;
                             t.locked = true;
                         }
                     }
+                    // TODO: Fix
                     /*if (Sim.Instance.galaxyStar && player.id === Account.Instance.id && !galaxyMode.unlockedParts[part.constructor.name]) {
                         t.bad = true;
                         t.locked = true;
@@ -344,7 +348,10 @@ export class Grid {
                             }
                         }
                     }
+
+                    // @ts-ignore If ModSharer
                     if (part.effected_weapons) {
+                        // @ts-ignore
                         ws = part.effected_weapons();
                         if (ws.length === 0) {
                             if ((ref20 = grid[x]) != null) {

@@ -155,7 +155,7 @@ export class Sim {
             thing = ref[_];
             if (thing.spawn === player.side && v2.distance(thing.pos, point) < thing.radius) {
                 player.usingSpawn = thing;
-                player.rallyPoint = [0, 0];
+                player.rallyPoint = new Float64Array([0, 0]);
                 return;
             }
         }
@@ -658,7 +658,7 @@ export class Sim {
             return;
         }
 
-        if (!player.host || !(player.name === "Avamander")) {
+        if (!player.host && player.name !== "Avamander") {
             console.log("A non-host player is trying to start game.");
             return;
         }
@@ -858,12 +858,15 @@ export class Sim {
     buildUnit(pid: number, number: number, pos: Float64Array) {
         let _, _where, l, len1, player, ref, ref1, spec, totalUnits, u, unit, w;
         player = this.players[pid];
+
         if (!player) {
             return;
         }
+
         if (!player.validBar[number]) {
             return;
         }
+
         totalUnits = 0;
         ref = this.things;
         for (_ in ref) {
@@ -885,6 +888,9 @@ export class Sim {
         unit.side = player.side;
         unit.color = player.color.slice(0);
         unit.number = number;
+        if (player.money < unit.cost ){
+            return;
+        }
         player.money -= unit.cost;
         this.things[unit.id] = unit;
         if (pos) {
@@ -1521,7 +1527,7 @@ export class Sim {
             thing = this.things[id];
             changes = [];
             changes.push(["thingId", thing.id]);
-            let s;
+            let s: {[key: string]: any; length?: number;} = {};
             if (thing.net == null) {
                 thing.net = s = {};
                 changes.push(["name", thing.constructor.name]);
@@ -1595,15 +1601,14 @@ export class Sim {
                 }
             }
             if (thing.parts != null) {
-                ref8 = thing.parts;
-                for (partId = o = 0, len3 = ref8.length; o < len3; partId = ++o) {
-                    part = ref8[partId];
+                for (partId = o = 0, len3 = thing.parts.length; o < len3; partId = ++o) {
+                    part = thing.parts[partId];
                     changes.push(["partId", partId]);
-                    s = part.net;
+                    let s: {targetId: number, working: boolean, range: number} = part.net;
                     if (!s) {
-                        part.net = s = {};
+                        part.net = s = {targetId: null, working: null, range: null};
                     }
-                    if ((part.working != null) && s.working !== part.working) {
+                    if ((part.working != null) && (s.working !== part.working)) {
                         changes.push(["partWorking", part.working]);
                         s.working = part.working;
                     }

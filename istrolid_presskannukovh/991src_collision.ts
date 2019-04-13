@@ -6,7 +6,7 @@ export class CollisionUtils {
         let p: Float64Array;
         let product;
         maxProduct = -2e308;
-        let rst: Float64Array;
+        let rst: Float64Array = null;
         for (i = 0, len = points.length; i < len; i++) {
             p = points[i];
             product = v2.dot(d, p);

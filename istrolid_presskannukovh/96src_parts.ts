@@ -1,5 +1,4 @@
-import {Engine, Part, Turret, Unit} from "./95src_unit";
-import {UnitUtils} from "./95unitutils";
+import {Part, Engine, Turret} from "./95part";
 import {
     AoeBullet,
     AoeExplosion,
@@ -12,10 +11,6 @@ import {
     TrackingMissile,
     Trail
 } from "./94src_things";
-import {v2} from "./4src_maths";
-import {baseAtlas, intp} from "./0dummy";
-import {CollisionUtils} from "./991src_collision";
-import {Sim} from "./6src_sim";
 
 export namespace Parts {
     export class Mount360 extends Part {
@@ -117,7 +112,7 @@ export namespace Parts {
         }
 
         initTurret(turret: Turret) {
-            return turret.range *= this.rangeBuffMul;
+            turret.range *= this.rangeBuffMul;
         }
     }
 
@@ -139,8 +134,8 @@ export namespace Parts {
         }
 
         initTurret(turret: Turret) {
-            return turret.weaponRangeFlat += this.weaponRangeFlat;
-        };
+            turret.weaponRangeFlat += this.weaponRangeFlat;
+        }
     }
 
     export class Mount10Demi extends Mount360 {
@@ -2086,8 +2081,8 @@ export namespace Parts {
             }
             v2.scale(_wave, amount, null);
             v2.add(unit.vel, _wave, null);
-            return this.dead = true;
-        };
+            this.dead = true;
+        }
     }
 
     export class RamTurret extends Turret {
@@ -2750,7 +2745,7 @@ export namespace Parts {
             if (this.life > this.maxLife / 4 && this.split === 0) {
                 image = "img/fire02.png";
             } else if (this.life > this.maxLife / 4) {
-                image = "export class fizzleMineEnergy.png";
+                image = "fizzleMineEnergy.png";
             } else {
                 image = this.image;
             }
@@ -3768,11 +3763,10 @@ export namespace Parts {
         };
 
         tick() {
-            let i, len, other, ref, results;
+            let i, len, other, ref;
             if (this.unit.warheadTest !== Sim.Instance.step) {
                 this.unit.warheadTest = Sim.Instance.step;
                 ref = this.unit.closestEnemies;
-                results = [];
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
@@ -3785,11 +3779,10 @@ export namespace Parts {
                         continue;
                     }
                     this.unit.hp = 0;
-                    results.push(other.applyDamage(this.unit.shapeDamage, this.unit.owner));
+                    other.applyDamage(this.unit.shapeDamage, this.unit);
                 }
-                return results;
             }
-        };
+        }
     }
 
     export class ModPart extends Part {
@@ -3807,7 +3800,7 @@ export namespace Parts {
 
         constructor() {
             super();
-            this.effected_weapons.prototype.bind(this);
+            this.effected_weapons.bind(this);
         }
 
         effected_weapons() {
@@ -3967,7 +3960,7 @@ export namespace Parts {
 
         constructor() {
             super();
-            this.effected_weapons.prototype.bind(this);
+            this.effected_weapons.bind(this);
         }
 
         effected_weapons() {
@@ -5233,3 +5226,9 @@ export namespace Parts {
     }
 }
 
+import {UnitUtils} from "./95unitutils";
+import {v2} from "./4src_maths";
+import {baseAtlas, intp} from "./0dummy";
+import {CollisionUtils} from "./991src_collision";
+import {Sim} from "./6src_sim";
+import {Unit} from "./95src_unit";

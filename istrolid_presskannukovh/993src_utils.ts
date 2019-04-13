@@ -20,6 +20,12 @@ export class Utils {
         return list[Math.floor(Math.random() * list.length)];
     };
 
+    static shuffle(list: any[]) {
+        return list.sort(function (a: any, b: any) {
+            return Math.random() - 0.5;
+        });
+    };
+
     // dumps JSON.stringify
     // loads JSON.parse;
 

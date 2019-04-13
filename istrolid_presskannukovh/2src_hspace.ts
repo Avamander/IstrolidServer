@@ -1,5 +1,6 @@
 import {Sim} from "./6src_sim";
 import {v2} from "./4src_maths";
+import {Thing} from "./94src_things";
 
 export class HSpace {
     private PRIME: number = 677;
@@ -43,7 +44,7 @@ export class HSpace {
         }
     };
 
-    findInRange(point: number[] | Float64Array, range: number, cb: (arg0: any) => boolean) {
+    findInRange(point: number[] | Float64Array, range: number, cb: (thing: Thing) => boolean) {
         let d, k, len, posKey, px, py, rx, ry, things, x, y;
         Sim.Instance.timeStart("findInRange");
         d = Math.floor(range / this.resolution) + 1;
