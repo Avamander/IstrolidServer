@@ -888,7 +888,7 @@ export class Sim {
         unit.side = player.side;
         unit.color = player.color.slice(0);
         unit.number = number;
-        if (player.money < unit.cost ){
+        if (player.money < unit.cost) {
             return;
         }
         player.money -= unit.cost;
@@ -1527,7 +1527,7 @@ export class Sim {
             thing = this.things[id];
             changes = [];
             changes.push(["thingId", thing.id]);
-            let s: {[key: string]: any; length?: number;} = {};
+            let s: { [key: string]: any; length?: number; } = {};
             if (thing.net == null) {
                 thing.net = s = {};
                 changes.push(["name", thing.constructor.name]);
@@ -1604,7 +1604,7 @@ export class Sim {
                 for (partId = o = 0, len3 = thing.parts.length; o < len3; partId = ++o) {
                     part = thing.parts[partId];
                     changes.push(["partId", partId]);
-                    let s: {targetId: number, working: boolean, range: number} = part.net;
+                    let s: { targetId: number, working: boolean, range: number } = part.net;
                     if (!s) {
                         part.net = s = {targetId: null, working: null, range: null};
                     }

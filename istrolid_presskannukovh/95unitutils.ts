@@ -10,11 +10,11 @@ export class UnitUtils {
         return JSON.stringify(spec);
     };
 
-    static atob (a: string) {
+    static atob(a: string) {
         return Buffer.from(a).toString("base64");
     };
 
-    static global (b: string) {
+    static global(b: string) {
         Buffer.from(b, "base64").toString();
     };
 

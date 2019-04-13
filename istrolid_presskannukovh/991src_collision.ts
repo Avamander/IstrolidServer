@@ -70,7 +70,7 @@ export class CollisionUtils {
         }
     };
 
-    static closestPointOnPolygon (point: Float64Array, points: Float64Array[]) {
+    static closestPointOnPolygon(point: Float64Array, points: Float64Array[]) {
         let closest, dist, i, j, k, minDist, p, ref;
         if (points.length === 1) {
             return points[0];

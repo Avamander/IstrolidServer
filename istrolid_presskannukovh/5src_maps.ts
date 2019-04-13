@@ -388,7 +388,7 @@ export class Mapping {
             Sim.Instance.things[u.id] = u;
             results.push((function () {
                 let results1 = [];
-                for (let i =  0; i < 6; i++) {
+                for (let i = 0; i < 6; i++) {
                     if (thing.commandPoint) {
                         spec = Mapping.blocks[0];
                     } else {

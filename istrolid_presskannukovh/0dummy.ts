@@ -2,14 +2,19 @@ import {Thing} from "./94src_things";
 
 export class baseAtlas {
     static rtt: any;
+
     static startOffscreenFrame(): any {
     }
+
     static beginSprites(arg0: number[], scale: number, arg2: any[]): any {
     }
+
     static endOffscreenFrame(): any {
     }
+
     static finishSprites(arg0: boolean): any {
     }
+
     static drawSprite(image: string,
                       pos: any[] | Float64Array | number[],
                       size: number[],
@@ -31,7 +36,7 @@ export class actionMixer {
 }
 
 export class intp {
-    static things: { [key: number]: Thing};
+    static things: { [key: number]: Thing };
     static particles: any;
     static t: number;
 }

@@ -221,6 +221,36 @@ export class Unit extends Thing {
         return v2.cross(v2.sub(p, u, new Float64Array([0, 0])), v2.sub(v, u, new Float64Array([0, 0])));
     }
 
+    static min(points: Float64Array[]) {
+        return points.sort(function (a, b) {
+            return a[0] - b[0];
+        })[0];
+    }
+
+    static max(points: Float64Array[]) {
+        return points.sort(function (a, b) {
+            return b[0] - a[0];
+        })[0];
+    }
+
+    static split(u: Float64Array, v: Float64Array, points: Float64Array[]) {
+        let p;
+        let results = [];
+        for (let j = 0; j < points.length; j++) {
+            p = points[j];
+            if (Unit.diffCross(u, v, p) < 0) {
+                results.push(p);
+            }
+        }
+        return results;
+    }
+
+    static min_diffCross(points: Float64Array[], u: Float64Array, v: Float64Array): Float64Array {
+        return points.sort(function (point: Float64Array) {
+            return Unit.diffCross(u, v, point);
+        })[0];
+    }
+
     fromSpec(spec: string) {
         this.cost = 0;
         this.hp = 5;
@@ -439,36 +469,6 @@ export class Unit extends Thing {
             }
         }
         return results;
-    }
-
-    static min(points: Float64Array[]) {
-        return points.sort(function (a, b) {
-            return a[0] - b[0];
-        })[0];
-    }
-
-    static max(points: Float64Array[]) {
-        return points.sort(function (a, b) {
-            return b[0] - a[0];
-        })[0];
-    }
-
-    static split(u: Float64Array, v: Float64Array, points: Float64Array[]) {
-        let p;
-        let results = [];
-        for (let j = 0; j < points.length; j++) {
-            p = points[j];
-            if (Unit.diffCross(u, v, p) < 0) {
-                results.push(p);
-            }
-        }
-        return results;
-    }
-
-    static min_diffCross(points: Float64Array[], u: Float64Array, v: Float64Array): Float64Array {
-        return points.sort(function (point: Float64Array) {
-            return Unit.diffCross(u, v, point);
-        })[0];
     }
 
     extend(u: Float64Array, v: Float64Array, points: Float64Array[]): Float64Array[] {

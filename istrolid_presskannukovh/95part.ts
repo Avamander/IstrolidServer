@@ -57,7 +57,7 @@ export class Part {
     dlc: any;
     disable: any;
     attach: any;
-    net: {targetId: null, working: null, range: null};
+    net: { targetId: null, working: null, range: null };
     weapon: boolean;
     range: number;
     target: Unit;
