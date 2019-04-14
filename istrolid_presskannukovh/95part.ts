@@ -1,13 +1,13 @@
 import {v2} from "./4src_maths"
 import {Unit} from "./95src_unit";
-import {Bullet, HitExplosion, Player, Thing, Trail} from "./94src_things";
+import {Player, Thing, Trail} from "./94src_things";
 import {baseAtlas, intp} from "./0dummy";
 import {Server} from "../server";
 import {Sim} from "./6src_sim";
 import {CollisionUtils} from "./991src_collision";
 
 export class Part {
-    genEnergy: any;
+    genEnergy: number;
     useEnergy: number;
     thrust: number;
     working: boolean;
@@ -26,8 +26,8 @@ export class Part {
     scale: number;
     decal: boolean;
     ghostCopy: boolean;
-    stripe: any;
-    northWest: any;
+    stripe: boolean = false;
+    northWest: boolean = false;
     partNum: number;
     image: string;
     canShowDamage: boolean;
@@ -41,8 +41,8 @@ export class Part {
     painted: boolean;
     paintable: boolean;
     cantPaint: boolean;
-    mount: boolean;
-    overlap: boolean;
+    mount: boolean = false;
+    overlap: boolean = false;
     solid: boolean;
     bad: boolean;
     struct: boolean;
@@ -53,15 +53,15 @@ export class Part {
     name: string;
     turret: this;
     arc: number;
-    doesShapedDamage: any;
-    dlc: any;
-    disable: any;
-    attach: any;
-    net: { targetId: null, working: null, range: null };
+    doesShapedDamage: boolean;
+    dlc: string = null;
+    disable: boolean = false;
+    attach: boolean;
+    net: { targetId: number; working: boolean; range: number; };
     weapon: boolean;
     range: number;
     target: Unit;
-    bulletCls: any;
+    bulletCls: string;
     dps: number;
 
     constructor() {
@@ -178,6 +178,27 @@ export class Engine extends Part {
     }
 }
 
+export class TorpTurret extends Part {
+    name = "Torpedo Launcher";
+    desc = "Launches torpedos that move in straight line.";
+    hp = 10;
+    cost = 5;
+    image = "turTorp.png";
+    size = [2, 2];
+    reloadTime = 52;
+    trackSpeed = 45;
+    bulletCls = TorpBullet.constructor.name;
+    range = 1100;
+    shotEnergy = 1300;
+    mass = 10;
+    bulletSpeed = 16;
+    damage = 24;
+
+    constructor() {
+        super();
+    }
+}
+
 export class Turret extends Part {
     tab: string = "weapons";
     image: string = "turret01.png";
@@ -185,7 +206,7 @@ export class Turret extends Part {
     weapon: boolean = true;
     canRotate: boolean = false;
     target: Unit;
-    bulletCls: Bullet;
+    bulletCls: string;
     range: number = 500;
     damage: number = 0;
     energyDamage: number = 0;
@@ -218,7 +239,7 @@ export class Turret extends Part {
     dps: number;
     fireEnergy: number;
     shotEnergy: number;
-    hitsMissiles: boolean;
+    hitsMissiles: boolean = false;
     onlyInRange: boolean;
     turretNum: number;
     targetId: number;
@@ -339,7 +360,7 @@ export class Turret extends Part {
             this.image = this.orignalImage.replace(".png", "Reload.png");
         }
         return super.draw.call(this);
-    };
+    }
 
     clientTick() {
         let ref, target, th;
@@ -352,7 +373,7 @@ export class Turret extends Part {
         } else {
             return this._rot = Unit.turnAngle(this._rot, this.unit.rot, 0.075);
         }
-    };
+    }
 
     aim(thing: Thing) {
         let c, check, current_time, d;
@@ -413,7 +434,6 @@ export class Turret extends Part {
         th = v2.angle(new Float64Array(predicted_pos));
         return [th, v2.mag(new Float64Array(predicted_pos)) - radius];
     }
-    ;
 
     canShoot(other: Thing) {
         let aimDistance, arcAngle, distance, ref, th;
@@ -521,8 +541,7 @@ export class Turret extends Part {
     makeBullet(distance: number) {
         let exp, particle;
         this.unit.cloak = 0;
-        //@ts-ignore
-        particle = new this.bulletCls();
+        particle = new (<any> Bullets)[this.bulletCls]();
         Sim.Instance.things[particle.id] = particle;
         particle.side = this.unit.side;
         particle.owner = this.unit.owner;
@@ -570,3 +589,8 @@ export class Turret extends Part {
         return typeof particle.postFire === "function" ? particle.postFire() : void 0;
     }
 }
+
+import {Bullets} from "./96bullets";
+import TorpBullet = Bullets.TorpBullet;
+import {Explosions} from "./97explosions";
+import HitExplosion = Explosions.HitExplosion;

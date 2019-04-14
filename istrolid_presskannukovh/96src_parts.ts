@@ -1,18 +1,36 @@
 import {Part, Engine, Turret} from "./95part";
-import {
-    AoeBullet,
-    AoeExplosion,
-    Bullet,
-    Debree,
-    LaserBullet,
-    RingHitExplosion,
-    SmallHitExplosion,
-    StraightMissile,
-    TrackingMissile,
-    Trail
-} from "./94src_things";
+import {Bullets} from "./96bullets";
+import {Explosions} from "./97explosions";
 
 export namespace Parts {
+    import LightPlasmaBullet = Bullets.LightPlasmaBullet;
+    import LightBeam = Bullets.LightBeam;
+    import RamBullet = Bullets.RamBullet;
+    import PlasmaBullet = Bullets.PlasmaBullet;
+    import MachineBullet = Bullets.MachineBullet;
+    import SidewinderBullet = Bullets.SidewinderBullet;
+    import TeslaBolt = Bullets.TeslaBolt;
+    import HeavyPDBullet = Bullets.HeavyPDBullet;
+    import RingBullet = Bullets.RingBullet;
+    import HeavyBeam = Bullets.HeavyBeam;
+    import FlackBullet = Bullets.FlackBullet;
+    import PDLaserBullet = Bullets.PDLaserBullet;
+    import FlameBullet = Bullets.FlameBullet;
+    import NeedleGunBullet = Bullets.NeedleGunBullet;
+    import MissileBullet = Bullets.MissileBullet;
+    import LaserBullet = Bullets.LaserBullet;
+    import WavePushArch = Bullets.WavePushArch;
+    import EMPOrb = Bullets.EMPOrb;
+    import EMPOrb2 = Bullets.EMPOrb2;
+    import WavePullArch = Bullets.WavePullArch;
+    import BattleCannonBullet = Bullets.BattleCannonBullet;
+    import AutoBullet = Bullets.AutoBullet;
+    import SniperLaser = Bullets.SniperLaser;
+    import Bomb = Bullets.Bomb;
+    import ArtilleryBullet = Bullets.ArtilleryBullet;
+
+    import AoeExplosion = Explosions.AoeExplosion;
+
     export class Mount360 extends Part {
         name = "360 Turret Mount";
         desc = "Use this to mount weapons.";
@@ -1936,17 +1954,6 @@ export namespace Parts {
         }
     }
 
-    export class PDLaserBullet extends LaserBullet {
-        image = "fireBeamLarge.png";
-        sound = "sounds/weapons/lightPD.wav";
-        size = [.3, .3];
-        color = [179, 207, 255, 255];
-
-        constructor() {
-            super();
-        }
-    }
-
     export class PDTurret extends Turret {
         name = "Point Defence";
         desc = "Point defence laser. Counters missiles.";
@@ -1957,8 +1964,7 @@ export namespace Parts {
         range = 400;
         reloadTime = 40;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = PDLaserBullet;
+        bulletCls = PDLaserBullet.name;
         shotEnergy = 1100;
         instant = true;
         mass = 10;
@@ -1966,19 +1972,6 @@ export namespace Parts {
         damage = 20;
         maxLife = .5;
         hitsMissiles = true;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class HeavyPDBullet extends Bullet {
-        image = "fireHex1.png";
-        sound = "sounds/weapons/heavyPD.wav";
-        size = [.7, .7];
-        color = [179, 207, 255, 255];
-        radius = 12;
-        hitsMultiple = true;
 
         constructor() {
             super();
@@ -1994,26 +1987,13 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 52;
         trackSpeed = 90;
-        // @ts-ignore
-        bulletCls = HeavyPDBullet;
+        bulletCls = HeavyPDBullet.name;
         range = 405;
         shotEnergy = 250 * 16;
         mass = 30;
         bulletSpeed = 55;
         damage = 60;
         hitsMissiles = true;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class RingBullet extends Bullet {
-        image = "fireRing.png";
-        sound = "sounds/weapons/zingg.wav";
-        hitExplosion = RingHitExplosion;
-        size = [1, 1];
-        color = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -2029,8 +2009,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 80;
         trackSpeed = 90;
-        // @ts-ignore
-        bulletCls = RingBullet;
+        bulletCls = RingBullet.name;
         range = 330;
         shotEnergy = 250 * 16;
         mass = 20;
@@ -2050,39 +2029,8 @@ export namespace Parts {
                 this.spin += .0001 * this.damage;
                 this.image = "turRingReload.png";
             }
-            baseAtlas.drawSprite("export class " + this.image, this.worldPos, [1, 1], this.spin, null);
+            baseAtlas.drawSprite("parts/" + this.image, this.worldPos, [1, 1], this.spin, null);
         };
-    }
-
-    export class RamBullet extends Bullet {
-        image = "export class fireWavePull.png";
-        sound = "sounds/weapons/WavePull.wav";
-        size = [.5, .5];
-        color = [179, 207, 255, 255];
-        radius = 30;
-        direction = -1;
-        waveEffect = 300;
-
-        constructor() {
-            super();
-        }
-
-        hitUnit(unit: Unit) {
-            let amount, dot, p, _wave;
-            // @ts-ignore
-            unit.applyDamage(this.damage, this);
-            p = this.waveEffect * this.damage / unit.mass;
-            v2.norm(this.vel, _wave);
-            v2.scale(_wave, -this.direction, null);
-            dot = v2.dot(unit.vel, _wave);
-            amount = 0;
-            if (dot < p) {
-                amount = p;
-            }
-            v2.scale(_wave, amount, null);
-            v2.add(unit.vel, _wave, null);
-            this.dead = true;
-        }
     }
 
     export class RamTurret extends Turret {
@@ -2094,8 +2042,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 96;
         trackSpeed = 90;
-        //@ts-ignore
-        bulletCls = RamBullet;
+        bulletCls = RamBullet.constructor.name;
         range = 125;
         shotEnergy = 1200;
         mass = 10;
@@ -2103,54 +2050,6 @@ export namespace Parts {
         damage = 80;
         hide = true;
         disable = true;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class TorpBullet extends StraightMissile {
-        image = "fireTorp1.png";
-        sound = "sounds/weapons/torp2.wav";
-        size = [1, 1];
-        radius = 25;
-        missile = true;
-        trailTime = 750;
-        trailSize = 0.06;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class TorpTurret extends Bullet {
-        name = "Torpedo Launcher";
-        desc = "Launches torpedos that move in straight line.";
-        hp = 10;
-        cost = 5;
-        image = "turTorp.png";
-        size = [2, 2];
-        reloadTime = 52;
-        trackSpeed = 45;
-        bulletCls = TorpBullet;
-        range = 1100;
-        shotEnergy = 1300;
-        mass = 10;
-        bulletSpeed = 16;
-        damage = 24;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class MissileBullet extends TrackingMissile {
-        image = "fireMis1.png";
-        sound = "sounds/weapons/torp1.wav";
-        size = [.8, .8];
-        color = [0, 0, 0, 255];
-        missile = true;
-        tracking = true;
 
         constructor() {
             super();
@@ -2167,8 +2066,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 33;
         trackSpeed = 45;
-        //@ts-ignore
-        bulletCls = MissileBullet;
+        bulletCls = MissileBullet.name;
         range = 1000;
         shotEnergy = 100 * 30;
         mass = 30;
@@ -2182,53 +2080,6 @@ export namespace Parts {
         }
     }
 
-    export class ArtilleryExplosion extends AoeExplosion {
-        sound = "sounds/weapons/thud3.wav";
-        soundVolume = .20;
-        maxLife = 10;
-
-        constructor() {
-            super();
-        }
-
-        draw() {
-            let color, fade, s;
-            super.draw.call(this);
-            if (this.dead) {
-                return;
-            }
-            fade = this.life / this.maxLife;
-            s = this.radius / 2;
-            color = [255, 255, 255, (1 - Math.pow(fade, 2)) * 180];
-            return baseAtlas.drawSprite("img/fire02.png", this.pos, [s, s], this.rot, color);
-        };
-    }
-
-    export class ArtilleryBullet extends AoeBullet {
-        image = "export class fireLong1.png";
-        sound = "sounds/weapons/artillery.wav";
-        color = [255, 240, 244, 255];
-        size = [1, 1];
-        missile = true;
-        explodeClass = ArtilleryExplosion;
-
-        constructor() {
-            super();
-        }
-
-        draw() {
-            let color, dist, size;
-            super.draw.call(this);
-            if (this.hitPos) {
-                dist = Math.min(v2.distance(this.pos, new Float64Array(this.hitPos)), 1000);
-                size = Math.pow(1.003, -dist) * this.aoe / 162;
-                color = [255, 0, 0, 80];
-                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 256, this.aoe / 256], 0, color);
-                baseAtlas.drawSprite("img/fire02.png", this.hitPos, [size * 2, size * 2], 0, color);
-            }
-        };
-    }
-
     export class ArtilleryTurret extends Turret {
         name = "Artillery Gun";
         desc = "Launches a slow moving shell that explodes at the targeted area.";
@@ -2239,8 +2090,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 89;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = ArtilleryBullet;
+        bulletCls = ArtilleryBullet.name;
         exactRange = true;
         range = 1600;
         minRange = 500;
@@ -2255,81 +2105,6 @@ export namespace Parts {
         }
     }
 
-    export class SidewinderBullet extends TrackingMissile {
-        image = "export class fireMine.png";
-        sound = "sounds/weapons/torp4.wav";
-        soundVolume = .05;
-        size = [.8, .8];
-        color = [0, 0, 0, 255];
-        missile = true;
-        tracking = true;
-        turnVel = [1, 1];
-        trailTime = 500;
-        trailSize = 0.12;
-        direction: number;
-        dist: number;
-        turretNum: number;
-
-        constructor() {
-            super();
-        }
-
-        tick() {
-            let minDistance, minUnit;
-            super.tick.call(this);
-            if ((Sim.Instance.step + this.id) % 4 === 0) {
-                if (!this.target || this.target.dead || this.target.cloaked()) {
-                    Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, Sim.Instance.maxRadius[Sim.otherSide(this.side)], (function (_this) {
-                        return function (unit: Unit) {
-                            let dist;
-                            if (unit.owner === _this.owner) {
-                                return false;
-                            }
-                            dist = v2.distance(unit.pos, _this.pos);
-                            if (null === null || dist < 0) {
-                                if (!unit.cloaked()) {
-                                    minUnit = unit;
-                                    minDistance = dist;
-                                }
-                            }
-                            return false;
-                        };
-                    })(this));
-                    if (minUnit) {
-                        return this.target = minUnit;
-                    }
-                }
-            }
-        };
-
-        move() {
-            if (this.dead) {
-                return;
-            }
-            if (this.target && !this.target.dead && !this.target.cloaked()) {
-                this.dist = v2.distance(this.target.pos, this.pos);
-                this.vel = new Float64Array([this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]]);
-            }
-            v2.norm(this.vel, null);
-            this.rot = v2.angle(this.vel);
-            /*if (v2.direction === 0) {
-            this.turnVel[0] = -Math.cos(this.rot) * 2;
-            this.turnVel[1] = -Math.sin(this.rot) * 2;
-        }
-        if (v2.direction === 1) {
-            this.turnVel[0] = Math.cos(this.rot) * 2;
-            this.turnVel[1] = Math.sin(this.rot) * 2;
-        }*/
-            v2.scale(new Float64Array(this.turnVel), Math.max(0.01, (this.maxLife - this.life * 2) / this.maxLife), new Float64Array(this.turnVel));
-            v2.scale(this.vel, Math.max(0.01, (this.life * 2) / this.maxLife), this.vel);
-            v2.add(this.vel, new Float64Array(this.turnVel), null);
-            v2.scale(this.vel, this.speed, null);
-            v2.add(this.pos, this.vel, null);
-            this.rot = v2.angle(this.vel);
-            return this.life += 1;
-        };
-    }
-
     export class SidewinderTurret extends Turret {
         name = "Sidewinder Missile";
         desc = "Sidewinder is a slow moving tracking missile.";
@@ -2340,8 +2115,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 96;
         trackSpeed = 45;
-        //@ts-ignore
-        bulletCls = SidewinderBullet;
+        bulletCls = SidewinderBullet.name;
         range = 780;
         shotEnergy = 2000;
         mass = 10;
@@ -2400,17 +2174,6 @@ export namespace Parts {
         };
     }
 
-    export class PlasmaBullet extends Bullet {
-        image = "export class fireShot1.png";
-        sound = "sounds/weapons/blaster2.wav";
-        size = [.6, .6];
-        color = [179, 207, 255, 255];
-
-        constructor() {
-            super();
-        }
-    }
-
     export class PlasmaTurret extends Turret {
         name = "Plasma Turret";
         desc = "Fires powerful long range projectiles.";
@@ -2420,24 +2183,12 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 52;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = PlasmaBullet;
+        bulletCls = PlasmaBullet.name;
         range = 820;
         shotEnergy = 100 * 48;
         mass = 40;
         bulletSpeed = 20;
         damage = 53;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class LightPlasmaBullet extends Bullet {
-        image = "export class fireShot1.png";
-        sound = "sounds/weapons/blaster2.wav";
-        size = [.6, .6];
-        color = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -2455,25 +2206,12 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 64;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = LightPlasmaBullet;
+        bulletCls = LightPlasmaBullet.name;
         range = 950;
         shotEnergy = 1700;
         mass = 10;
         bulletSpeed = 22;
         damage = 26;
-
-        constructor() {
-            super();
-        }
-
-    }
-
-    export class LightBeam extends LaserBullet {
-        image = "export class fireBeamLarge.png";
-        sound = "sounds/weapons/beam2.wav";
-        size = [.5, .5];
-        color = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -2489,8 +2227,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 7;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = LightBeam;
+        bulletCls = LightBeam.name;
         range = 350;
         instant = true;
         shotEnergy = 80 * 7;
@@ -2505,17 +2242,6 @@ export namespace Parts {
 
     }
 
-    export class HeavyBeam extends LaserBullet {
-        image = "export class fireBeamLarge.png";
-        sound = "sounds/weapons/beam4.wav";
-        size = [1, 1];
-        color = [179, 207, 255, 255];
-
-        constructor() {
-            super();
-        }
-    }
-
     export class HeavyBeamTurret extends Turret {
         name = "Heavy Beam";
         desc = "Mid range beam weapon.";
@@ -2525,8 +2251,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 40;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = HeavyBeam;
+        bulletCls = HeavyBeam.name;
         shotEnergy = 5000;
         instant = true;
         range = 610;
@@ -2534,39 +2259,6 @@ export namespace Parts {
         bulletSpeed = 2000;
         damage = 38;
         maxLife = .5;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class FlackExplosion extends AoeExplosion {
-        maxLife = 10;
-        sound: string = null;
-
-        constructor() {
-            super();
-        }
-
-        draw() {
-            let color, fade, s;
-            super.draw.call(this);
-            if (this.dead) {
-                return;
-            }
-            fade = this.life / this.maxLife;
-            s = this.aoe / 80;
-            color = [255, 255, 255, (1 - Math.pow(fade, 2)) * 180];
-            return baseAtlas.drawSprite("export class fireFlackExp1.png", this.pos, [s, s], this.rot, color);
-        };
-    }
-
-    export class FlackBullet extends AoeBullet {
-        image = "fireFlack1.png";
-        sound = "sounds/weapons/zingg.wav";
-        color = [255, 240, 244, 255];
-        size = [1, 1];
-        explodeClass = FlackExplosion;
 
         constructor() {
             super();
@@ -2582,8 +2274,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 32;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = FlackBullet;
+        bulletCls = FlackBullet.name;
         range = 460;
         mass = 30;
         shotEnergy = 100 * 32;
@@ -2597,46 +2288,18 @@ export namespace Parts {
         }
     }
 
-    export class SniperLaser extends Bullet {
-        image = "hit1.png";
-        sound = "sounds/weapons/blaster2.wav";
-        size = [2, 2];
-        color = [179, 207, 255, 255];
-        hitOnce: { [key: number]: boolean };
-
-        constructor() {
-            super();
-            this.hitOnce = {};
-        }
-
-        draw() {
-            if (this.dead) {
-                return;
-            }
-            baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot + intp.t, this.color);
-        }
-
-        hitUnit(unit: Unit) {
-            if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage, this);
-                this.hitOnce[unit.id] = true;
-            }
-        }
-    }
-
     export class SniperGun extends Turret {
         hide = true;
         disable = true;
         name = "Sniper Gun";
         desc = "Fires a sniper round with high DPS. Its only good at max range and requires massive banks. The sniper ship must not be moving, and it has 18% chance of firing in any one second.";
-        hp = 10
+        hp = 10;
         cost = 5;
         image = "turSnipe1.png";
         size = [2, 2];
         reloadTime = 120;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = SniperLaser;
+        bulletCls = SniperLaser.name;
         shotEnergy = 100000;
         range = 1700;
         minRange = 300;
@@ -2657,25 +2320,6 @@ export namespace Parts {
         };
     }
 
-    export class EMPOrb extends Bullet {
-        image = "export class fireEnergyBall.png";
-        sound = "sounds/weapons/blaster1.wav";
-        soundVolume = .05;
-        size = [1, 1];
-        color = [179, 207, 255, 255];
-
-        constructor() {
-            super();
-        }
-
-        draw() {
-            if (this.dead) {
-                return;
-            }
-            baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot + intp.t, this.color);
-        };
-    }
-
     export class EMPGun extends Turret {
         name = "EMP Gun";
         desc = "Fires an EMP orb that drains energy from targets and deals low damage.";
@@ -2685,8 +2329,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 61;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = EMPOrb;
+        bulletCls = EMPOrb.name;
         shotEnergy = 3600;
         range = 620;
         mass = 2;
@@ -2699,235 +2342,28 @@ export namespace Parts {
         }
     }
 
-    export class EMPOrb2 extends Bullet {
-        _slowVel: Float64Array;
-        image = "export class fizzleMine.png";
-        sound = "sounds/weapons/blaster1.wav";
-        soundVolume = .05;
-        size = [1, 1];
-        color = [179, 207, 255, 255];
-        split = 0;
-
-        constructor() {
-            super();
-        }
-
-        clientTick() {
-            let exp, exp2;
-            if (this.life > this.maxLife / 4 && this.split === 0) {
-                exp = new Debree();
-                exp.image = "export class fizzleMinePart.png";
-                exp.z = this.z + (Math.random() - 0.5) * .01;
-                exp.pos = v2.create(this.pos);
-                exp.rot = this.rot;
-                exp.vel[0] = Math.cos(this.rot) * 3;
-                exp.vel[1] = Math.sin(this.rot) * 3;
-                exp.vrot = 0;
-                intp.particles[exp.id] = exp;
-                exp2 = new Debree();
-                exp2.image = "export class fizzleMinePart.png";
-                exp2.z = exp.z;
-                exp2.pos = v2.create(this.pos);
-                v2.set(exp.vel, exp2.vel);
-                v2.scale(exp2.vel, -1, null);
-                exp2.rot = exp.rot + Math.PI;
-                exp2.vrot = 0;
-                intp.particles[exp2.id] = exp2;
-                return this.split = 1;
-            }
-        };
-
-        draw() {
-            let image;
-            if (this.dead) {
-                return;
-            }
-            if (this.life > this.maxLife / 4 && this.split === 0) {
-                image = "img/fire02.png";
-            } else if (this.life > this.maxLife / 4) {
-                image = "fizzleMineEnergy.png";
-            } else {
-                image = this.image;
-            }
-            return baseAtlas.drawSprite(image, this.pos, this.size, this.rot + intp.t, this.color);
-        };
-
-        postFire() {
-            this.maxLife += 24;
-            this._slowVel = v2.create(this.vel);
-            return v2.scale(this._slowVel, 0.2, null);
-        };
-
-        move() {
-            if (this.dead) {
-                return;
-            }
-            if (this.life > this.maxLife / 4) {
-                v2.add(this.pos, this.vel, null);
-            } else {
-                v2.add(this.pos, this._slowVel, null);
-            }
-        };
-
-        tick() {
-            let exp;
-            if (this.life < this.maxLife / 4) {
-                this.life += Math.round(Math.random());
-            } else {
-                this.life += 1;
-                this.scan();
-            }
-            if (this.life > this.maxLife) {
-                this.dead = true;
-            }
-            if (this.dead) {
-                exp = new this.hitExplosion();
-                exp.z = 1000;
-                exp.pos = new Float64Array([this.pos[0], this.pos[1]]);
-                if (this.t !== null) {
-                    v2.add(exp.pos, v2.scale(this.vel, this.t, null), null);
-                }
-                exp.vel = new Float64Array([0, 0]);
-                exp.rot = 0;
-                exp.radius = 1;
-                Sim.Instance.things[exp.id] = exp;
-            }
-        };
-    }
-
     export class EMPGun2 extends Turret {
-        name = "Orb Launcher";
-        desc = "Deploys an orb that launches out after a second, at high speed.";
-        hp = 10;
-        cost = 5;
-        image = "turFizzleGun.png";
+        name: string = "Orb Launcher";
+        desc: string = "Deploys an orb that launches out after a second, at high speed.";
+        hp: number = 10;
+        cost: number = 5;
+        image: string = "turFizzleGun.png";
         size = [2, 2];
         reloadTime = 64;
-        trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = EMPOrb2;
-        shotEnergy = 2000;
-        range = 1400;
-        minRange = 450;
-        mass = 20;
-        bulletSpeed = 39;
-        damage = 15;
-        energyDamage = 0;
-        disable = false;
+        trackSpeed: number = 25;
+        bulletCls = EMPOrb2.name;
+        shotEnergy: number = 2000;
+        range: number = 1400;
+        minRange: number = 450;
+        mass: number = 20;
+        bulletSpeed: number = 39;
+        damage: number = 15;
+        energyDamage: number = 0;
+        disable: boolean = false;
 
         constructor() {
             super();
         }
-    }
-
-    export class BombExplosion extends AoeExplosion {
-        maxLife = 10;
-        sound = "sounds/weapons/thud3.wav";
-        soundVolume = .25;
-
-        constructor() {
-            super();
-        }
-
-        draw() {
-            let ex, i, n, results;
-            super.draw.call(this);
-            if (this.life === 0) {
-                results = [];
-                for (n = i = 1; i < 15; n = ++i) {
-                    ex = new Debree();
-                    ex.image = "fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
-                    ex.z = this.z + (Math.random() - 0.5) * .01;
-                    ex.pos = new Float64Array([0, 0]);
-                    ex.vel = new Float64Array([0, 0]);
-                    v2.set(this.pos, ex.pos);
-                    v2.scale(v2.random(ex.vel), Math.random() * 6, null);
-                    ex.rot = (Math.random() - 0.5) * Math.PI * 2;
-                    ex.vrot = (Math.random() - 0.5);
-                    ex.maxLife = 16;
-                    ex._pos = v2.create(ex.pos);
-                    ex._pos2 = v2.create(ex.pos);
-                    ex._rot = ex.rot;
-                    ex._rot2 = ex.rot;
-                    results.push(intp.particles[ex.id] = ex);
-                }
-                return results;
-            }
-        };
-    }
-
-    export class Bomb extends AoeBullet {
-        image = "bombDormant.png";
-        sound = "sounds/weapons/wewewee.wav";
-        soundVolume = .03;
-        size = [1, 1];
-        color = [255, 255, 255, 255];
-        explodeClass = BombExplosion;
-        trailSize = .1;
-        trailTime = 500;
-        trail: Trail;
-        _slowVel: Float64Array;
-
-        constructor() {
-            super();
-            this.trail = new Trail(this.trailSize, this.trailTime);
-        }
-
-        postFire() {
-            this.maxLife += 28;
-            this._slowVel = v2.create(this.vel);
-            v2.scale(this._slowVel, 0, null);
-        };
-
-        move() {
-            if (this.dead) {
-                return;
-            }
-
-            if (this.life > 28) {
-                return v2.add(this.pos, this.vel, null);
-            } else {
-                return v2.add(this.pos, this._slowVel, null);
-            }
-        };
-
-        tick() {
-            let exp;
-            this.life += 1;
-            if (this.life > this.maxLife) {
-                this.dead = true;
-                if (this.explode) {
-                    exp = new BombExplosion();
-                    exp.z = 1000;
-                    exp.pos = new Float64Array([this.pos[0], this.pos[1]]);
-                    exp.vel = new Float64Array([0, 0]);
-                    exp.rot = 0;
-                    exp.aoe = this.aoe;
-                    exp.side = this.side;
-                    exp.owner = this.owner;
-                    exp.damage = this.damage;
-                    Sim.Instance.things[exp.id] = exp;
-                }
-            }
-        };
-
-        draw() {
-            let color, dist, size;
-            this.trail.draw(this.pos, this);
-            super.draw.call(this);
-            this.z = 1;
-            if (this.life === 28) {
-                this.image = "export class bombActive.png";
-                //playSound("sounds/weapons/wizzzz.wav");
-            }
-            if (this.hitPos) {
-                dist = Math.min(v2.distance(this.pos, new Float64Array(this.hitPos)), 1000);
-                size = Math.pow(1.003, -dist) * this.aoe / 162;
-                color = [255, 0, 0, 80];
-                baseAtlas.drawSprite("img/point02.png", this.hitPos, [this.aoe / 256, this.aoe / 256], 0, color);
-                baseAtlas.drawSprite("img/fire02.png", this.hitPos, [size * 2, size * 2], 0, color);
-            }
-        };
     }
 
     export class BombGun extends Turret {
@@ -2939,8 +2375,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 60;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = Bomb;
+        bulletCls = Bomb.name;
         shotEnergy = 3600;
         range = 650;
         mass = 20;
@@ -2949,19 +2384,6 @@ export namespace Parts {
         onlyInRange = true;
         exactRange = true;
         aoe = 100;
-
-        constructor() {
-            super();
-        }
-    }
-
-    export class AutoBullet extends Bullet {
-        image = "fireAuto.png";
-        sound = "sounds/weapons/autocannon.wav";
-        size = [.6, .6];
-        color = [179, 207, 255, 255];
-        hitExplosion = SmallHitExplosion;
-        turretNum: number;
 
         constructor() {
             super();
@@ -2977,8 +2399,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 53;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = AutoBullet;
+        bulletCls = AutoBullet.name;
         range = 560;
         shotEnergy = 355 * 5;
         mass = 10;
@@ -3012,7 +2433,7 @@ export namespace Parts {
 
         makeRealBullet() {
             let particle;
-            particle = new this.bulletCls();
+            particle = new (<any> Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
@@ -3032,18 +2453,6 @@ export namespace Parts {
         };
     }
 
-    export class ShotgunBullet extends Bullet {
-        image = "fireAuto.png";
-        sound = "sounds/weapons/autocannon.wav";
-        size = [.6, .6];
-        color = [179, 207, 255, 255];
-        hitExplosion = SmallHitExplosion;
-
-        constructor() {
-            super();
-        }
-    }
-
     export class Shotgun extends Turret {
         name = "Shotgun";
         desc = "Fires five bullets in rapid bursts.";
@@ -3053,8 +2462,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 96;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = AutoBullet;
+        bulletCls = AutoBullet.name;
         range = 450;
         shotEnergy = 355 * 5;
         mass = 15;
@@ -3089,7 +2497,7 @@ export namespace Parts {
 
         makeRealBullet() {
             let particle;
-            particle = new this.bulletCls();
+            particle = new (<any> Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
@@ -3109,18 +2517,6 @@ export namespace Parts {
         };
     }
 
-    export class MachineBullet extends Bullet {
-        image = "fireBeamSmall.png";
-        sound = "sounds/weapons/autocannon.wav";
-        size = [.6, .6];
-        color = [179, 207, 255, 255];
-        hitExplosion = SmallHitExplosion;
-
-        constructor() {
-            super();
-        }
-    }
-
     export class MachineGun extends Turret {
         name = "Machine Gun";
         desc = "Fires fast bullets.";
@@ -3130,8 +2526,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 5;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = MachineBullet;
+        bulletCls = MachineBullet.name;
         range = 780;
         shotEnergy = 200;
         mass = 10;
@@ -3150,21 +2545,6 @@ export namespace Parts {
         };
     }
 
-    export class TeslaBolt extends LaserBullet {
-        image = "ap1.png";
-        sound = "sounds/weapons/tesla2.wav";
-        size = [.6, .6];
-        color = [179, 207, 255, 255];
-        drawLength = 250;
-
-        constructor() {
-            super();
-            if (this.image === "zap1.png") {
-                this.image = "zap" + (Math.floor(Math.random() * 4 + 1)) + ".png";
-            }
-        }
-    }
-
     export class TeslaTurret extends Turret {
         name = "Tesla Turret";
         desc = "Fires lighting bolts that arc between units.";
@@ -3174,8 +2554,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 10;
         trackSpeed = 25;
-        //@ts-ignore
-        bulletCls = TeslaBolt;
+        bulletCls = TeslaBolt.name;
         range = 540;
         bounceRange = 540;
         shotEnergy = 1500;
@@ -3209,7 +2588,7 @@ export namespace Parts {
         zap(from: Float64Array, unit: Unit): null {
             let closestUnit, minD: number, particle, range;
             this.zapped.push(unit.id);
-            particle = new this.bulletCls();
+            particle = new (<any> Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
@@ -3281,59 +2660,6 @@ export namespace Parts {
     }
 
 
-    export class WavePullArch extends Bullet {
-        image = "fireWavePull.png";
-        sound = "sounds/weapons/WavePull.wav";
-        size = [.5, .5];
-        color = [179, 207, 255, 255];
-        radius = 30;
-        maxRadius = 100;
-        direction = 1;
-        waveEffect = 0.5;
-        hitsMultiple = true;
-        hitsCloak = true;
-        hitOnce: { [key: number]: boolean };
-
-        constructor() {
-            super();
-            this.size = [.5, .5];
-            this.hitOnce = {};
-        }
-
-        draw() {
-            this.color[3] = 128 * (1 - this.radius / this.maxRadius);
-            this.size[0] = this.radius / 100;
-            this.size[1] = this.radius / 100;
-            super.draw.call(this);
-        };
-
-        tick() {
-            super.tick.call(this);
-            this.radius += (this.maxRadius - 30) / this.maxLife;
-            if (this.radius > this.maxRadius) {
-                return this.radius = this.maxRadius;
-            }
-        };
-
-        hitUnit(unit: Unit) {
-            let amount, dot, p, _wave;
-            if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage, this);
-                this.hitOnce[unit.id] = true;
-            }
-            p = this.waveEffect * this.damage;
-            v2.norm(this.vel, _wave);
-            v2.scale(_wave, -this.direction, null);
-            dot = v2.dot(unit.vel, _wave);
-            amount = 0;
-            if (dot < p) {
-                amount = p;
-            }
-            v2.scale(_wave, amount, null);
-            v2.add(unit.vel, _wave, null);
-        };
-    }
-
     export class WavePullTurret extends Turret {
         name = "Gravity Pull Wave";
         desc = "Projects a gravity wave that pulls and damages as it passes through units.";
@@ -3343,8 +2669,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 64;
         trackSpeed = 90;
-        //@ts-ignore
-        bulletCls = WavePullArch;
+        bulletCls = WavePullArch.name;
         range = 850;
         shotEnergy = 1200;
         mass = 10;
@@ -3357,23 +2682,11 @@ export namespace Parts {
         }
     }
 
-    export class WavePushArch extends WavePullArch {
-        image = "fireWavePush.png";
-        sound = "sounds/weapons/WavePush.wav";
-        direction = -1;
-        maxRadius = 100;
-        waveEffect = 0.5;
-
-        constructor() {
-            super();
-        }
-    }
-
     export class WavePushTurret extends WavePullTurret {
         name = "Gravity Push Wave";
         desc = "Projects a gravity wave that pushes and damages as it passes through units.";
         image = "turWavePush.png";
-        bulletCls = WavePushArch;
+        bulletCls = WavePushArch.name;
         range = 775;
         damage = 5;
         multiHit = true;
@@ -3381,130 +2694,6 @@ export namespace Parts {
         constructor() {
             super();
         }
-    }
-
-    export class FlameBulletGhost extends Bullet {
-        _rot: number;
-        vrot: number;
-        maxRadius: number;
-        _rot2: number;
-        main: boolean;
-
-        constructor() {
-            super();
-        }
-
-        draw() {
-            this.color[0] = Math.max(0, 255 - (260 * this.radius / this.maxRadius));
-            this.color[1] = Math.max(0, 255 - (440 * this.radius / this.maxRadius));
-            this.color[2] = Math.max(0, 255 - (700 * this.radius / this.maxRadius));
-            this.color[3] = 64 * (1.2 - this.radius / this.maxRadius);
-            this.size[0] = this.radius / 100;
-            this.size[1] = this.radius / 100;
-            super.draw.call(this);
-        };
-
-        tick() {
-            super.tick.call(this);
-            this.radius += (this.maxRadius - 3) / this.maxLife;
-            if (this.radius > this.maxRadius) {
-                return this.radius = this.maxRadius;
-            }
-        };
-
-        scan() {
-
-        };
-    }
-
-    export class FlameBullet extends Bullet {
-        image = "fireFlame1.png";
-        sound = "sounds/weapons/fireFlame.wav";
-        size = [0.7, 0.7];
-        color = [179, 207, 255, 255];
-        radius = 2;
-        maxRadius = 64;
-        hitsMultiple = true;
-        hitsCloak = true;
-        createGhost = 0;
-        originPos = [0, 0];
-        hitOnce: { [key: number]: boolean };
-        burnAmount: number;
-        turretNum: number;
-
-        constructor() {
-            super();
-            this.hitOnce = {};
-        }
-
-        draw() {
-            let ex, ref, s, w;
-            this.createGhost += 1;
-            if (this.life < 2 && this.createGhost % 3 === 0) {
-                if (this.origin) {
-                    w = (ref = this.origin.weapons) != null ? ref[this.turretNum || 0] : void 0;
-                    if (w) {
-                        v2.set(w.worldPos, new Float64Array(this.originPos));
-                        ex = new FlameBulletGhost();
-                        ex.main = false;
-                        ex.image = "fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
-                        ex.z = this.z + (Math.random() - 0.5) * .01;
-                        ex.pos = new Float64Array(this.originPos);
-                        ex.vel = new Float64Array(this.vel);
-                        s = .3 + .4 * Math.random();
-                        ex.size = [s, s];
-                        ex.radius = this.radius * 5;
-                        ex.maxRadius = this.maxRadius * 5;
-                        ex.rot = (Math.random() - 0.5) * Math.PI * 2;
-                        ex.vrot = 0;
-                        ex.maxLife = this.maxLife;
-                        ex._pos = v2.create(ex.pos);
-                        ex._pos2 = v2.create(ex.pos);
-                        ex._rot = ex.rot;
-                        ex._rot2 = ex.rot;
-                        intp.particles[ex.id] = ex;
-                    }
-                }
-            }
-            this.color[0] = Math.max(0, 255 - (260 * this.radius / this.maxRadius));
-            this.color[1] = Math.max(0, 255 - (440 * this.radius / this.maxRadius));
-            this.color[2] = Math.max(0, 255 - (700 * this.radius / this.maxRadius));
-            this.color[3] = 64 * (1.2 - this.radius / this.maxRadius);
-            this.size[0] = this.radius * 0.1;
-            this.size[1] = this.radius * 0.1;
-            super.draw.call(this);
-        };
-
-        tick() {
-            super.tick.call(this);
-            this.radius += (this.maxRadius - 30) / this.maxLife;
-            if (this.radius > this.maxRadius) {
-                return this.radius = this.maxRadius;
-            }
-        };
-
-        hitUnit(unit: Unit) {
-            let maxBurn;
-            if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage, this);
-                maxBurn = (unit.hp + unit.shield) * 1.0;
-                if (unit.burn < maxBurn) {
-                    unit.burn += this.burnAmount * this.damage;
-                    if (unit.burn > maxBurn) {
-                        unit.burn = maxBurn;
-                    }
-                }
-                this.hitOnce[unit.id] = true;
-            }
-        };
-
-        postFire() {
-            v2.add(this.pos, this.vel, null);
-            v2.add(this.pos, this.vel, null);
-            this.z += 10;
-            this.rot = Math.PI * 2 * Math.random();
-            this.image = "fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
-        };
     }
 
     export class FlameTurret extends Turret {
@@ -3516,8 +2705,7 @@ export namespace Parts {
         size = [2, 2];
         reloadTime = 8;
         trackSpeed = 90;
-        //@ts-ignore
-        bulletCls = FlameBullet;
+        bulletCls = FlameBullet.name;
         range = 350;
         shotEnergy = 400;
         mass = 15;
@@ -4958,25 +4146,6 @@ export namespace Parts {
         }
     }
 
-    export class PartUtils {
-
-    }
-
-    export class BattleCannonBullet extends StraightMissile {
-        target: any;
-        origin: any;
-        turretNum: any;
-        image = "battleCannonBullet";
-        sound = "sounds/weapons/torp2.wav";
-        size = [1, 1];
-        radius = 20;
-        trailTime = 500;
-
-        constructor() {
-            super();
-        }
-    }
-
     export class BattleCannon extends Turret {
         name = "Battle Cannon";
         desc = "Glory to PDables!";
@@ -4994,8 +4163,7 @@ export namespace Parts {
         fired = 2;
         spread = [.01, -.01];
         disable = true;
-        //@ts-ignore
-        bulletCls = BattleCannonBullet;
+        bulletCls = BattleCannonBullet.name;
 
         constructor() {
             super();
@@ -5009,7 +4177,7 @@ export namespace Parts {
 
         makeRealBullet(spread: number, pos: number) {
             let particle, tempPos;
-            particle = new this.bulletCls();
+            particle = new (<any> Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.life = 0;
@@ -5037,7 +4205,7 @@ export namespace Parts {
     }
 
     export class Flag {
-        image = "export class decals/Symbol12.png";
+        image = "parts/decals/Symbol12.png";
         color = [245, 171, 53, 255];
         size = [5, 5];
         range = 100;
@@ -5045,23 +4213,6 @@ export namespace Parts {
         slow = .85;
 
         constructor() {
-        }
-    }
-
-    export class NeedleGunBullet extends Bullet {
-        image = "needleGunBullet";
-        sound = "sounds/weapons/blaster1.wav";
-        size = [1, 1];
-        radius = 20;
-        trailTime = 500;
-        trailSize = 0.02;
-        turretNum: number;
-        weapon: this;
-        aoe: number;
-        burnAmount: number;
-
-        constructor() {
-            super();
         }
     }
 
@@ -5079,8 +4230,7 @@ export namespace Parts {
         size = [2, 2];
         range = 700;
         fired = 1;
-        //@ts-ignore
-        bulletCls = NeedleGunBullet;
+        bulletCls = NeedleGunBullet.name;
         disable = true;
 
         constructor() {
@@ -5099,7 +4249,6 @@ export namespace Parts {
             particle.z = this.unit.z + .001;
             particle.turretNum = this.turretNum;
             particle.origin = this.unit;
-            //@ts-ignore
             particle.weapon = this;
             particle.target = this.target;
             particle.speed = this.bulletSpeed;
@@ -5130,13 +4279,12 @@ export namespace Parts {
         reductionRatio = .2;
         splitRatio = .95;
         useEnergy = 50 / 16;
-        projector = true;
-        disable = true;
+        projector: boolean = true;
+        disable: boolean = true;
         shotEnergy = 10;
-        instant = true;
-        //@ts-ignore
-        bulletCls = LaserBullet;
-        gimble = false;
+        instant: boolean = true;
+        bulletCls = LaserBullet.name;
+        gimble: boolean = false;
         arc = 360;
         weaponRange = 1;
         weaponRangeFlat = 0;
@@ -5144,7 +4292,7 @@ export namespace Parts {
         weaponSpeed = 0;
         weaponReload = 1;
         weaponEnergy = 1;
-        noOverkill = false;
+        noOverkill: boolean = false;
 
         constructor() {
             super();

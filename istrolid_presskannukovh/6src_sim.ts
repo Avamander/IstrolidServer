@@ -5,11 +5,14 @@ import {ZJson} from "./994src_zjson";
 import {Colors} from "./992src_colors";
 import {HSpace} from "./2src_hspace";
 import {Utils} from "./993src_utils";
-import {Bullet, Particle, Player, Thing,} from "./94src_things";
+import {Particle, Player, Thing} from "./94src_things";
 import {Server} from "../server";
 import {Unit} from "./95src_unit";
 import {Grid} from "./99src_grid";
 import {UnitUtils} from "./95unitutils";
+import {AI} from "./97src_ai";
+import {Bullets} from "./96bullets";
+import Bullet = Bullets.Bullet;
 
 export class Sim {
     static defaultBattleType = "3v3";
@@ -107,6 +110,7 @@ export class Sim {
     timeStarts: { [x: string]: number; } = {};
     timePath: string[] = [];
     moneyInc: number;
+    aimanager: AI = AI.Instance;
 
     constructor(battleType: string) {
         this.battleType = battleType;
@@ -584,7 +588,7 @@ export class Sim {
                 return
              */
             if (nocheck) {
-                // return this.ais.useAiFleet(name, side, aiBuildBar); // TODO:
+                return AI.useAiFleet(name, side, aiBuildBar); // TODO:
             }
             if (this.numInTeam(side) >= this.playersPerTeam()) {
                 console.log("Enough players in team");
@@ -607,7 +611,7 @@ export class Sim {
                 return;
             }
         }
-        //return this.ais.useAiFleet(name, side, aiBuildBar); // TODO:
+        return AI.useAiFleet(name, side, aiBuildBar);
     };
 
     kickPlayer(p: Player, number: number) {
@@ -1168,7 +1172,7 @@ export class Sim {
     };
 
     simulate() {
-        let id, l, len1, len2, m, player, ref, ref1, ref2, ref3, ref4, ref5, t, thing;
+        let id, l, len1, len2, m, player, ref, ref1, ref2, ref3, ref4, t, thing;
         this.timeStart("sim");
         this.step += 1;
         this.startingSim();

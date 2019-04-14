@@ -13479,21 +13479,18 @@ export class AIData {
             "name": "",
             "aiRules": [["Avoid over #damage shots", 20], ["When #% of energy, @chargeTypes", 33, "Find recharger"], ["Stay in #m range of slot # units", 1750, 1], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Ram", "cloaked", "---", 1500], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Kite", "more expensive", 100, 1000], ["@attackTypes enemy within #m", "Kite", 1000], ["Stay in #m range of slot # units", 1250, 1], ["When #% of energy, @chargeTypes", 60, "Find recharger"], ["@capTypes Command Points within #m", "Spread to", 10000], ["Field # for # of ship in slot # at priority #", 2, 2, 1, 11], ["Field # for # of ship in slot # at priority #", 4, 2, 1, 14], ["Field # for # of @needTypes at priority #", 1, 3, "cloak counter need", 6]]
         }, {
-            "parts": [{"pos": [0, 0], "type": "Mount30", "dir": 0, "ghostCopy": true}, {
+            "parts": [{"pos": [0, 0], "type": "Mount30", "dir": 0}, {
                 "pos": [-30, 0],
                 "type": "Reactor1x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-20, -40], "type": "CloakGenerator", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-20, -40], "type": "CloakGenerator", "dir": 0}, {
                 "pos": [10, -60],
                 "type": "Engine03",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [10, -30], "type": "Wing1x1Round", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [10, -30], "type": "Wing1x1Round", "dir": 0}, {
                 "pos": [0, 0],
                 "type": "RingTurret",
-                "dir": 0,
-                "ghostCopy": true
+                "dir": 0
             }], "name": "", "aiRules": []
         }, {
             "parts": [{"pos": [-80, -20], "type": "CloakGenerator", "dir": 0}, {
@@ -15569,7 +15566,7 @@ export class AIData {
             }, {"pos": [0, 0], "type": "Battery2x2", "dir": 0}],
             "name": "",
             "aiRules": [["@capTypes Command Points within #m", "Spread to", 10000], ["Field # at start", 2], ["Try to field # every # seconds", 2, 40]]
-        }, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+        }, "", "", "", "", "", "", "", "", ""],
         "Tempest": [{
             "parts": [{"pos": [100, -60], "type": "TargetingMod", "dir": 0}, {
                 "pos": [-100, -60],
@@ -15834,7 +15831,7 @@ export class AIData {
             }, {"pos": [30, 70], "type": "Wing1x1Round", "dir": 0}, {"pos": [0, 40], "type": "TorpTurret", "dir": 0}],
             "name": "",
             "aiRules": [["Stay in #m range of slot # units", 1500, 1], ["@attackTypes enemy within #m", "Attack", 2000], ["@capTypes Command Points within #m", "Spread to", 10000], ["Field # at start", 4], ["Try to field # every # seconds", 5, 50]]
-        }, {"parts": [], "name": "", "aiRules": []}, {}, {}, {}, {"parts": [], "name": "", "aiRules": []}, {}, {}],
+        }, {"parts": [], "name": "", "aiRules": []}, "", "", "", {"parts": [], "name": "", "aiRules": []}, "", ""],
         "ThePounder": [{
             "parts": [{"pos": [70, -10], "type": "Battery1x1", "dir": 0}, {
                 "pos": [40, 90],
@@ -17531,7 +17528,7 @@ export class AIData {
             }, {"pos": [20, 40], "type": "LightBeamTurret", "dir": 0}],
             "name": "",
             "aiRules": [["When #% of energy, @chargeTypes", 20, "Find recharger"], ["Avoid over #damage shots", 30], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Ram", "Slower", "Cloaked", 600], ["Stay in #m range of slot # units", 600, 1], ["@attackTypes enemy that is @absoluteTypes then # within #m", "Backstab", "Less Arc", 100, 500], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Stay at range", "Stronger", "More Brawling Value", 1500], ["@attackTypes enemy that is @relativeTypes and @relativeTypes within #m", "Attack", "Weaker", "Less Brawling Value", 1000], ["@capTypes Command Points within #m", "Spread to", 10000], ["Field # for # of ship in slot # at priority #", 3, 4, 7, 2]]
-        }, {}],
+        }, ""],
         "Zyro": [{
             "parts": [{"pos": [50, 0], "type": "UArmor1x2", "dir": 0}, {
                 "pos": [0, 60],
@@ -17922,142 +17919,115 @@ export class AIData {
             "name": "",
             "aiRules": []
         }, {
-            "parts": [{"pos": [50, -90], "type": "Engine02", "dir": 0, "ghostCopy": true}, {
+            "parts": [{"pos": [50, -90], "type": "Engine02", "dir": 0}, {
                 "pos": [110, -90],
                 "type": "Engine02",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [40, 90], "type": "Wing2x1", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [40, 90], "type": "Wing2x1", "dir": 0}, {
                 "pos": [110, 40],
                 "type": "Wing1x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-130, -40], "type": "HArmor1x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-130, -40], "type": "HArmor1x2", "dir": 0}, {
                 "pos": [110, 0],
                 "type": "HArmor1x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [110, -40], "type": "HArmor1x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [110, -40], "type": "HArmor1x2", "dir": 0}, {
                 "pos": [-40, 20],
                 "type": "Mount360",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-80, -40], "type": "Reactor2x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-80, -40], "type": "Reactor2x2", "dir": 0}, {
                 "pos": [0, 70],
                 "type": "Battery2x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [40, 20], "type": "Mount360", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [40, 20], "type": "Mount360", "dir": 0}, {
                 "pos": [80, -40],
                 "type": "Reactor2x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [40, -50], "type": "HArmor2x1", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [40, -50], "type": "HArmor2x1", "dir": 0}, {
                 "pos": [-130, 30],
                 "type": "HArmor1x1Angle",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [130, -40], "type": "HArmor1x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [130, -40], "type": "HArmor1x2", "dir": 0}, {
                 "pos": [-40, 90],
                 "type": "Wing2x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [0, -40], "type": "Mount360", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [0, -40], "type": "Mount360", "dir": 0}, {
                 "pos": [-110, 40],
                 "type": "Wing1x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [130, 30], "type": "HArmor1x1Angle", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [130, 30], "type": "HArmor1x1Angle", "dir": 0}, {
                 "pos": [-40, -50],
                 "type": "HArmor2x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-110, 0], "type": "HArmor1x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-110, 0], "type": "HArmor1x2", "dir": 0}, {
                 "pos": [40, -20],
                 "type": "ReloaderMod",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-130, 0], "type": "HArmor1x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-130, 0], "type": "HArmor1x2", "dir": 0}, {
                 "pos": [130, 0],
                 "type": "HArmor1x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [80, 70], "type": "Wing2x1", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [80, 70], "type": "Wing2x1", "dir": 0}, {
                 "pos": [-80, 70],
                 "type": "Wing2x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-110, -40], "type": "HArmor1x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-110, -40], "type": "HArmor1x2", "dir": 0}, {
                 "pos": [-130, -90],
                 "type": "HArmor1x1AngleBack",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [130, -90], "type": "HArmor1x1AngleBack", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [130, -90], "type": "HArmor1x1AngleBack", "dir": 0}, {
                 "pos": [130, -70],
                 "type": "HArmor1x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-80, 0], "type": "ReloaderMod", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-80, 0], "type": "ReloaderMod", "dir": 0}, {
                 "pos": [-40, -20],
                 "type": "ReloaderMod",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-50, -90], "type": "Engine02", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-50, -90], "type": "Engine02", "dir": 0}, {
                 "pos": [-130, -70],
                 "type": "HArmor1x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [30, -110], "type": "Engine02", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [30, -110], "type": "Engine02", "dir": 0}, {
                 "pos": [-30, -110],
                 "type": "Engine02",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-110, -90], "type": "Engine02", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-110, -90], "type": "Engine02", "dir": 0}, {
                 "pos": [-20, -70],
                 "type": "HArmor2x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [20, -70], "type": "HArmor2x1", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [20, -70], "type": "HArmor2x1", "dir": 0}, {
                 "pos": [-80, -80],
                 "type": "HArmor2x2",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [80, -80], "type": "HArmor2x2", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [80, -80], "type": "HArmor2x2", "dir": 0}, {
                 "pos": [0, 90],
                 "type": "HArmor2x1",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-70, -110], "type": "HArmor1x1AngleBack", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-70, -110], "type": "HArmor1x1AngleBack", "dir": 0}, {
                 "pos": [70, -110],
                 "type": "HArmor1x1AngleBack",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [0, -100], "type": "EnergyTransfer", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [0, -100], "type": "EnergyTransfer", "dir": 0}, {
                 "pos": [80, 0],
                 "type": "ReloaderMod",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-80, 40], "type": "ReloaderMod", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-80, 40], "type": "ReloaderMod", "dir": 0}, {
                 "pos": [0, 40],
                 "type": "BulletSpeedMod",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [40, 60], "type": "BulletSpeedMod", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [40, 60], "type": "BulletSpeedMod", "dir": 0}, {
                 "pos": [0, 0],
                 "type": "ReloaderMod",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [-40, 60], "type": "BulletSpeedMod", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [-40, 60], "type": "BulletSpeedMod", "dir": 0}, {
                 "pos": [80, 40],
                 "type": "BulletSpeedMod",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [0, -40], "type": "PDTurret", "dir": 0, "ghostCopy": true}, {
+                "dir": 0
+            }, {"pos": [0, -40], "type": "PDTurret", "dir": 0}, {
                 "pos": [-40, 20],
                 "type": "ArtilleryTurret",
-                "dir": 0,
-                "ghostCopy": true
-            }, {"pos": [40, 20], "type": "ArtilleryTurret", "dir": 0, "ghostCopy": true}],
+                "dir": 0
+            }, {"pos": [40, 20], "type": "ArtilleryTurret", "dir": 0}],
             "name": "Heavy Cruiser Tesla Missile",
             "aiRules": []
         }, {

@@ -1,4 +1,4 @@
-import {Bullet, Debree, Player, ShipExplosion, Thing} from "./94src_things";
+import {Debree, Player, Thing} from "./94src_things";
 import {v2} from "./4src_maths";
 import {Sim} from "./6src_sim";
 import {Utils} from "./993src_utils";
@@ -1555,4 +1555,8 @@ import JumpEngine = Parts.JumpEngine;
 import ModProjector = Parts.ModProjector;
 import EnergyTransfer = Parts.EnergyTransfer;
 import StasisField = Parts.StasisField;
-import FlameBulletGhost = Parts.FlameBulletGhost;
+import {Bullets} from "./96bullets";
+import FlameBulletGhost = Bullets.FlameBulletGhost;
+import {Explosions} from "./97explosions";
+import ShipExplosion = Explosions.ShipExplosion;
+import Bullet = Bullets.Bullet;

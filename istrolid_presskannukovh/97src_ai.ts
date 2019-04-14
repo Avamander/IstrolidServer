@@ -1,12 +1,12 @@
 import {v2} from "./4src_maths";
 import {Unit} from "./95src_unit";
-import {Bullet, CommandPoint, Player, Thing} from "./94src_things";
+import {CommandPoint, Player, Thing} from "./94src_things";
 import {Sim} from "./6src_sim";
 import {Utils} from "./993src_utils";
-import {Parts} from "./96src_parts";
 import {AIData} from "./98src_aidata";
-import MissileBullet = Parts.MissileBullet;
-
+import {Bullets} from "./96bullets";
+import Bullet = Bullets.Bullet;
+import MissileBullet = Bullets.MissileBullet;
 
 export class AI {
     all: {
@@ -99,7 +99,14 @@ export class AI {
     _aAvgPos = new Float64Array(2);
     _avoidVec = new Float64Array(2);
 
-    esc_string(s: string) {
+
+    private static _instance: AI;
+
+    public static get Instance() {
+        return this._instance || (this._instance = new this());
+    }
+
+    static esc_string(s: string) {
         return '"' + s.replace(/[\\"]/g, '\\$1') + '"';
     }
 
@@ -117,7 +124,7 @@ export class AI {
         }
 
         if (typeof obj === "string") {
-            return prefix + this.esc_string(obj);
+            return prefix + AI.esc_string(obj);
         }
 
         if (typeof obj !== "object") {
@@ -139,7 +146,7 @@ export class AI {
         for (key in obj) {
             value = obj[key];
             results.push(prefix +
-                this.esc_string(key) +
+                AI.esc_string(key) +
                 ":\n" +
                 this.csonify(value, indent));
         }
@@ -173,7 +180,7 @@ export class AI {
         return this.allRuleSet[rule[0]] === true;
     }
 
-    ruleToStr(rule: string[]): string {
+    static ruleToStr(rule: string[]): string {
         let count, i, l, len1, part, parts, string;
         string = "";
         count = 1;
@@ -190,7 +197,7 @@ export class AI {
         return string;
     }
 
-    closest(pos: Float64Array, fn: Function, maxDist: number): Unit {
+    static closest(pos: Float64Array, fn: Function, maxDist: number): Unit {
         let dist, minDist, minT, ref, t;
         if (maxDist == null) {
             maxDist = 10000000;
@@ -214,15 +221,15 @@ export class AI {
         return (minT as Unit);
     }
 
-    goThere(unit: Unit, thing: Thing) {
+    static goThere(unit: Unit, thing: Thing) {
         if (!thing) {
             return false;
         }
-        this.goInRange(thing.radius * .75, thing.radius, unit, thing);
+        AI.goInRange(thing.radius * .75, thing.radius, unit, thing);
         return true;
     }
 
-    stayInRange(range: number, unit: Unit, thing: Thing) {
+    static stayInRange(range: number, unit: Unit, thing: Thing) {
         if (!thing) {
             return false;
         }
@@ -237,7 +244,7 @@ export class AI {
         });
     }
 
-    goInRange(spread: number, range: number, unit: Unit, thing: Thing) {
+    static goInRange(spread: number, range: number, unit: Unit, thing: Thing) {
         if (!thing) {
             return false;
         }
@@ -258,7 +265,7 @@ export class AI {
         return true;
     }
 
-    goAway(unit: Unit, thing: Thing, range: number) {
+    static goAway(unit: Unit, thing: Thing, range: number) {
         let dest, dist;
         if (!thing || !thing.pos || !unit || !unit.pos) {
             return false;
@@ -278,7 +285,7 @@ export class AI {
         return true;
     }
 
-    unitCompair(unit: Unit, enemy: Unit) {
+    static unitCompair(unit: Unit, enemy: Unit) {
         let enemyKillsIn, unitKillsIn;
         enemyKillsIn = unit.hp / enemy.weaponDPS;
         unitKillsIn = enemy.hp / unit.weaponDPS;
@@ -289,7 +296,7 @@ export class AI {
         }
     }
 
-    willBeAt(unit: Unit, thing: Thing) {
+    static willBeAt(unit: Unit, thing: Thing) {
         if (!thing || !unit || unit.dead) {
             return false;
         }
@@ -310,10 +317,10 @@ export class AI {
     }
 
 
-    spreadCapCP(unit: Unit, rule: string) {
+    static spreadCapCP(unit: Unit, rule: string) {
         let closestUnguarded, cp, guarded, ref, ref1, tallyCps, u;
         if (unit.gardingCP && (unit.gardingCP.side === Sim.otherSide(unit.side) || (unit.commandPoint === true && (unit.gardingCP as CommandPoint).capping > 0))) {
-            this.goThere(unit, unit.gardingCP);
+            AI.goThere(unit, unit.gardingCP);
             return true;
         }
         tallyCps = [];
@@ -355,7 +362,7 @@ export class AI {
         return true;
     }
 
-    capAndGuardCP(unit: Unit) {
+    static capAndGuardCP(unit: Unit) {
         let closestUnguarded, cp, guarded, ref, ref1, tallyCps, u;
         tallyCps = [];
         ref = Sim.Instance.things;
@@ -367,7 +374,7 @@ export class AI {
                 for (let __ in ref1) {
                     u = ref1[__];
                     if (u.unit && u.side === unit.side && u.id !== unit.id && (u as Unit).number === unit.number) {
-                        if (this.willBeAt((u as Unit), cp)) {
+                        if (AI.willBeAt((u as Unit), cp)) {
                             guarded = true;
                             break;
                         }
@@ -391,17 +398,15 @@ export class AI {
         //this.goThere(unit, Mapping.cp); // TODO:
         return true;
     }
-    ;
 
-    attack(enemy: Unit, unit: Unit) {
-        if (enemy && this.goInRange(0, unit.weaponRange, unit, enemy)) {
+    static attack(enemy: Unit, unit: Unit) {
+        if (enemy && AI.goInRange(0, unit.weaponRange, unit, enemy)) {
             unit.softTarget = enemy;
             return true;
         }
     }
-    ;
 
-    kite(enemy: Unit, unit: Unit) {
+    static kite(enemy: Unit, unit: Unit) {
         let distacne, w;
         if (!enemy) {
             return false;
@@ -413,13 +418,13 @@ export class AI {
                 return true;
             }
         }
-        if (this.stayInRange(unit.weaponRange, unit, enemy)) {
+        if (AI.stayInRange(unit.weaponRange, unit, enemy)) {
             return true;
         }
     }
 
-    ram(enemy: Unit, unit: Unit) {
-        if (enemy && this.goInRange(0, unit.radius + enemy.radius, unit, enemy)) {
+    static ram(enemy: Unit, unit: Unit) {
+        if (enemy && AI.goInRange(0, unit.radius + enemy.radius, unit, enemy)) {
             return true;
         }
     }
@@ -428,8 +433,8 @@ export class AI {
         return this.gotoNoStop(unit, enemy.pos);
     }
 
-    stayClose(enemy: Unit, unit: Unit) {
-        if (enemy && this.goInRange(0, enemy.radius, unit, enemy)) {
+    static stayClose(enemy: Unit, unit: Unit) {
+        if (enemy && AI.goInRange(0, enemy.radius, unit, enemy)) {
             return true;
         }
     }
@@ -477,17 +482,20 @@ export class AI {
     }
     ;
 
-    attackFilter(enemy: Unit, unit: Unit, type: string, range: number) {
+    static attackFilter(enemy: Thing, unit: Unit, type: string, range: string) {
         if (!enemy) {
             return false;
         }
+
         if (!enemy.unit) {
             return false;
         }
-        if (enemy.side !== Sim.otherSide(unit.side)) {
+
+        if ((enemy as Unit).side !== Sim.otherSide(unit.side)) {
             return false;
         }
-        if (enemy.cloakFade > 0) {
+
+        if ((enemy as Unit).cloakFade > 0) {
             type = type.toLowerCase();
             if (type === "ram" || type === "circle" || type === "flee") {
                 return true;
@@ -496,7 +504,6 @@ export class AI {
         }
         return true;
     }
-    ;
 
     attackMoves(enemy: Unit, unit: Unit, type: string, range: number) {
         let wiggle;
@@ -505,13 +512,13 @@ export class AI {
         }
         switch (type.toLowerCase()) {
             case "attack":
-                return this.attack(enemy, unit);
+                return AI.attack(enemy, unit);
             case "flee":
-                return this.goAway(unit, enemy, enemy.weaponRange + enemy.radius + enemy.maxSpeed * 16);
+                return AI.goAway(unit, enemy, enemy.weaponRange + enemy.radius + enemy.maxSpeed * 16);
             case "kite":
-                return this.kite(enemy, unit);
+                return AI.kite(enemy, unit);
             case "ram":
-                return this.ram(enemy, unit);
+                return AI.ram(enemy, unit);
             case "run-by":
                 if (v2.distance(enemy.pos, unit.pos) > 500) {
                     return this.run_by(enemy, unit);
@@ -554,7 +561,7 @@ export class AI {
                 }
                 break;
             case "stay at range":
-                return this.goAway(unit, enemy, enemy.weaponRange + enemy.radius + unit.radius);
+                return AI.goAway(unit, enemy, enemy.weaponRange + enemy.radius + unit.radius);
         }
     }
 
@@ -601,7 +608,7 @@ export class AI {
         let cp;
         switch (rule[1].toLowerCase()) {
             case "capture":
-                cp = this.closest(unit.pos, (function (t: Thing) {
+                cp = AI.closest(unit.pos, (function (t: Thing) {
                     return t.commandPoint &&
                         (t.side === Sim.otherSide(unit.side) ||
                             (
@@ -609,28 +616,28 @@ export class AI {
                                 ((t as CommandPoint).capping > 0)
                             ));
                 }), parseInt(rule[2]));
-                if (cp && this.goThere(unit, cp)) {
+                if (cp && AI.goThere(unit, cp)) {
                     return true;
                 }
                 break;
             case "spread to":
-                if (this.spreadCapCP(unit, rule[1])) {
+                if (AI.spreadCapCP(unit, rule[1])) {
                     return true;
                 }
                 break;
             case "guard":
-                if (this.capAndGuardCP(unit)) {
+                if (AI.capAndGuardCP(unit)) {
                     return true;
                 }
                 break;
             case "protect":
-                cp = this.closest(unit.pos, (function (t: Thing) {
+                cp = AI.closest(unit.pos, (function (t: Thing) {
                     return t.commandPoint &&
                         t.side === unit.side &&
                         (unit.commandPoint === true &&
                             (t as CommandPoint).capping > 0);
                 }), parseInt(rule[2]));
-                if (cp && this.goThere(unit, cp)) {
+                if (cp && AI.goThere(unit, cp)) {
                     return true;
                 }
                 break;
@@ -639,7 +646,7 @@ export class AI {
         }
     }
 
-    filter(t: Thing, unit: Unit) {
+    static filter(t: Thing, unit: Unit) {
         return t.unit && t.id !== unit.id && t.side === unit.side && t.energyCaster;
     };
 
@@ -653,9 +660,9 @@ export class AI {
             }
             switch (rule[2].toLowerCase()) {
                 case "find recharger":
-                    recharger = this.closest(unit.pos, this.filter, 3000);
+                    recharger = AI.closest(unit.pos, AI.filter, 3000);
                     if (recharger) {
-                        this.goInRange(500, 600, unit, recharger);
+                        AI.goInRange(500, 600, unit, recharger);
                         if (v2.distance(unit.pos, recharger.pos) < 600) {
                             unit.needsFullCharge = (unit.energy <= (unit.storeEnergy * .98));
                         }
@@ -665,7 +672,7 @@ export class AI {
                 case "rest":
                     return true;
                 case "flee enemies":
-                    enemy = this.closest(unit.pos, (function (t: Thing) {
+                    enemy = AI.closest(unit.pos, (function (t: Thing) {
                         return t.unit && t.side === Sim.otherSide(unit.side);
                     }), 3000);
                     if (this.attackMoves(enemy, unit, "flee", 3000)) {
@@ -676,11 +683,11 @@ export class AI {
                     return this.gotoLocation(unit, ["-", "friendly spawn", "", "", ""]);
                 case "find friendlies":
                 case "find friendies":
-                    friendly = this.closest(unit.pos, (function (t: Thing) {
+                    friendly = AI.closest(unit.pos, (function (t: Thing) {
                         return t.unit && t.id !== unit.id && t.side === unit.side;
                     }), 3000);
                     if (friendly && v2.distance(unit.pos, friendly.pos) > 500) {
-                        this.stayClose(friendly, unit);
+                        AI.stayClose(friendly, unit);
                         return true;
                     }
                     break;
@@ -716,7 +723,7 @@ export class AI {
         let pos: Float64Array = null;
         switch (rule[1].toLowerCase()) {
             case "enemy spawn":
-                spawn = this.closest(unit.pos, (function (t: Thing) {
+                spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === Sim.otherSide(unit.side);
                 }), 4000);
@@ -725,7 +732,7 @@ export class AI {
                 }
                 break;
             case "friendly spawn":
-                spawn = this.closest(unit.pos, (function (t: Thing) {
+                spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === unit.side;
                 }), 4000);
@@ -734,12 +741,12 @@ export class AI {
                 }
                 break;
             case "enemy home point":
-                spawn = this.closest(unit.pos, (function (t: Thing) {
+                spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === Sim.otherSide(unit.side);
                 }), 4000);
                 if (spawn) {
-                    cp = this.closest(spawn.pos, (function (t: Thing) {
+                    cp = AI.closest(spawn.pos, (function (t: Thing) {
                         return t.commandPoint;
                     }), 4000);
                 }
@@ -748,12 +755,12 @@ export class AI {
                 }
                 break;
             case "friendly home point":
-                spawn = this.closest(unit.pos, (function (t: Thing) {
+                spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === unit.side;
                 }), 4000);
                 if (spawn) {
-                    cp = this.closest(spawn.pos, (function (t: Thing) {
+                    cp = AI.closest(spawn.pos, (function (t: Thing) {
                         return t.commandPoint;
                     }), 4000);
                 }
@@ -784,15 +791,15 @@ export class AI {
         }
     }
 
-    ifRelative(clause: string, unit: Unit, other: Unit) {
+    static ifRelative(clause: string, unit: Unit, other: Unit) {
         let l, len1, len2, m, ref, ref1, w;
         switch (clause.toLowerCase()) {
             case "---":
                 return true;
             case "stronger":
-                return this.unitCompair(unit, other) <= 0;
+                return AI.unitCompair(unit, other) <= 0;
             case "weaker":
-                return this.unitCompair(unit, other) >= 0;
+                return AI.unitCompair(unit, other) >= 0;
             case "faster":
                 return other.maxSpeed >= unit.maxSpeed;
             case "slower":
@@ -847,43 +854,42 @@ export class AI {
                 return console.log("clause not defined", clause);
         }
     }
-    ;
 
-    ifAbsolute(clause: string, value: number, unit: Unit) {
+    static ifAbsolute(clause: string, value: string, unit: Unit) {
+        let numerical_value = parseInt(value);
         switch (clause.toLowerCase()) {
             case "---":
                 return true;
             case "faster":
-                return unit.maxSpeed * 16 >= value;
+                return unit.maxSpeed * 16 >= numerical_value;
             case "slower":
-                return unit.maxSpeed * 16 <= value;
+                return unit.maxSpeed * 16 <= numerical_value;
             case "more range":
-                return unit.weaponRange >= value;
+                return unit.weaponRange >= numerical_value;
             case "less range":
-                return unit.weaponRange <= value;
+                return unit.weaponRange <= numerical_value;
             case "more hp":
-                return unit.hp >= value;
+                return unit.hp >= numerical_value;
             case "less hp":
-                return unit.hp <= value;
+                return unit.hp <= numerical_value;
             case "more expensive":
-                return unit.cost >= value;
+                return unit.cost >= numerical_value;
             case "less expensive":
-                return unit.cost <= value;
+                return unit.cost <= numerical_value;
             case "more dps":
-                return unit.weaponDPS * 16 >= value;
+                return unit.weaponDPS * 16 >= numerical_value;
             case "less dps":
-                return unit.weaponDPS * 16 <= value;
+                return unit.weaponDPS * 16 <= numerical_value;
             case "more arc":
-                return unit.weaponArc >= value;
+                return unit.weaponArc >= numerical_value;
             case "less arc":
-                return unit.weaponArc <= value;
+                return unit.weaponArc <= numerical_value;
             default:
-                return console.log("clause not defined", clause);
+                return console.log("clause not defined", numerical_value);
         }
     }
-    ;
 
-    counterNeed(needType: string, player: Player) {
+    static counterNeed(needType: string, player: Player) {
         let l, len1, need, part, ref, ref1, ref2, ref3, u;
         need = 0;
         switch (needType.toLowerCase()) {
@@ -895,7 +901,7 @@ export class AI {
                         ref1 = u.parts;
                         for (l = 0, len1 = ref1.length; l < len1; l++) {
                             part = ref1[l];
-                            if (part.weapon && part.bulletCls.missile) {
+                            if (part.weapon && (<any> Bullets)[part.bulletCls].missile) {
                                 need += part.dps;
                             }
                         }
@@ -1011,7 +1017,7 @@ export class AI {
         return false;
     }
 
-    priorityBuild(need: number, priority: number, number: number, buildPriority: { number: number; priority: number; }[]) {
+    static priorityBuild(need: number, priority: number, number: number, buildPriority: { number: number; priority: number; }[]) {
         let i, l, ref1, results;
         if (need > 100) {
             need = 100;
@@ -1028,7 +1034,7 @@ export class AI {
 
     doPlayerAIRules(player: Player) {
         let b, enemyHave, l, len1, len2, len3, len4,
-            m, myUnits, need, number, o, otherSlot, p, ratio, ref, ref1, ref2, results, rule, rules,
+            m, myUnits, need, number, o, otherSlot, p, ratio, ref, ref1, ref2, rule, rules,
             start, type, u, unit;
         if (Sim.Instance.serverType === "1v1t") {
             return;
@@ -1067,7 +1073,7 @@ export class AI {
                     case "field # at priority #":
                         need = rule[1] - countsFielded[number];
                         if (need > 0) {
-                            this.priorityBuild(need, rule[2], number, buildPriority);
+                            AI.priorityBuild(need, rule[2], number, buildPriority);
                         }
                         break;
                     case "field # for # of enemy * at priority #":
@@ -1075,7 +1081,7 @@ export class AI {
                         enemyHave = enemysFielded[rule[3]] || 0;
                         need = Math.floor(enemyHave * ratio) - countsFielded[number];
                         if (need > 0) {
-                            this.priorityBuild(need, rule[4], number, buildPriority);
+                            AI.priorityBuild(need, rule[4], number, buildPriority);
                         }
                         break;
                     case "field # for # of ship in slot # at priority #":
@@ -1083,31 +1089,31 @@ export class AI {
                         otherSlot = parseInt(rule[3]) - 1;
                         need = Math.floor(countsFielded[otherSlot] * ratio) - countsFielded[number];
                         if (need > 0) {
-                            this.priorityBuild(need, rule[4], number, buildPriority);
+                            AI.priorityBuild(need, rule[4], number, buildPriority);
                         }
                         break;
                     case "try to field # every # seconds":
                         if (Sim.Instance.step !== 0 && Sim.Instance.step % (rule[2] * 16) === 0) {
                             need = rule[1];
-                            this.priorityBuild(need, 0, number, buildPriority);
+                            AI.priorityBuild(need, 0, number, buildPriority);
                         }
                         break;
                     case "field # at start":
                         if (Sim.Instance.step < 16 * 5) {
                             need = rule[1] - countsFielded[number];
-                            this.priorityBuild(need, 0, number, buildPriority);
+                            AI.priorityBuild(need, 0, number, buildPriority);
                         }
                         break;
                     case "field # for # of @needtypes at priority #":
-                        ratio = rule[1] / rule[2] * this.counterNeed(rule[3], player);
+                        ratio = rule[1] / rule[2] * AI.counterNeed(rule[3], player);
                         need = Math.floor(ratio - countsFielded[number]);
                         if (need > 0) {
-                            this.priorityBuild(need, rule[4], number, buildPriority);
+                            AI.priorityBuild(need, rule[4], number, buildPriority);
                         }
                         break;
                     case "field # when money over # at priority #":
                         if (player.money > rule[2]) {
-                            this.priorityBuild(rule[1], rule[3], number, buildPriority);
+                            AI.priorityBuild(rule[1], rule[3], number, buildPriority);
                         }
                 }
             }
@@ -1168,7 +1174,7 @@ export class AI {
                 used = false;
                 used = this.doUnitRules(unit, rule, player);
                 if (used) {
-                    unit.message += this.ruleToStr(rule);
+                    unit.message += AI.ruleToStr(rule);
                     break;
                 }
             }
@@ -1183,57 +1189,57 @@ export class AI {
                 return this.capAI(unit, rule);
             case "@attacktypes enemy within #m":
                 filter = function (t: Thing) {
-                    return this.attackFilter(t, unit, rule[1], rule[2]);
+                    return AI.attackFilter(t, unit, rule[1], rule[2]);
                 };
-                enemy = this.closest(unit.pos, filter, parseInt(rule[2]));
+                enemy = AI.closest(unit.pos, filter, parseInt(rule[2]));
                 if (this.attackMoves(enemy, unit, rule[1], parseInt(rule[2]))) {
                     return true;
                 }
                 break;
             case "@attacktypes enemy @unittypes within #m":
                 filter = function (t: Thing) {
-                    if (!this.attackFilter(t, unit, rule[1], rule[2])) {
+                    if (!AI.attackFilter(t, unit, rule[1], rule[2])) {
                         return false;
                     }
-                    return this.classifyShip(t) === rule[2];
+                    return this.classifyShip((t as Unit)) === rule[2];
                 };
 
-                enemy = this.closest(unit.pos, filter, parseInt(rule[3]));
+                enemy = AI.closest(unit.pos, filter, parseInt(rule[3]));
                 if (this.attackMoves(enemy, unit, rule[1], parseInt(rule[2]))) {
                     return true;
                 }
                 break;
             case "@attacktypes enemy that is @relativetypes and @relativetypes within #m":
                 filter = function (t: Thing) {
-                    if (!this.attackFilter(t, unit, rule[1], rule[2])) {
+                    if (!AI.attackFilter(t, unit, rule[1], rule[2])) {
                         return false;
                     }
-                    return this.ifRelative(rule[2], unit, t) && this.ifRelative(rule[3], unit, t);
+                    return AI.ifRelative(rule[2], unit, (t as Unit)) && AI.ifRelative(rule[3], unit, (t as Unit));
                 };
-                enemy = this.closest(unit.pos, filter, parseInt(rule[4]));
+                enemy = AI.closest(unit.pos, filter, parseInt(rule[4]));
                 if (this.attackMoves(enemy, unit, rule[1], parseInt(rule[4]))) {
                     return true;
                 }
                 break;
             case "@attacktypes enemy that is @absolutetypes then # within #m":
                 filter = function (t: Thing) {
-                    if (!this.attackFilter(t, unit, rule[1], rule[2])) {
+                    if (!AI.attackFilter(t, unit, rule[1], rule[2])) {
                         return false;
                     }
-                    return this.ifAbsolute(rule[2], rule[3], t);
+                    return AI.ifAbsolute(rule[2], rule[3], (t as Unit));
                 };
 
-                enemy = this.closest(unit.pos, filter, parseInt(rule[4]));
+                enemy = AI.closest(unit.pos, filter, parseInt(rule[4]));
                 if (this.attackMoves(enemy, unit, rule[1], parseInt(rule[4]))) {
                     return true;
                 }
                 break;
             case "find units that are out of energy":
-                target = this.closest(unit.pos, function (t: Thing) {
+                target = AI.closest(unit.pos, function (t: Thing) {
                     return t.unit && t.id !== unit.id && t.side === unit.side && (t as Unit).energy < t.storeEnergy * .75;
                 }, 4000);
                 if (target) {
-                    this.goInRange(500, 600, unit, target);
+                    AI.goInRange(500, 600, unit, target);
                     return true;
                 }
                 break;
@@ -1247,38 +1253,38 @@ export class AI {
                 break;
             case "when shields down to #%, flee":
                 if (unit.shield / unit.maxShield < parseInt(rule[1]) / 100) {
-                    enemy = this.closest(unit.pos, (function (t: Thing) {
+                    enemy = AI.closest(unit.pos, (function (t: Thing) {
                         return t.unit && t.side === Sim.otherSide(unit.side);
                     }), 4000);
                     if (enemy) {
-                        this.goAway(unit, enemy, enemy.weaponRange * 1.5);
+                        AI.goAway(unit, enemy, enemy.weaponRange * 1.5);
                         return true;
                     }
                 }
                 break;
             case "stay in #m range of friendly units":
-                friendly = this.closest(unit.pos, (function (t: Thing) {
+                friendly = AI.closest(unit.pos, (function (t: Thing) {
                     return t.unit && t.id !== unit.id && t.side === unit.side;
                 }), 4000);
                 if (friendly && v2.distance(unit.pos, friendly.pos) > parseInt(rule[1])) {
-                    this.stayClose(friendly, unit);
+                    AI.stayClose(friendly, unit);
                     return true;
                 }
                 break;
             case "stay in #m range of slot # units":
-                friendly = this.closest(unit.pos, (function (t: Thing) {
+                friendly = AI.closest(unit.pos, (function (t: Thing) {
                     return t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
                 }), 4000);
                 if (friendly && v2.distance(unit.pos, friendly.pos) > parseInt(rule[1])) {
-                    this.stayClose(friendly, unit);
+                    AI.stayClose(friendly, unit);
                     return true;
                 }
                 break;
             case "stayaway in #m range from slot # units":
-                friendly = this.closest(unit.pos, (function (t: Thing) {
+                friendly = AI.closest(unit.pos, (function (t: Thing) {
                     return t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
                 }), 4000);
-                if (friendly && this.goAway(unit, friendly, parseInt(rule[1]))) {
+                if (friendly && AI.goAway(unit, friendly, parseInt(rule[1]))) {
                     return true;
                 }
                 break;
@@ -1314,7 +1320,6 @@ export class AI {
                 return false;
         }
     }
-    ;
 
     avoidEnemies(unit: Unit, dps: number) {
         let minDist: number = 9000000;
@@ -1343,14 +1348,13 @@ export class AI {
             };
         })(this));
         if (doWhat === "Flee") {
-            this.goAway(unit, minEnemy, stayAwayRange);
+            AI.goAway(unit, minEnemy, stayAwayRange);
             return true;
         }
         if (doWhat === "Stop") {
             return true;
         }
     }
-    ;
 
     rymarq_system(unit: Unit) {
         let k, l, len1, list, part, ref, v;
@@ -1419,7 +1423,7 @@ export class AI {
         return list[0][1];
     }
 
-    saktoth_system(unit: Unit) {
+    static saktoth_system(unit: Unit) {
         let ref, ref1;
         if (unit.weaponDPS === 0) {
             return "scout";
@@ -1460,7 +1464,7 @@ export class AI {
     }
 
 
-    useAiFleet(aiName: string, side: string, aiBuildBar:
+    static useAiFleet(aiName: string, side: string, aiBuildBar:
         ({
             parts:
                 { pos: number[]; type: string; dir: number }[];
@@ -1483,7 +1487,7 @@ export class AI {
                 aiBuildBar[i] = JSON.stringify(u);
             }
         }
-        player = Sim.Instance.playerJoin("", "ai" + Sim.rid(), aiName, color, aiBuildBar, this.buildBar2aiRules(aiBuildBar), true);
+        player = Sim.Instance.playerJoin("", "ai" + Sim.rid(), aiName, color, aiBuildBar, AI.buildBar2aiRules(aiBuildBar), true);
         player.side = side;
         player.afk = false;
         player.connected = true;
@@ -1499,10 +1503,10 @@ export class AI {
         if (!aiName) {
             return;
         }
-        return this.useAiFleet(aiName, side, this.all[aiName]);
+        return AI.useAiFleet(aiName, side, this.all[aiName]);
     }
 
-    buildBar2aiRules(buildBar:
+    static buildBar2aiRules(buildBar:
                          ({
                              parts:
                                  { pos: number[]; type: string; dir: number }[];
