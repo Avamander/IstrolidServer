@@ -1,7 +1,7 @@
 import {IstrolidServer} from "../server";
-import {Sim} from "./6src_sim";
-import {Utils} from "./993src_utils";
-import {Player} from "./94src_things";
+import {Sim} from "./sim";
+import {Utils} from "./utils";
+import {Player} from "./things";
 
 export class CTF {
 

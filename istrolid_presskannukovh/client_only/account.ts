@@ -1,8 +1,8 @@
 import {inspect} from "util";
 import colors = module
-import {Colors} from "../992src_colors";
-import {Sim} from "../6src_sim";
-import {Unit} from "../95src_unit";
+import {Colors} from "../colors";
+import {Sim} from "../sim";
+import {Unit} from "../unit";
 
 export class Account {
     private static _instance: Account;

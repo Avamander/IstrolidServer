@@ -1,4 +1,4 @@
-import {v2} from "./4src_maths";
+import {v2} from "./maths";
 
 export class CollisionUtils {
     static furthestPoint(points: Float64Array[], d: Float64Array): Float64Array {

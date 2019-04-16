@@ -1,17 +1,17 @@
-import {v2} from "./4src_maths";
-import {Sim} from "./6src_sim";
+import {v2} from "./maths";
+import {Sim} from "./sim";
 import {
     Debree,
     Particle,
     Player,
     Thing,
     Trail
-} from "./94src_things";
-import {Unit} from "./95src_unit";
-import {CollisionUtils} from "./991src_collision";
+} from "./things";
+import {Unit} from "./unit";
+import {CollisionUtils} from "./collision";
 import {actionMixer, baseAtlas, intp} from "./dummy";
-import {Explosions} from "./97explosions";
-import {Turret} from "./95part";
+import {Explosions} from "./explosions";
+import {Turret} from "./part";
 
 export namespace Bullets {
     import HitExplosion = Explosions.HitExplosion;

@@ -1,4 +1,4 @@
-import {Sim} from "./6src_sim";
+import {Sim} from "./sim";
 import {baseAtlas, control} from "./dummy";
 
 export class Utils {

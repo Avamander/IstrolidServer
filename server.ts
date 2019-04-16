@@ -1,7 +1,7 @@
-import {Player} from "./istrolid_presskannukovh/94src_things";
-import {Sim} from "./istrolid_presskannukovh/6src_sim";
-import {Utils} from "./istrolid_presskannukovh/993src_utils";
-import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
+import {Player} from "./istrolid_presskannukovh/things";
+import {Sim} from "./istrolid_presskannukovh/sim";
+import {Utils} from "./istrolid_presskannukovh/utils";
+import {CommandsManager} from "./istrolid_presskannukovh/commands";
 const WebSocket = require("ws");
 //import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
 //require("./fix"); // Enable DLC when server and replace window with global

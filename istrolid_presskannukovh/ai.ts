@@ -1,10 +1,10 @@
-import {v2} from "./4src_maths";
-import {Unit} from "./95src_unit";
-import {CommandPoint, Player, Thing} from "./94src_things";
-import {Sim} from "./6src_sim";
-import {Utils} from "./993src_utils";
-import {AIData} from "./98src_aidata";
-import {Bullets} from "./96bullets";
+import {v2} from "./maths";
+import {Unit} from "./unit";
+import {CommandPoint, Player, Thing} from "./things";
+import {Sim} from "./sim";
+import {Utils} from "./utils";
+import {AIData} from "./aidata";
+import {Bullets} from "./bullets";
 import Bullet = Bullets.Bullet;
 import MissileBullet = Bullets.MissileBullet;
 

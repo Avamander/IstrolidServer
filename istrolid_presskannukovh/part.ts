@@ -1,10 +1,10 @@
-import {v2} from "./4src_maths"
-import {Unit} from "./95src_unit";
-import {Player, Thing, Trail} from "./94src_things";
+import {v2} from "./maths"
+import {Unit} from "./unit";
+import {Player, Thing, Trail} from "./things";
 import {baseAtlas, intp} from "./dummy";
 import {IstrolidServer} from "../server";
-import {Sim} from "./6src_sim";
-import {CollisionUtils} from "./991src_collision";
+import {Sim} from "./sim";
+import {CollisionUtils} from "./collision";
 
 export class Part {
     turret!: this;
@@ -621,8 +621,8 @@ export class Turret extends Part {
     }
 }
 
-import {Bullets} from "./96bullets";
+import {Bullets} from "./bullets";
 import TorpBullet = Bullets.TorpBullet;
-import {Explosions} from "./97explosions";
+import {Explosions} from "./explosions";
 import HitExplosion = Explosions.HitExplosion;
 import BattleCannonBullet = Bullets.BattleCannonBullet;

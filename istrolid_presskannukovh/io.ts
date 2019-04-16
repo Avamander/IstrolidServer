@@ -1,4 +1,4 @@
-import {Sim} from "./6src_sim";
+import {Sim} from "./sim";
 
 export class IO {
     hasProp = {}.hasOwnProperty;

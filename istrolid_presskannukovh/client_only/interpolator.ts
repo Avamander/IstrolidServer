@@ -1,9 +1,9 @@
-import {v2} from "../4src_maths";
+import {v2} from "../maths";
 import {prot} from "../protocol";
-import {ZJson} from "../994src_zjson";
-import {Sim} from "../6src_sim";
-import {Player} from "../94src_things";
-import {Utils} from "../993src_utils";
+import {ZJson} from "../zjson";
+import {Sim} from "../sim";
+import {Player} from "../things";
+import {Utils} from "../utils";
 
 export class Interpolator {
     replay = "off";

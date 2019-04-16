@@ -1,13 +1,13 @@
-import {Debree, Player, Thing} from "./94src_things";
-import {v2} from "./4src_maths";
-import {Sim} from "./6src_sim";
-import {Utils} from "./993src_utils";
-import {Colors} from "./992src_colors";
+import {Debree, Player, Thing} from "./things";
+import {v2} from "./maths";
+import {Sim} from "./sim";
+import {Utils} from "./utils";
+import {Colors} from "./colors";
 import {baseAtlas, battleMode, commander, control, intp} from "./dummy";
-import {CollisionUtils} from "./991src_collision";
-import {Parts} from "./96src_parts";
-import {UnitUtils} from "./95unitutils";
-import {Part} from "./95part";
+import {CollisionUtils} from "./collision";
+import {Parts} from "./parts";
+import {UnitUtils} from "./unitutils";
+import {Part} from "./part";
 
 export class Unit extends Thing {
     parts: Part[];
@@ -1621,8 +1621,8 @@ import JumpEngine = Parts.JumpEngine;
 import ModProjector = Parts.ModProjector;
 import EnergyTransfer = Parts.EnergyTransfer;
 import StasisField = Parts.StasisField;
-import {Bullets} from "./96bullets";
+import {Bullets} from "./bullets";
 import FlameBulletGhost = Bullets.FlameBulletGhost;
-import {Explosions} from "./97explosions";
+import {Explosions} from "./explosions";
 import ShipExplosion = Explosions.ShipExplosion;
 import Bullet = Bullets.Bullet;

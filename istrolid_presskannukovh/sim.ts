@@ -1,17 +1,17 @@
-import {v2} from "./4src_maths";
+import {v2} from "./maths";
 import {prot} from "./protocol";
-import {IstrolidMap, Mapping} from "./5src_maps";
-import {ZJson} from "./994src_zjson";
-import {Colors} from "./992src_colors";
+import {IstrolidMap, Mapping} from "./maps";
+import {ZJson} from "./zjson";
+import {Colors} from "./colors";
 import {HSpace} from "./hspace";
-import {Utils} from "./993src_utils";
-import {Particle, Player, Thing} from "./94src_things";
+import {Utils} from "./utils";
+import {Particle, Player, Thing} from "./things";
 import {IstrolidServer} from "../server";
-import {Unit} from "./95src_unit";
-import {Grid} from "./99src_grid";
-import {UnitUtils} from "./95unitutils";
-import {AI} from "./97src_ai";
-import {Bullets} from "./96bullets";
+import {Unit} from "./unit";
+import {Grid} from "./grid";
+import {UnitUtils} from "./unitutils";
+import {AI} from "./ai";
+import {Bullets} from "./bullets";
 import Bullet = Bullets.Bullet;
 
 export class Sim {

@@ -1,8 +1,8 @@
 import {actionMixer, baseAtlas, intp} from "./dummy";
-import {v2} from "./4src_maths";
-import {Sim} from "./6src_sim";
-import {CollisionUtils} from "./991src_collision";
-import {Debree, Particle, Thing} from "./94src_things";
+import {v2} from "./maths";
+import {Sim} from "./sim";
+import {CollisionUtils} from "./collision";
+import {Debree, Particle, Thing} from "./things";
 
 export namespace Explosions {
     export class Explosion extends Particle {

@@ -1,8 +1,8 @@
 /*
 General Game Objects live here
  */
-import {Part} from "./95part";
-import {Sim} from "./6src_sim";
+import {Part} from "./part";
+import {Sim} from "./sim";
 
 export class ThingUtil {
     hasProp = {}.hasOwnProperty;
@@ -880,7 +880,7 @@ export class SpawnPoint extends Thing {
     };
 }
 
-import {v2} from "./4src_maths";
-import {Unit} from "./95src_unit";
+import {v2} from "./maths";
+import {Unit} from "./unit";
 import {actionMixer, baseAtlas, battleMode, commander, intp, ui} from "./dummy";
-import {CollisionUtils} from "./991src_collision";
+import {CollisionUtils} from "./collision";

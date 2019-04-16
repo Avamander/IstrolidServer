@@ -1,8 +1,8 @@
-import {v2} from "./4src_maths";
+import {v2} from "./maths";
 import {MTwist} from "./mtwist";
-import {Sim} from "./6src_sim";
-import {CommandPoint, SpawnPoint, Thing} from "./94src_things";
-import {Unit} from "./95src_unit";
+import {Sim} from "./sim";
+import {CommandPoint, SpawnPoint, Thing} from "./things";
+import {Unit} from "./unit";
 import {IstrolidServer} from "../server";
 
 export class IstrolidMap {

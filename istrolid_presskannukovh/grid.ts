@@ -1,7 +1,7 @@
-import {Sim} from "./6src_sim";
-import {Unit} from "./95src_unit";
-import {Part} from "./95part";
-import {Player} from "./94src_things";
+import {Sim} from "./sim";
+import {Unit} from "./unit";
+import {Part} from "./part";
+import {Player} from "./things";
 import {Account} from "./dummy";
 
 export class Grid {

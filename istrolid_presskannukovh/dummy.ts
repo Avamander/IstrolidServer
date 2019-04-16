@@ -1,4 +1,4 @@
-import {Thing} from "./94src_things";
+import {Thing} from "./things";
 
 export class baseAtlas {
     static rtt: any;

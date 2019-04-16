@@ -1,6 +1,6 @@
-import {Part, Engine, Turret} from "./95part";
-import {Bullets} from "./96bullets";
-import {Explosions} from "./97explosions";
+import {Part, Engine, Turret} from "./part";
+import {Bullets} from "./bullets";
+import {Explosions} from "./explosions";
 
 export namespace Parts {
     import LightPlasmaBullet = Bullets.LightPlasmaBullet;
@@ -4399,10 +4399,10 @@ export namespace Parts {
     }
 }
 
-import {UnitUtils} from "./95unitutils";
-import {v2} from "./4src_maths";
+import {UnitUtils} from "./unitutils";
+import {v2} from "./maths";
 import {baseAtlas, intp} from "./dummy";
-import {CollisionUtils} from "./991src_collision";
-import {Sim} from "./6src_sim";
-import {Unit} from "./95src_unit";
-import {Thing} from "./94src_things";
+import {CollisionUtils} from "./collision";
+import {Sim} from "./sim";
+import {Unit} from "./unit";
+import {Thing} from "./things";
