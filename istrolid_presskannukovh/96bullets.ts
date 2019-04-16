@@ -9,42 +9,41 @@ import {
 } from "./94src_things";
 import {Unit} from "./95src_unit";
 import {CollisionUtils} from "./991src_collision";
-import {actionMixer, baseAtlas, intp} from "./0dummy";
+import {actionMixer, baseAtlas, intp} from "./dummy";
 import {Explosions} from "./97explosions";
 import {Turret} from "./95part";
 
 export namespace Bullets {
-    import Explosion = Explosions.Explosion;
-    import SmallHitExplosion = Explosions.SmallHitExplosion;
     import HitExplosion = Explosions.HitExplosion;
     import AoeExplosion = Explosions.AoeExplosion;
     import RingHitExplosion = Explosions.RingHitExplosion;
     import BombExplosion = Explosions.BombExplosion;
     import FlackExplosion = Explosions.FlackExplosion;
     import ArtilleryExplosion = Explosions.ArtilleryExplosion;
+    import SmallHitExplosion = Explosions.SmallHitExplosion;
 
     export class Bullet extends Particle {
-        dead: boolean;
+        dead: boolean = false;
         image: string = "img/unitBar/pip1.png";
         damage: number = 1;
         speed: number = 10;
         size: number[] = [1, 1];
         radius: number = 10;
         hitsMultiple = false;
-        hitExplosion: string = Explosion.constructor.name;
-        explodeClass: string = Explosion.constructor.name;
-        side: string = null;
+        hitExplosion: string = Explosions.SmallHitExplosion.name;
+        explodeClass: string = Explosions.SmallHitExplosion.name;
+        side: string = "";
         hitsCloak: boolean = false;
-        life: number;
-        t: number;
+        life: number = 0;
+        maxLife: number = 10;
         energyDamage: number = 0;
-        explode: boolean = false;
+        explode: boolean = true;
         hitsMissiles: boolean = false;
         soundVolume: number = .1;
-        owner: Player;
-        target: Unit;
         aoe: number = 0;
-        hitPos: Float64Array;
+        hitPos: Float64Array = new Float64Array(2);
+        // @ts-ignore
+        t: number = null;
 
         constructor() {
             super();
@@ -54,56 +53,62 @@ export namespace Bullets {
 
         applyDamage() {
             this.dead = true;
-        };
+        }
 
         move(): void {
             if (this.dead) {
                 return;
             }
-            v2.add(this.pos, this.vel, null);
+            v2.add_r(this.pos, this.vel);
             this.life += 1;
-        };
+        }
 
         tick(): void {
             if (this.life > this.maxLife) {
                 this.dead = true;
                 return;
             }
+
             if (this.explode === false) {
                 this.dead = true;
                 return;
             }
+
             this.scan();
+
             if (this.dead) {
                 let exp = new (<any> Explosions)[this.hitExplosion]();
                 exp.z = 1000;
                 exp.pos = new Float64Array([this.pos[0], this.pos[1]]);
                 if (this.t !== null) {
-                    v2.add(exp.pos, v2.scale(this.vel, this.t, null), null);
+                    v2.add_r(exp.pos, v2.scale_r(this.vel, this.t));
                 }
                 exp.vel = new Float64Array([0, 0]);
                 exp.rot = 0;
                 exp.radius = 0.75;
                 Sim.Instance.things[exp.id] = exp;
             }
-        };
+        }
 
         scan() {
-            Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + Sim.Instance.maxRadius[Sim.otherSide(this.side)], (function (_this) {
+            Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + Sim.Instance.maxRadius[Sim.otherSide(this.side)],
+                // @ts-ignore because they're all units
+                (function (_this) {
                 return function (unit: Unit) {
-                    if (_this.collide(unit)) {
+                    if (_this.collide((unit as Thing))) {
                         _this.hitUnit(unit);
                         return !_this.hitsMultiple;
                     }
                     return false;
                 };
             })(this));
+
             if (this.hitsMissiles) {
-                return Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + 100, (function (_this) {
+                return Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + 100,
+                    // @ts-ignore Because every one is bullet
+                    (function (_this) {
                     return function (missile: Bullet) {
-                        // @ts-ignore
                         if (missile.missile && _this.collide(missile)) {
-                            // @ts-ignore
                             _this.hitMissle(missile);
                             return !_this.hitsMultiple;
                         }
@@ -111,20 +116,20 @@ export namespace Bullets {
                     };
                 })(this));
             }
-        };
+        }
 
-        hitUnit(thing: Thing): void {
-            thing.applyDamage(this.damage, this);
+        hitUnit(unit: Unit): void {
+            unit.applyDamage(this.damage, this);
             if (this.energyDamage) {
-                thing.applyEnergyDamage(this.energyDamage);
+                unit.applyEnergyDamage(this.energyDamage);
             }
             this.dead = true;
-        };
+        }
 
         hitMissle(thing: Thing): void {
             thing.life = thing.maxLife;
             thing.explode = false;
-        };
+        }
 
         collide(thing: Thing) {
             if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
@@ -141,18 +146,18 @@ export namespace Bullets {
             }
             if (thing.unit) {
                 let this_pos = new Float64Array([this.vel[0] - thing.vel[0], this.vel[1] - thing.vel[1]]);
-                let dist = CollisionUtils.closestDistance(thing.getBoundPoints(), [this.pos, v2.add(this_pos, this.pos, null)]);
+                let dist = CollisionUtils.closestDistance(thing.getBoundPoints(), [this.pos, v2.add_r(this_pos, this.pos)]);
                 this.t = 0;
                 return dist < this.radius;
             }
             return this.collideCircles(thing);
-        };
+        }
 
         _collide(thing: Thing) {
             let distance = v2.distance(this.pos, thing.pos);
             //let speed = v2.mag(thing.vel) + v2.mag(this.vel);
             return distance < thing.radius;
-        };
+        }
 
         collideCircles(thing: Thing) {
             let c, distance, r, speed, t1, t2, ta, tb, tc, v;
@@ -167,6 +172,7 @@ export namespace Bullets {
             if (distance > thing.radius + this.radius + speed) {
                 return false;
             }
+            // @ts-ignore
             this.t = null;
 
             c = [this.pos[0] - thing.pos[0], this.pos[1] - thing.pos[1]];
@@ -177,6 +183,7 @@ export namespace Bullets {
             tc = v[0] * v[0] + v[1] * v[1];
             t1 = (ta - tb) / tc;
             t2 = (ta + tb) / tc;
+
             if (t1 > 0 && t1 < t2) {
                 this.t = t1;
             }
@@ -187,7 +194,7 @@ export namespace Bullets {
                 return this.t > 0 && this.t < 1;
             }
             return false;
-        };
+        }
 
         __collide(thing: Unit) {
             let part, ref;
@@ -213,20 +220,23 @@ export namespace Bullets {
                 }
             }
             return false;
-        };
+        }
+
+        postFire () {
+
+        }
     }
 
     export class AoeBullet extends Bullet {
-        owner: Player;
         image = "img/unitBar/pip1.png";
         size = [1, 1];
-        color = [100, 100, 100, 255];
+        color: [number, number, number, number] = [100, 100, 100, 255];
         speed = 30;
         aoe = 50;
         damage = 3;
         explode = true;
-        explodeClass = AoeExplosion.constructor.name;
-        hitPos = new Float64Array([0, 0]);
+        explodeClass = AoeExplosion.name;
+        hitPos = new Float64Array(2);
 
         constructor() {
             super();
@@ -236,7 +246,7 @@ export namespace Bullets {
             if (this.dead) {
                 return;
             }
-            v2.add(this.pos, this.vel, null);
+            v2.add_r(this.pos, this.vel);
         };
 
         tick() {
@@ -278,7 +288,7 @@ export namespace Bullets {
     export class TrackingMissile extends Bullet {
         image = "img/unitBar/pip1.png";
         size = [1, 1];
-        color = [0, 0, 0, 255];
+        color: [number, number, number, number] = [0, 0, 0, 255];
         speed = 15;
         damage = 8;
         radius = 10;
@@ -303,12 +313,12 @@ export namespace Bullets {
             }
             if (this.target && !this.target.dead && !this.target.cloaked()) {
                 this.vel = new Float64Array([this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]]);
-                v2.norm(this.vel, null);
-                v2.scale(this.vel, this.speed, null);
+                v2.norm_r(this.vel);
+                v2.scale_r(this.vel, this.speed);
             }
-            v2.add(this.pos, this.vel, null);
+            v2.add_r(this.pos, this.vel);
             this.rot = v2.angle(this.vel);
-            return this.life += 1;
+            this.life += 1;
         };
 
         tick() {
@@ -316,9 +326,11 @@ export namespace Bullets {
                 this.dead = true;
                 return;
             }
-            Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + Sim.Instance.maxRadius[Sim.otherSide(this.side)], (function (_this) {
-                return function (unit: Thing) {
-                    if (_this.collide(unit)) {
+            Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.radius + this.speed + Sim.Instance.maxRadius[Sim.otherSide(this.side)],
+                // @ts-ignore Because unitSpaces contains Units
+                (function (_this) {
+                return function (unit: Unit) {
+                    if (_this.collide((unit as Thing))) {
                         _this.hitUnit(unit);
                         return true;
                     }
@@ -333,7 +345,7 @@ export namespace Bullets {
                 exp.vel = new Float64Array([0, 0]);
                 exp.rot = 0;
                 exp.radius = .5;
-                return Sim.Instance.things[exp.id] = exp;
+                Sim.Instance.things[exp.id] = (exp as Thing);
             }
         };
     }
@@ -341,22 +353,21 @@ export namespace Bullets {
     export class LaserBullet extends Bullet {
         image = "img/laser01.png";
         size = [1, 1];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         speed = 2000;
         damage = 2.5;
         maxLife = 3;
         drawLength = 437;
-        target: Unit;
-        origin: Unit;
-        turretNum: number;
-        targetPos: Float64Array;
+        turretNum: number = 0;
+        targetPos: Float64Array = new Float64Array(2);
 
         constructor() {
             super();
         }
 
         move() {
-        };
+
+        }
 
         tick() {
             if (this.dead) {
@@ -366,7 +377,7 @@ export namespace Bullets {
             if (this.life > this.maxLife) {
                 return this.dead = true;
             }
-        };
+        }
 
         draw() {
             let d, pos, rot, w;
@@ -377,14 +388,20 @@ export namespace Bullets {
                 }
             }
             if (this.target) {
-                pos = this.target.unit ? CollisionUtils.closestPointOnPolygon(this.pos, this.target.getBoundPoints()) : this.target.pos;
+                if (this.target.unit) {
+                    pos = CollisionUtils.closestPointOnPolygon(this.pos, this.target.getBoundPoints());
+                } else {
+                    pos = this.target.pos;
+                }
+
+                // @ts-ignore
                 v2.set(pos, this.targetPos);
             }
             let _offset = new Float64Array([this.targetPos[0] - this.pos[0], this.targetPos[1] - this.pos[1]]);
             rot = v2.angle(_offset);
             d = v2.mag(_offset) / this.drawLength;
-            v2.scale(_offset, .5, null);
-            v2.add(_offset, this.pos, null);
+            v2.scale_r(_offset, .5);
+            v2.add_r(_offset, this.pos);
             if (w) {
                 w.rot = rot;
             }
@@ -396,9 +413,9 @@ export namespace Bullets {
         image = "parts/fireAuto.png";
         sound = "sounds/weapons/autocannon.wav";
         size = [.6, .6];
-        color = [179, 207, 255, 255];
-        hitExplosion = SmallHitExplosion.constructor.name;
-        turretNum: number;
+        color: [number, number, number, number] = [179, 207, 255, 255];
+        hitExplosion = SmallHitExplosion.name;
+        turretNum: number = 0;
 
         constructor() {
             super();
@@ -410,7 +427,7 @@ export namespace Bullets {
         sound = "sounds/weapons/blaster1.wav";
         soundVolume = .05;
         size = [1, 1];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -425,12 +442,12 @@ export namespace Bullets {
     }
 
     export class EMPOrb2 extends Bullet {
-        _slowVel: Float64Array;
+        _slowVel: Float64Array = new Float64Array(2);
         image = "parts/fizzleMine.png";
         sound = "sounds/weapons/blaster1.wav";
         soundVolume = .05;
         size = [1, 1];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         split = 0;
 
         constructor() {
@@ -454,7 +471,7 @@ export namespace Bullets {
                 exp2.z = exp.z;
                 exp2.pos = v2.create(this.pos);
                 v2.set(exp.vel, exp2.vel);
-                v2.scale(exp2.vel, -1, null);
+                v2.scale_r(exp2.vel, -1);
                 exp2.rot = exp.rot + Math.PI;
                 exp2.vrot = 0;
                 intp.particles[exp2.id] = exp2;
@@ -470,29 +487,29 @@ export namespace Bullets {
             if (this.life > this.maxLife / 4 && this.split === 0) {
                 image = "img/fire02.png";
             } else if (this.life > this.maxLife / 4) {
-                image = "fizzleMineEnergy.png";
+                image = "parts/fizzleMineEnergy.png";
             } else {
                 image = this.image;
             }
             return baseAtlas.drawSprite(image, this.pos, this.size, this.rot + intp.t, this.color);
-        };
+        }
 
         postFire() {
             this.maxLife += 24;
             this._slowVel = v2.create(this.vel);
-            return v2.scale(this._slowVel, 0.2, null);
-        };
+            return v2.scale_r(this._slowVel, 0.2);
+        }
 
         move() {
             if (this.dead) {
                 return;
             }
             if (this.life > this.maxLife / 4) {
-                v2.add(this.pos, this.vel, null);
+                v2.add_r(this.pos, this.vel);
             } else {
-                v2.add(this.pos, this._slowVel, null);
+                v2.add_r(this.pos, this._slowVel);
             }
-        };
+        }
 
         tick() {
             let exp;
@@ -510,21 +527,21 @@ export namespace Bullets {
                 exp.z = 1000;
                 exp.pos = new Float64Array([this.pos[0], this.pos[1]]);
                 if (this.t !== null) {
-                    v2.add(exp.pos, v2.scale(this.vel, this.t, null), null);
+                    v2.add_r(exp.pos, v2.scale_r(this.vel, this.t));
                 }
                 exp.vel = new Float64Array([0, 0]);
                 exp.rot = 0;
                 exp.radius = 1;
                 Sim.Instance.things[exp.id] = exp;
             }
-        };
+        }
     }
 
     export class FlameBullet extends Bullet {
         image = "parts/fireFlame1.png";
         sound = "sounds/weapons/fireFlame.wav";
         size = [0.7, 0.7];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 2;
         maxRadius = 64;
         hitsMultiple = true;
@@ -532,8 +549,8 @@ export namespace Bullets {
         createGhost = 0;
         originPos = [0, 0];
         hitOnce: { [key: number]: boolean };
-        burnAmount: number;
-        turretNum: number;
+        burnAmount: number = 0;
+        turretNum: number = 0;
 
         constructor() {
             super();
@@ -550,7 +567,7 @@ export namespace Bullets {
                         v2.set(w.worldPos, new Float64Array(this.originPos));
                         ex = new FlameBulletGhost();
                         ex.main = false;
-                        ex.image = "fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
+                        ex.image = "parts/fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
                         ex.z = this.z + (Math.random() - 0.5) * .01;
                         ex.pos = new Float64Array(this.originPos);
                         ex.vel = new Float64Array(this.vel);
@@ -602,20 +619,22 @@ export namespace Bullets {
         };
 
         postFire() {
-            v2.add(this.pos, this.vel, null);
-            v2.add(this.pos, this.vel, null);
+            v2.add_r(this.pos, this.vel);
+            v2.add_r(this.pos, this.vel);
             this.z += 10;
             this.rot = Math.PI * 2 * Math.random();
-            this.image = "fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
+            this.image = "parts/fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
         };
     }
 
     export class FlameBulletGhost extends Bullet {
-        _rot: number;
-        vrot: number;
-        maxRadius: number;
-        _rot2: number;
-        main: boolean;
+        maxRadius: number = 10;
+
+        // These are re-assigned hopefully on creation
+        _rot: number = 0;
+        vrot: number = 0;
+        _rot2: number = 0;
+        main: boolean = false;
 
         constructor() {
             super();
@@ -648,7 +667,7 @@ export namespace Bullets {
         target: any;
         origin: any;
         turretNum: any;
-        image = "battleCannonBullet";
+        image = "parts/battleCannonBullet";
         sound = "sounds/weapons/torp2.wav";
         size = [1, 1];
         radius = 20;
@@ -663,7 +682,7 @@ export namespace Bullets {
         image = "parts/fireHex1.png";
         sound = "sounds/weapons/heavyPD.wav";
         size = [.7, .7];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 12;
         hitsMultiple = true;
 
@@ -676,7 +695,7 @@ export namespace Bullets {
         image = "parts/fireShot1.png";
         sound = "sounds/weapons/blaster2.wav";
         size = [.6, .6];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -687,8 +706,8 @@ export namespace Bullets {
         image = "parts/fireBeamSmall.png";
         sound = "sounds/weapons/autocannon.wav";
         size = [.6, .6];
-        color = [179, 207, 255, 255];
-        hitExplosion = SmallHitExplosion.constructor.name;
+        color: [number, number, number, number] = [179, 207, 255, 255];
+        hitExplosion = SmallHitExplosion.name;
 
         constructor() {
             super();
@@ -696,16 +715,16 @@ export namespace Bullets {
     }
 
     export class NeedleGunBullet extends Bullet {
-        image: string = "needleGunBullet";
+        image: string = "parts/needleGunBullet";
         sound: string = "sounds/weapons/blaster1.wav";
         size = [1, 1];
         radius: number = 20;
         trailTime: number = 500;
         trailSize: number = 0.02;
-        turretNum: number;
-        weapon: Turret;
-        aoe: number;
-        burnAmount: number;
+        turretNum: number = 0;
+        weapon!: Turret;
+        aoe: number = 0;
+        burnAmount: number = 0;
 
         constructor() {
             super();
@@ -719,7 +738,7 @@ export namespace Bullets {
 
         image = "parts/fireLong1.png";
         sound = "sounds/weapons/artillery.wav";
-        color = [255, 240, 244, 255];
+        color: [number, number, number, number] = [255, 240, 244, 255];
         size = [1, 1];
         missile = true;
         explodeClass = ArtilleryExplosion.name;
@@ -741,7 +760,7 @@ export namespace Bullets {
         image = "parts/fireShot1.png";
         sound = "sounds/weapons/blaster2.wav";
         size = [.6, .6];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -752,7 +771,7 @@ export namespace Bullets {
         image = "parts/fireBeamLarge.png";
         sound = "sounds/weapons/beam2.wav";
         size = [.5, .5];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -760,10 +779,10 @@ export namespace Bullets {
     }
 
     export class PDLaserBullet extends LaserBullet {
-        image = "fireBeamLarge.png";
+        image = "parts/fireBeamLarge.png";
         sound = "sounds/weapons/lightPD.wav";
         size = [.3, .3];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -774,7 +793,7 @@ export namespace Bullets {
         image = "parts/zap1.png";
         sound = "sounds/weapons/tesla2.wav";
         size = [.6, .6];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         drawLength = 250;
 
         constructor() {
@@ -786,7 +805,7 @@ export namespace Bullets {
     }
 
     export class TorpBullet extends StraightMissile {
-        image = "fireTorp1.png";
+        image = "parts/fireTorp1.png";
         sound = "sounds/weapons/torp2.wav";
         size = [1, 1];
         radius = 25;
@@ -800,10 +819,10 @@ export namespace Bullets {
     }
 
     export class MissileBullet extends TrackingMissile {
-        image = "fireMis1.png";
+        image = "parts/fireMis1.png";
         sound = "sounds/weapons/torp1.wav";
         size = [.8, .8];
-        color = [0, 0, 0, 255];
+        color: [number, number, number, number] = [0, 0, 0, 255];
         missile = true;
         tracking = true;
 
@@ -813,9 +832,9 @@ export namespace Bullets {
     }
 
     export class FlackBullet extends AoeBullet {
-        image = "fireFlack1.png";
+        image = "parts/fireFlack1.png";
         sound = "sounds/weapons/zingg.wav";
-        color = [255, 240, 244, 255];
+        color: [number, number, number, number] = [255, 240, 244, 255];
         size = [1, 1];
         explodeClass = FlackExplosion.name;
 
@@ -828,7 +847,7 @@ export namespace Bullets {
         image = "parts/fireWavePull.png";
         sound = "sounds/weapons/WavePull.wav";
         size = [.5, .5];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 30;
         direction = -1;
         waveEffect = 300;
@@ -838,28 +857,29 @@ export namespace Bullets {
         }
 
         hitUnit(unit: Unit) {
-            let amount, dot, p, _wave;
-            unit.applyDamage(this.damage, this);
+            let amount, dot, p;
+            let _wave: Float64Array = new Float64Array(2);
+            unit.applyDamage(this.damage, (this as Thing));
             p = this.waveEffect * this.damage / unit.mass;
             v2.norm(this.vel, _wave);
-            v2.scale(_wave, -this.direction, null);
+            v2.scale_r(_wave, -this.direction);
             dot = v2.dot(unit.vel, _wave);
             amount = 0;
             if (dot < p) {
                 amount = p;
             }
-            v2.scale(_wave, amount, null);
-            v2.add(unit.vel, _wave, null);
+            v2.scale_r(_wave, amount);
+            v2.add_r(unit.vel, _wave);
             this.dead = true;
         }
     }
 
     export class RingBullet extends Bullet {
-        image = "fireRing.png";
+        image = "parts/fireRing.png";
         sound = "sounds/weapons/zingg.wav";
-        hitExplosion = RingHitExplosion.constructor.name;
+        hitExplosion = RingHitExplosion.name;
         size = [1, 1];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -867,10 +887,10 @@ export namespace Bullets {
     }
 
     export class SniperLaser extends Bullet {
-        image = "hit1.png";
+        image = "parts/hit1.png";
         sound = "sounds/weapons/blaster2.wav";
         size = [2, 2];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         hitOnce: { [key: number]: boolean };
 
         constructor() {
@@ -887,7 +907,7 @@ export namespace Bullets {
 
         hitUnit(unit: Unit) {
             if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage, this);
+                unit.applyDamage(this.damage, (this as Thing));
                 this.hitOnce[unit.id] = true;
             }
         }
@@ -897,7 +917,7 @@ export namespace Bullets {
         image = "parts/fireWavePull.png";
         sound = "sounds/weapons/WavePull.wav";
         size = [.5, .5];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 30;
         maxRadius = 100;
         direction = 1;
@@ -926,26 +946,27 @@ export namespace Bullets {
         }
 
         hitUnit (unit: Unit) {
-            let amount, dot, p, _wave;
+            let amount, dot, p;
+            let _wave: Float64Array = new Float64Array(2);
             if (!this.hitOnce[unit.id]) {
-                unit.applyDamage(this.damage, this);
+                unit.applyDamage(this.damage, (this as Thing));
                 this.hitOnce[unit.id] = true;
             }
             p = this.waveEffect * this.damage;
             v2.norm(this.vel, _wave);
-            v2.scale(_wave, -this.direction, null);
+            v2.scale_r(_wave, -this.direction);
             dot = v2.dot(unit.vel, _wave);
             amount = 0;
             if (dot < p) {
                 amount = p;
             }
-            v2.scale(_wave, amount, null);
-            v2.add(unit.vel, _wave, null);
+            v2.scale_r(_wave, amount);
+            v2.add_r(unit.vel, _wave);
         }
     }
 
     export class WavePushArch extends WavePullArch {
-        image = "fireWavePush.png";
+        image = "parts/fireWavePush.png";
         sound = "sounds/weapons/WavePush.wav";
         direction = -1;
         maxRadius = 100;
@@ -961,12 +982,14 @@ export namespace Bullets {
         sound = "sounds/weapons/wewewee.wav";
         soundVolume = .03;
         size = [1, 1];
-        color = [255, 255, 255, 255];
+        color: [number, number, number, number] = [255, 255, 255, 255];
         explodeClass = BombExplosion.name;
         trailSize = .1;
         trailTime = 500;
         trail: Trail;
-        _slowVel: Float64Array;
+
+        // This is hopefully re-assigned on creation
+        _slowVel!: Float64Array;
 
         constructor() {
             super();
@@ -976,8 +999,8 @@ export namespace Bullets {
         postFire() {
             this.maxLife += 28;
             this._slowVel = v2.create(this.vel);
-            v2.scale(this._slowVel, 0, null);
-        };
+            v2.scale_r(this._slowVel, 0);
+        }
 
         move() {
             if (this.dead) {
@@ -985,11 +1008,11 @@ export namespace Bullets {
             }
 
             if (this.life > 28) {
-                return v2.add(this.pos, this.vel, null);
+                return v2.add_r(this.pos, this.vel);
             } else {
-                return v2.add(this.pos, this._slowVel, null);
+                return v2.add_r(this.pos, this._slowVel);
             }
-        };
+        }
 
         tick() {
             let exp;
@@ -1013,7 +1036,7 @@ export namespace Bullets {
 
         draw() {
             let color, dist, size;
-            this.trail.draw(this.pos, this);
+            this.trail.draw(this.pos, (this as Thing));
             super.draw.call(this);
             this.z = 1;
             if (this.life === 28) {
@@ -1035,7 +1058,7 @@ export namespace Bullets {
         image = "parts/fireBeamLarge.png";
         sound = "sounds/weapons/beam4.wav";
         size = [1, 1];
-        color = [179, 207, 255, 255];
+        color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
             super();
@@ -1047,15 +1070,15 @@ export namespace Bullets {
         sound = "sounds/weapons/torp4.wav";
         soundVolume = .05;
         size = [.8, .8];
-        color = [0, 0, 0, 255];
+        color: [number, number, number, number] = [0, 0, 0, 255];
         missile = true;
         tracking = true;
         turnVel = [1, 1];
         trailTime = 500;
         trailSize = 0.12;
-        direction: number;
-        dist: number;
-        turretNum: number;
+        direction: number = 0;
+        dist: number = 0;
+        turretNum: number = 0;
 
         constructor() {
             super();
@@ -1066,7 +1089,10 @@ export namespace Bullets {
             super.tick.call(this);
             if ((Sim.Instance.step + this.id) % 4 === 0) {
                 if (!this.target || this.target.dead || this.target.cloaked()) {
-                    Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, Sim.Instance.maxRadius[Sim.otherSide(this.side)], (function (_this) {
+                    Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, Sim.Instance.maxRadius[Sim.otherSide(this.side)],
+                        // @ts-ignore
+                        (function (_this) {
+                        // @ts-ignore because we're looking at units
                         return function (unit: Unit) {
                             let dist;
                             if (unit.owner === _this.owner) {
@@ -1089,31 +1115,32 @@ export namespace Bullets {
             }
         };
 
-        move() {
+        move(): void {
             if (this.dead) {
                 return;
             }
-            if (this.target && !this.target.dead && !this.target.cloaked()) {
+            if (this.target &&
+                !this.target.dead &&
+                !this.target.cloaked()) {
                 this.dist = v2.distance(this.target.pos, this.pos);
                 this.vel = new Float64Array([this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]]);
             }
-            v2.norm(this.vel, null);
+            v2.norm_r(this.vel);
             this.rot = v2.angle(this.vel);
-            /*if (v2.direction === 0) {
-            this.turnVel[0] = -Math.cos(this.rot) * 2;
-            this.turnVel[1] = -Math.sin(this.rot) * 2;
-        }
-        if (v2.direction === 1) {
-            this.turnVel[0] = Math.cos(this.rot) * 2;
-            this.turnVel[1] = Math.sin(this.rot) * 2;
-        }*/
+            if (this.direction === 0) {
+                this.turnVel[0] = -Math.cos(this.rot) * 2;
+                this.turnVel[1] = -Math.sin(this.rot) * 2;
+            } else if (this.direction === 1) {
+                this.turnVel[0] = Math.cos(this.rot) * 2;
+                this.turnVel[1] = Math.sin(this.rot) * 2;
+            }
             v2.scale(new Float64Array(this.turnVel), Math.max(0.01, (this.maxLife - this.life * 2) / this.maxLife), new Float64Array(this.turnVel));
             v2.scale(this.vel, Math.max(0.01, (this.life * 2) / this.maxLife), this.vel);
-            v2.add(this.vel, new Float64Array(this.turnVel), null);
-            v2.scale(this.vel, this.speed, null);
-            v2.add(this.pos, this.vel, null);
+            v2.add_r(this.vel, new Float64Array(this.turnVel));
+            v2.scale_r(this.vel, this.speed);
+            v2.add_r(this.pos, this.vel);
             this.rot = v2.angle(this.vel);
-            return this.life += 1;
+            this.life += 1;
         };
     }
 }

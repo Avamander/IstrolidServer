@@ -1,4 +1,4 @@
-import {Server} from "../server";
+import {IstrolidServer} from "../server";
 import {Sim} from "./6src_sim";
 import {Utils} from "./993src_utils";
 import {Player} from "./94src_things";
@@ -23,18 +23,18 @@ export class CTF {
         beta = this.numInTeam("beta");
         if (alpha === 0 && beta === 0) {
             if (say_stuff) {
-                Server.Instance.say("Not enough players.");
+                IstrolidServer.say("Not enough players.");
             }
             return false;
         }
         if (beta - alpha > 1) {
             if (say_stuff) {
-                Server.Instance.say("Team alpha does not have enough players.");
+                IstrolidServer.say("Team alpha does not have enough players.");
             }
             return false;
         } else if (alpha - beta > 1) {
             if (say_stuff) {
-                Server.Instance.say("Team beta does not have enough players.");
+                IstrolidServer.say("Team beta does not have enough players.");
             }
             return false;
         }

@@ -1,4 +1,4 @@
-import {HSpace} from "./2src_hspace";
+import {HSpace} from "./hspace";
 
 export class FFA {
     hasProp = {}.hasOwnProperty;

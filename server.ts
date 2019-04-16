@@ -1,94 +1,188 @@
 import {Player} from "./istrolid_presskannukovh/94src_things";
 import {Sim} from "./istrolid_presskannukovh/6src_sim";
 import {Utils} from "./istrolid_presskannukovh/993src_utils";
-import Timeout = NodeJS.Timeout;
+import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
+const WebSocket = require("ws");
 //import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
-
-let ws = require("ws");
 //require("./fix"); // Enable DLC when server and replace window with global
-//let istrolid = require("./istrolid.js");
 
-const allowedCmds = [
-    "playerJoin",
-    "alpha",
-    "mouseMove",
-    "playerSelected",
-    "setRallyPoint",
-    "buildRq",
-    "stopOrder",
-    "holdPositionOrder",
-    "followOrder",
-    "selfDestructOrder",
-    "moveOrder",
-    "configGame",
-    "startGame",
-    "addAi",
-    "switchSide",
-    "kickPlayer",
-    "surrender"
-];
+export class IstrolidServer {
+    private static readonly config = require("./config.json");
+    static readonly allowedCmds = [
+        "playerJoin",
+        "alpha",
+        "mouseMove",
+        "playerSelected",
+        "setRallyPoint",
+        "buildRq",
+        "stopOrder",
+        "holdPositionOrder",
+        "followOrder",
+        "selfDestructOrder",
+        "moveOrder",
+        "configGame",
+        "startGame",
+        "addAi",
+        "switchSide",
+        "kickPlayer",
+        "surrender"
+    ];
 
+    wss: any;
+    root: any;
 
-export class Server {
-    wss = new ws.Server({
-        port: 5053,
-        perMessageDeflateOptions: {
-            chunkSize: 256,
-            memLevel: 9,
-            level: 5
-        },
-        zlibInflateOptions: {
-            chunkSize: 256
-        },
-        clientNoContextTakeover: true,
-        serverNoContextTakeover: true,
-        serverMaxWindowBits: 10,
-        concurrencyLimit: 5,
-        threshold: 512
-    });
+    players: Player[] = [];
+    lastInfoTime: number = 0;
+    interval: NodeJS.Timeout;
 
-    players: Player[];
-    lastInfoTime = 0;
-    interval: Timeout;
-    static _instance: Server = null;
+    static _instance: IstrolidServer;
 
     public static get Instance(){
         return this._instance;
     }
 
     constructor () {
-        this.connectToRoot();
+        this.wss = new WebSocket.Server({
+            port: 5053,
+            perMessageDeflateOptions: {
+                chunkSize: 256,
+                memLevel: 9,
+                level: 5
+            },
+            zlibInflateOptions: {
+                chunkSize: 256
+            },
+            clientNoContextTakeover: true,
+            serverNoContextTakeover: true,
+            serverMaxWindowBits: 10,
+            concurrencyLimit: 5,
+            threshold: 512
+        });
 
-        this.wss.on("connection", function (ws: { on: { (arg0: string, arg1: (msg: any) => void): void; (arg0: string, arg1: (e: any) => void): void; }; }, req: { headers: { [x: string]: any; }; }) {
-            console.log("connection from", req.headers["x-forwarded-for"]);
+        this.wss.on("connection", function (ws: any, req: any) {
+            console.log("Connection from", req.headers["x-forwarded-for"]);
 
-            let id = req.headers["sec-websocket-key"];
+            let id: number = IstrolidServer.atob_number((req.headers["sec-websocket-key"] as string));
+            console.log("Player with ID")
 
-            ws.on("message", function (msg) {
+            ws.on("message", function (msg: Iterable<number>) {
                 let packet = new DataView(new Uint8Array(msg).buffer);
                 // @ts-ignore
                 let data: string[] = Sim.Instance.zJson.loadDv(packet);
                 //console.log(data);
-                if (data[0] === "playerJoin") {
-                    // @ts-ignore
-                    let player = Sim.Instance.playerJoin(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
-                    player.ws = ws;
-                    Sim.Instance.players[id] = player;
-                    Sim.Instance.clearNetState();
-                } else if (allowedCmds.includes(data[0])) {
-                    // @ts-ignore Look up function in simulation and execute it with arguments given
-                    if (typeof Sim.Instance[data[0]] === "function") {
+                switch (data[0]) {
+                    case "playerJoin": {
                         // @ts-ignore
-                        Sim.Instance[data[0]].apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
-                    // @ts-ignore
-                    } else if (typeof Sim[data[0]] === "function") {
-                        // @ts-ignore
-                        Sim[data[0]].apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        let player = Sim.Instance.playerJoin(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+                        player.ws = ws;
+                        if (Sim.Instance.players[id] !== undefined) {
+                            console.log("Player reconnected", player.name);
+                        }
+                        Sim.Instance.players[id] = player;
+                        Sim.Instance.clearNetState();
+                        break;
+                    }
+                    case "alpha": {
+                        console.log("What the fuck is alpha", data);
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.alpha.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "mouseMove": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.mouseMove.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "playerSelected": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.playerSelected.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "setRallyPoint": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.setRallyPoint.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "buildRq": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.buildRq.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "stopOrder": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.stopOrder.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "holdPositionOrder": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.holdPositionOrder.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "followOrder": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.followOrder.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "selfDestructOrder": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.selfDestructOrder.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "moveOrder": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.moveOrder.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "configGame": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.configGame.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "startGame": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.startGame.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "addAi": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.addAi.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "switchSide": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.switchSide.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "kickPlayer": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.kickPlayer.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
+                    }
+                    case "surrender": {
+                        //console.log("What the fuck is alpha", data)
+                        // @ts-ignore Look up function in simulation and execute it with arguments given
+                        Sim.Instance.surrender.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
+                        break;
                     }
                 }
             });
 
-            ws.on("close", function (e) {
+            ws.on("close", function (e: any) {
+                console.log("WebSocket closed", e);
                 if (Sim.Instance.players[id]) {
                     Sim.Instance.players[id].connected = false;
                     delete Sim.Instance.players[id];
@@ -109,75 +203,90 @@ export class Server {
 
                 let packet = Sim.Instance.send();
 
-                Server.Instance.wss.clients.forEach((client: { readyState: any; send: (arg0: DataView) => void; }) => {
-                    if (client.readyState === ws.OPEN) {
+                IstrolidServer.Instance.wss.clients.forEach((client: { readyState: any; send: (arg0: DataView) => void; }) => {
+                    if (client.readyState === WebSocket.OPEN) {
                         client.send(packet);
                     }
                 });
             }
 
-            if (rightNow - Server.Instance.lastInfoTime > 15000) {
-                Server.Instance.sendInfo();
-                Server.Instance.lastInfoTime = rightNow;
+            if (rightNow - IstrolidServer.Instance.lastInfoTime > 15000) {
+                IstrolidServer.sendInfo();
+                IstrolidServer.Instance.lastInfoTime = rightNow;
             }
         }, 17);
 
-        Server._instance = this;
+
+        this.root = new WebSocket(IstrolidServer.config.root_addr);
+
+        IstrolidServer._instance = this;
+
+        this.connectToRoot();
     }
 
-    send (player: Player, data: any) {
+    static send (player: Player, data: any) {
         let packet = Sim.Instance.zJson.dumpDv(data);
         let client = player.ws;
-        if (client && client.readyState === ws.OPEN) {
+        if (client && client.readyState === WebSocket.OPEN) {
             client.send(packet);
         }
-    };
+    }
+
+    static readonly charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    static atob_number (input: string): number {
+        let result: number = 0;
+
+        for (var i = 0; i < input.length; i++) {
+            result *= 64;
+            result += IstrolidServer.charset.indexOf(input[i]);
+        }
+
+        return result;
+    }
 
     sendToRoot (data: any) {
-        this.rootsendData(data);
-    };
+        IstrolidServer.rootsendData(data);
+    }
 
-    stop () {
+    static stop () {
         console.log("stopping server");
-        this.wss.close();
-        clearInterval(this.interval);
-    };
+        IstrolidServer.Instance.wss.close();
+        clearInterval(IstrolidServer.Instance.interval);
+    }
 
-    say (msg: any) {
-        this.rootsendData(["message", {
+    static say (msg: string) {
+        IstrolidServer.rootsendData(["message", {
             text: msg,
-            channel: Server.config.name,
+            channel: IstrolidServer.config.name,
             color: "FFFFFF",
             name: "Avama",
             server: true
         }]);
-    };
-
-    root: any;
-    private static readonly config = require("./config.json");
+    }
 
     connectToRoot () {
-        this.root = new ws(Server.config.root_addr);
+        IstrolidServer.Instance.root = new WebSocket(IstrolidServer.config.root_addr);
 
-        this.root.on("open", function () {
+        IstrolidServer.Instance.root.on("open", function () {
             console.log("Connected to root!");
-            Server.Instance.sendInfo();
+            IstrolidServer.sendInfo();
             let account_info = {
-                email: Server.config.user_email,
-                fingerprint: Server.config.user_fingerprint,
-                steamid: Server.config.user_steam_id,
-                token: Server.config.user_token,
+                email: IstrolidServer.config.user_email,
+                fingerprint: IstrolidServer.config.user_fingerprint,
+                steamid: IstrolidServer.config.user_steam_id,
+                token: IstrolidServer.config.user_token,
             };
-            Server.Instance.rootsendData(["authSignIn", account_info]);
-            Server.Instance.rootsendData(["registerBot"]);
-            Server.Instance.lastInfoTime = Utils.now();
+            IstrolidServer.rootsendData(["authSignIn", account_info]);
+            IstrolidServer.rootsendData(["registerBot"]);
+            IstrolidServer.Instance.lastInfoTime = Utils.now();
         });
 
-        this.root.on("message", function (msg: string) {
+        IstrolidServer.Instance.root.on("message", function (msg: string) {
             let data = JSON.parse(msg);
             switch (data[0]) {
                 case "message":
-                    if (data[1].channel === Server.config.name && data[1].text.startsWith("!")) {
+                    if (data[1].channel === IstrolidServer.config.name && data[1].text.startsWith("!")) {
                         let p = Sim.Instance.players.filter(function (p) {
                             return p.name === data[1].name;
                         })[0];
@@ -185,8 +294,7 @@ export class Server {
                         if (p != null) {
                             let cmds = data[1].text.slice(1).split(" ");
                             console.log("Command issued, ", cmds);
-                            //return CommandsManager.Instance.processCommand(p, cmds); // TODO:
-                            return;
+                            return CommandsManager.Instance.processCommand(p, cmds);
                         }
                     } /*else if (data[1].channel === config.name && data[1].text.startsWith("#")) {
                     text = data[1].text.slice(1);
@@ -328,27 +436,27 @@ export class Server {
             }
         });
 
-        this.root.on("close", function () {
-            console.log("cannot connect to root, retrying");
-            setTimeout(this.connectToRoot, 5000);
+        IstrolidServer.Instance.root.on("close", function () {
+            console.log("Cannot connect to root, retrying!");
+            setTimeout(IstrolidServer.Instance.connectToRoot, 5000);
         });
 
-        this.root.on("error", function (e: string) {
+        IstrolidServer.Instance.root.on("error", function (e: string) {
             console.log("connection to root failed", e);
         });
     };
 
-    rootsendData (data: any) {
-        if (this.root.readyState === ws.OPEN) {
-            this.root.send(JSON.stringify(data));
+    static rootsendData (data: any) {
+        if (IstrolidServer.Instance.root.readyState === WebSocket.OPEN) {
+            IstrolidServer.Instance.root.send(JSON.stringify(data));
         }
-    };
+    }
 
-    sendInfo () {
+    static sendInfo () {
         // Send server info
         let info = {
-            name: Server.config.name,
-            address: "wss://" + Server.config.addr + ":" + Server.config.port,
+            name: IstrolidServer.config.name,
+            address: "wss://" + IstrolidServer.config.addr + ":" + IstrolidServer.config.port,
 
             observers: Sim.Instance.players.filter(function (player: Player) {
                 return player.connected && !player.ai;
@@ -368,11 +476,11 @@ export class Server {
             version: Sim.Instance.VERSION,
             state: Sim.Instance.state
         };
-        this.rootsendData(["setServer", info]);
-    };
+        IstrolidServer.rootsendData(["setServer", info]);
+    }
 }
 
-let server = new Server();
+let server = new IstrolidServer();
 Sim.Instance.cheatSimInterval = -12;
 Sim.Instance.lastSimInterval = 0;
 

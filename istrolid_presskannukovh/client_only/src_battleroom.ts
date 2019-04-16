@@ -357,7 +357,7 @@
                         config = {};
                         config['type'] = name;
                         console.log("send", "configGame", config);
-                        return network.send("configGame", config);
+                        return Server.send("configGame", config);
                     }
                 });
             });
@@ -403,7 +403,7 @@
                         text("Start");
                         return onclick(function () {
                             ui.go("battle");
-                            return network.send("startGame");
+                            return Server.send("startGame");
                         });
                     });
                 } else if (ready) {
@@ -413,7 +413,7 @@
                             text_align("center");
                             text("Start");
                             return onclick(function () {
-                                return network.send("startGame");
+                                return Server.send("startGame");
                             });
                         });
                     } else {
@@ -533,7 +533,7 @@
                     aiBuildBar = ais.all[name];
                 }
                 if (aiBuildBar) {
-                    network.send("addAi", name, ui.pickingLobbyAiSide, aiBuildBar);
+                    Server.send("addAi", name, ui.pickingLobbyAiSide, aiBuildBar);
                 }
                 return ui.pickingLobbyAiSide = false;
             });
@@ -586,7 +586,7 @@
                     color("#DDD");
                     text("join this team");
                     return onclick(function () {
-                        network.send("switchSide", side);
+                        Server.send("switchSide", side);
                         if (side !== "spectators") {
                             return network.sendPlayer();
                         }
@@ -621,7 +621,7 @@
                     color("#DDD");
                     text("spectate");
                     return onclick(function () {
-                        return network.send("switchSide", side);
+                        return Server.send("switchSide", side);
                     });
                 });
             }
@@ -659,7 +659,7 @@
                     }
                     return onclick(function () {
                         console.log("kick", player.number);
-                        return network.send("kickPlayer", player.number);
+                        return Server.send("kickPlayer", player.number);
                     });
                 });
             }
@@ -762,7 +762,7 @@
                     text("Surrender");
                     text_align("center");
                     return onclick(function () {
-                        return network.send("surrender");
+                        return Server.send("surrender");
                     });
                 });
             } else {

@@ -708,14 +708,14 @@
                             }
                         }
                         console.log("command", commandArray);
-                        rootNet.send("command", commandArray);
+                        Server.send("command", commandArray);
                         return e.target.value = "";
                     } else {
                         message = {
                             text: text,
                             channel: chat.channel
                         };
-                        rootNet.send("message", message);
+                        Server.send("message", message);
                         return e.target.value = "";
                     }
                 }

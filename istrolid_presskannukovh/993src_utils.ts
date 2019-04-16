@@ -1,8 +1,8 @@
 import {Sim} from "./6src_sim";
-import {baseAtlas, control} from "./0dummy";
+import {baseAtlas, control} from "./dummy";
 
 export class Utils {
-    stats: {
+    stats!: {
         add: {
             (arg0: any, arg1: number): void;
             (arg0: any, arg1: number): void;
@@ -13,7 +13,9 @@ export class Utils {
             (arg0: any, arg1: number, arg2: number, arg3: number): void;
             (arg0: any, arg1: number, arg2: number, arg3: number): void;
         };
-        fps: any; Sim: any; net: any;
+        fps: number;
+        Sim: any;
+        net: any;
     };
 
     static choose(list: any[]) {

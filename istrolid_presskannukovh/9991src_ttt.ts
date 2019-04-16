@@ -151,7 +151,7 @@ modes.TicTacToe = (function (superClass) {
                 }
             }
             if (!stillThere) {
-                this.say("Every one left. Ending game.");
+                Server.say("Every one left. Ending game.");
                 this.winningSide = false;
                 this.endOfGame();
             }

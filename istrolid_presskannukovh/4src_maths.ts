@@ -16,6 +16,11 @@ export class v2 {
         return d;
     };
 
+    static create_r() {
+        this.created += 1;
+        return new Float64Array(2);
+    };
+
     static zero(d: Float64Array) {
         d[0] = 0;
         d[1] = 0;
@@ -37,6 +42,12 @@ export class v2 {
         return d;
     };
 
+    static add_r(a: Float64Array, b: Float64Array) {
+        a[0] = a[0] + b[0];
+        a[1] = a[1] + b[1];
+        return a;
+    };
+
     static sub(a: Float64Array, b: Float64Array, d: Float64Array) {
         if (d == null) {
             d = a;
@@ -44,6 +55,12 @@ export class v2 {
         d[0] = a[0] - b[0];
         d[1] = a[1] - b[1];
         return d;
+    };
+
+    static sub_r(a: Float64Array, b: Float64Array) {
+        a[0] = a[0] - b[0];
+        a[1] = a[1] - b[1];
+        return a;
     };
 
     static neg(a: Float64Array, d: Float64Array) {
@@ -62,6 +79,12 @@ export class v2 {
         d[0] = v[0] * n;
         d[1] = v[1] * n;
         return d;
+    };
+
+    static scale_r(v: Float64Array, n: number) {
+        v[0] = v[0] * n;
+        v[1] = v[1] * n;
+        return v;
     };
 
     static norm(a: Float64Array, d: Float64Array) {
@@ -84,6 +107,25 @@ export class v2 {
         d[0] = x / len;
         d[1] = y / len;
         return d;
+    };
+
+    static norm_r(a: Float64Array) {
+        let len, x, y;
+        x = a[0];
+        y = a[1];
+        len = Math.sqrt(x * x + y * y);
+        if (len === 0) {
+            a[0] = 0;
+            a[1] = 0;
+            return a;
+        } else if (len === 1) {
+            a[0] = x;
+            a[1] = y;
+            return a;
+        }
+        a[0] = x / len;
+        a[1] = y / len;
+        return a;
     };
 
     static cross(a: Float64Array, b: Float64Array) {
@@ -168,6 +210,17 @@ export class v2 {
         return d;
     };
 
+    static rotate_r(v: Float64Array, th: number) {
+        let cos, sin, v0, v1;
+        sin = Math.sin(th);
+        cos = Math.cos(th);
+        v0 = v[0];
+        v1 = v[1];
+        v[0] = v0 * cos - v1 * sin;
+        v[1] = v0 * sin + v1 * cos;
+        return v;
+    };
+
     static pointTo(d: Float64Array, th: number) {
         d[0] = Math.cos(th - Math.PI / 2);
         d[1] = Math.sin(th - Math.PI / 2);
@@ -188,6 +241,10 @@ export class v3 {
             d[2] = a[2];
         }
         return d;
+    };
+
+    static create_r() {
+        return new Float64Array(3);
     };
 
     static zero(d: Float64Array) {
@@ -270,6 +327,29 @@ export class v3 {
         return d;
     };
 
+    static norm_r(a: Float64Array) {
+        let len, x, y, z;
+        x = a[0];
+        y = a[1];
+        z = a[2];
+        len = Math.sqrt(x * x + y * y + z * z);
+        if (len === 0) {
+            a[0] = 0;
+            a[1] = 0;
+            a[2] = 0;
+            return a;
+        } else if (len === 1) {
+            a[0] = x;
+            a[1] = y;
+            a[2] = z;
+            return a;
+        }
+        a[0] = x / len;
+        a[1] = y / len;
+        a[2] = z / len;
+        return a;
+    };
+
     static cross(a: Float64Array, b: Float64Array, d: Float64Array) {
         let x, y, z;
         if (d == null) {
@@ -287,7 +367,7 @@ export class v3 {
     static angle(a: Float64Array, b: Float64Array) {
         let cosa, cross, mg, sina, th;
         mg = v3.mag(a) * v3.mag(b);
-        cross = v3.cross(a, b, v3.create(null));
+        cross = v3.cross(a, b, v3.create_r());
         sina = v3.mag(cross);
         sina /= mg;
         cosa = v3.dot(a, b);
@@ -313,7 +393,7 @@ export class v3 {
             d = from;
         }
         v3.sub(from, to, d);
-        v3.norm(d, null);
+        v3.norm_r(d);
         return d;
     };
 
@@ -339,7 +419,7 @@ export class v3 {
         v[0] = Math.random() - .5;
         v[1] = Math.random() - .5;
         v[2] = Math.random() - .5;
-        return v3.norm(v, null);
+        return v3.norm_r(v);
     };
 
     static print_friendly(n: number) {
@@ -384,6 +464,10 @@ export class m3 {
             d[8] = m[8];
         }
         return d;
+    };
+
+    static create_r() {
+        return new Float64Array(9);
     };
 
     static set(m: Float64Array, d: Float64Array) {
@@ -440,7 +524,7 @@ export class m3 {
 
     static to_m4(m: Float64Array, d: Float64Array) {
         if (d == null) {
-            d = m4.create(null);
+            d = m4.create_r();
         }
         d[0] = m[0];
         d[1] = m[1];
@@ -489,6 +573,10 @@ export class m4 {
             d[15] = m[15];
         }
         return d;
+    };
+
+    static create_r(): Float64Array {
+        return new Float64Array(16);
     };
 
     static set(m: Float64Array, d: Float64Array) {
@@ -650,7 +738,7 @@ export class m4 {
 
     static only_rot(m: Float64Array, d: Float64Array) {
         if (d == null) {
-            d = m4.create(null);
+            d = m4.create_r();
         }
         d[0] = m[0];
         d[1] = m[1];
@@ -673,7 +761,7 @@ export class m4 {
 
     static to_m3(m: Float64Array, d: Float64Array) {
         if (d == null) {
-            d = m3.create(null);
+            d = m3.create_r();
         }
         d[0] = m[0];
         d[1] = m[1];
@@ -707,7 +795,7 @@ export class m4 {
         }
         id = 1 / det;
         if (d == null) {
-            d = m3.create(null);
+            d = m3.create_r();
         }
         d[0] = b01 * id;
         d[1] = (-a22 * a01 + a02 * a21) * id;
@@ -794,7 +882,7 @@ export class m4 {
 
     static pos(m: Float64Array, v: Float64Array) {
         if (v == null) {
-            v = v3.create(null);
+            v = v3.create_r();
         }
         v[0] = m[12];
         v[1] = m[13];
@@ -811,7 +899,7 @@ export class m4 {
 
     static forward(m: Float64Array, v: Float64Array) {
         if (v == null) {
-            v = v3.create(null);
+            v = v3.create_r();
         }
         v[0] = -m[8];
         v[1] = -m[9];
@@ -1141,7 +1229,7 @@ export class m4 {
     static get_hpr(m: Float64Array, v: Float64Array) {
         let heading, pitch, roll;
         if (v == null) {
-            v = v3.create(null);
+            v = v3.create_r();
         }
         if (m[1] > 0.998) {
             heading = Math.atan2(m[2], m[10]);
@@ -1188,7 +1276,7 @@ export class m4 {
     static frustum(left: number, right: number, bottom: number, top: number, near: number, far: number, dest: Float64Array) {
         let fn, rl, tb;
         if (dest == null) {
-            dest = m4.create(null);
+            dest = m4.create_r();
         }
         rl = right - left;
         tb = top - bottom;
@@ -1222,7 +1310,7 @@ export class m4 {
     static ortho(left: number, right: number, bottom: number, top: number, near: number, far: number, dest: Float64Array) {
         let fn, rl, tb;
         if (dest == null) {
-            dest = m4.create(null);
+            dest = m4.create_r();
         }
         rl = right - left;
         tb = top - bottom;
@@ -1249,7 +1337,7 @@ export class m4 {
     static lookAt(eye: Float64Array, center: Float64Array, up: Float64Array, dest: Float64Array) {
         let centerx, centery, centerz, eyex, eyey, eyez, len, upx, upy, upz, x0, x1, x2, y0, y1, y2, z0, z1, z2;
         if (!dest) {
-            dest = m4.create(null);
+            dest = m4.create_r();
         }
         eyex = eye[0];
         eyey = eye[1];

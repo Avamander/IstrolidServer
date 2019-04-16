@@ -253,13 +253,13 @@ export class Account {
         if (!update) {
             return;
         }
-        return rootNet.send("savePlayer", playerDiff);
+        return Server.send("savePlayer", playerDiff);
     };
 
     closeAndSave (e) {
         Account.Instance.savingToServer = true;
         Account.Instance.rootRealSave();
-        return rootNet.send("ping", "windowClose");
+        return Server.send("ping", "windowClose");
     };
 
     onbeforeunload (e) {
@@ -282,7 +282,7 @@ export class Account {
         if (!Account.Instance.token && Account.Instance.password) {
             Account.Instance.token = Account.Instance.hashPass(account.password);
         }
-        return rootNet.send("authSignIn", {
+        return Server.send("authSignIn", {
             email: Account.Instance.email,
             token: Account.Instance.token,
             fingerprint: Account.Instance.fingerprint,
@@ -441,7 +441,7 @@ export class Account {
             return;
         }
         Account.Instance.token = Account.Instance.hashPass(Account.Instance.password);
-        return rootNet.send("authRegister", {
+        return Server.send("authRegister", {
             name: Account.Instance.name,
             color: Account.Instance.color,
             email: Account.Instance.email,
@@ -455,7 +455,7 @@ export class Account {
             Account.Instance.error = "Invalid Email";
             return;
         }
-        return rootNet.send("authEmailLink", Account.Instance.email.toLowerCase());
+        return Server.send("authEmailLink", Account.Instance.email.toLowerCase());
     };
 
     changePassword () {
@@ -468,7 +468,7 @@ export class Account {
             tokenOld = onecup.params.token;
         }
         console.log("change pass", Account.Instance.oldPassword, Account.Instance.newPassword);
-        rootNet.send("authChangePassword", tokenOld, tokenNew);
+        Server.send("authChangePassword", tokenOld, tokenNew);
         commander.token = tokenNew;
         return account.save();
     };

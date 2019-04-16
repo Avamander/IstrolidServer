@@ -235,12 +235,25 @@ export class AI {
         }
         let g = new Float64Array(2);
         v2.sub(unit.pos, thing.pos, g);
-        v2.norm(g, null);
-        v2.scale(g, range, null);
+        v2.norm_r(g);
+        v2.scale_r(g, range);
         v2.add(g, thing.pos, g);
         return unit.aiOrder({
             type: "Move",
-            dest: g
+            dest: g,
+            ai: false,
+            begun: false,
+            distance: 0,
+            id: 0,
+            noFinish: false,
+            noStop: false,
+            // @ts-ignore
+            pos: undefined,
+            rally: false,
+            range: 0,
+            // @ts-ignore
+            target: undefined,
+            targetId: 0
         });
     }
 
@@ -256,11 +269,24 @@ export class AI {
         }
         let r = new Float64Array(2);
         v2.random(r);
-        v2.scale(r, spread * Math.random(), null);
-        v2.add(r, thing.pos, null);
+        v2.scale_r(r, spread * Math.random());
+        v2.add_r(r, thing.pos);
         unit.aiOrder({
             type: "Move",
-            dest: r
+            dest: r,
+            ai: false,
+            begun: false,
+            distance: 0,
+            id: 0,
+            noFinish: false,
+            noStop: false,
+            // @ts-ignore
+            pos: undefined,
+            rally: false,
+            range: 0,
+            // @ts-ignore
+            target: undefined,
+            targetId: 0
         });
         return true;
     }
@@ -280,7 +306,19 @@ export class AI {
         unit.aiOrder({
             type: "Move",
             dest: dest,
-            range: 0
+            range: 0,
+            ai: false,
+            begun: false,
+            distance: 0,
+            id: 0,
+            noFinish: false,
+            noStop: false,
+            // @ts-ignore
+            pos: undefined,
+            rally: false,
+            // @ts-ignore
+            target: undefined,
+            targetId: 0
         });
         return true;
     }
@@ -357,8 +395,8 @@ export class AI {
             }
         });
         closestUnguarded = tallyCps[0];
-        //this.goThere(unit, Mapping.cp);
-        //unit.gardingCP = Mapping.cp;  // TODO:
+        this.goThere(unit, closestUnguarded.cp);
+        unit.gardingCP = closestUnguarded.cp;
         return true;
     }
 
@@ -395,13 +433,13 @@ export class AI {
             return a.dist - b.dist;
         });
         closestUnguarded = tallyCps[0];
-        //this.goThere(unit, Mapping.cp); // TODO:
+        this.goThere(unit, closestUnguarded.cp);
         return true;
     }
 
     static attack(enemy: Unit, unit: Unit) {
-        if (enemy && AI.goInRange(0, unit.weaponRange, unit, enemy)) {
-            unit.softTarget = enemy;
+        if (enemy && AI.goInRange(0, unit.weaponRange, unit, (enemy as Thing))) {
+            unit.softTarget = (enemy as Thing);
             return true;
         }
     }
@@ -418,13 +456,13 @@ export class AI {
                 return true;
             }
         }
-        if (AI.stayInRange(unit.weaponRange, unit, enemy)) {
+        if (AI.stayInRange(unit.weaponRange, unit, (enemy as Thing))) {
             return true;
         }
     }
 
     static ram(enemy: Unit, unit: Unit) {
-        if (enemy && AI.goInRange(0, unit.radius + enemy.radius, unit, enemy)) {
+        if (enemy && AI.goInRange(0, unit.radius + enemy.radius, unit, (enemy as Thing))) {
             return true;
         }
     }
@@ -434,7 +472,7 @@ export class AI {
     }
 
     static stayClose(enemy: Unit, unit: Unit) {
-        if (enemy && AI.goInRange(0, enemy.radius, unit, enemy)) {
+        if (enemy && AI.goInRange(0, enemy.radius, unit, (enemy as Thing))) {
             return true;
         }
     }
@@ -447,20 +485,46 @@ export class AI {
         k = 3;
         th = v2.angle(this._angleVec);
         v2.pointTo(this._leftVec, th + Math.PI / 2);
-        v2.scale(this._leftVec, range * k, null);
+        v2.scale_r(this._leftVec, range * k);
         v2.pointTo(this._rightVec, th - Math.PI / 2);
-        v2.scale(this._rightVec, range * k, null);
-        v2.add(this._leftVec, enemy.pos, null);
-        v2.add(this._rightVec, enemy.pos, null);
+        v2.scale_r(this._rightVec, range * k);
+        v2.add_r(this._leftVec, enemy.pos);
+        v2.add_r(this._rightVec, enemy.pos);
         v2.add(unit.pos, unit.vel, this._angleVec);
         if (v2.distance(this._angleVec, this._leftVec) < v2.distance(this._angleVec, this._rightVec)) {
             unit.aiOrder({
                 type: "Move",
-                dest: this._leftVec
+                dest: this._leftVec,
+                ai: false,
+                begun: false,
+                distance: 0,
+                id: 0,
+                noFinish: false,
+                noStop: false,
+                // @ts-ignore
+                pos: undefined,
+                rally: false,
+                range: 0,
+                // @ts-ignore
+                target: undefined,
+                targetId: 0
             });
         } else {
             unit.aiOrder({
                 type: "Move",
+                ai: false,
+                begun: false,
+                distance: 0,
+                id: 0,
+                noFinish: false,
+                noStop: false,
+                // @ts-ignore
+                pos: undefined,
+                rally: false,
+                range: 0,
+                // @ts-ignore
+                target: undefined,
+                targetId: 0,
                 dest: this._rightVec
             });
         }
@@ -473,10 +537,23 @@ export class AI {
             amount = 0.7;
         }
         v2.pointTo(this._backPos, enemy.rot + Math.PI);
-        v2.scale(this._backPos, unit.weaponRange * amount, null);
-        v2.add(this._backPos, enemy.pos, null);
+        v2.scale_r(this._backPos, unit.weaponRange * amount);
+        v2.add_r(this._backPos, enemy.pos);
         return unit.aiOrder({
             type: "Move",
+            ai: false,
+            begun: false,
+            distance: 0,
+            id: 0,
+            noFinish: false,
+            noStop: false,
+            // @ts-ignore
+            pos: undefined,
+            rally: false,
+            range: 0,
+            // @ts-ignore
+            target: undefined,
+            targetId: 0,
             dest: v2.create(this._backPos)
         });
     }
@@ -514,7 +591,7 @@ export class AI {
             case "attack":
                 return AI.attack(enemy, unit);
             case "flee":
-                return AI.goAway(unit, enemy, enemy.weaponRange + enemy.radius + enemy.maxSpeed * 16);
+                return AI.goAway(unit, (enemy as Thing), enemy.weaponRange + enemy.radius + enemy.maxSpeed * 16);
             case "kite":
                 return AI.kite(enemy, unit);
             case "ram":
@@ -542,7 +619,7 @@ export class AI {
             case "circle":
                 return this.circle(enemy, unit);
             case "backstab":
-                return this.backstab(enemy, unit, null);
+                return this.backstab(enemy, unit, 0);
             case "wiggle":
                 if (unit.wiggling > 0) {
                     unit.wiggling -= 1;
@@ -551,29 +628,54 @@ export class AI {
                     unit.wiggling = 2;
                     wiggle = new Float64Array(2);
                     v2.random(wiggle);
-                    v2.scale(wiggle, 1000, null);
-                    v2.add(wiggle, unit.pos, null);
+                    v2.scale_r(wiggle, 1000);
+                    v2.add_r(wiggle, unit.pos);
                     unit.aiOrder({
                         type: "Move",
-                        dest: wiggle
+                        dest: wiggle,
+                        ai: false,
+                        begun: false,
+                        distance: 0,
+                        id: 0,
+                        noFinish: false,
+                        noStop: false,
+                        // @ts-ignore
+                        pos: undefined,
+                        rally: false,
+                        range: 0,
+                        // @ts-ignore
+                        target: undefined,
+                        targetId: 0
                     });
                     return true;
                 }
                 break;
             case "stay at range":
-                return AI.goAway(unit, enemy, enemy.weaponRange + enemy.radius + unit.radius);
+                return AI.goAway(unit, (enemy as Thing), enemy.weaponRange + enemy.radius + unit.radius);
         }
     }
 
     gotoNoStop(unit: Unit, goto: Float64Array) {
         let go;
         v2.sub(goto, unit.pos, this._next);
-        v2.scale(this._next, 10000 / v2.mag(this._next), null);
+        v2.scale_r(this._next, 10000 / v2.mag(this._next));
         go = new Float64Array(2);
         v2.add(unit.pos, this._next, go);
         return unit.aiOrder({
             type: "Move",
             dest: go,
+            ai: false,
+            begun: false,
+            distance: 0,
+            id: 0,
+            noFinish: false,
+            // @ts-ignore
+            pos: undefined,
+            rally: false,
+            range: 0,
+            // @ts-ignore
+            target: undefined,
+            targetId: 0,
             noStop: true
         });
     }
@@ -582,7 +684,7 @@ export class AI {
     gotoNoStopSmooth(unit: Unit, goto: Float64Array) {
         let dest, i, l;
         v2.sub(this._goto, unit.pos, this._next);
-        v2.scale(this._next, 10000 / v2.mag(this._next), null);
+        v2.scale_r(this._next, 10000 / v2.mag(this._next));
         v2.add(unit.pos, this._next, this._goto);
         if (unit.topOrderIs("Move")) {
             dest = new Float64Array(2);
@@ -592,17 +694,40 @@ export class AI {
             return unit.aiOrder({
                 type: "Move",
                 dest: dest,
-                noStop: true
+                noStop: true,
+                ai: false,
+                begun: false,
+                distance: 0,
+                id: 0,
+                noFinish: false,
+                // @ts-ignore
+                pos: undefined,
+                rally: false,
+                range: 0,
+                // @ts-ignore
+                target: undefined,
+                targetId: 0
             });
         } else {
             return unit.aiOrder({
                 type: "Move",
                 dest: v2.create(this._goto),
-                noStop: true
+                noStop: true,
+                ai: false,
+                begun: false,
+                distance: 0,
+                id: 0,
+                noFinish: false,
+                // @ts-ignore
+                pos: undefined,
+                rally: false,
+                range: 0,
+                // @ts-ignore
+                target: undefined,
+                targetId: 0
             });
         }
     }
-    ;
 
     capAI(unit: Unit, rule: [string, string, string, string, string]) {
         let cp;
@@ -616,7 +741,7 @@ export class AI {
                                 ((t as CommandPoint).capping > 0)
                             ));
                 }), parseInt(rule[2]));
-                if (cp && AI.goThere(unit, cp)) {
+                if (cp && AI.goThere(unit, (cp as Thing))) {
                     return true;
                 }
                 break;
@@ -637,7 +762,7 @@ export class AI {
                         (unit.commandPoint === true &&
                             (t as CommandPoint).capping > 0);
                 }), parseInt(rule[2]));
-                if (cp && AI.goThere(unit, cp)) {
+                if (cp && AI.goThere(unit, (cp as Thing))) {
                     return true;
                 }
                 break;
@@ -662,7 +787,7 @@ export class AI {
                 case "find recharger":
                     recharger = AI.closest(unit.pos, AI.filter, 3000);
                     if (recharger) {
-                        AI.goInRange(500, 600, unit, recharger);
+                        AI.goInRange(500, 600, unit, (recharger as Thing));
                         if (v2.distance(unit.pos, recharger.pos) < 600) {
                             unit.needsFullCharge = (unit.energy <= (unit.storeEnergy * .98));
                         }
@@ -706,21 +831,21 @@ export class AI {
         for (let _ in ref) {
             thing = ref[_];
             if (fn(thing)) {
-                v2.add(this._mid, thing.pos, null);
+                v2.add_r(this._mid, thing.pos);
                 number += 1;
             }
         }
         if (number === 0) {
             number = 1;
         }
-        v2.scale(this._mid, 1 / number, null);
+        v2.scale_r(this._mid, 1 / number);
         return this._mid;
     }
 
 
     gotoLocation(unit: Unit, rule: [string, string, string, string, string]) {
         let cp, spawn;
-        let pos: Float64Array = null;
+        let pos: Float64Array = new Float64Array(2);
         switch (rule[1].toLowerCase()) {
             case "enemy spawn":
                 spawn = AI.closest(unit.pos, (function (t: Thing) {
@@ -771,6 +896,7 @@ export class AI {
             case "enemy army middle":
                 pos = this.thingsMiddle(function (t: Thing) {
                     return t.unit &&
+                        // @ts-ignore
                         t.side === this.otherSide(unit.side);
                 });
                 break;
@@ -784,7 +910,20 @@ export class AI {
             if (v2.distance(unit.pos, pos) > 300) {
                 unit.aiOrder({
                     type: "Move",
-                    dest: pos
+                    dest: pos,
+                    ai: false,
+                    begun: false,
+                    distance: 0,
+                    id: 0,
+                    noFinish: false,
+                    noStop: false,
+                    // @ts-ignore
+                    pos: undefined,
+                    rally: false,
+                    range: 0,
+                    // @ts-ignore
+                    target: undefined,
+                    targetId: 0
                 });
                 return true;
             }
@@ -933,7 +1072,14 @@ export class AI {
         return need;
     }
 
-    checkBulletSth(b: Bullet, unit: Unit, avoidDamage: number, bulletType: Bullet) {
+    static checkBulletSth(b: Bullet, unit: Unit, avoidDamage: number, bulletType: string) {
+        let _rvec = new Float64Array(2);
+        let _lvec = new Float64Array(2);
+        let _upos = new Float64Array(2);
+        let _uvec = new Float64Array(2);
+        let _avec = new Float64Array(2);
+        let _apos = new Float64Array(2);
+        let _avoidVec = new Float64Array(2);
         /*
          * insta hit weapons
         if b.unit and b.side != unit.side
@@ -958,38 +1104,38 @@ export class AI {
             return;
         }
         if (b.missile && (b as MissileBullet).tracking && ((ref = b.target) != null ? ref.id : void 0) === unit.id) {
-            v2.sub(unit.pos, b.pos, this._avec);
-            if (v2.mag(this._avec) < 600) {
-                v2.norm(this._avec, null);
-                return v2.add(this._avoidVec, this._avec, null);
+            v2.sub(unit.pos, b.pos, _avec);
+            if (v2.mag(_avec) < 600) {
+                v2.norm_r(_avec);
+                return v2.add_r(_avoidVec, _avec);
             }
         } else if (b.hitPos) {
-            v2.sub(unit.pos, b.hitPos, this._avec);
-            if (v2.mag(this._avec) < b.aoe + unit.radius + 100) {
-                v2.norm(this._avec, null);
-                return v2.add(this._avoidVec, this._avec, null);
+            v2.sub(unit.pos, b.hitPos, _avec);
+            if (v2.mag(_avec) < b.aoe + unit.radius + 100) {
+                v2.norm_r(_avec);
+                return v2.add_r(_avoidVec, _avec);
             }
         } else {
-            v2.sub(unit.pos, b.pos, this._avec);
-            if (v2.mag(this._avec) < unit.radius + (b.maxLife - b.life) * b.speed) {
-                v2.set(unit.pos, this._upos);
-                v2.set(unit.vel, this._uvec);
-                v2.set(b.pos, this._apos);
-                v2.set(b.vel, this._avec);
+            v2.sub(unit.pos, b.pos, _avec);
+            if (v2.mag(_avec) < unit.radius + (b.maxLife - b.life) * b.speed) {
+                v2.set(unit.pos, _upos);
+                v2.set(unit.vel, _uvec);
+                v2.set(b.pos, _apos);
+                v2.set(b.vel, _avec);
                 results = [];
                 for (i = l = 0, ref1 = Math.min(64, b.maxLife - b.life); 0 <= ref1 ? l < ref1 : l > ref1; i = 0 <= ref1 ? ++l : --l) {
-                    if (v2.distance(this._upos, this._apos) < unit.radius + 100) {
-                        v2.sub(this._apos, this._upos, this._avec);
-                        v2.pointTo(this._lvec, unit.rot + .3);
-                        v2.pointTo(this._rvec, unit.rot - .3);
-                        if (v2.distance(this._lvec, this._avec) > v2.distance(this._rvec, this._avec)) {
-                            results.push(v2.add(this._avoidVec, this._lvec, null));
+                    if (v2.distance(_upos, _apos) < unit.radius + 100) {
+                        v2.sub(_apos, _upos, _avec);
+                        v2.pointTo(_lvec, unit.rot + .3);
+                        v2.pointTo(_rvec, unit.rot - .3);
+                        if (v2.distance(_lvec, _avec) > v2.distance(_rvec, _avec)) {
+                            results.push(v2.add_r(_avoidVec, _lvec));
                         } else {
-                            results.push(v2.add(this._avoidVec, this._rvec, null));
+                            results.push(v2.add_r(_avoidVec, _rvec));
                         }
                     } else {
-                        v2.add(this._upos, this._uvec, null);
-                        results.push(v2.add(this._apos, this._avec, null));
+                        v2.add_r(_upos, _uvec);
+                        results.push(v2.add_r(_apos, _avec));
                     }
                 }
                 return results;
@@ -1003,13 +1149,14 @@ export class AI {
         Sim.Instance.bulletSpaces[Sim.otherSide(unit.side)].findInRange(
             unit.pos,
             unit.radius + 500,
+            // @ts-ignore
             (function (_this) {
                 return function (b: Bullet) {
-                    return this.checkBulletSth(b, unit, avoidDamage, bulletType);
+                    return AI.checkBulletSth(b, unit, avoidDamage, bulletType);
                 };
             })(this));
         if (v2.mag(this._avoidVec) > .1) {
-            v2.scale(this._avoidVec, 10, null);
+            v2.scale_r(this._avoidVec, 10);
             v2.add(this._avoidVec, unit.pos, this._apos);
             this.gotoNoStopSmooth(unit, this._apos);
             return true;
@@ -1201,6 +1348,7 @@ export class AI {
                     if (!AI.attackFilter(t, unit, rule[1], rule[2])) {
                         return false;
                     }
+                    // @ts-ignore
                     return this.classifyShip((t as Unit)) === rule[2];
                 };
 
@@ -1239,7 +1387,7 @@ export class AI {
                     return t.unit && t.id !== unit.id && t.side === unit.side && (t as Unit).energy < t.storeEnergy * .75;
                 }, 4000);
                 if (target) {
-                    AI.goInRange(500, 600, unit, target);
+                    AI.goInRange(500, 600, unit, (target as Thing));
                     return true;
                 }
                 break;
@@ -1257,7 +1405,7 @@ export class AI {
                         return t.unit && t.side === Sim.otherSide(unit.side);
                     }), 4000);
                     if (enemy) {
-                        AI.goAway(unit, enemy, enemy.weaponRange * 1.5);
+                        AI.goAway(unit, (enemy as Thing), enemy.weaponRange * 1.5);
                         return true;
                     }
                 }
@@ -1284,7 +1432,7 @@ export class AI {
                 friendly = AI.closest(unit.pos, (function (t: Thing) {
                     return t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
                 }), 4000);
-                if (friendly && AI.goAway(unit, friendly, parseInt(rule[1]))) {
+                if (friendly && AI.goAway(unit, (friendly as Thing), parseInt(rule[1]))) {
                     return true;
                 }
                 break;
@@ -1323,9 +1471,10 @@ export class AI {
 
     avoidEnemies(unit: Unit, dps: number) {
         let minDist: number = 9000000;
-        let minEnemy: Unit = null;
-        let doWhat: string = null;
+        let minEnemy: Unit;
+        let doWhat: string;
         let stayAwayRange: number = 0;
+        // @ts-ignore
         Sim.Instance.unitSpaces[Sim.otherSide(unit.side)].findInRange(unit.pos, 3000, (function (_this) {
             return function (enemy: Unit) {
                 let dist: number;
@@ -1347,10 +1496,13 @@ export class AI {
                 return false;
             };
         })(this));
+        // @ts-ignore
         if (doWhat === "Flee") {
+            // @ts-ignore
             AI.goAway(unit, minEnemy, stayAwayRange);
             return true;
         }
+        // @ts-ignore
         if (doWhat === "Stop") {
             return true;
         }
@@ -1359,17 +1511,17 @@ export class AI {
     rymarq_system(unit: Unit) {
         let k, l, len1, list, part, ref, v;
         let type: { [key: string]: number } = {
-            brick: null,
-            scout: null,
-            fighter: null,
-            swarmer: null,
-            bomber: null,
-            interceptor: null,
-            destroyer: null,
-            cruiser: null,
-            battleship: null,
-            carrier: null,
-            support: null
+            brick: 0,
+            scout: 0,
+            fighter: 0,
+            swarmer: 0,
+            bomber: 0,
+            interceptor: 0,
+            destroyer: 0,
+            cruiser: 0,
+            battleship: 0,
+            carrier: 0,
+            support: 0
         };
         if (unit.weapons.length === 0) {
             type.brick = (unit.hp + unit.shield) * 2;
@@ -1417,6 +1569,7 @@ export class AI {
             }
             return results;
         })();
+        // @ts-ignore
         list = list.sort(function (a: number[], b: number[]) {
             return b[0] - a[0];
         });
@@ -1487,6 +1640,7 @@ export class AI {
                 aiBuildBar[i] = JSON.stringify(u);
             }
         }
+
         player = Sim.Instance.playerJoin("", "ai" + Sim.rid(), aiName, color, aiBuildBar, AI.buildBar2aiRules(aiBuildBar), true);
         player.side = side;
         player.afk = false;

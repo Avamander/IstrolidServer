@@ -2,7 +2,7 @@ import {Sim} from "./6src_sim";
 import {Unit} from "./95src_unit";
 import {Part} from "./95part";
 import {Player} from "./94src_things";
-import {Account} from "./0dummy";
+import {Account} from "./dummy";
 
 export class Grid {
     static readonly SIZE = 20;
@@ -247,7 +247,16 @@ export class Grid {
                     y = ref3[1];
                     x += px;
                     y += py;
-                    let t: Part = (ref4 = grid[x]) != null ? ref4[y] : void 0;
+
+                    let t: Part;
+
+                    if (grid[x]) {
+                        t = grid[x][y];
+                    } else {
+                        // @ts-ignore
+                        t = null;
+                    }
+
                     if (t === void 0) {
                         badParts.push(part);
                         continue;
@@ -389,7 +398,14 @@ export class Grid {
                     ref27 = ref26[r];
                     ax = ref27[0];
                     ay = ref27[1];
-                    let t: Part = (ref28 = grid[x + ax]) != null ? ref28[y + ay] : void 0;
+                    let t: Part;
+                    if (grid[x + ax]) {
+                        t = grid[x + ax][y + ay];
+                    } else {
+                        // @ts-ignore
+                        t = null;
+                    }
+
                     if (t && t.solid && !t.fill) {
                         t.fill = true;
                         newSet.push([x + ax, y + ay]);

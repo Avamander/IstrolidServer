@@ -1,12 +1,12 @@
 import {v2} from "./4src_maths";
-import {prot} from "./3src_protocol";
+import {prot} from "./protocol";
 import {IstrolidMap, Mapping} from "./5src_maps";
 import {ZJson} from "./994src_zjson";
 import {Colors} from "./992src_colors";
-import {HSpace} from "./2src_hspace";
+import {HSpace} from "./hspace";
 import {Utils} from "./993src_utils";
 import {Particle, Player, Thing} from "./94src_things";
-import {Server} from "../server";
+import {IstrolidServer} from "../server";
 import {Unit} from "./95src_unit";
 import {Grid} from "./99src_grid";
 import {UnitUtils} from "./95unitutils";
@@ -20,66 +20,88 @@ export class Sim {
     DEBUG = false;
     VERSION = 49;
     MINOR_VERSION = 2;
-    battleType: string;
-    local: boolean;
-    players: Player[];
+
+    local: boolean = false;
+    fullUpdate: boolean = false;
+    awaitRestart: boolean = false;
+    galaxyStar: boolean = false;
+    challenge: boolean = false;
+    noAIPlayers: boolean = false;
+    aiOnly: boolean = false;
+    paused: boolean = false;
+    sound: boolean = false;
+    ffa: boolean = false;
+    gainsMoney: boolean = true;
+    makeRocks: boolean = true;
+    aiTestMode: boolean = false;
+    enableAi: boolean = true;
+    check: boolean = true;
+
+    players: Player[] = [];
     chat: {
         players: {
             [key: string]: Player; // Return ID based on name
         };
     };
-    step: number;
-    timeDelta: number;
+
+    step: number = 0;
+    timeDelta: number = 0;
+    numBattles: number = 0;
+    deaths: number = 0;
+    captures: number = 0;
+    counting: number = 0;
+    numRocks: number = 0;
+    mapSeed: number = 0;
+    countDown: number = 0;
+    axisSort: number = 0;
+    deathPenalty: number = 0;
+    ticksPerSec: number = 16;
+    defaultMoney: number = 2000;
+    nGamesPlayed: number = 0;
+    lastId: number = 0;
+    costLimit: number = 1000;
+    cheatSimInterval: number = -12;
+    moneyInc: number = 0;
+    lastSimInterval: number = 0;
+    numComPoints: number = 8;
+    mapScale: number = 1.5;
+    moneyRatio: number = 1;
+    tickTime: number = 63;
+    unitLimit: number = 100;
+    NxN: number = 24;
+
     winningSide: string;
-    numBattles: number;
-    zJson: ZJson;
-    projSpaces: { [key: string]: HSpace; };
-    unitSpaces: { [key: string]: HSpace; };
-    deaths: number;
-    captures: number;
+    battleType: string;
+    state: string = "waiting";
+    serverType: string = "3v3";
+
+    // @ts-ignore
     net: {};
-    counting: number;
-    numRocks: number;
-    mapSeed: number;
-    countDown: number;
-    modes: { [x: string]: typeof Sim; };
-    fullUpdate: boolean;
-    surrender_votes: { [key: string]: number; };
-    commandPoint: any[];
-    bulletSpaces: { [key: string]: HSpace };
-    maxRadius: { [key: string]: number };
-    things: Thing[];
-    awaitRestart: boolean;
-    axisSortedMissles: { [key: number]: Bullet };
-    axisSort: number;
-    units: { [key: number]: Unit };
-    axisSortedUnits: { [key: number]: Unit };
-    galaxyStar: boolean;
-    theme: IstrolidMap;
-    lastSimInterval: number;
-    sound: boolean;
-    ais: { useAiFleet: { (arg0: any, arg1: any, arg2: any): void; (arg0: any, arg1: any, arg2: any): void; }; };
-    challenge: boolean;
-    noAIPlayers: boolean;
-    aiOnly: boolean;
-    paused: boolean;
-    cheatSimInterval: number;
-    particles: Particle[];
-    bullets: Bullet[];
-    _pos: Float64Array = new Float64Array([0, 0]);
-    ffa: boolean;
-    mapping: Mapping;
-    deathPenalty: number;
-    ticksPerSec = 16;
-    defaultMoney = 2000;
-    gainsMoney = true;
-    makeRocks = true;
-    state = "waiting";
-    serverType = "3v3";
-    lastId = 0;
-    costLimit = 1000;
-    aiTestMode = false;
-    nGamesPlayed = 0;
+    commandPoint: any[][] = [];
+    things: Thing[] = [];
+    particles: Particle[] = [];
+    bullets: Bullet[] = [];
+    timePath: string[] = [];
+    _pos: Float64Array = new Float64Array(2);
+
+    modes: { [x: string]: typeof Sim; } = {};
+    surrender_votes: { [key: string]: number; } = {};
+    maxRadius: { [key: string]: number } = {};
+    axisSortedMissles: { [key: number]: Bullet } = {};
+    units: { [key: number]: Unit } = {};
+    axisSortedUnits: { [key: number]: Unit } = {};
+    timeings: { [x: string]: any; } = {};
+    timeStarts: { [x: string]: number; } = {};
+    projSpaces: { [key: string]: HSpace; } = {};
+    unitSpaces: { [key: string]: HSpace; } = {};
+    bulletSpaces: { [key: string]: HSpace; } = {};
+
+    // @ts-ignore
+    ais: {
+        useAiFleet: { (arg0: any, arg1: any, arg2: any): void;
+        (arg0: any, arg1: any, arg2: any): void; };
+    };
+
     validTypes: { [x: string]: any; } = {
         "1v1": "1v1",
         "1v1r": "1v1r",
@@ -93,24 +115,21 @@ export class Sim {
         //"TicTacToe": "TicTacToe",
         //"FFA": "FFA"
     };
-    numComPoints = 8;
-    mapScale = 1.5;
-    moneyRatio = 1;
-    tickTime = 63;
-    unitLimit = 100;
-    enableAi = true;
-    check = true;
-    NxN = 24;
     gameFields = ["players", "things", "aiTestMode", "nGamesPlayed", "numBattles", "local", "step", "timeDelta", "winningSide", "numBattles", "unitSpaces", "projSpaces", "zJson", "serverType", "theme"];
     thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "color", "sliceImage", "side", "owner", "capping", "spawn", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
     playerFields = ["name", "side", "afk", "host", "money", "connected", "dead", "color", "mouse", "action", "buildQ", "validBar", "ai", "apm", "capps", "kills", "unitsBuilt", "moneyEarned", "rallyPoint"];
     simFields = ["serverType", "step", "theme", "state", "winningSide", "countDown"];
-    data: {};
-    timeings: { [x: string]: any; } = {};
-    timeStarts: { [x: string]: number; } = {};
-    timePath: string[] = [];
-    moneyInc: number;
+
+    data: any;
+
+    // @ts-ignore
+    mapping: Mapping;
+    // @ts-ignore
+    theme: IstrolidMap;
+
+    zJson: ZJson;
     aimanager: AI = AI.Instance;
+
 
     constructor(battleType: string) {
         this.battleType = battleType;
@@ -120,11 +139,16 @@ export class Sim {
         this.chat = {players: {}};
         this.step = 0;
         this.timeDelta = 0;
-        this.winningSide = null;
+        this.winningSide = "";
         this.numBattles = 0;
         this.unitSpaces = {};
         this.projSpaces = {};
         this.zJson = new ZJson(prot.commonWords);
+        this.net = {};
+        this.lastId = 0;
+        this.counting = 0;
+
+        this._instance = this;
     }
 
     public static get Instance() {
@@ -142,22 +166,25 @@ export class Sim {
     };
 
     static say(message: string) {
-        if (typeof Server.Instance !== "undefined" && Server.Instance !== null) {
-            Server.Instance.say(message);
+        if (typeof IstrolidServer.Instance !== "undefined" && IstrolidServer.Instance !== null) {
+            IstrolidServer.say(message);
         } else {
             console.log(message);
         }
     };
 
     static setRallyPoint(player: Player, point: Float64Array) {
-        let _, ref, thing;
         if (!player) {
             return;
         }
-        ref = Sim.Instance.things;
-        for (_ in ref) {
-            thing = ref[_];
-            if (thing.spawn === player.side && v2.distance(thing.pos, point) < thing.radius) {
+
+
+        let thing;
+
+        for (let _ in Sim.Instance.things) {
+            thing = Sim.Instance.things[_];
+            if (thing.spawn === player.side &&
+                v2.distance(thing.pos, point) < thing.radius) {
                 player.usingSpawn = thing;
                 player.rallyPoint = new Float64Array([0, 0]);
                 return;
@@ -265,7 +292,7 @@ export class Sim {
         this.net = {};
         this.step = 0;
         this.timeDelta = 0;
-        this.winningSide = null;
+        this.winningSide = "";
         this.lastId = 0;
         this.counting = 0;
         this.generateMap(this.mapScale, this.numComPoints, this.mapSeed);
@@ -284,7 +311,6 @@ export class Sim {
         if (this.chat == null) {
             this.chat = {players: {}};
         }
-        this.winningSide = null;
         this.state = "starting";
         this.regenerateMap();
         this.captures = 0;
@@ -426,19 +452,20 @@ export class Sim {
     };
 
     playerJoin(_: any, pid: any, name: any, color: any, buildBar: any, aiRules: any, ai: boolean) {
-        let dcIndex, i, l, len1, len2, m, p, player, ref, ref1;
+        let dcIndex, p, player;
         if (ai == null) {
             ai = false;
         }
         console.log("playerJoin", pid, name, color);
-        ref = this.players;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            p = ref[l];
+
+        for (let l = 0; l < this.players.length; l++) {
+            p = this.players[l];
             if (p.id === pid) {
                 player = p;
                 break;
             }
         }
+
         if (!player) {
             player = new Player(pid);
             player.streak = 0;
@@ -448,13 +475,14 @@ export class Sim {
                 player.side = "spectators";
             }
             dcIndex = null;
-            ref1 = this.players;
-            for (i = m = 0, len2 = ref1.length; m < len2; i = ++m) {
-                p = ref1[i];
+
+            for (let i = 0; i < this.players.length; i++) {
+                p = this.players[i];
                 if (!p.connected && p.side === "spectators") {
                     dcIndex = i;
                 }
             }
+
             if (dcIndex === null) {
                 player.number = this.players.length;
                 this.players.push(player);
@@ -475,6 +503,8 @@ export class Sim {
     playerEdit(_: any, pid: any, name: any, color: any, buildBar: any[], aiRules: any, ai: boolean) {
         let canEditShips, i, l, len1, m, o, p, player, ref;
         ref = this.players;
+        // WARNING: Default player is selected when there's noone else
+        player = ref[0];
         for (l = 0, len1 = ref.length; l < len1; l++) {
             p = ref[l];
             if (p.id === pid) {
@@ -487,6 +517,7 @@ export class Sim {
         player.color[3] = 255;
         player.ai = ai;
         player.aiRules = aiRules;
+
         if (!player.buildBar) {
             player.buildBar = [[], [], [], [], [], [], [], [], [], []];
         }
@@ -494,6 +525,7 @@ export class Sim {
         if (!player.validBar) {
             player.validBar = [false, false, false, false, false, false, false, false, false, false];
         }
+
         player.connected = true;
         if (this.serverType === "1v1t" && this.state !== "waiting" && player.side !== "spectators") {
             for (i = m = 0; m < 10; i = ++m) {
@@ -517,28 +549,34 @@ export class Sim {
         return player;
     };
 
-    switchSide(player: { kickTime: number; side: any; streek: number; lastActiveTime: number; }, side: string) {
+    switchSide(player: ({ kickTime: number; side: any; streek: number; lastActiveTime: number; } | Player), side: string) {
         if (!player) {
             return;
         }
+
         if (player.kickTime > Utils.now() - 15000) {
             return;
         }
+
         if (this.local && !Sim.Instance.galaxyStar && !Sim.Instance.challenge) {
             player.side = side;
             return;
         }
+
         if (side !== "spectators" && this.numInTeam(side) >= this.playersPerTeam()) {
             return;
         }
+
         if (this.state !== "waiting") {
             return;
         }
+
         player.side = side;
         if (side === "spectators") {
             player.streek = 0;
         }
-        return player.lastActiveTime = Date.now();
+
+        player.lastActiveTime = Date.now();
     };
 
     whoIsHost() {
@@ -547,6 +585,9 @@ export class Sim {
         ref = this.players;
         for (l = 0, len1 = ref.length; l < len1; l++) {
             p = ref[l];
+            if (!p){
+
+            }
             if (p.host === true) {
                 if (!p.connected || p.side === "spectators") {
                     p.host = false;
@@ -571,11 +612,13 @@ export class Sim {
     };
 
     addAi(player: any, name: any, side: any, aiBuildBar: any, nocheck: boolean) {
-        let l, len1, numAi, p, ref, total;
+        let p;
         if (nocheck == null) {
             nocheck = false;
         }
+
         console.log("addAI", name, side);
+
         if (!this.local) {
             if (this.noAIPlayers) {
                 return;
@@ -597,39 +640,42 @@ export class Sim {
             if (this.state !== "waiting") {
                 return;
             }
-            total = this.playersPerTeam() * 2;
-            numAi = 0;
-            ref = this.players;
-            for (l = 0, len1 = ref.length; l < len1; l++) {
-                p = ref[l];
+
+            let numAi = 0;
+
+            for (let l = 0; l < this.players.length; l++) {
+                p = this.players[l];
                 if (p.ai && p.connected && p.side !== "spectators") {
                     numAi += 1;
                 }
             }
-            if (numAi === total - 1) {
+
+            if (numAi === (this.playersPerTeam() * 2) - 1) {
                 console.log("All players can't be AI");
                 return;
             }
         }
         return AI.useAiFleet(name, side, aiBuildBar);
-    };
+    }
 
-    kickPlayer(p: Player, number: number) {
-        let player;
+    kickPlayer(kicker: Player, target_number: number) {
         if (this.state !== "waiting") {
             return;
         }
-        if (!p.host) {
+
+        if (!kicker.host) {
             return;
         }
-        player = this.players[number];
+
+        let player = this.players[target_number];
+
         if (player) {
             player.side = "spectators";
             player.kickTime = Utils.now();
             if (player.ai) {
                 player.connected = false;
             }
-            return Sim.say(p.name + " kicked " + player.name);
+            return Sim.say(kicker.name + " kicked " + player.name);
         }
     };
 
@@ -650,7 +696,7 @@ export class Sim {
             }
         }
         return results;
-    };
+    }
 
     startGame(player: { host: any; name: string; }, real: boolean) {
         if (real == null) {
@@ -697,7 +743,7 @@ export class Sim {
             return false;
         }
         return true;
-    };
+    }
 
     validateBuildBar(player: Player) {
         let i, l, len1, n, ref, spec;
@@ -717,7 +763,7 @@ export class Sim {
             spec = ref[i];
             player.validBar[i] = Grid.validSpec(player, spec);
         }
-    };
+    }
 
     moveOrder(player: Player, points: any[], additive: any, orderId: any) {
         let l, len1, n, ref, results, u;
@@ -735,6 +781,17 @@ export class Sim {
             u = ref[l];
             if ((u != null) && u.owner === player.number && !u.dead) {
                 u.giveOrder({
+                    ai: false,
+                    begun: false,
+                    distance: 0,
+                    noFinish: false,
+                    noStop: false,
+                    // @ts-ignore
+                    pos: undefined,
+                    rally: false,
+                    // @ts-ignore
+                    target: undefined,
+                    targetId: 0,
                     id: orderId,
                     type: "Move",
                     dest: points[n],
@@ -767,6 +824,17 @@ export class Sim {
             u = ref[l];
             if (u.owner === player.number) {
                 u.giveOrder({
+                    ai: false,
+                    begun: false,
+                    dest: undefined,
+                    distance: 0,
+                    noStop: false,
+                    // @ts-ignore
+                    pos: undefined,
+                    rally: false,
+                    range: 0,
+                    // @ts-ignore
+                    target: undefined,
                     id: orderId,
                     type: "Follow",
                     targetId: unitId,
@@ -890,13 +958,13 @@ export class Sim {
         unit = new Unit(spec);
         unit.owner = player.number;
         unit.side = player.side;
-        unit.color = player.color.slice(0);
+        unit.color = player.color;
         unit.number = number;
         if (player.money < unit.cost) {
             return;
         }
         player.money -= unit.cost;
-        this.things[unit.id] = unit;
+        this.things[unit.id] = (unit as Thing);
         if (pos) {
             v2.set(pos, unit.pos);
             unit.rot = v2.angle(unit.pos) + Math.PI;
@@ -930,39 +998,17 @@ export class Sim {
     };
 
     buildRq(player: Player, name: number, number: number) {
-        let i, l, len, m, n, ref, ref1;
         if (!player) {
             return;
         }
         if (number > 0) {
-            for (i = l = 0, ref = number; 0 <= ref ? l < ref : l > ref; i = 0 <= ref ? ++l : --l) {
-                player.buildQ.push(name);
-            }
+            player.buildQ.push(name);
         } else if (number < 0) {
-            len = player.buildQ.length;
-            for (i = m = ref1 = len - 1; ref1 <= -1 ? m < -1 : m > -1; i = ref1 <= -1 ? ++m : --m) {
-                if (player.buildQ[i] === name) {
-                    player.buildQ[i] = null;
-                    number += 1;
-                    if (number === 0) {
-                        break;
-                    }
-                }
+            for (let i = 0; i <= (number * -1); i++) {
+                player.buildQ.splice(player.buildQ.indexOf(name), 1);
             }
-            player.buildQ = (function () {
-                let len1, o, ref2, results;
-                ref2 = player.buildQ;
-                results = [];
-                for (o = 0, len1 = ref2.length; o < len1; o++) {
-                    n = ref2[o];
-                    if (n !== null) {
-                        results.push(n);
-                    }
-                }
-                return results;
-            })();
         }
-    };
+    }
 
     findSpawnPoint(player: Player) {
         let _, ref, unit;
@@ -970,6 +1016,7 @@ export class Sim {
             if (player.usingSpawn.side === player.side) {
                 return player.usingSpawn;
             } else {
+                // @ts-ignore
                 player.usingSpawn = null;
             }
         }
@@ -980,7 +1027,7 @@ export class Sim {
                 return unit;
             }
         }
-    };
+    }
 
     canBuildHere(pos: Float64Array, side: string, cls: Unit) {
         let _, dist, inRange, ref, unit;
@@ -1003,7 +1050,7 @@ export class Sim {
             }
         }
         return inRange;
-    };
+    }
 
     playerSelected(player: Player, selection: any[]) {
         let id, l, len1, ref, ref1, results, t, u;
@@ -1037,7 +1084,7 @@ export class Sim {
             })());
         }
         return results;
-    };
+    }
 
     surrender(player: Player) {
         if (!player) {
@@ -1104,35 +1151,29 @@ export class Sim {
                 return;
             }
         }
-    };
+    }
 
     checkAfkPlayers() {
-        let l, len1, player, ref, results;
-        ref = this.players;
-        results = [];
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            player = ref[l];
+        let l, len1, player;
+        for (l = 0, len1 = this.players.length; l < len1; l++) {
+            player = this.players[l];
+
             if (player.ai) {
                 if (player.side !== "spectators") {
                     player.afk = false;
-                    results.push(player.connected = true);
-                } else {
-                    results.push(void 0);
+                    player.connected = true;
                 }
             } else if (!player.connected) {
-                results.push(player.afk = true);
+                player.afk = true
             } else if (player.lastActiveTime < Date.now() - 1000 * 60 * 10) {
                 if (this.serverType !== "1v1r") {
-                    results.push(player.afk = true);
-                } else {
-                    results.push(void 0);
+                    player.afk = true
                 }
             } else {
-                results.push(player.afk = false);
+                player.afk = false
             }
         }
-        return results;
-    };
+    }
 
     numInTeam(side: string) {
         let l, len1, num, player, ref;
@@ -1145,7 +1186,7 @@ export class Sim {
             }
         }
         return num;
-    };
+    }
 
     startingSim() {
         if (this.state === "starting") {
@@ -1169,7 +1210,7 @@ export class Sim {
             Sim.say("Challenger appears, game is about to start!");
             return this.countDown = 16 * 6;
         }
-    };
+    }
 
     simulate() {
         let id, l, len1, len2, m, player, ref, ref1, ref2, ref3, ref4, t, thing;
@@ -1186,14 +1227,15 @@ export class Sim {
 
         this.timeStart("units");
         this.units = [
+            // @ts-ignore
             (function () {
-                let ref, results;
+                let ref;
+                let results: Unit[] = [];
                 ref = Sim.Instance.things;
-                results = [];
                 for (id in ref) {
                     t = ref[id];
                     if (t.unit) {
-                        results.push(t);
+                        results.push((t as Unit));
                     }
                 }
                 return results;
@@ -1203,14 +1245,15 @@ export class Sim {
 
         this.timeStart("bullets");
         this.bullets = [
+            // @ts-ignore
             (function () {
-                let ref, results;
+                let ref;
+                let results: Bullet[] = [];
                 ref = Sim.Instance.things;
-                results = [];
                 for (id in ref) {
                     t = ref[id];
                     if (t.bullet) {
-                        results.push(t);
+                        results.push((t as Bullet));
                     }
                 }
                 return results;
@@ -1310,7 +1353,7 @@ export class Sim {
             }
         }*/
         return this.timeEnd("sim");
-    };
+    }
 
     spacesRebuild() {
         let ref1, thing;
@@ -1346,7 +1389,7 @@ export class Sim {
                 this.bulletSpaces[thing.side].insert(thing);
             }
         }
-    };
+    }
 
     victoryConditions() {
         let cappedArr, id, k, l, len1, player, ref, ref1, stillThere, thing;
@@ -1397,7 +1440,7 @@ export class Sim {
             this.winningSide = "";
             this.endOfGame();
         }
-    };
+    }
 
     endOfGame() {
         let player;
@@ -1444,47 +1487,55 @@ export class Sim {
             }
         }
         return this.state = "ended";
-    };
+    }
 
     unitsCollide() {
         let distance, force, i, j, k, l, len1, missles, ratio, results, t, u, u2, units;
         units = (function () {
-            let ref, results;
+            let ref;
             ref = Sim.Instance.things;
-            results = [];
+            let results: Unit[] = [];
             for (k in ref) {
                 t = ref[k];
                 if (t.unit && !t.fixed && t.active) {
-                    results.push(t);
+                    results.push((t as Unit));
                 }
             }
             return results;
         }).call(this);
 
         let n = this.step % 2;
-        units.sort(function (a: { pos: number[]; }, b: { pos: number[]; }) {
-            return a.pos[n] - b.pos[n];
-        });
+        units.sort(
+            function (a: Unit, b: Unit) {
+                return a.pos[n] - b.pos[n];
+            }
+        );
 
         this.axisSort = n;
         this.axisSortedUnits = units;
         missles = (function () {
-            let ref, results;
+            let ref;
+            let results: Bullet[];
             ref = Sim.Instance.things;
             results = [];
             for (k in ref) {
                 t = ref[k];
                 if (t.missile) {
+                    // @ts-ignore because a Missile is a Thing
                     results.push(t);
                 }
             }
             return results;
         }).call(this);
-        missles.sort(function (a: { pos: number[]; }, b: { pos: number[]; }) {
-            return a.pos[n] - b.pos[n];
-        });
+        missles.sort(
+            function (a: Bullet, b: Bullet) {
+                return a.pos[n] - b.pos[n];
+            }
+        );
         this.axisSortedMissles = missles;
+
         results = [];
+
         for (i = l = 0, len1 = units.length; l < len1; i = ++l) {
             u = units[i];
             results.push((function () {
@@ -1501,11 +1552,11 @@ export class Sim {
                         if (distance < u.radius + u2.radius) {
                             force = (u.radius + u2.radius) - distance;
                             ratio = u2.mass / (u.mass + u2.mass);
-                            let _push = v2.create(null);
+                            let _push = v2.create_r();
                             v2.scale(_offset, ratio * force / distance * .02, _push);
-                            v2.add(u.pos, _push, null);
+                            v2.add_r(u.pos, _push);
                             v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
-                            results1.push(v2.add(u2.pos, _push, null));
+                            results1.push(v2.add_r(u2.pos, _push));
                         } else {
                             results1.push(void 0);
                         }
@@ -1517,12 +1568,12 @@ export class Sim {
             })());
         }
         return results;
-    };
+    }
 
     send() {
         let _, changes, e, f, i, id, l, len1, len2, len3, len4, len5, len6, len8, m, o, p, packet, part,
             partId, player, predictable, q, r, ref1, ref10, ref11, ref13, ref2, ref3, ref4, ref5, ref6,
-            ref7, ref8, ref9, send, splayers, sthings, t, targetId, thing, v, x, y, z;
+            ref7, ref9, send, splayers, sthings, t, targetId, thing, v, x, y, z;
 
         this.timeStart("send");
         this.timeStart("things");
@@ -1576,10 +1627,10 @@ export class Sim {
             }
             if (!predictable) {
                 if (s.vel == null) {
-                    s.vel = v2.create(null);
+                    s.vel = v2.create_r();
                 }
                 if (s.pos == null) {
-                    s.pos = v2.create(null);
+                    s.pos = v2.create_r();
                 }
                 v2.set(thing.vel, s.vel);
                 v2.set(thing.pos, s.pos);
@@ -1610,7 +1661,7 @@ export class Sim {
                     changes.push(["partId", partId]);
                     let s: { targetId: number, working: boolean, range: number } = part.net;
                     if (!s) {
-                        part.net = s = {targetId: null, working: null, range: null};
+                        part.net = s = {targetId: 0, working: true, range: 0};
                     }
                     if ((part.working != null) && (s.working !== part.working)) {
                         changes.push(["partWorking", part.working]);
@@ -1792,28 +1843,25 @@ export class Sim {
     };
 
     clearNetState() {
-        let id, l, len1, len2, m, part, player, ref, ref1, ref2, results, thing;
         console.log("Clearing net state");
         this.fullUpdate = true;
+
         delete this.net;
-        for (id in this.things) {
-            thing = this.things[id];
-            delete thing.net;
-            if (thing.parts != null) {
-                ref1 = thing.parts;
-                for (l = 0, len1 = ref1.length; l < len1; l++) {
-                    part = ref1[l];
-                    delete part.net;
+
+        for (let id in this.things) {
+            delete this.things[id].net;
+            if (this.things[id].parts) {
+                for (let l = 0; l < this.things[id].parts.length; l++) {
+                    delete this.things[id].parts[l].net;
                 }
             }
         }
-        ref2 = this.players;
-        results = [];
-        for (m = 0, len2 = ref2.length; m < len2; m++) {
-            player = ref2[m];
-            results.push(delete player.net);
+
+        for (let m = 0; m < this.players.length; m++) {
+            if (this.players[m]){
+                delete this.players[m].net;
+            }
         }
-        return results;
     };
 
     timeStart(what: string) {

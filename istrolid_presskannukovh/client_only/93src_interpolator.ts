@@ -1,5 +1,5 @@
 import {v2} from "../4src_maths";
-import {prot} from "../3src_protocol";
+import {prot} from "../protocol";
 import {ZJson} from "../994src_zjson";
 import {Sim} from "../6src_sim";
 import {Player} from "../94src_things";

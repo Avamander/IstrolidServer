@@ -8,8 +8,13 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "moduleResolution": "node",
+    "strict": true,
+    "alwaysStrict": true,
     //"outFile": "./istrolid.ts.js",
     "outDir": "./istrolid_ts",
+    "typeRoots": [
+        "node_modules/@types"
+    ],
     "lib": [
       "dom",
       "es7",
@@ -19,10 +24,10 @@
     "target": "es2018"
   },
   "files": [
-    "./istrolid_presskannukovh/0dummy.ts",
-    "./istrolid_presskannukovh/1src_mtwist.ts",
-    "./istrolid_presskannukovh/2src_hspace.ts",
-    "./istrolid_presskannukovh/3src_protocol.ts",
+    "./istrolid_presskannukovh/dummy.ts",
+    "./istrolid_presskannukovh/mtwist.ts",
+    "./istrolid_presskannukovh/hspace.ts",
+    "./istrolid_presskannukovh/protocol.ts",
     "./istrolid_presskannukovh/4src_maths.ts",
     "./istrolid_presskannukovh/5src_maps.ts",
     "./istrolid_presskannukovh/6src_sim.ts",

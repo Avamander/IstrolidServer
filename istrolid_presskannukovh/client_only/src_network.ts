@@ -20,7 +20,7 @@
                     console.log("ws open", e);
                     _this.sendPlayer();
                     console.log("sending game key", commander.name, rootNet.gameKey);
-                    return _this.send("gameKey", commander.name, rootNet.gameKey);
+                    return Server.send("gameKey", commander.name, rootNet.gameKey);
                 };
             })(this);
             this.websocket.onclose = (function (_this) {
@@ -44,12 +44,12 @@
             })(this);
         };
 
-        Connection.prototype.send = function () {
+        Server.send = function () {
             var args, dv;
             args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
             if (this.websocket.readyState === 1) {
                 dv = sim.zJson.dumpDv(args);
-                return this.websocket.send(dv);
+                return Server.send(dv);
             }
         };
 
@@ -64,7 +64,7 @@
                     buildBar[i] = fromShort(commander.buildBar[i]);
                 }
             }
-            return this.send("playerJoin", commander.id, commander.name, commander.color, buildBar, getAIRules());
+            return Server.send("playerJoin", commander.id, commander.name, commander.color, buildBar, getAIRules());
         };
 
         Connection.prototype.close = function () {
@@ -193,11 +193,11 @@
             })(this);
         };
 
-        RootConnection.prototype.send = function () {
+        Server.send = function () {
             var args;
             args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
             if (this.websocket.readyState === 1) {
-                return this.websocket.send(JSON.stringify(args));
+                return Server.send(JSON.stringify(args));
             }
         };
 
@@ -217,7 +217,7 @@
         };
 
         RootConnection.prototype.sendMode = function () {
-            return this.send("setMode", this.playerMode(), chat.channel);
+            return Server.send("setMode", this.playerMode(), chat.channel);
         };
 
         return RootConnection;
@@ -250,10 +250,10 @@
                     buildBar[i] = fromShort(commander.buildBar[i]);
                 }
             }
-            return this.send("playerJoin", commander.id, commander.name, commander.color, buildBar, getAIRules());
+            return Server.send("playerJoin", commander.id, commander.name, commander.color, buildBar, getAIRules());
         };
 
-        Local.prototype.send = function () {
+        Server.send = function () {
             var args, dv, j, len, p, player, ref, ref1;
             args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
             dv = (ref = sim.zJson).dumpDv.apply(ref, args);

@@ -1,8 +1,8 @@
 /*
 General Game Objects live here
  */
-
 import {Part} from "./95part";
+import {Sim} from "./6src_sim";
 
 export class ThingUtil {
     hasProp = {}.hasOwnProperty;
@@ -93,33 +93,43 @@ export class Player {
     aiRules: any;
     host: boolean = false;
     ai: boolean = false;
-    lastActiveTime: number;
-    connected: boolean;
-    name: any;
+    lastActiveTime: number = 0;
+    connected: boolean = false;
+    name: string = "";
     mouse: any;
-    id: number;
-    color: number[];
-    maxMoney: number;
-    money: number;
+    id: string | number;
+    color: [number, number, number, number];
+    maxMoney: number = 90000;
+    money: number = 0;
+    buildQ: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    validBar: boolean[] = [true, true, true, true, true, true, true, true, true, true];
+
+    // @ts-ignore
     rallyPoint: Float64Array;
-    selection: any[] | Thing[] | { owner: any; }[];
-    buildQ: number[];
-    validBar: boolean[];
+    // @ts-ignore
+    selection: any[] | Thing[];
+    // @ts-ignore
     mouseTrail: any[];
+    // @ts-ignore
     usingSpawn: Thing;
-    side: string;
-    number: any;
+    // Set by playerJoin
+    number!: number;
+    // @ts-ignore
     _mouse: Float64Array;
+
+    side: string = "spectators";
     action: any;
     buildBar: any;
-    kickTime: number;
+    kickTime: number = 0;
     ws: any;
-    streak: number;
-    surrendered: boolean;
-    afk: boolean;
+    streak: number = 0;
+    surrendered: boolean = false;
+    afk: boolean = false;
     net: any;
+    t: any;
+    repick: any;
 
-    constructor(id1: number) {
+    constructor(id1: number | string) {
         this.id = id1;
         this.color = [255, 255, 255, 255]; //randColor(200); // TODO:
         this.reset();
@@ -147,6 +157,7 @@ export class Player {
         this.unitsBuilt = 0;
         this.moneyEarned = 0;
         this.mouseTrail = [];
+        // @ts-ignore
         this.usingSpawn = null;
     };
 
@@ -162,6 +173,7 @@ export class Player {
             let results = [];
             for (let element in Sim.Instance.things) {
                 if (Sim.Instance.things[element].unit &&
+                    // @ts-ignore
                     Sim.Instance.things[element].owner === this.number) {
                     results.push(Sim.Instance.things[element]);
                 }
@@ -180,7 +192,7 @@ export class Player {
         if (this.aiRules) {
             Sim.Instance.timeIt("ai", (function (_this) {
                 return function () {
-                    //return doPlayerAIRules(_this); // TODO:
+                    return Sim.Instance.aimanager.doPlayerAIRules(_this);
                 };
             })(this));
         }
@@ -189,27 +201,29 @@ export class Player {
     };
 
     wave() {
-        let build, i, j, len, n, ref, slot, waitTime;
+        let build, slot, waitTime;
         waitTime = 16 * 2;
         if (Sim.Instance.step > waitTime && Sim.Instance.step % 16 === 0) {
             build = false;
             if (Sim.Instance.serverType === "IO") {
                 if ((this.buildQ[0] != null) && this.rqUnit(this.buildQ[0])) {
+                    // @ts-ignore
                     this.buildQ[0] = null;
                     build = true;
                 }
             } else {
-                ref = this.buildQ;
-                for (i = j = 0, len = ref.length; j < len; i = ++j) {
-                    slot = ref[i];
+                for (let j = 0; j < this.buildQ.length; j++) {
+                    slot = this.buildQ[j];
                     if (this.rqUnit(slot)) {
-                        this.buildQ[i] = null;
+                        // @ts-ignore
+                        this.buildQ[j] = null;
                         build = true;
                     } else {
                         break;
                     }
                 }
             }
+
             if (build) {
                 return this.buildQ = this.get_build_q();
             }
@@ -228,23 +242,23 @@ export class Player {
 
     rqUnit(slot: number) {
         if (Sim.Instance.serverType === "Survival" && this.side === "beta") {
-            let pos = v2.scale(
+            let pos = v2.scale_r(
                 v2.pointTo(
                     new Float64Array([]),
                     Math.random() * Math.PI * 2),
-                2000 * Sim.Instance.mapScale,
-                null
+                2000 * Sim.Instance.mapScale
             );
             return Sim.Instance.buildUnit(this.number, slot, pos);
         }
 
         if (Sim.Instance.serverType === "IO") {
-            let units = (function (passed_this: Player) {
-                let results = [];
+            let units = (function () {
+                let results: Unit[] = [];
                 for (let element in Sim.Instance.things) {
                     if (Sim.Instance.things[element].unit &&
-                        Sim.Instance.things[element].owner === passed_this.number) {
-                        results.push(Sim.Instance.things[element]);
+                        // @ts-ignore
+                        Sim.Instance.things[element].owner === this.number) {
+                        results.push((Sim.Instance.things[element] as Unit));
                     }
                 }
                 return results;
@@ -268,14 +282,26 @@ export class Player {
             let unit = Sim.Instance.buildUnit(this.number, slot, spawn.pos);
             if (unit) {
                 v2.random(unit.pos);
-                v2.scale(unit.pos, 100 + Math.random() * (spawn.radius - 100), null);
-                v2.add(unit.pos, spawn.pos, null);
+                v2.scale_r(unit.pos, 100 + Math.random() * (spawn.radius - 100));
+                v2.add_r(unit.pos, spawn.pos);
                 this.unitsBuilt += 1;
                 if (this.rallyPoint[0] !== 0 && this.rallyPoint[1] !== 0) {
                     unit.setOrder({
                         type: "Move",
                         dest: this.rallyPoint,
-                        rally: true
+                        rally: true,
+                        ai: false,
+                        begun: false,
+                        distance: 0,
+                        id: 0,
+                        noFinish: false,
+                        noStop: false,
+                        // @ t s -igno re
+                        pos: this.rallyPoint,
+                        range: 0,
+                        // @ts-ignore
+                        target: undefined,
+                        targetId: 0
                     });
                 }
                 return unit;
@@ -298,16 +324,15 @@ export class Player {
         }
 
         if (battleMode.rallyPlacing) {
-            baseAtlas.drawSprite("img/unitBar/rallyPoint.png", battleMode.mouse, [1, 1], 0, null);
+            baseAtlas.drawSprite("img/unitBar/rallyPoint.png", battleMode.mouse, [1, 1], 0, [255, 0, 255, 255]);
         } else if (commander.rallyPoint && commander.rallyPoint[0] !== 0 && commander.rallyPoint[1] !== 0) {
-            baseAtlas.drawSprite("img/unitBar/rallyPoint.png", commander.rallyPoint, [1, 1], 0, null);
+            baseAtlas.drawSprite("img/unitBar/rallyPoint.png", commander.rallyPoint, [1, 1], 0, [255, 255, 0, 255]);
         }
 
         if (!this.selection) {
             return;
         }
 
-        let results = [];
         for (let j = 0; j < this.selection.length; j++) {
             if (this.selection[j].dead) {
                 continue;
@@ -319,9 +344,7 @@ export class Player {
             }
             if (this.selection.length === 1) {
                 if (this.selection[j].weapons) {
-                    results.push(ThingUtil.drawAllArcs(this.selection[j]));
-                } else {
-                    results.push(void 0);
+                    ThingUtil.drawAllArcs(this.selection[j]);
                 }
             } else {
                 if (this.selection[j].weapons != null && this.selection[j].weapons.length > 0) {
@@ -330,58 +353,43 @@ export class Player {
                     let cur = Math.PI * range * 2;
                     let n = Math.floor(cur / 80 * arc / 360);
 
-                    results.push((function (passed_this: Player) {
-                        let results1 = [];
-                        let th, x, y;
-                        let _pos: Float64Array;
-                        for (let i = -n; i !== 0; i++) {
-                            th = i / (n * 2) * arc / 180 * Math.PI + Math.PI; // TODO: t.rot + ;
-                            x = Math.sin(-th) * range;
-                            y = Math.cos(-th) * range;
-                            _pos = new Float64Array([
-                                passed_this.selection[j].pos[0] + x,
-                                passed_this.selection[j].pos[1] + y]
-                            );
-
-
-                            let other, drawIt = true;
-
-                            for (let m = 0; m < passed_this.selection.length; m++) {
-                                other = passed_this.selection[m];
-                                if (other.unit
-                                    && other.id !== passed_this.selection[j].id
-                                    && other.owner === passed_this.selection[j].owner) {
-                                    if ((other.weapons != null) && other.weapons.length > 0) {
-                                        let _vec = new Float64Array([0, 0]);
-                                        _pos[0] = other.pos[0] - _vec[0];
-                                        _pos[1] = other.pos[1] - _vec[1];
-                                        if (v2.mag(_vec) < other.weaponRange) {
-                                            let angle = v2.angle(_vec);
-                                            let arcRad = other.weaponArc / 180 * Math.PI;
-                                            if (Math.abs(Unit.angleBetween(angle, other.rot)) < arcRad / 2) {
-                                                drawIt = false;
-                                                break;
-                                            }
+                    let th, x, y;
+                    for (let i = -n; i !== 0; i++) {
+                        th = i / (n * 2) * arc / 180 * Math.PI + this.t.rot + Math.PI;
+                        x = Math.sin(-th) * range;
+                        y = Math.cos(-th) * range;
+                        let _pos = v2.create_r();
+                        let _vec = v2.create_r();
+                        _pos[0] = this.selection[j].pos[0] + x;
+                        _pos[1] = this.selection[j].pos[1] + y;
+                        let other, drawIt = true;
+                        for (let m = 0; m < this.selection.length; m++) {
+                            other = this.selection[m];
+                            if (other.unit
+                                && other.id !== this.selection[j].id
+                                && other.owner === this.selection[j].owner) {
+                                if ((other.weapons != null) && other.weapons.length > 0) {
+                                    _pos[0] = other.pos[0] - _vec[0];
+                                    _pos[1] = other.pos[1] - _vec[1];
+                                    if (v2.mag(_vec) < other.weaponRange) {
+                                        let angle = v2.angle(_vec);
+                                        let arcRad = other.weaponArc / 180 * Math.PI;
+                                        if (Math.abs(Unit.angleBetween(angle, other.rot)) < arcRad / 2) {
+                                            drawIt = false;
+                                            break;
                                         }
                                     }
                                 }
                             }
-
-                            if (drawIt) {
-                                results1.push(baseAtlas.drawSprite("img/arrow02.png", _pos, [.5, .5], th + Math.PI, [255, 0, 0, 255]));
-                            } else {
-                                results1.push(void 0);
-                            }
                         }
-                        return results1;
-                    }).call(this));
-                } else {
-                    results.push(void 0);
+                        if (drawIt) {
+                            baseAtlas.drawSprite("img/arrow02.png", _pos, [.5, .5], th + Math.PI, [255, 0, 0, 255]);
+                        }
+                    }
                 }
             }
         }
-        return results;
-    };
+    }
 }
 
 export class Trail {
@@ -435,82 +443,98 @@ export class Trail {
 }
 
 export class Thing {
-    dead: boolean;
-    storeEnergy: number;
-    maxHP: number;
-    spawn: string;
-    spec: string | any[];
-    net: {};
-    target: Thing | Unit;
-    message: any;
-    follow: any;
-    origin: Unit;
-    z: number;
-    color: number[];
-    parts: Part[];
-    active: boolean;
-    fixed: any;
-    canCapture: any;
-    id: number;
+    dead: boolean = false;
+    active: boolean = false;
     commandPoint: boolean = false;
-    radius: number;
     missile: boolean = false;
-    life: number;
-    maxLife: number;
-    vel: Float64Array;
     unit: boolean = false; // Is unit
-    side: string;
-    owner: Player;
     explode: boolean = false;
     bullet: boolean = false;
-    pos: Float64Array;
-    cloak: number;
-    lastDamager: Thing;
-    energyCaster: boolean;
+    "static": boolean = false;
+    energyCaster: boolean = false;
+
+    storeEnergy: number = 0;
+    maxHP: number = 10;
+    z: number = 0.01;
+
+    // @ts-ignore
+    color: [number, number, number, number];
+    // @ts-ignore
+    id: number;
+    // @ts-ignore
+    radius: number;
+    // @ts-ignore
+    life: number = 5;
+
+    maxLife: number = 5;
+    cloak: number = 0;
+
+    // @ts-ignore
+    spawn: string;
+    // @ts-ignore
+    spec: string | any[];
+    // @ts-ignore
+    net: {};
+    // @ts-ignore
+    target: Thing | null = null;
+    // @ts-ignore
+    origin: Unit;
+
+    message: any;
+    follow: any;
+    parts!: Part[];
+    fixed: any;
+    canCapture: any;
+    side: string = "spectators";
+    owner!: number;
+
+    vel!: Float64Array;
+    pos!: Float64Array;
+    lastDamager: Thing | null = null;
 
     constructor() {
         this.id = Sim.Instance.nid();
     }
 
-    postDeath() {
+    postDeath(): void {
 
     }
 
-    getBoundPoints(): any {
+    getBoundPoints(): Float64Array[] {
+        throw new Error("getBoundPoints was called, must be overrided")
+    }
+
+    cloaked(): boolean {
+        return false;
+    }
+
+    applyDamage(damage: number, damager: Thing): void {
 
     }
 
-    cloaked(): any {
+    applyEnergyDamage(damage: number): void {
 
     }
 
-    applyDamage(damage: number, damager: Thing) {
+    applyBurnAmount(damage: number): void {
 
     }
 
-    applyEnergyDamage(damage: number) {
+    move(): void {
 
     }
 
-    applyBurnAmount(damage: number) {
+    tick(): void {
 
     }
 
-    move() {
-
-    }
-
-    tick() {
-
-    }
-
-    draw() {
+    draw(): void {
 
     }
 }
 
 export class Particle extends Thing {
-    image: string;
+    image: string = "";
     id: number;
     size: number[] = [.1, .1];
     maxLife: number = 60;
@@ -518,13 +542,14 @@ export class Particle extends Thing {
     life: number = 0;
     dead: boolean = false;
     z: number;
-    color: number[];
+    color: [number, number, number, number];
     vel: Float64Array;
     _pos: Float64Array;
     _pos2: Float64Array;
     rot: number;
-    sound: string;
-    soundVolume: number;
+    // @ts-ignore
+    sound: string = null;
+    soundVolume: number = 0.0;
 
     constructor() {
         super();
@@ -533,10 +558,10 @@ export class Particle extends Thing {
         this.life = 0;
         this.dead = false;
         this.z = Math.random();
-        this.pos = v2.create(null);
-        this.vel = v2.create(null);
-        this._pos = v2.create(null);
-        this._pos2 = v2.create(null);
+        this.pos = v2.create_r();
+        this.vel = v2.create_r();
+        this._pos = v2.create_r();
+        this._pos2 = v2.create_r();
         this.rot = 0;
         if (this.sound && Sim.Instance.sound) {
             //playSound(this.sound, this.soundVolume);
@@ -547,29 +572,31 @@ export class Particle extends Thing {
         if (this.dead) {
             return;
         }
-        v2.add(this.pos, this.vel, null);
+        v2.add_r(this.pos, this.vel);
         this.life += 1;
         if (this.life > this.maxLife) {
             this.dead = true;
         }
-    };
+    }
 
     draw() {
         if (this.dead) {
             return;
         }
         baseAtlas.drawSprite(this.image, this.pos, this.size, this.rot, this.color);
-    };
+    }
 }
 
 export class Debree extends Particle {
-    vrot: number;
-    _rot: number;
-    image: string = null;
-    maxLife = 16 * 5;
-    radius = 2;
-    size = [1, 1];
-    _rot2: number;
+    image: string = "img/debree/bigdebree04.png";
+    maxLife: number = 16 * 5;
+    radius: number = 2;
+    size: [number, number] = [1, 1];
+
+    // These are hopefully set in the constructor
+    _rot2!: number;
+    vrot!: number;
+    _rot!: number;
 
     constructor() {
         super();
@@ -589,26 +616,28 @@ export class Debree extends Particle {
     };
 }
 
-export class Rock {
-    flag: boolean;
-    torq: number;
-    image = "img/unitBar/pip1.png";
-    size = new Float64Array([1, 1]);
+export class Rock extends Thing {
+    flag: boolean = false;
+    image: string = "img/unitBar/pip1.png";
+    size: Float64Array = new Float64Array([1, 1]);
     "static" = true;
     maxHP = 1000;
-    color: any;
+    color: [number, number, number, number];
     id: number;
     dead: boolean;
     hp: number;
     pos: Float64Array;
     vel: Float64Array;
     rot: number;
-    z: number;
-    player: Player;
     commandPoint: boolean = false;
     bullet: boolean = false;
 
+    z: number = 0.01;
+    //player: Player;
+    torq: number = 0;
+
     constructor() {
+        super();
         this.image = "img/rocks/srock01.png";
         this.color = Sim.Instance.theme.fillColor;
         this.id = Sim.Instance.nid();
@@ -646,8 +675,8 @@ export class CommandPoint extends Thing {
     z: number;
     side: string;
     pos: Float64Array;
-    id: any;
-    color: number[];
+    id: number;
+    color: [number, number, number, number];
     rot: number;
     vel: Float64Array;
     hp: number;
@@ -704,8 +733,8 @@ export class CommandPoint extends Thing {
                 if (Sim.Instance.things[thing_id].unit && Sim.Instance.things[thing_id].canCapture) {
                     if (v2.distance(this.pos, Sim.Instance.things[thing_id].pos) < this.radius) {
                         sides[Sim.Instance.things[thing_id].side] = true;
-                        if (Sim.Instance.players[Sim.Instance.things[thing_id].owner.id]) {
-                            playerOnPoint.push(Sim.Instance.players[Sim.Instance.things[thing_id].owner.id]);
+                        if (Sim.Instance.players[Sim.Instance.things[thing_id].owner]) {
+                            playerOnPoint.push(Sim.Instance.players[Sim.Instance.things[thing_id].owner]);
                         }
                     }
                 }
@@ -810,7 +839,7 @@ export class SpawnPoint extends Thing {
     vel: Float64Array;
     rot: number;
     hp: number;
-    color: number[];
+    color: [number, number, number, number];
     commandPoint: boolean = false;
     bullet: boolean = false;
 
@@ -851,8 +880,7 @@ export class SpawnPoint extends Thing {
     };
 }
 
-import {Sim} from "./6src_sim";
 import {v2} from "./4src_maths";
 import {Unit} from "./95src_unit";
-import {actionMixer, baseAtlas, battleMode, commander, intp, ui} from "./0dummy";
+import {actionMixer, baseAtlas, battleMode, commander, intp, ui} from "./dummy";
 import {CollisionUtils} from "./991src_collision";

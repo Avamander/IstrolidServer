@@ -1,6 +1,7 @@
 import {Sim} from "./6src_sim";
 import {v2} from "./4src_maths";
 import {Thing} from "./94src_things";
+import {Unit} from "./95src_unit";
 
 export class HSpace {
     private PRIME: number = 677;
@@ -33,18 +34,17 @@ export class HSpace {
         return Math.floor(pos[0] / this.resolution) + Math.floor(pos[1] / this.resolution) * this.PRIME;
     };
 
-    insert(thing: { pos?: Float64Array }) {
+    insert(thing: { pos: Float64Array }) {
         let posKey = this.key(thing.pos);
         let things = this.hash.get(posKey);
         if (things == null) {
-            // @ts-ignore
-            return v2.set(posKey, [thing]);
+            this.hash.set(posKey, [thing]);
         } else {
-            return things.push(thing);
+            things.push(thing);
         }
     };
 
-    findInRange(point: number[] | Float64Array, range: number, cb: (thing: Thing) => boolean) {
+    findInRange(point: number[] | Float64Array, range: number, cb: (thing: Thing | Unit) => boolean) {
         let d, k, len, posKey, px, py, rx, ry, things, x, y;
         Sim.Instance.timeStart("findInRange");
         d = Math.floor(range / this.resolution) + 1;

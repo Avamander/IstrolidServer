@@ -1906,7 +1906,7 @@ define("istrolid_presskannukovh/1src_mtwist", ["require", "exports"], function (
     }
     exports.MTwist = MTwist;
 });
-define("istrolid_presskannukovh/993src_utils", ["require", "exports", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/0dummy"], function (require, exports, _6src_sim_1, _0dummy_1) {
+define("istrolid_presskannukovh/993src_utils", ["require", "exports", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/dummy"], function (require, exports, _6src_sim_1, _0dummy_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Utils {
@@ -2742,7 +2742,7 @@ define("istrolid_presskannukovh/991src_collision", ["require", "exports", "istro
     }
     exports.CollisionUtils = CollisionUtils;
 });
-define("istrolid_presskannukovh/96src_parts", ["require", "exports", "istrolid_presskannukovh/94src_things", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/0dummy", "istrolid_presskannukovh/991src_collision"], function (require, exports, _94src_things_1, _95src_unit_1, _4src_maths_2, _6src_sim_3, _0dummy_2, _991src_collision_1) {
+define("istrolid_presskannukovh/96src_parts", ["require", "exports", "istrolid_presskannukovh/94src_things", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/dummy", "istrolid_presskannukovh/991src_collision"], function (require, exports, _94src_things_1, _95src_unit_1, _4src_maths_2, _6src_sim_3, _0dummy_2, _991src_collision_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Mount360 extends _95src_unit_1.Part {
@@ -7563,7 +7563,7 @@ define("istrolid_presskannukovh/96src_parts", ["require", "exports", "istrolid_p
     }
     exports.ModProjector = ModProjector;
 });
-define("istrolid_presskannukovh/95src_unit", ["require", "exports", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/94src_things", "istrolid_presskannukovh/993src_utils", "server", "istrolid_presskannukovh/992src_colors", "istrolid_presskannukovh/96src_parts", "istrolid_presskannukovh/0dummy", "istrolid_presskannukovh/991src_collision"], function (require, exports, _4src_maths_3, _6src_sim_4, _94src_things_2, _993src_utils_2, server_1, _992src_colors_1, _96src_parts_1, _0dummy_3, _991src_collision_2) {
+define("istrolid_presskannukovh/95src_unit", ["require", "exports", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/94src_things", "istrolid_presskannukovh/993src_utils", "server", "istrolid_presskannukovh/992src_colors", "istrolid_presskannukovh/96src_parts", "istrolid_presskannukovh/dummy", "istrolid_presskannukovh/991src_collision"], function (require, exports, _4src_maths_3, _6src_sim_4, _94src_things_2, _993src_utils_2, server_1, _992src_colors_1, _96src_parts_1, _0dummy_3, _991src_collision_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class UnitUtils {
@@ -9433,7 +9433,7 @@ define("istrolid_presskannukovh/95src_unit", ["require", "exports", "istrolid_pr
     }
     exports.Turret = Turret;
 });
-define("istrolid_presskannukovh/5src_maps", ["require", "exports", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/1src_mtwist", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/94src_things", "istrolid_presskannukovh/95src_unit", "server"], function (require, exports, _4src_maths_4, _1src_mtwist_1, _6src_sim_5, _94src_things_3, _95src_unit_2, server_2) {
+define("istrolid_presskannukovh/5src_maps", ["require", "exports", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/mtwist", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/94src_things", "istrolid_presskannukovh/95src_unit", "server"], function (require, exports, _4src_maths_4, _1src_mtwist_1, _6src_sim_5, _94src_things_3, _95src_unit_2, server_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class IstrolidMap {
@@ -10177,7 +10177,7 @@ define("istrolid_presskannukovh/2src_hspace", ["require", "exports", "istrolid_p
     }
     exports.HSpace = HSpace;
 });
-define("istrolid_presskannukovh/99src_grid", ["require", "exports", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/0dummy"], function (require, exports, _6src_sim_7, _95src_unit_3, _0dummy_4) {
+define("istrolid_presskannukovh/99src_grid", ["require", "exports", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/dummy"], function (require, exports, _6src_sim_7, _95src_unit_3, _0dummy_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Grid {
@@ -10573,7 +10573,7 @@ define("istrolid_presskannukovh/99src_grid", ["require", "exports", "istrolid_pr
     Grid.SIZE = 20;
     exports.Grid = Grid;
 });
-define("istrolid_presskannukovh/6src_sim", ["require", "exports", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/3src_protocol", "istrolid_presskannukovh/994src_zjson", "istrolid_presskannukovh/992src_colors", "istrolid_presskannukovh/2src_hspace", "istrolid_presskannukovh/993src_utils", "istrolid_presskannukovh/94src_things", "server", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/99src_grid"], function (require, exports, _4src_maths_6, _3src_protocol_1, _994src_zjson_1, _992src_colors_2, _2src_hspace_1, _993src_utils_3, _94src_things_4, server_3, _95src_unit_4, _99src_grid_1) {
+define("istrolid_presskannukovh/6src_sim", ["require", "exports", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/protocol", "istrolid_presskannukovh/994src_zjson", "istrolid_presskannukovh/992src_colors", "istrolid_presskannukovh/hspace", "istrolid_presskannukovh/993src_utils", "istrolid_presskannukovh/94src_things", "server", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/99src_grid"], function (require, exports, _4src_maths_6, _3src_protocol_1, _994src_zjson_1, _992src_colors_2, _2src_hspace_1, _993src_utils_3, _94src_things_4, server_3, _95src_unit_4, _99src_grid_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Sim {
@@ -12247,7 +12247,7 @@ define("istrolid_presskannukovh/6src_sim", ["require", "exports", "istrolid_pres
     Sim.defaultBattleType = "3v3";
     exports.Sim = Sim;
 });
-define("istrolid_presskannukovh/94src_things", ["require", "exports", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/0dummy", "istrolid_presskannukovh/991src_collision"], function (require, exports, _6src_sim_8, _4src_maths_7, _95src_unit_5, _0dummy_5, _991src_collision_3) {
+define("istrolid_presskannukovh/94src_things", ["require", "exports", "istrolid_presskannukovh/6src_sim", "istrolid_presskannukovh/4src_maths", "istrolid_presskannukovh/95src_unit", "istrolid_presskannukovh/dummy", "istrolid_presskannukovh/991src_collision"], function (require, exports, _6src_sim_8, _4src_maths_7, _95src_unit_5, _0dummy_5, _991src_collision_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class ThingUtil {

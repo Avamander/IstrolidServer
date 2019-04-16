@@ -2,12 +2,11 @@ import {v2} from "./4src_maths";
 
 export class CollisionUtils {
     static furthestPoint(points: Float64Array[], d: Float64Array): Float64Array {
-        let i, len, maxProduct;
         let p: Float64Array;
         let product;
-        maxProduct = -2e308;
-        let rst: Float64Array = null;
-        for (i = 0, len = points.length; i < len; i++) {
+        let maxProduct = -2e308;
+        let rst: Float64Array;
+        for (let i = 0; i < points.length; i++) {
             p = points[i];
             product = v2.dot(d, p);
             if (product > maxProduct) {
@@ -15,6 +14,7 @@ export class CollisionUtils {
                 maxProduct = product;
             }
         }
+        // @ts-ignore
         return rst;
     };
 
@@ -28,7 +28,7 @@ export class CollisionUtils {
         let l = v2.dot(ap, ab);
         let t = l / d;
         t = Math.min(Math.max(t, 0), 1);
-        return v2.add(v2.scale(ab, t, null), a, null);
+        return v2.add_r(v2.scale_r(ab, t), a);
     };
 
     static closestPointToOrigin(a: Float64Array, b: Float64Array) {
@@ -45,7 +45,7 @@ export class CollisionUtils {
 
     static closestDistance(points1: Float64Array[], points2: Float64Array[]) {
         let _p, a, b, c, d, da, db, p;
-        d = v2.create(null);
+        d = v2.create_r();
         a = CollisionUtils.support(points1, points2, d);
         v2.neg(d, d);
         b = CollisionUtils.support(points1, points2, d);

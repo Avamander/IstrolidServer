@@ -73,8 +73,10 @@ export class UnitUtils {
         let spec: { parts: { "type": string; }[]; };
         let cost = 0;
         if (!Array.isArray(input_spec)) {
-            // @ ts-ignore
             spec = UnitUtils.fromShort(input_spec);
+        } else {
+            // @ts-ignore
+            spec = input_spec;
         }
 
         for (j = 0, len = spec.parts.length; j < len; j++) {

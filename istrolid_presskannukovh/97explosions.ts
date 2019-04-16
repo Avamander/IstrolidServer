@@ -1,21 +1,20 @@
-import {actionMixer, baseAtlas, intp} from "./0dummy";
+import {actionMixer, baseAtlas, intp} from "./dummy";
 import {v2} from "./4src_maths";
 import {Sim} from "./6src_sim";
-import {Unit} from "./95src_unit";
 import {CollisionUtils} from "./991src_collision";
-import {Debree, Particle, Player} from "./94src_things";
+import {Debree, Particle, Thing} from "./94src_things";
 
 export namespace Explosions {
     export class Explosion extends Particle {
-        image = "img/unitBar/pip1.png";
-        maxLife = 30;
-        radius = 2;
-        sound = "sounds/weapons/thud2.wav";
-        soundVolume = .1;
+        image: string = "img/unitBar/pip1.png";
+        maxLife: number = 30;
+        radius: number = 2;
+        sound: string = "sounds/weapons/thud2.wav";
+        soundVolume: number = .1;
         dead: boolean = false;
-        life: number;
-        color: number[];
-        rot: number;
+        life: number = 0;
+        color: [number, number, number, number] = [255, 255, 255, 255];
+        rot: number = 0;
         damaged: boolean = false;
 
         constructor() {
@@ -42,9 +41,9 @@ export namespace Explosions {
         hitImage: string;
         rot: number;
         frame: number;
-        life: number;
+        life: number = 0;
         dead: any;
-        color: number[];
+        color: [number, number, number, number] = [255, 255, 255, 255];
 
         constructor() {
             super();
@@ -73,11 +72,11 @@ export namespace Explosions {
 
     export class SmallHitExplosion extends Explosion {
         sound = "sounds/weapons/thud4.wav";
-        dead: boolean;
+        dead: boolean = false;
         frame: number = 0;
         hitImage: string;
         rot: number = Math.random() * Math.PI * 2;
-        color: number[];
+        color: [number, number, number, number] = [255, 255, 255, 255];
 
         constructor() {
             super();
@@ -102,7 +101,7 @@ export namespace Explosions {
         image: string = "img/fire02.png";
         maxLife: number = 30;
         frame: number = 0;
-        hitImage: string;
+        hitImage: string = "img/fire02.png";
 
         constructor() {
             super();
@@ -141,8 +140,8 @@ export namespace Explosions {
         radius = 2;
         sound = "sounds/weapons/explode1.wav";
         soundVolume = .1;
-        life: number;
-        dead: boolean;
+        life: number = 0;
+        dead: boolean = false;
 
         constructor() {
             super();
@@ -161,8 +160,6 @@ export namespace Explosions {
     }
 
     export class AoeExplosion extends Explosion {
-        owner: Player;
-        side: string;
         image = "img/point02.png";
         maxLife = 10;
         radius = 2;
@@ -184,25 +181,32 @@ export namespace Explosions {
                 this.damaged = true;
                 return Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(
                     this.pos,
-                    this.aoe + Sim.Instance.maxRadius[Sim.otherSide(this.side)], (function (_this) {
-                        return function (unit: Unit) {
-                            if (unit.owner === _this.owner) {
+                    this.aoe + Sim.Instance.maxRadius[Sim.otherSide(this.side)],
+                    // @ts-ignore because unitSpaces contains Units
+                    (function (_this) {
+                        // @ts-ignore because unitSpaces
+                        return function (thing: Thing) {
+                            if (!thing.unit){
                                 return false;
                             }
-                            let distance = Math.max(CollisionUtils.closestDistance(unit.getBoundPoints(), [_this.pos]), 0);
+
+                            if (thing.owner === _this.owner) {
+                                return false;
+                            }
+                            let distance = Math.max(CollisionUtils.closestDistance(thing.getBoundPoints(), [_this.pos]), 0);
                             if (distance < _this.aoe) {
                                 let fallOff = 1 - distance / _this.aoe;
-                                if (typeof unit.applyDamage === "function") {
-                                    unit.applyDamage(_this.damage * fallOff, _this);
+                                if (typeof thing.applyDamage === "function") {
+                                    thing.applyDamage(_this.damage * fallOff, _this);
                                 }
                                 if (_this.energyDamage > 1) {
-                                    if (typeof unit.applyEnergyDamage === "function") {
-                                        unit.applyEnergyDamage(_this.energyDamage * fallOff);
+                                    if (typeof thing.applyEnergyDamage === "function") {
+                                        thing.applyEnergyDamage(_this.energyDamage * fallOff);
                                     }
                                 }
                                 if (_this.burnAmount > 1) {
-                                    if (typeof unit.applyBurnAmount === "function") {
-                                        unit.applyBurnAmount(_this.burnAmount * fallOff);
+                                    if (typeof thing.applyBurnAmount === "function") {
+                                        thing.applyBurnAmount(_this.burnAmount * fallOff);
                                     }
                                 }
                             }
@@ -210,7 +214,7 @@ export namespace Explosions {
                         };
                     })(this));
             }
-        };
+        }
 
         draw() {
             if (this.dead) {
@@ -220,38 +224,39 @@ export namespace Explosions {
             let s = this.aoe / 512 * this.radius;
             this.color[3] = (1 - fade) * 50;
             return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
-        };
+        }
     }
 
     export class FlackExplosion extends AoeExplosion {
-        maxLife = 10;
-        sound: string = null;
+        maxLife: number = 10;
+        image: string = "img/fire02.png";
+        radius: number = 2;
+        sound: string = "sounds/weapons/thud1.wav";
+        soundVolume: number = .1;
 
         constructor() {
             super();
         }
 
-        draw() {
-            let color, fade, s;
-            super.draw.call(this);
+        draw () {
             if (this.dead) {
                 return;
             }
-            fade = this.life / this.maxLife;
-            s = this.aoe / 80;
-            color = [255, 255, 255, (1 - Math.pow(fade, 2)) * 180];
-            return baseAtlas.drawSprite("parts/fireFlackExp1.png", this.pos, [s, s], this.rot, color);
+            let fade = this.life / this.maxLife;
+            let s = this.radius / 2;
+            this.color[3] = (1 - Math.pow(fade, 2)) * 80;
+            return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
         };
     }
 
     export class FrameExplosion extends Explosion {
-        image = "img/fx/fire1/f#.png";
-        nFrames = 8;
-        maxLife = 16;
-        radius = 2;
-        sound = "sounds/weapons/explode1.wav";
-        soundVolume = .1;
-        loopFrames: boolean;
+        image: string = "img/fx/fire1/f#.png";
+        nFrames: number = 8;
+        maxLife: number = 16;
+        radius: number = 2;
+        sound: string = "sounds/weapons/explode1.wav";
+        soundVolume: number = .1;
+        loopFrames: boolean = false;
 
         constructor() {
             super();
@@ -261,20 +266,22 @@ export namespace Explosions {
             if (this.dead) {
                 return;
             }
-            //let fade = this.life / this.maxLife; // TODO:
+            let fade = this.life / this.maxLife;
             let s = 3;
             this.color = [255, 255, 255, 210];
             if (this.loopFrames) {
                 let frame = this.life % this.nFrames + 1;
                 let intFrame = Math.floor(frame);
-                //let image = this.image.replace("#", intFrame); //TODO:
+                // @ts-ignore
+                let image = this.image.replace("#", intFrame);
                 return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
             } else {
                 let frame = (this.life / this.maxLife) * this.nFrames + 1;
                 let intFrame = Math.floor(frame);
                 if (intFrame < this.nFrames) {
-                    //let tweenFrame = frame - intFrame; // TODO:
-                    //let image = this.image.replace("#", intFrame); //TODO:
+                    let tweenFrame = frame - intFrame;
+                    // @ts-ignore
+                    let image = this.image.replace("#", intFrame);
                     return baseAtlas.drawSprite(this.image, this.pos, [s, s], this.rot, this.color);
                 }
             }
@@ -302,7 +309,7 @@ export namespace Explosions {
                     ex.pos = new Float64Array([0, 0]);
                     ex.vel = new Float64Array([0, 0]);
                     v2.set(this.pos, ex.pos);
-                    v2.scale(v2.random(ex.vel), Math.random() * 6, null);
+                    v2.scale_r(v2.random(ex.vel), Math.random() * 6);
                     ex.rot = (Math.random() - 0.5) * Math.PI * 2;
                     ex.vrot = (Math.random() - 0.5);
                     ex.maxLife = 16;

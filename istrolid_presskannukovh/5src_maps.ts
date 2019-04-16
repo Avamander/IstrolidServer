@@ -1,17 +1,20 @@
 import {v2} from "./4src_maths";
-import {MTwist} from "./1src_mtwist";
+import {MTwist} from "./mtwist";
 import {Sim} from "./6src_sim";
 import {CommandPoint, SpawnPoint, Thing} from "./94src_things";
 import {Unit} from "./95src_unit";
-import {Server} from "../server";
+import {IstrolidServer} from "../server";
 
 export class IstrolidMap {
-    rockColor: number[];
-    spotColor: number[];
-    fillColor: number[];
+    rockColor: [number, number, number, number];
+    spotColor: [number, number, number, number];
+    fillColor: [number, number, number, number];
     makeRocks: boolean;
 
-    constructor(rockColor: number[], spotColor: number[], fillColor: number[], makeRocks: boolean) {
+    constructor(rockColor: [number, number, number, number],
+                spotColor: [number, number, number, number],
+                fillColor: [number, number, number, number],
+                makeRocks: boolean) {
         this.rockColor = rockColor;
         this.spotColor = spotColor;
         this.fillColor = fillColor;
@@ -220,7 +223,7 @@ export class Mapping {
     static randomVector(v: Float64Array) {
         v[0] = -0.5 + v2.random(new Float64Array([0, 0]))[0];
         v[1] = -0.5 + v2.random(new Float64Array([0, 0]))[1];
-        return v2.norm(new Float64Array(v), null);
+        return v2.norm_r(new Float64Array(v));
     };
 
     static cp(r: number, th: number, side: string) {
@@ -294,7 +297,7 @@ export class Mapping {
             case "FFA":
                 //genFFA();
                 //break;
-                Server.Instance.say("Other gamemodes are currently not migrated");
+                IstrolidServer.say("Other gamemodes are currently not migrated");
                 break;
             default:
                 Mapping.genSymmetrical();
@@ -340,12 +343,12 @@ export class Mapping {
             if (i === 0) {
                 v2.set(alpha_spawn.pos, commandPoint.pos);
                 let from_center = v2.mag(commandPoint.pos);
-                v2.scale(commandPoint.pos, (from_center - 1500) / from_center, null);
+                v2.scale_r(commandPoint.pos, (from_center - 1500) / from_center);
             } else {
                 for (let o = 0; o < 10; o++) {
                     let tooClose = false;
                     Mapping.randomVector(commandPoint.pos);
-                    v2.scale(commandPoint.pos, (300 + this.mr.random() * 2000) * Sim.Instance.mapScale, null);
+                    v2.scale_r(commandPoint.pos, (300 + this.mr.random() * 2000) * Sim.Instance.mapScale);
 
                     for (let id in Sim.Instance.things) {
                         let thing: Thing = Sim.Instance.things[id];
@@ -385,7 +388,7 @@ export class Mapping {
             u.pos = v2.create(thing.pos);
             u.side = thing.side;
             u.rot = v2.angle(u.pos) + Math.PI;
-            Sim.Instance.things[u.id] = u;
+            Sim.Instance.things[u.id] = (u as Thing);
             results.push((function () {
                 let results1 = [];
                 for (let i = 0; i < 6; i++) {
@@ -400,7 +403,7 @@ export class Mapping {
                     u.pos[1] += Math.cos(i / 3 * Math.PI) * thing.radius * .8;
                     u.side = thing.side;
                     u.rot = Math.PI / 2;
-                    results1.push(Sim.Instance.things[u.id] = u);
+                    results1.push(Sim.Instance.things[u.id] = (u as Thing));
                 }
                 return results1;
             })());

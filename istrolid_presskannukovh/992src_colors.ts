@@ -106,7 +106,7 @@ export class Colors {
         "BFBFBF"
     ];
 
-    nice: number[][];
+    nice: number[][] = [];
 
     constructor() {
         for (let j = 0; j < Colors.niceHex.length; j++) {
@@ -114,9 +114,9 @@ export class Colors {
         }
     }
 
-    static validate(a: number[]) {
-        let b, i, j, ref;
-        b = [0, 0, 0, 0];
+    static validate(a: [number, number, number, number]): [number, number, number, number] {
+        let i, j, ref;
+        let b: [number, number, number, number] = [0, 0, 0, 0];
         for (i = j = 0; j < 4; i = ++j) {
             if (Number.isInteger(a[i]) && (0 <= (ref = a[i]) && ref < 256)) {
                 b[i] = Math.floor(a[i]);
@@ -205,6 +205,7 @@ export class Colors {
                 case b:
                     h = (r - g) / d + 4;
             }
+            // @ts-ignore It's probably not going to be undefined
             h /= 6;
         }
         return [h, s, l, a];

@@ -1,72 +1,85 @@
 import {v2} from "./4src_maths"
 import {Unit} from "./95src_unit";
 import {Player, Thing, Trail} from "./94src_things";
-import {baseAtlas, intp} from "./0dummy";
-import {Server} from "../server";
+import {baseAtlas, intp} from "./dummy";
+import {IstrolidServer} from "../server";
 import {Sim} from "./6src_sim";
 import {CollisionUtils} from "./991src_collision";
 
 export class Part {
-    genEnergy: number;
-    useEnergy: number;
-    thrust: number;
-    working: boolean;
-    fireEnergy: number;
+    turret!: this;
+
+    net!: {
+        targetId: number;
+        working: boolean;
+        range: number;
+    };
+
+    pos: Float64Array;
+    worldPos: Float64Array;
+
+    owner!: Player;
+
+    unit!: Unit;
+    target!: Unit;
+
+    size!: number[];
+
+    scale!: number;
+    partNum!: number;
+    arc!: number;
+    range: number = 0;
+    dps: number = 0;
+    genEnergy: number = 0;
+    useEnergy: number = 0;
+    thrust: number = 0;
+    fireEnergy: number = 0;
     hp: number = 10;
     cost: number = 10;
     mass: number = 40;
     rot: number = 0;
     dir: number = 0;
-    canRotate: boolean = true;
-    flip: boolean = true;
     opacity: number = 1;
-    size: number[];
-    owner: Player;
-    unit: Unit;
-    scale: number;
-    decal: boolean;
-    ghostCopy: boolean;
+
+    bulletCls: string = BattleCannonBullet.name;
+    tab: string = "decals";
+    image: string = "decals/Symbol15.png";
+    orignalImage: string = "decals/Symbol15.png";
+    name: string = "";
+    dlc: string | null = null;
+
     stripe: boolean = false;
     northWest: boolean = false;
-    partNum: number;
-    image: string;
-    canShowDamage: boolean;
-    gimble: boolean;
-    orignalImage: string;
-    pos: Float64Array;
-    worldPos: Float64Array;
-    disabled: boolean;
-    locked: boolean;
-    overPaint: boolean;
-    painted: boolean;
-    paintable: boolean;
-    cantPaint: boolean;
+    disabled: boolean = false;
+    locked: boolean = false;
+    overPaint: boolean = false;
+    painted: boolean = false;
+    paintable: boolean = true;
+    cantPaint: boolean = false;
     mount: boolean = false;
     overlap: boolean = false;
-    solid: boolean;
-    bad: boolean;
-    struct: boolean;
-    exhaust: boolean;
-    noEffect: boolean;
-    noTurret: boolean;
-    fill: boolean;
-    name: string;
-    turret: this;
-    arc: number;
-    doesShapedDamage: boolean;
-    dlc: string = null;
+    solid: boolean = false;
+    bad: boolean = false;
+    struct: boolean = false;
+    exhaust: boolean = false;
+    noEffect: boolean = false;
+    noTurret: boolean = false;
+    fill: boolean = false;
+    doesShapedDamage: boolean = false;
     disable: boolean = false;
-    attach: boolean;
-    net: { targetId: number; working: boolean; range: number; };
-    weapon: boolean;
-    range: number;
-    target: Unit;
-    bulletCls: string;
-    dps: number;
+    attach: boolean = false;
+    weapon: boolean = false;
+    canRotate: boolean = true;
+    flip: boolean = true;
+    decal: boolean = false;
+    ghostCopy: boolean = false;
+    canShowDamage: boolean = false;
+    gimble: boolean = false;
+    working: boolean = true;
 
     constructor() {
-        this.pos = v2.create(null);
-        this.worldPos = v2.create(null);
+        this.pos = v2.create_r();
+        this.worldPos = v2.create_r();
         this.orignalImage = this.image;
     }
 
@@ -96,9 +109,9 @@ export class Part {
 
     computeWorldPos() {
         v2.set(this.pos, this.worldPos);
-        v2.sub(this.worldPos, this.unit.center, null);
+        v2.sub_r(this.worldPos, this.unit.center);
         v2.rotate(this.worldPos, Math.PI + this.unit.rot, this.worldPos);
-        v2.add(this.worldPos, this.unit.pos, null);
+        v2.add_r(this.worldPos, this.unit.pos);
     }
 
     draw() {
@@ -164,17 +177,17 @@ export class Engine extends Part {
     trailSize = .1;
     trailTime = 500;
     canRotate = false;
-    trail: Trail;
+    trail!: Trail;
 
     constructor() {
         super();
-        if (typeof Server.Instance === "undefined" || Server.Instance === null) {
+        if (typeof IstrolidServer.Instance === "undefined" || IstrolidServer.Instance === null) {
             this.trail = new Trail(this.trailSize, this.trailTime);
         }
     }
 
     preDraw() {
-        this.trail.draw(this.worldPos, this.unit);
+        this.trail.draw(this.worldPos, (this.unit as Thing));
     }
 }
 
@@ -202,11 +215,48 @@ export class TorpTurret extends Part {
 export class Turret extends Part {
     tab: string = "weapons";
     image: string = "turret01.png";
+    // @ts-ignore
+    bulletCls: string;
+    orignalImage: string;
+
     gimble: boolean = true;
     weapon: boolean = true;
     canRotate: boolean = false;
-    target: Unit;
-    bulletCls: string;
+    exactRange: boolean = false;
+    hitsMissiles: boolean = false;
+    instant: boolean = false;
+    working: boolean = true;
+    onlyInRange: boolean = false;
+    noOverkill = false;
+
+    // @ts-ignore
+    target: Thing;
+    unit!: Unit;
+
+    pos: Float64Array;
+    worldPos: Float64Array;
+
+    baseStats: {
+        [x: string]: any;
+        range?: any;
+        damage?: any;
+        energyDamage?: any;
+        bulletSpeed?: any;
+        reloadTime?: any;
+        shotEnergy?: any;
+    };
+
+    dps: number = 0;
+    fireEnergy: number = 0;
+    shotEnergy: number = 0;
+    turretNum: number = 0;
+    targetId: number = 0;
+    aoe: number = 0;
+    burnAmount: number = 0;
+    reload: number;
+    fireTimer: number;
+    _rot: number;
+    _rot2: number;
     range: number = 500;
     damage: number = 0;
     energyDamage: number = 0;
@@ -214,9 +264,7 @@ export class Turret extends Part {
     reloadTime: number = 10;
     overshoot: number = 0.3;
     minRange: number = -1000;
-    instant: boolean = false;
     accuracy: number = 0;
-    exactRange: boolean = false;
     arc: number = 0;
     weaponRange: number = 1;
     weaponRangeFlat: number = 0;
@@ -225,26 +273,6 @@ export class Turret extends Part {
     weaponSpeed: number = 1;
     weaponReload: number = 1;
     weaponEnergy: number = 1;
-    noOverkill = false;
-    reload: number;
-    fireTimer: number;
-    pos: Float64Array;
-    worldPos: Float64Array;
-    orignalImage: string;
-    baseStats: { [x: string]: any; range?: any; damage?: any; energyDamage?: any; bulletSpeed?: any; reloadTime?: any; shotEnergy?: any; };
-    _rot: number;
-    _rot2: number;
-    unit: Unit;
-    working: boolean;
-    dps: number;
-    fireEnergy: number;
-    shotEnergy: number;
-    hitsMissiles: boolean = false;
-    onlyInRange: boolean;
-    turretNum: number;
-    targetId: number;
-    aoe: number;
-    burnAmount: number;
 
     constructor() {
         super();
@@ -252,8 +280,8 @@ export class Turret extends Part {
         this.reload = 0;
         this.rot = 0;
         this.fireTimer = 0;
-        this.pos = v2.create(null);
-        this.worldPos = v2.create(null);
+        this.pos = v2.create_r();
+        this.worldPos = v2.create_r();
         this.orignalImage = this.image;
         this.baseStats = {};
         this._rot = 0;
@@ -265,7 +293,8 @@ export class Turret extends Part {
         for (let j = 0; j < this.unit.parts.length; j++) {
             part = this.unit.parts[j];
             if (part.mount && v2.distance(part.pos, this.pos) < .1) {
-                part.turret = this;
+                // @ts-ignore because this is Part
+                part.turret = (this as Part);
                 this.arc = part.arc;
                 part.initTurret(this);
             }
@@ -339,7 +368,7 @@ export class Turret extends Part {
             if (this.unit.target !== undefined && this.unit.target !== null && this.canShoot(this.unit.target)) {
                 this.target = this.unit.target;
                 return this.fire();
-            } else if (this.target !== undefined && this.target !== null && this.canShoot(this.target)) {
+            } else if (this.target !== undefined && this.target !== null && this.canShoot((this.target as Thing))) {
                 return this.fire();
             } else {
                 return Sim.Instance.timeIt("findTarget", (function (_this) {
@@ -496,9 +525,10 @@ export class Turret extends Part {
     findTarget() {
         let m, u;
         if (this.unit.target && !this.hitsMissiles) {
-            this.target = this.unit.target;
+            this.target = (this.unit.target as Unit);
             return;
         }
+        // @ts-ignore
         this.target = null;
         if (this.hitsMissiles) {
             for (let j = 0; j < this.unit.closestEnemyBullets.length; j++) {
@@ -516,8 +546,8 @@ export class Turret extends Part {
 
         for (let l = 0; l < this.unit.closestEnemies.length; l++) {
             u = this.unit.closestEnemies[l];
-            if (this.canShoot(u)) {
-                this.target = u;
+            if (this.canShoot((u as Thing))) {
+                this.target = (u as Thing);
                 break;
             }
         }
@@ -560,11 +590,11 @@ export class Turret extends Part {
         particle.burnAmount = this.burnAmount;
         v2.set(this.worldPos, particle.pos);
         v2.pointTo(particle.vel, this.rot);
-        v2.scale(particle.vel, particle.speed, null);
+        v2.scale_r(particle.vel, particle.speed);
         particle.rot = this.rot;
         if (this.instant) {
             particle.targetPos = v2.create(particle.target.pos);
-            if (this.target.maxLife) {
+            if (!this.target.unit) {
                 this.target.life = this.target.maxLife;
                 this.target.explode = false;
                 exp = new HitExplosion();
@@ -575,18 +605,19 @@ export class Turret extends Part {
                 exp.radius = .5;
                 Sim.Instance.things[exp.id] = exp;
             } else {
-                this.target.applyDamage(particle.damage, this.unit);
+                this.target.applyDamage(particle.damage, (this.unit as Thing));
             }
         } else if (this.exactRange) {
             particle.maxLife = Math.floor(distance / particle.speed);
-            particle.hitPos = v2.create(null);
-            v2.add(particle.hitPos, particle.vel, null);
-            v2.scale(particle.hitPos, distance / particle.speed, null);
-            v2.add(particle.hitPos, particle.pos, null);
+            particle.hitPos = v2.create_r();
+            v2.add_r(particle.hitPos, particle.vel);
+            v2.scale_r(particle.hitPos, distance / particle.speed);
+            v2.add_r(particle.hitPos, particle.pos);
         } else {
             particle.maxLife = Math.floor(this.range / particle.speed * (1 + this.overshoot));
         }
-        return typeof particle.postFire === "function" ? particle.postFire() : void 0;
+
+        particle.postFire();
     }
 }
 
@@ -594,3 +625,4 @@ import {Bullets} from "./96bullets";
 import TorpBullet = Bullets.TorpBullet;
 import {Explosions} from "./97explosions";
 import HitExplosion = Explosions.HitExplosion;
+import BattleCannonBullet = Bullets.BattleCannonBullet;

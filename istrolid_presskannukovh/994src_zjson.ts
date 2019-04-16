@@ -14,7 +14,7 @@ export class ZJson {
     dv: DataView;
     num2str: Map<number, string>;
     str2num: Map<string, number>;
-    i: number;
+    i: number = 0;
     MAX8: number = 256;
     MAX16: number = 256 * 256;
     MAX32: number = 256 * 256 * 256 * 256;
@@ -45,15 +45,14 @@ export class ZJson {
     UNDEFINED_MARK = 0x53;
 
     constructor(strTable: string[]) {
-        if (strTable == null) {
-            strTable = null;
-        }
         this.buffSize = 1024 * 1024;
         this.buffer = new ArrayBuffer(this.buffSize);
         this.dv = new DataView(this.buffer);
         this.str2num = new Map();
         this.num2str = new Map();
-        if (strTable) {
+        if (!strTable) {
+            console.log("No strTable specified");
+        } else {
             for (let i = 0; i < strTable.length; i++) {
                 this.str2num.set(strTable[i], i);
                 this.num2str.set(i, strTable[i]);
@@ -161,18 +160,20 @@ export class ZJson {
         return dv;
     };
 
-    dumpNode(json: string | number | boolean | any[]): any[] | number {
+    dumpNode(json: string | number | boolean | any[]): any[] | number | null {
         let e, i, j, k, l, len, length, num, ref, results, results1, results2, v;
         if (json === null) {
             this.dv.setUint8(this.i, this.NULL_MARK);
             this.i += 1;
-            return;
+            return null;
         }
+
         if (json === void 0) {
             this.dv.setUint8(this.i, this.UNDEFINED_MARK);
             this.i += 1;
-            return;
+            return null;
         }
+
         switch (typeof json) {
             case "object":
                 if (json.length != null) {

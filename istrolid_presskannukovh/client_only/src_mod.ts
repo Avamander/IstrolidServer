@@ -34,7 +34,7 @@
                     mod.info = null;
                     mod.player = "";
                     mod.chanFilter = "";
-                    return rootNet.send("command", ["modLog"]);
+                    return Server.send("command", ["modLog"]);
                 });
             });
             input({
@@ -55,7 +55,7 @@
                 return onkeypress(function (e) {
                     if (e.which === 13) {
                         mod.info = null;
-                        return rootNet.send("command", ["modInfo", mod.player]);
+                        return Server.send("command", ["modInfo", mod.player]);
                     }
                 });
             });
@@ -188,7 +188,7 @@
                 padding("0px 5px");
                 return onclick(function () {
                     mod.player = msg.name;
-                    return rootNet.send("command", ["modInfo", mod.player]);
+                    return Server.send("command", ["modInfo", mod.player]);
                 });
             });
             span(".hover-black", function () {

@@ -1263,7 +1263,7 @@ export namespace Parts {
     }
 
     export class EnergyTransfer extends Part {
-        working: boolean;
+        working: boolean = true;
         name = "Energy Transfer";
         desc = "Gives energy to units in 800m range. Gives 960e per ship.";
         hp = 0;
@@ -1351,7 +1351,7 @@ export namespace Parts {
     }
 
     export class StasisField extends Part {
-        stasisPos: Float64Array;
+        stasisPos: Float64Array = new Float64Array(2);
         name = "Stasis Field";
         desc = "Slows and decloaks enemy ships.";
         hp = 10;
@@ -1383,7 +1383,11 @@ export namespace Parts {
                     continue;
                 }
                 if (other.owner === this.unit.owner) {
-                    continue;
+                    if (other.side !== this.unit.side){
+
+                    } else {
+                        continue;
+                    }
                 }
                 distance = CollisionUtils.closestDistance(other.getBoundPoints(), [this.stasisPos]);
                 if (distance < this.range) {
@@ -1391,7 +1395,7 @@ export namespace Parts {
                     other.cloak = 0;
                     speed = v2.mag(other.vel);
                     if (speed > this.maxSlow) {
-                        v2.scale(other.vel, 0.9, null);
+                        v2.scale_r(other.vel, 0.9);
                     }
                     this.working = true;
                     results.push(other.slowed = true);
@@ -1844,7 +1848,7 @@ export namespace Parts {
         attach = true;
         stripe = true;
         tab = "engines";
-        working: boolean;
+        working: boolean = true;
 
         constructor() {
             super();
@@ -1858,7 +1862,7 @@ export namespace Parts {
         draw() {
             super.draw.call(this);
             if (this.working) {
-                return baseAtlas.drawSprite("engineJumpPip.png", this.worldPos, [1, 1], this.unit.rot, null);
+                return baseAtlas.drawSprite("engineJumpPip.png", this.worldPos, [1, 1], this.unit.rot, [0, 0, 255, 255]);
             }
         };
     }
@@ -2016,6 +2020,7 @@ export namespace Parts {
         bulletSpeed = 35;
         damage = 100;
         spin = 0;
+        color: [number, number, number, number] = [255, 255, 255, 255];
 
         constructor() {
             super();
@@ -2029,7 +2034,7 @@ export namespace Parts {
                 this.spin += .0001 * this.damage;
                 this.image = "turRingReload.png";
             }
-            baseAtlas.drawSprite("parts/" + this.image, this.worldPos, [1, 1], this.spin, null);
+            baseAtlas.drawSprite("parts/" + this.image, this.worldPos, [1, 1], this.spin, this.color);
         };
     }
 
@@ -2148,7 +2153,7 @@ export namespace Parts {
             let particle;
             this.shots -= 1;
             particle = new SidewinderBullet();
-            Sim.Instance.things[particle.id] = particle;
+            Sim.Instance.things[particle.id] = (particle as Thing);
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
             particle.life = 0;
@@ -2156,14 +2161,14 @@ export namespace Parts {
             particle.z = this.unit.z + .001;
             particle.turretNum = this.turretNum;
             particle.origin = this.unit;
-            particle.target = this.target;
+            particle.target = (this.target as Thing);
             particle.direction = direction;
             particle.speed = this.bulletSpeed;
             particle.damage = this.damage / 2;
             particle.maxLife = this.range / particle.speed * 1.5;
             v2.set(this.worldPos, particle.pos);
             v2.pointTo(particle.vel, this.rot);
-            v2.scale(particle.vel, particle.speed, null);
+            v2.scale_r(particle.vel, particle.speed);
             return particle.rot = this.rot;
         };
 
@@ -2448,7 +2453,7 @@ export namespace Parts {
             particle.maxLife = this.range / particle.speed * 1.5;
             v2.set(this.worldPos, particle.pos);
             v2.pointTo(particle.vel, this.rot);
-            v2.scale(particle.vel, particle.speed, null);
+            v2.scale_r(particle.vel, particle.speed);
             return particle.rot = this.rot;
         };
     }
@@ -2512,8 +2517,8 @@ export namespace Parts {
             particle.maxLife = this.range / particle.speed * 1.5;
             v2.set(this.worldPos, particle.pos);
             v2.pointTo(particle.vel, this.rot);
-            v2.scale(particle.vel, particle.speed, null);
-            return particle.rot = this.rot;
+            v2.scale_r(particle.vel, particle.speed);
+            particle.rot = this.rot;
         };
     }
 
@@ -2541,7 +2546,7 @@ export namespace Parts {
 
         makeBullet(distance: number) {
             this.rot += (Math.random() - 0.5) * 0.3;
-            super.makeBullet.call(this);
+            super.makeBullet.call(this, distance);
         };
     }
 
@@ -2564,7 +2569,7 @@ export namespace Parts {
         bulletSpeed = 2000;
         maxLife = 1;
         maxZap = 10;
-        zapped: number[];
+        zapped: number[] = [];
 
         constructor() {
             super();
@@ -2580,14 +2585,14 @@ export namespace Parts {
             for (i = 0, len = ref.length; i < len; i++) {
                 id = ref[i];
                 unit = Sim.Instance.things[id];
-                results.push(unit.applyDamage(this.damage / this.zapped.length, this.unit));
+                results.push(unit.applyDamage(this.damage / this.zapped.length, (this.unit as Thing)));
             }
             return results;
         };
 
-        zap(from: Float64Array, unit: Unit): null {
+        zap(from: Float64Array, thing: Thing): void {
             let closestUnit, minD: number, particle, range;
-            this.zapped.push(unit.id);
+            this.zapped.push(thing.id);
             particle = new (<any> Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
@@ -2598,13 +2603,13 @@ export namespace Parts {
             if (this.zapped.length === 1) {
                 particle.turretNum = this.turretNum;
                 particle.origin = this.unit;
-                if (typeof unit.applyEnergyDamage === "function") {
-                    unit.applyEnergyDamage(this.energyDamage);
+                if (typeof thing.applyEnergyDamage === "function") {
+                    thing.applyEnergyDamage(this.energyDamage);
                 }
             } else {
                 particle.sound = null;
             }
-            particle.target = unit;
+            particle.target = thing;
             v2.set(from, particle.pos);
             particle.targetPos = v2.create(particle.target.pos);
             if (this.zapped.length === this.maxZap) {
@@ -2613,14 +2618,22 @@ export namespace Parts {
             range = this.bounceRange;
             minD = range;
             closestUnit = null;
-            Sim.Instance.unitSpaces[Sim.otherSide(this.unit.side)].findInRange(unit.pos, range + Sim.Instance.maxRadius[Sim.otherSide(this.unit.side)], (function (_this) {
+            Sim.Instance.unitSpaces[Sim.otherSide(this.unit.side)].findInRange(thing.pos, range + Sim.Instance.maxRadius[Sim.otherSide(this.unit.side)],
+                // @ts-ignore
+                (function (_this) {
                 return function (other: Unit) {
                     let d, ref;
                     if (other.owner === _this.unit.owner) {
-                        return false;
+                        if (other.side !== _this.unit.side){
+
+                        } else {
+                            return false;
+                        }
                     }
-                    if (other.cloakFade === 0 && (ref = other.id, [].indexOf.call(_this.zapped, ref) < 0)) {
-                        d = v2.distance(unit.pos, other.pos) - other.radius;
+                    ref = other.id;
+                    // @ts-ignore
+                    if (other.cloakFade === 0 && ([].indexOf.call(_this.zapped, other.id) < 0)) {
+                        d = v2.distance(thing.pos, other.pos) - other.radius;
                         if (d < 0) {
                             d = 0;
                         }
@@ -2633,14 +2646,21 @@ export namespace Parts {
                 };
             })(this));
             if (this.hitsMissiles) {
-                Sim.Instance.bulletSpaces[Sim.otherSide(this.unit.side)].findInRange(unit.pos, range, (function (_this) {
+                Sim.Instance.bulletSpaces[Sim.otherSide(this.unit.side)].findInRange(thing.pos, range,
+                    // @ts-ignore
+                    (function (_this) {
                     return function (other: Unit) {
-                        let d, ref;
                         if (other.owner === _this.unit.owner) {
-                            return false;
+                            if (other.side !== _this.unit.side) {
+
+                            } else {
+                                return false;
+                            }
                         }
-                        if (ref = other.id, [].indexOf.call(_this.zapped, ref) < 0) {
-                            d = v2.distance(unit.pos, other.pos) - other.radius;
+                        let ref = other.id;
+                        // @ts-ignore
+                        if ([].indexOf.call(_this.zapped, other.id) < 0) {
+                            let d = v2.distance(thing.pos, other.pos) - other.radius;
                             if (d < 0) {
                                 d = 0;
                             }
@@ -2654,7 +2674,7 @@ export namespace Parts {
                 })(this));
             }
             if (closestUnit) {
-                return this.zap(unit.pos, closestUnit);
+                return this.zap(thing.pos, closestUnit);
             }
         };
     }
@@ -2752,7 +2772,9 @@ export namespace Parts {
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
-                        continue;
+                        if (other.side !== this.unit.side) {
+                            continue;
+                        }
                     }
                     if (CollisionUtils.closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
                         results.push(this.unit.hp = 0);
@@ -2813,7 +2835,9 @@ export namespace Parts {
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
-                        continue;
+                        if (other.side !== this.unit.side) {
+                            continue;
+                        }
                     }
                     if (CollisionUtils.closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
                         results.push(this.unit.hp = 0);
@@ -2829,7 +2853,7 @@ export namespace Parts {
             let exp;
             exp = new AoeExplosion();
             exp.side = this.unit.side;
-            exp.image = "zaphit" + "1.png";//(chooseInt(1, 3)) + ".png";
+            exp.image = "parts/zaphit" + "1.png";//(chooseInt(1, 3)) + ".png";
             exp.z = 1000;
             exp.pos = v2.create(this.worldPos);
             exp.vel = new Float64Array([0, 0]);
@@ -2857,7 +2881,7 @@ export namespace Parts {
         life = 25;
         damage = 5;
         burnAmount = 10;
-        tab = "defence";
+        tab: string = "defence";
         explodes = true;
 
         constructor() {
@@ -2877,7 +2901,9 @@ export namespace Parts {
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
-                        continue;
+                        if (other.side !== this.unit.side) {
+                            continue;
+                        }
                     }
                     if (CollisionUtils.closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
                         results.push(this.unit.hp = 0);
@@ -2941,12 +2967,9 @@ export namespace Parts {
                 for (i = 0, len = ref.length; i < len; i++) {
                     part = ref[i];
                     if (part.doesShapedDamage) {
-                        results.push(this.unit.shapeDamage += this.damage);
-                    } else {
-                        results.push(void 0);
+                        this.unit.shapeDamage += this.damage
                     }
                 }
-                return results;
             }
         };
 
@@ -2958,7 +2981,9 @@ export namespace Parts {
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
-                        continue;
+                        if (other.side !== this.unit.side) {
+                            continue;
+                        }
                     }
                     if ((other.maxHP + other.maxShield) * 2 < this.unit.shapeDamage) {
                         continue;
@@ -2967,7 +2992,7 @@ export namespace Parts {
                         continue;
                     }
                     this.unit.hp = 0;
-                    other.applyDamage(this.unit.shapeDamage, this.unit);
+                    other.applyDamage(this.unit.shapeDamage, (this.unit as Thing));
                 }
             }
         }
@@ -4199,14 +4224,14 @@ export namespace Parts {
             }
             v2.set(tempPos, particle.pos);
             v2.pointTo(particle.vel, spread);
-            v2.scale(particle.vel, particle.speed, null);
+            v2.scale_r(particle.vel, particle.speed);
             return particle.rot = spread;
         };
     }
 
     export class Flag {
         image = "parts/decals/Symbol12.png";
-        color = [245, 171, 53, 255];
+        color: [number, number, number, number] = [245, 171, 53, 255];
         size = [5, 5];
         range = 100;
         stopFriction = .8;
@@ -4250,7 +4275,7 @@ export namespace Parts {
             particle.turretNum = this.turretNum;
             particle.origin = this.unit;
             particle.weapon = this;
-            particle.target = this.target;
+            particle.target = (this.target as Thing);
             particle.speed = this.bulletSpeed;
             particle.damage = this.damage;
             particle.energyDamage = this.energyDamage;
@@ -4259,7 +4284,7 @@ export namespace Parts {
             particle.burnAmount = this.burnAmount;
             v2.set(this.worldPos, particle.pos);
             v2.pointTo(particle.vel, this.rot + Math.random() * .14 - .07);
-            v2.scale(particle.vel, particle.speed, null);
+            v2.scale_r(particle.vel, particle.speed);
             particle.rot = v2.angle(particle.vel);
             return particle.maxLife = Math.floor(this.range / particle.speed * (1 + this.overshoot));
         };
@@ -4369,14 +4394,15 @@ export namespace Parts {
         };
 
         draw() {
-            return this.draw.call(this);
+            super.draw.call(this);
         };
     }
 }
 
 import {UnitUtils} from "./95unitutils";
 import {v2} from "./4src_maths";
-import {baseAtlas, intp} from "./0dummy";
+import {baseAtlas, intp} from "./dummy";
 import {CollisionUtils} from "./991src_collision";
 import {Sim} from "./6src_sim";
 import {Unit} from "./95src_unit";
+import {Thing} from "./94src_things";

@@ -57,7 +57,7 @@ modes.nvn = (function (superClass) {
             return true;
         }
 
-        this.say("Not enough players");
+        Server.say("Not enough players");
         return false;
     }
     ;

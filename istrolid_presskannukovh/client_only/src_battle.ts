@@ -361,7 +361,7 @@
             return after(0, function () {
                 print("here?");
                 network.sendPlayer();
-                return network.send("switchSide", "alpha");
+                return Server.send("switchSide", "alpha");
             });
         };
 
@@ -377,7 +377,7 @@
             if (this.lastMouseMove < now - 1000 / 16) {
                 this.lastMouseMove = now;
                 if (typeof network !== "undefined" && network !== null) {
-                    network.send("mouseMove", this.mouse, this.selecting || this.ordering);
+                    Server.send("mouseMove", this.mouse, this.selecting || this.ordering);
                 }
             }
             if (this.selecting) {
@@ -561,7 +561,7 @@
             if ((ref = intp.players[commander.number]) != null) {
                 ref.selection = things;
             }
-            return network.send("playerSelected", ids);
+            return Server.send("playerSelected", ids);
         };
 
         BattleMode.prototype.ondblclick = function (e) {
@@ -604,7 +604,7 @@
                 return;
             }
             if (this.rallyPlacing && (e.which === 1 || e.which === 3)) {
-                network.send("setRallyPoint", this.mouse);
+                Server.send("setRallyPoint", this.mouse);
                 commander.rallyPoint = v2.create(this.mouse);
                 if ((ref = intp.players[commander.number]) != null) {
                     ref.rallyPoint = v2.create(this.mouse);
@@ -685,7 +685,7 @@
                     this.copySelected(number);
                 } else if (e.altKey) {
                     if (commander.validBar[number]) {
-                        network.send("buildRq", number, 1);
+                        Server.send("buildRq", number, 1);
                     }
                 } else if (e.ctrlKey) {
                     this.savedSelections[number] = (function () {
@@ -750,17 +750,17 @@
         };
 
         BattleMode.prototype.stopOrder = function () {
-            return network.send("stopOrder");
+            return Server.send("stopOrder");
         };
 
         BattleMode.prototype.holdPositionOrder = function () {
-            return network.send("holdPositionOrder");
+            return Server.send("holdPositionOrder");
         };
 
         BattleMode.prototype.followOrder = function (unit, shiftKey) {
             var i, id, j, len, ref, results, t;
             id = this.genOrderId();
-            network.send("followOrder", unit.id, shiftKey, id);
+            Server.send("followOrder", unit.id, shiftKey, id);
             ref = commander.selection;
             results = [];
             for (i = j = 0, len = ref.length; j < len; i = ++j) {
@@ -782,13 +782,13 @@
         };
 
         BattleMode.prototype.selfDestructOrder = function () {
-            return network.send("selfDestructOrder");
+            return Server.send("selfDestructOrder");
         };
 
         BattleMode.prototype.moveOrder = function (formation, shiftKey) {
             var i, id, j, len, ref, results, t;
             id = this.genOrderId();
-            network.send("moveOrder", formation, shiftKey, id);
+            Server.send("moveOrder", formation, shiftKey, id);
             ref = commander.selection;
             results = [];
             for (i = j = 0, len = ref.length; j < len; i = ++j) {
@@ -851,7 +851,7 @@
             if (e.which === 3 || e.altKey || e.metaKey || e.ctrlkey) {
                 number = -number;
             }
-            return network.send("buildRq", index, number);
+            return Server.send("buildRq", index, number);
         };
 
         BattleMode.prototype.computeLineMove = function () {

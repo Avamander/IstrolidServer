@@ -1,14 +1,10 @@
 import {Sim} from "./6src_sim";
 import {v2} from "./4src_maths";
-import {Player, Rock} from "./94src_things";
+import {Player, Rock, Thing} from "./94src_things";
+import {Unit} from "./95src_unit";
 
 export class CommandsManager {
-    indexOf = [].indexOf || function (item) {
-        for (let i = 0, l = this.length; i < l; i++) {
-            if (i in this && this[i] === item) return i;
-        }
-        return -1;
-    };
+    indexOf = [].indexOf;
 
     defStats = {
         parts: {},
@@ -20,6 +16,21 @@ export class CommandsManager {
     };
 
     allowedSim = ["mapScale", "numComPoints", "defaultMoney", "costLimit", "makeRocks", "awaitRestart", "tickTime", "moneyRatio", "unitLimit", "victoryGoal", "NxN", "enableAi", "check", "numFlags"];
+
+    current_teams: string[] = ["alpha", "beta"];
+
+
+    static _instance: CommandsManager;
+
+    repick: number = 0;
+
+    public static get Instance(){
+        return this._instance || (this._instance = new this());
+    }
+
+    constructor () {
+
+    }
 
     static findChatPlayer(name: string): Player {
         if (Sim.Instance.chat.players) {
@@ -114,21 +125,22 @@ export class CommandsManager {
         if (Sim.Instance.state !== "running") {
             return false;
         }
-        Sim.say("game already started");
+        Sim.say("Game already started");
         return true;
     };
 
-    static muha(x: number, y: number, color: number[]) {
-        let filename, j, len, letter, mu, ref, results;
+    static muha(x: number, y: number, color: [number, number, number, number], text: string) {
+        let filename, letter, ref, results;
         ref = text.toUpperCase();
         results = [];
-        for (j = 0, len = ref.length; j < len; j++) {
+        for (let j = 0; j < ref.length; j++) {
             letter = ref[j];
             if (letter === " ") {
                 x += 400;
                 continue;
             }
-            mu = new Rock();
+
+            let mu: Rock = new Rock();
             filename = (function () {
                 switch (letter) {
                     case "#":
@@ -143,18 +155,18 @@ export class CommandsManager {
             mu.color = color;
             mu.z = 10;
             mu["static"] = false;
-            mu.size = [10, 10];
-            mu.vel = [-350, 0];
-            mu.pos = [x, y];
+            mu.size = new Float64Array([10, 10]);
+            mu.vel = new Float64Array([-350, 0]);
+            mu.pos = new Float64Array([x, y]);
             mu.tick = function () {
                 if (this.pos[0] < -10000) {
                     return this.dead = true;
                 }
             };
             mu.move = function () {
-                return v2.add(this.pos, this.vel, null);
+                return v2.add_r(this.pos, this.vel);
             };
-            Sim.Instance.things[mu.id] = mu;
+            Sim.Instance.things[mu.id] = (mu as Thing);
             results.push(x += 400);
         }
         return results;
@@ -167,7 +179,7 @@ export class CommandsManager {
 
         let combinations = CommandsManager.permute(players);
 
-        let best_combination = undefined;
+        let best_combination = [];
         let best_combination_score = 256 * 256 * 256;
         let combination_score = 0;
 
@@ -193,7 +205,7 @@ export class CommandsManager {
             }
         }
 
-        let result = [];
+        let result: Player[][] = [];
         result.push([]);
         result.push([]);
 
@@ -240,7 +252,7 @@ export class CommandsManager {
             }
         }
 
-        let result = [];
+        let result: Player[][] = [];
         result.push([]);
         result.push([]);
 
@@ -252,38 +264,15 @@ export class CommandsManager {
             result[1].push(best_combination[j]);
         }
         return result;
-    };
+    }
 
-    select_k_from(from, k) {
-        let i, j, combs, head, buff;
 
-        if (k > set.length || k <= 0) {
-            return [];
-        } else if (k === set.length) {
-            return [set];
-        } else if (k === 1) {
-            combs = [];
-            for (i = 0; i < set.length; i++) {
-                combs.push([set[i]]);
-            }
-            return combs;
-        }
+    processCommand(player: Player, cmds: string[]) {
+        let aiBuildBar, debug, hostP, index, l, len, len1, name, p, picked, ref, current_players, ref2,
+            repick, playing_players, playing_teams,
+            results, side, total, type;
 
-        combs = [];
-        for (i = 0; i < set.length - k + 1; i++) {
-            head = set.slice(i, i + 1);
-            buff = this.select_k_from(set.slice(i + 1), k - 1);
-            for (j = 0; j < buff.length; j++) {
-                combs.push(head.concat(buff[j]));
-            }
-        }
-        return combs;
-    };
 
-    processCommand(player, cmds) {
-        let _, aiBuildBar, debug, hostP, i, index, k, l, len, len1, n, name, p, picked, ref, current_players, ref2,
-            ref3, ref4, repick, playing_players, playing_teams,
-            results, results1, side, t, total, type, u, v;
         // noinspection FallThroughInSwitchStatementJS
         switch (cmds[0].toLowerCase()) {
             case "mv":
@@ -376,7 +365,7 @@ export class CommandsManager {
 
                 for (let team_index = 0; team_index < playing_teams.length; team_index++) {
                     for (let team_player of playing_teams[team_index]) {
-                        team_player.side = current_teams[team_index]
+                        team_player.side = this.current_teams[team_index]
                     }
                 }
 
@@ -384,7 +373,7 @@ export class CommandsManager {
                 Sim.say("Current (im)balance index is " + CommandsManager.get_balance_index());
                 break;
             case "shuffle":
-                if (checkRunning() && player.name !== "Avamander") {
+                if (CommandsManager.checkRunning() && player.name !== "Avamander") {
                     Sim.say("Game is running, not shuffling!");
                     Sim.say("Current (im)balance index is " + CommandsManager.get_balance_index());
                     break;
@@ -453,18 +442,18 @@ export class CommandsManager {
 
                 for (let team_index = 0; team_index < playing_teams.length; team_index++) {
                     for (let team_player of playing_teams[team_index]) {
-                        team_player.side = current_teams[team_index]
+                        team_player.side = this.current_teams[team_index]
                     }
                 }
 
                 Sim.say("Balanced!");
-                Sim.say("Current (im)balance index is " + get_balance_index());
+                Sim.say("Current (im)balance index is " +  CommandsManager.get_balance_index());
                 break;
             case "getbalance":
-                Sim.say("Current (im)balance index is " + get_balance_index());
+                Sim.say("Current (im)balance index is " +  CommandsManager.get_balance_index());
                 break;
             case "gethost":
-                if (!(checkHost(player))) {
+                if (!(CommandsManager.checkHost(player))) {
                     break;
                 }
                 player.host = true;
@@ -472,7 +461,7 @@ export class CommandsManager {
                 break;
             case "givehost":
             case "sethost":
-                if (!(checkHost(player))) {
+                if (!(CommandsManager.checkHost(player))) {
                     break;
                 }
                 player.host = false;
@@ -493,14 +482,14 @@ export class CommandsManager {
             case "m":
             case "mode":
                 if (cmds.length < 2) {
-                    Sim.say(helpMessage(cmds[0]));
+                    Sim.say(this.helpMessage(cmds[0]));
                     break;
                 }
-                if (!checkHost(player)) {
+                if (!CommandsManager.checkHost(player)) {
                     break;
                 }
 
-                if (checkRunning()) {
+                if (CommandsManager.checkRunning()) {
                     break;
                 }
 
@@ -524,7 +513,7 @@ export class CommandsManager {
                     }
                 })();
                 if (Sim.Instance.validTypes[type] != null) {
-                    return Sim.configGame(player, {
+                    return Sim.Instance.configGame(player, {
                         type: type
                     });
                 } else {
@@ -532,22 +521,22 @@ export class CommandsManager {
                 }
                 break;
             case "start":
-                if (checkRunning()) {
+                if (CommandsManager.checkRunning()) {
                     break;
                 }
 
-                if (!checkHost(player)) {
+                if (!CommandsManager.checkHost(player)) {
                     break;
                 }
 
-                return Sim.startGame(player);
+                return Sim.Instance.startGame(player, true);
             case "j":
             case "join":
                 if (cmds.length < 2) {
-                    Sim.say(helpMessage(cmds[0]));
+                    Sim.say(this.helpMessage(cmds[0]));
                     break;
                 }
-                if (checkRunning()) {
+                if (CommandsManager.checkRunning()) {
                     break;
                 }
                 if ((ref = cmds[1]) === "alpha" || ref === "beta" || ref === "spectators") {
@@ -561,8 +550,8 @@ export class CommandsManager {
                     Sim.say("You haven't voted!");
                     break;
                 } else {
-                    if (repick !== undefined && repick > 0) {
-                        repick -= 1;
+                    if (this.repick !== undefined && this.repick > 0) {
+                        this.repick -= 1;
                         player.repick = false;
                         Sim.say("Abstained");
                         break;
@@ -608,7 +597,7 @@ export class CommandsManager {
                         }
                     }
                     while (!picked) {
-                        p = Sim.players[Math.floor(Math.random() * Sim.players.length)];
+                        p = Sim.Instance.players[Math.floor(Math.random() * Sim.Instance.players.length)];
                         if (p.host) {
                             continue;
                         }
@@ -617,6 +606,7 @@ export class CommandsManager {
                             picked = true;
                         }
                     }
+                    // @ts-ignore
                     hostP.host = false;
                     return Sim.say("Host repicked");
                 } else {
@@ -640,7 +630,7 @@ export class CommandsManager {
                     Sim.say("Unknown team");
                     break;
                 }
-                aiBuildBar = ais.all[name];
+                aiBuildBar = Sim.Instance.aimanager.all[name];
                 if (!aiBuildBar) {
                     Sim.say("Cannot find " + name + ", using your current fleet");
                     aiBuildBar = player.buildBar;
@@ -659,9 +649,16 @@ export class CommandsManager {
                     Sim.say(this.helpMessage(cmds[0]));
                     break;
                 }
-                return this.changeStat(cmds[1], cmds[2], cmds[3]);
+                return this.changeStat(cmds[1], cmds[2], cmds[3], false);
             case "changes":
                 Sim.say("List of changes:");
+                Sim.say(" * WebSocket compression");
+                Sim.say(" * Rewritten in TypeScript");
+                Sim.say(" * Surrendering requires majority to agree");
+                Sim.say(" * Temporary: Nukes do not self-explode");
+                Sim.say(" * Temporary: Jump does not work");
+                Sim.say(" * Temporary: Custom gamemodes are disabled");
+                /*
                 results = [];
                 for (n in this.diffStats) {
                     p = this.diffStats[n];
@@ -674,7 +671,8 @@ export class CommandsManager {
                         return results1;
                     })());
                 }
-                return results;
+                return results*/
+                return;
             case "r":
             case "reset":
                 if (!CommandsManager.checkHost(player)) {
@@ -683,15 +681,17 @@ export class CommandsManager {
                 this.resetStats();
                 return Sim.say("Reset to default stats");
             case "export":
+                return Sim.say("Not implemented due to being hacky");
+                /*
                 Sim.Instance.things = Sim.Instance.things || {};
-                ref3 = Sim.things;
+                ref3 = Sim.Instance.things;
                 for (_ in ref3) {
                     t = ref3[_];
                     if (t.owner === -1) {
                         t.hp = 0;
                     }
                 }
-                u = genStatUnit(diffStats);
+                u = this.genStatUnit(diffStats);
                 u.pos = [0, 0];
                 u.rot = Math.PI;
                 u.owner = -1;
@@ -699,29 +699,34 @@ export class CommandsManager {
                 u.canCapture = false;
                 Sim.Instance.things[u.id] = u;
                 return Sim.say("Stat changes exported, copy the unit with copy script to save it");
+                */
             case "import":
-                if (!checkHost(player)) {
+                return Sim.say("Not implemented due to being hacky");
+                /*
+                if (!this.checkHost(player)) {
                     break;
                 }
                 if (cmds.length < 2) {
-                    Sim.say(helpMessage(cmds[0]));
+                    Sim.say(this.helpMessage(cmds[0]));
                     break;
                 }
-                resetStats();
+                this.resetStats();
                 i = parseInt(cmds[1]);
                 Sim.say("Loading stats from " + player.name + "'s slot: " + i);
                 window.diffStats = statFromSpec(player.buildBar[i - 1]);
                 return applyDiff(diffStats);
+                */
             case "fw":
             case "firework":
             case "fireworks":
-                if (player.name !== "Avamander" && (checkHost(player) && !checkRunning())) {
+                if (player.name !== "Avamander" &&
+                    (CommandsManager.checkHost(player) && !CommandsManager.checkRunning())) {
                     Sim.say("You need to be the host and the game must not be running to do that!");
                     break;
                 }
 
                 for (let _ in Sim.Instance.things) {
-                    Sim.Instance.things[_].hp = 0;
+                    (Sim.Instance.things[_] as Unit).hp = 0;
                 }
                 Sim.say("Poof!");
                 return;
@@ -751,7 +756,7 @@ export class CommandsManager {
                     Sim.say("only Avamander can do that");
                     break;
                 }
-                return Sim.endOfGame();
+                return Sim.Instance.endOfGame();
             case "restart":
                 if (player.name !== "Avamander") {
                     Sim.say("only Avamander can do that");
@@ -761,9 +766,9 @@ export class CommandsManager {
                 return process.exit();
             case "h":
             case "help":
-                return Sim.say(helpMessage(cmds[1]));
+                return Sim.say(this.helpMessage(cmds[1]));
             default:
-                return Sim.say(helpMessage());
+                return Sim.say(this.helpMessage(""));
         }
     };
 
@@ -793,10 +798,6 @@ export class CommandsManager {
                 return "!changes - list all the changes";
             case "reset":
                 return "!reset - reset stats to defaule";
-            case "export":
-                return "!export - generate a ship that contains current stats";
-            case "import":
-                return "!import <slot> - import stats from unit in slot <slot>";
             case "end":
                 return "!end - end the game";
             case "restart":
@@ -812,11 +813,13 @@ export class CommandsManager {
             case "givehost":
                 return "!givehost <name> - gives host to the specified user currently playing";
             default:
-                return "available commands: abstain givehost belence balance shuffle mode start join addai repick set changes reset export import end restart help";
+                return "available commands: abstain givehost belence balance shuffle mode start join addai repick set changes reset end restart help";
         }
     };
 
-    parseStat(t, str) {
+    parseStat(t: any, str: string) {
+        return Sim.say("Not implemented");
+        /*
         let v, value;
         if (typeof stat === t) {
             value = str;
@@ -840,7 +843,7 @@ export class CommandsManager {
                             }
                             return results;
                         } else {
-                            if (!quiet) {
+                            if (!this.quiet) {
                                 Sim.say("Cannot parse " + str + " to " + t);
                             }
                             return null;
@@ -852,8 +855,10 @@ export class CommandsManager {
             })();
         }
         return value;
+        */
     };
 
+    /*
     genStatUnit(stats) {
         return new types.Unit({
             parts: [
@@ -913,9 +918,11 @@ export class CommandsManager {
         return {
             sim: {}
         };
-    };
+    };*/
 
-    applyDiff(diff, quiet) {
+    applyDiff(diff: any, quiet: any) {
+        return Sim.say("Not implemented");
+        /*
         let k, n, p, results, v;
         if (quiet == null) {
             quiet = false;
@@ -934,146 +941,17 @@ export class CommandsManager {
             })());
         }
         return results;
+        */
     };
 
+    // @ts-ignore
     changeStat(type, field, stat, quiet) {
-        let ns, part, ref, ref1, ref2, ref3, stats, t, universalButNo, value;
-        if (quiet == null) {
-            quiet = false;
-        }
-        if (!((type != null) && (field != null) && (stat != null))) {
-            return;
-        }
-        if (type.toLowerCase() === "sim") {
-            if (Sim.Instance[field] == null) {
-                if (field === "awaitRestart") {
-                    Sim.Instance.awaitRestart = false;
-                } else {
-                    if (!quiet) {
-                        Sim.say("unknown field " + field);
-                    }
-                    return;
-                }
-            }
-            if (indexOf.call(allowedSim, field) < 0) {
-                if (!quiet) {
-                    Sim.say("cannot change sim." + field);
-                }
-                return;
-            }
-            if (stat === "default") {
-                Sim.Instance[field] = Sim.Instance.constructor.prototype[field];
-                delete diffStats.sim[field];
-                if (!quiet) {
-                    Sim.say("sim." + field + " is now " + Sim[field]);
-                }
-                return;
-            }
-            t = typeof Sim.Instance.[field];
-            value = parseStat(t, stat);
-            if ((value == null) || (t === "number" && isNaN(value))) {
-                if (!quiet) {
-                    Sim.say("invalid value " + stat);
-                }
-                return;
-            }
-            if (value != null) {
-                Sim.Instance[field] = value;
-                diffStats.sim[field] = value;
-                if (!quiet) {
-                    Sim.say("sim." + field + " is now " + value);
-                }
-            }
-            return;
-        }
-        part = {};
-        if (parts[type]) {
-            part = parts[type];
-            ns = "parts";
-        } else if (types[type]) {
-            part = types[type];
-            ns = "types";
-        } else {
-            if (!quiet) {
-                Sim.say("cannot find " + type);
-            }
-            return;
-        }
-        if (!part) {
-            if (!quiet) {
-                Sim.say("unknown part " + type);
-            }
-            return;
-        }
-        universalButNo = {
-            disable: false,
-            hitsMissiles: false,
-            missile: false
-        };
-        if (part.prototype[field] == null) {
-            if (field in universalButNo) {
-                part.prototype[field] = universalButNo[field];
-            } else {
-                if (!quiet) {
-                    Sim.say("unknown field " + field);
-                }
-                return;
-            }
-        }
-        if (stat === "default") {
-            if (ns === "parts") {
-                if ((ref = defStats.parts[type]) != null ? ref[field] : void 0) {
-                    parts[type].prototype[field] = defStats.parts[type][field];
-                }
-                value = parts[type].prototype[field];
-            } else if (ns === "types") {
-                if ((ref1 = defStats.types[type]) != null ? ref1[field] : void 0) {
-                    types[type].prototype[field] = defStats.types[type][field];
-                }
-                value = types[type].prototype[field];
-            }
-            if (Sim.state === "running" && !quiet) {
-                Sim.say("game is running, some units may keep the old stat");
-            }
-            if (!quiet) {
-                Sim.say(type + "." + field + " is now " + (typeof value === "function" ? value.name : value));
-            }
-            if ((ref2 = diffStats[type]) != null) {
-                delete ref2[field];
-            }
-            if (Object.keys(diffStats[type] || {}).length <= 0) {
-                delete diffStats[type];
-            }
-            return;
-        }
-        t = typeof part.prototype[field];
-        value = parseStat(t, stat);
-        if ((value == null) || (t === "number" && isNaN(value))) {
-            if (!quiet) {
-                Sim.say("cannot parse " + stat + " to " + t);
-            }
-            return;
-        }
-        if (value != null) {
-            if (!((ref3 = defStats[ns][type]) != null ? ref3[field] : void 0)) {
-                stat = defStats[ns][type] || {};
-                stat[field] = part.prototype[field];
-                defStats[ns][type] = stat;
-            }
-            part.prototype[field] = value;
-            stats = diffStats[type] || {};
-            stats[field] = value;
-            diffStats[type] = stats;
-            if (Sim.state === "running" && !quiet) {
-                Sim.say("game is running, some units may keep the old stat");
-            }
-            if (!quiet) {
-                return Sim.say(type + "." + field + " is now " + (t === "function" ? value.name : value));
-            }
-        }
+        return Sim.say("Not implemented");
     };
 
     resetStats() {
+        return Sim.say("Not implemented");
+    /*
         let k, ref, ref1, ref2, stat, type, v;
         ref = this.defStats.parts;
         for (type in ref) {
@@ -1098,27 +976,36 @@ export class CommandsManager {
         }
         return window.diffStats = {
             sim: {}
-        };
+        };*/
     };
 
-    runText(text, color) {
+    runText(text: string, color: [number, number, number, number]) {
         let j, results, x, y;
         if (!Sim.Instance.things) {
             return;
         }
         text = text.replace(/[^a-zA-Z0-9#.]/g, " ").slice(0, 25);
 
-        results = [];
-        for (x = j = 0; j < 4000; x = j += 4000) {
-            results.push((function () {
-                let l, results1;
-                results1 = [];
-                for (y = l = -5000; l < 5000; y = l += 500) {
-                    results1.push(CommandsManager.muha(Math.random() * 10000 + 6000, y, color || [Math.random() * 255, Math.random() * 255, Math.random() * 255, 255]));
-                }
-                return results1;
-            })());
+        if (!color) {
+            color = [
+                Math.random() * 255,
+                Math.random() * 255,
+                Math.random() * 255,
+                255
+            ];
         }
-        return results;
+
+        results = [];
+
+        for (let x = 0; x < 4000; x += 4000) {
+            for (let y = -5000; y < 5000; y += 500) {
+                CommandsManager.muha(
+                    Math.random() * 10000 + 6000,
+                    y,
+                    color,
+                    text
+                );
+            }
+        }
     };
 }
