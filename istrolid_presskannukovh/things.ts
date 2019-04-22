@@ -83,6 +83,7 @@ export class ThingUtil {
 export class Player {
     gainsMoney: boolean = true;
     ready: boolean = false;
+    streek: number = 0;
     actions: number = 0;
     apm: number = 0;
     capps: number = 0;
@@ -128,6 +129,7 @@ export class Player {
     net: any;
     t: any;
     repick: any;
+    lastSpawnCount: number = 0;
 
     constructor(id1: number | string) {
         this.id = id1;
@@ -142,14 +144,7 @@ export class Player {
         this.rallyPoint = new Float64Array([0, 0]);
         this.selection = [];
         this.buildQ = [];
-        this.validBar = (function () {
-            let results;
-            results = [];
-            for (let j = 0; j < 10; j++) {
-                results.push(true);
-            }
-            return results;
-        })();
+        this.validBar = [false, false, false, false, false, false, false, false, false, false];
         this.actions = 0;
         this.apm = 0;
         this.capps = 0;
@@ -452,6 +447,8 @@ export class Thing {
     bullet: boolean = false;
     "static": boolean = false;
     energyCaster: boolean = false;
+    flag: boolean = false;
+    spawnPoint: boolean = false;
 
     storeEnergy: number = 0;
     maxHP: number = 10;
@@ -485,12 +482,15 @@ export class Thing {
     parts!: Part[];
     fixed: any;
     canCapture: any;
+    carryFlag: boolean = false;
+
     side: string = "spectators";
     owner!: number;
 
     vel!: Float64Array;
     pos!: Float64Array;
     lastDamager: Thing | null = null;
+    maxSpeed: number = 100;
 
     constructor() {
         this.id = Sim.Instance.nid();
@@ -633,8 +633,9 @@ export class Rock extends Thing {
     bullet: boolean = false;
 
     z: number = 0.01;
-    //player: Player;
+    player!: Player;
     torq: number = 0;
+    home: boolean = false;
 
     constructor() {
         super();
@@ -646,7 +647,7 @@ export class Rock extends Thing {
         this.pos = new Float64Array([0, 0]);
         this.vel = new Float64Array([0, 0]);
         this.rot = 0;
-        this.size = new Float64Array([1, 1])
+        this.size = new Float64Array([1, 1]);
     }
 
     tick(): void {
@@ -842,6 +843,7 @@ export class SpawnPoint extends Thing {
     color: [number, number, number, number];
     commandPoint: boolean = false;
     bullet: boolean = false;
+    spawnPoint: boolean = true;
 
     constructor() {
         super();

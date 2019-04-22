@@ -4,6 +4,7 @@
   "description": "Istrolid Server",
   "main": "server.js",
   "dependencies": {
+    "assemblyscript": "github:assemblyscript/assemblyscript",
     "ws": "^6.1.0"
   },
   "devDependencies": {},

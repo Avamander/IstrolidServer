@@ -896,8 +896,7 @@ export class AI {
             case "enemy army middle":
                 pos = this.thingsMiddle(function (t: Thing) {
                     return t.unit &&
-                        // @ts-ignore
-                        t.side === this.otherSide(unit.side);
+                        t.side === Sim.otherSide(unit.side);
                 });
                 break;
             case "friendly army middle":
@@ -1331,6 +1330,10 @@ export class AI {
 
     doUnitRules(unit: Unit, rule: [string, string, string, string, string], player: Player) {
         let enemy, filter, friendly, target;
+        if (!unit) {
+            return true;
+        }
+
         switch (rule[0].toLowerCase()) {
             case "@captypes command points within #m":
                 return this.capAI(unit, rule);
@@ -1384,7 +1387,7 @@ export class AI {
                 break;
             case "find units that are out of energy":
                 target = AI.closest(unit.pos, function (t: Thing) {
-                    return t.unit && t.id !== unit.id && t.side === unit.side && (t as Unit).energy < t.storeEnergy * .75;
+                    return unit && t.unit && t.id !== unit.id && t.side === unit.side && (t as Unit).energy < t.storeEnergy * .75;
                 }, 4000);
                 if (target) {
                     AI.goInRange(500, 600, unit, (target as Thing));

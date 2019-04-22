@@ -5,7 +5,7 @@ import {ZJson} from "./zjson";
 import {Colors} from "./colors";
 import {HSpace} from "./hspace";
 import {Utils} from "./utils";
-import {Particle, Player, Thing} from "./things";
+import {CommandPoint, Particle, Player, SpawnPoint, Thing} from "./things";
 import {IstrolidServer} from "../server";
 import {Unit} from "./unit";
 import {Grid} from "./grid";
@@ -13,6 +13,7 @@ import {UnitUtils} from "./unitutils";
 import {AI} from "./ai";
 import {Bullets} from "./bullets";
 import Bullet = Bullets.Bullet;
+import {GameMode, GameModes} from "./gamemode";
 
 export class Sim {
     static defaultBattleType = "3v3";
@@ -36,13 +37,6 @@ export class Sim {
     aiTestMode: boolean = false;
     enableAi: boolean = true;
     check: boolean = true;
-
-    players: Player[] = [];
-    chat: {
-        players: {
-            [key: string]: Player; // Return ID based on name
-        };
-    };
 
     step: number = 0;
     timeDelta: number = 0;
@@ -77,19 +71,29 @@ export class Sim {
 
     // @ts-ignore
     net: {};
-    commandPoint: any[][] = [];
+
+    commandPoint: CommandPoint[] = [];
     things: Thing[] = [];
     particles: Particle[] = [];
     bullets: Bullet[] = [];
+    units: Unit[] = [];
+    players: Player[] = [];
+    chat: {
+        players: {
+            [key: string]: Player; // Return ID based on name
+        };
+    };
+
+    axisSortedMissles: Bullet[] = [];
+    axisSortedUnits: Unit[] = [];
     timePath: string[] = [];
+
     _pos: Float64Array = new Float64Array(2);
 
     modes: { [x: string]: typeof Sim; } = {};
     surrender_votes: { [key: string]: number; } = {};
     maxRadius: { [key: string]: number } = {};
-    axisSortedMissles: { [key: number]: Bullet } = {};
-    units: { [key: number]: Unit } = {};
-    axisSortedUnits: { [key: number]: Unit } = {};
+
     timeings: { [x: string]: any; } = {};
     timeStarts: { [x: string]: number; } = {};
     projSpaces: { [key: string]: HSpace; } = {};
@@ -108,13 +112,14 @@ export class Sim {
         "1v1t": "1v1t",
         "2v2": "2v2",
         "3v3": "3v3",
-        //"nvn": "nvn",
-        //"Survival": "Survival",
+        "nvn": "nvn",
+        "Survival": "Survival",
         //"IO": "IO",
-        //"CTF": "CTF",
-        //"TicTacToe": "TicTacToe",
-        //"FFA": "FFA"
+        "CTF": "CTF",
+        ///"TicTacToe": "TicTacToe",
+        "FFA": "FFA"
     };
+
     gameFields = ["players", "things", "aiTestMode", "nGamesPlayed", "numBattles", "local", "step", "timeDelta", "winningSide", "numBattles", "unitSpaces", "projSpaces", "zJson", "serverType", "theme"];
     thingFields = ["onOrderId", "holdPosition", "hp", "energy", "shield", "cloak", "burn", "dead", "radius", "size", "rot", "image", "warpIn", "color", "sliceImage", "side", "owner", "capping", "spawn", "aoe", "damage", "life", "maxLife", "turretNum", "targetPos", "hitPos"];
     playerFields = ["name", "side", "afk", "host", "money", "connected", "dead", "color", "mouse", "action", "buildQ", "validBar", "ai", "apm", "capps", "kills", "unitsBuilt", "moneyEarned", "rallyPoint"];
@@ -122,13 +127,14 @@ export class Sim {
 
     data: any;
 
-    // @ts-ignore
-    mapping: Mapping;
-    // @ts-ignore
     theme: IstrolidMap;
-
     zJson: ZJson;
+    gameMode: GameMode;
     aimanager: AI = AI.Instance;
+
+    waveNum: number = 0;
+    victoryGoal: number = 1;
+    numFlags: number = 1;
 
 
     constructor(battleType: string) {
@@ -148,7 +154,9 @@ export class Sim {
         this.lastId = 0;
         this.counting = 0;
 
-        this._instance = this;
+        this.theme = Mapping.bluepurple;
+
+        this.gameMode = new (<any>GameModes)["g" + battleType](this);
     }
 
     public static get Instance() {
@@ -178,11 +186,10 @@ export class Sim {
             return;
         }
 
-
         let thing;
 
-        for (let _ in Sim.Instance.things) {
-            thing = Sim.Instance.things[_];
+        for (let thing_id in Sim.Instance.things) {
+            thing = Sim.Instance.things[thing_id];
             if (thing.spawn === player.side &&
                 v2.distance(thing.pos, point) < thing.radius) {
                 player.usingSpawn = thing;
@@ -288,6 +295,7 @@ export class Sim {
     };
 
     start() {
+        // Cheanup first
         let l, len1, p, ref;
         this.net = {};
         this.step = 0;
@@ -295,7 +303,7 @@ export class Sim {
         this.winningSide = "";
         this.lastId = 0;
         this.counting = 0;
-        this.generateMap(this.mapScale, this.numComPoints, this.mapSeed);
+
         if (this.players == null) {
             this.players = [];
         } else {
@@ -308,15 +316,27 @@ export class Sim {
                 }
             }
         }
-        if (this.chat == null) {
-            this.chat = {players: {}};
+
+        if (!this.things) {
+            this.things = [];
+        } else {
+            for (let id in this.things) {
+                delete this.things[id];
+            }
+            delete this.things;
+            this.things = [];
         }
+
         this.state = "starting";
-        this.regenerateMap();
         this.captures = 0;
         this.deaths = 0;
         this.nGamesPlayed += 1;
-        return this.clearNetState();
+        this.generateMap(
+            this.mapScale,
+            this.numComPoints,
+            this.mapSeed);
+        this.gameMode.start();
+        this.clearNetState();
     };
 
     configGame(p: { host: boolean; name: string; }, config: { type: string; }) {
@@ -372,6 +392,8 @@ export class Sim {
                 }
             }
             */
+
+            this.gameMode = new (<any>GameModes)["g" + config.type](this);
         }
     };
 
@@ -420,36 +442,37 @@ export class Sim {
             if (typeof Sim.Instance.init === "function") {
                 Sim.Instance.init();
             }*/
+            this.gameMode = new (<any>GameModes)["g" + config.type](this);
         }
     }
 
     playersPerTeam() {
-        if (this.serverType.slice(0, 3) === "1v1") {
-            return 1;
+        switch (this.gameMode.serverType.slice(0, 3)) {
+            case "1v1": {
+                return 1;
+            }
+            case "2v2": {
+                return 2;
+            }
+            case "3v3": {
+                return 3;
+            }
+            case "FFA": {
+                return 4;
+            }
+            default: {
+                return 3;
+            }
         }
-        if (this.serverType === "2v2") {
-            return 2;
-        }
-        if (this.serverType === "3v3") {
-            return 3;
-        }
-        if (this.serverType === "FFA") {
-            return 6;
-        }
-        return 3;
     };
 
-    generateMap(mapScale: number, numComPoints: number, mapSeed: any) {
+    generateMap(mapScale: number, numComPoints: number, mapSeed: number) {
         this.mapScale = mapScale != null ? mapScale : 1.5;
         this.numComPoints = numComPoints != null ? numComPoints : 8;
         this.mapSeed = mapSeed;
         this.numRocks = 60 * this.mapScale;
-        return this.regenerateMap();
-    };
-
-    regenerateMap() {
-        return Mapping.generate(this.mapSeed);
-    };
+        this.gameMode.generateMap(mapScale, numComPoints, mapSeed);
+    }
 
     playerJoin(_: any, pid: any, name: any, color: any, buildBar: any, aiRules: any, ai: boolean) {
         let dcIndex, p, player;
@@ -501,16 +524,21 @@ export class Sim {
     };
 
     playerEdit(_: any, pid: any, name: any, color: any, buildBar: any[], aiRules: any, ai: boolean) {
-        let canEditShips, i, l, len1, m, o, p, player, ref;
-        ref = this.players;
-        // WARNING: Default player is selected when there's noone else
-        player = ref[0];
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            p = ref[l];
+        let canEditShips, i, m, o, p;
+
+        // @ts-ignore Wait for it to be filled in and abort if not
+        let player: Player = null;
+        for (let l = 0; l < this.players.length; l++) {
+            p = this.players[l];
             if (p.id === pid) {
                 player = p;
                 break;
             }
+        }
+
+        if (!player) {
+            console.log("Edit without player??");
+            return;
         }
         player.name = name;
         player.color = Colors.validate(color);
@@ -549,45 +577,15 @@ export class Sim {
         return player;
     };
 
-    switchSide(player: ({ kickTime: number; side: any; streek: number; lastActiveTime: number; } | Player), side: string) {
-        if (!player) {
-            return;
-        }
-
-        if (player.kickTime > Utils.now() - 15000) {
-            return;
-        }
-
-        if (this.local && !Sim.Instance.galaxyStar && !Sim.Instance.challenge) {
-            player.side = side;
-            return;
-        }
-
-        if (side !== "spectators" && this.numInTeam(side) >= this.playersPerTeam()) {
-            return;
-        }
-
-        if (this.state !== "waiting") {
-            return;
-        }
-
-        player.side = side;
-        if (side === "spectators") {
-            player.streek = 0;
-        }
-
-        player.lastActiveTime = Date.now();
+    switchSide(player: Player, side: string) {
+        this.gameMode.switchSide(player, side);
     };
 
     whoIsHost() {
-        let haveHost, l, len1, len2, m, p, ref, ref1;
+        let haveHost, p;
         haveHost = false;
-        ref = this.players;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            p = ref[l];
-            if (!p){
-
-            }
+        for (let l = 0; l < this.players.length; l++) {
+            p = this.players[l];
             if (p.host === true) {
                 if (!p.connected || p.side === "spectators") {
                     p.host = false;
@@ -600,9 +598,8 @@ export class Sim {
             }
         }
         if (!haveHost) {
-            ref1 = this.players;
-            for (m = 0, len2 = ref1.length; m < len2; m++) {
-                p = ref1[m];
+            for (let m = 0; m < this.players.length; m++) {
+                p = this.players[m];
                 if (!p.ai && p.connected && p.side !== "spectators") {
                     p.host = true;
                     break;
@@ -611,7 +608,7 @@ export class Sim {
         }
     };
 
-    addAi(player: any, name: any, side: any, aiBuildBar: any, nocheck: boolean) {
+    addAi(player: Player, name: any, side: any, aiBuildBar: any, nocheck: boolean) {
         let p;
         if (nocheck == null) {
             nocheck = false;
@@ -680,78 +677,34 @@ export class Sim {
     };
 
     kickAllAis() {
-        let l, len1, player, ref, results;
+        let l, len1, player, ref;
         if (this.aiTestMode) {
             return;
         }
         ref = this.players;
-        results = [];
         for (l = 0, len1 = ref.length; l < len1; l++) {
             player = ref[l];
             if (player.ai) {
                 player.connected = false;
-                results.push(player.side = "spectators");
-            } else {
-                results.push(void 0);
+                player.side = "spectators";
             }
         }
-        return results;
     }
 
-    startGame(player: { host: any; name: string; }, real: boolean) {
-        if (real == null) {
-            real = false;
-        }
+    startGame(player: Player, real: boolean) {
+        this.gameMode.startGame(player, real);
+    }
 
-        if (this.local) {
-            this.start();
-            return;
-        }
-
-        if (!player.host && player.name !== "Avamander") {
-            console.log("A non-host player is trying to start game.");
-            return;
-        }
-
-        if (this.state !== "waiting") {
-            console.log("Trying to start a game when a game is already in progress. State:", this.state);
-            return;
-        }
-
-        if (!this.canStart(true)) {
-            return;
-        }
-
-        Sim.say("Game is about to start!");
-        return this.countDown = 16 * 6;
-    };
-
-    canStart(sayStuff: boolean) {
-        if (sayStuff == null) {
-            sayStuff = false;
-        }
-        if (this.numInTeam("alpha") < this.playersPerTeam()) {
-            if (sayStuff) {
-                Sim.say("Team alpha does not have enough players.");
-            }
-            return false;
-        }
-        if (this.numInTeam("beta") < this.playersPerTeam()) {
-            if (sayStuff) {
-                Sim.say("Team beta does not have enough players.");
-            }
-            return false;
-        }
-        return true;
+    canStart(sayStuff: boolean): boolean {
+        return this.gameMode.canStart(sayStuff);
     }
 
     validateBuildBar(player: Player) {
-        let i, l, len1, n, ref, spec;
+        let i, l, len1, ref, spec;
         if (!this.check) {
             player.validBar = (function () {
-                let l, results;
-                results = [];
-                for (n = l = 0; l < 10; n = ++l) {
+                let results = [];
+                for (let l = 0; l < 10; l++) {
                     results.push(true);
                 }
                 return results;
@@ -766,7 +719,6 @@ export class Sim {
     }
 
     moveOrder(player: Player, points: any[], additive: any, orderId: any) {
-        let l, len1, n, ref, results, u;
         if (!player) {
             return;
         }
@@ -774,12 +726,15 @@ export class Sim {
             return;
         }
         player.actions += 1;
-        n = 0;
-        ref = player.selection;
-        results = [];
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            u = ref[l];
-            if ((u != null) && u.owner === player.number && !u.dead) {
+
+        let n = 0;
+        let u;
+
+        for (let l = 0; l < player.selection.length; l++) {
+            u = player.selection[l];
+            if (u &&
+                u.owner === player.number &&
+                !u.dead) {
                 u.giveOrder({
                     ai: false,
                     begun: false,
@@ -801,16 +756,12 @@ export class Sim {
                 if (n === points.length) {
                     n = points.length - 1;
                 }
-                results.push(u.underPlayerControl = true);
-            } else {
-                results.push(void 0);
+                u.underPlayerControl = true;
             }
         }
-        return results;
     };
 
-    followOrder(player: Player, unitId: any, additive: any, orderId: any) {
-        let l, len1, ref, results, u;
+    followOrder(player: Player, unitId: number, additive: any, orderId: any) {
         if (!player) {
             return;
         }
@@ -818,38 +769,23 @@ export class Sim {
             return;
         }
         player.actions += 1;
-        ref = player.selection;
-        results = [];
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            u = ref[l];
+        let u;
+        for (let l = 0; l < player.selection.length; l++) {
+            u = player.selection[l];
             if (u.owner === player.number) {
                 u.giveOrder({
-                    ai: false,
-                    begun: false,
-                    dest: undefined,
-                    distance: 0,
-                    noStop: false,
-                    // @ts-ignore
-                    pos: undefined,
-                    rally: false,
-                    range: 0,
-                    // @ts-ignore
-                    target: undefined,
                     id: orderId,
                     type: "Follow",
                     targetId: unitId,
                     noFinish: true
                 }, additive);
-                results.push(u.underPlayerControl = true);
-            } else {
-                results.push(void 0);
+                u.underPlayerControl = true;
             }
         }
-        return results;
-    };
+    }
 
     stopOrder(player: Player, additive: any) {
-        let l, len1, ref, results, u;
+        let u;
         if (!player) {
             return;
         }
@@ -857,21 +793,17 @@ export class Sim {
             return;
         }
         player.actions += 1;
-        ref = player.selection;
-        results = [];
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            u = ref[l];
+
+        for (let l = 0; l < player.selection.length; l++) {
+            u = player.selection[l];
             if (u.owner === player.number) {
-                results.push(u.stopAndClearOrders());
-            } else {
-                results.push(void 0);
+                u.stopAndClearOrders();
             }
         }
-        return results;
     };
 
     holdPositionOrder(player: Player, additive: any) {
-        let l, len1, len2, m, ref, ref1, results, someHolding, u;
+        let results, someHolding, u;
         if (!player) {
             return;
         }
@@ -880,33 +812,28 @@ export class Sim {
         }
         player.actions += 1;
         someHolding = false;
-        ref = player.selection;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            u = ref[l];
+        for (let l = 0; l < player.selection.length; l++) {
+            u = player.selection[l];
             if (u.owner === player.number && u.holdPosition) {
                 someHolding = true;
                 break;
             }
         }
-        ref1 = player.selection;
+
         results = [];
-        for (m = 0, len2 = ref1.length; m < len2; m++) {
-            u = ref1[m];
+        for (let m = 0; m < player.selection.length; m++) {
+            u = player.selection[m];
             if (u.owner === player.number) {
                 if (someHolding) {
-                    results.push(u.holdPosition = false);
+                    u.holdPosition = false;
                 } else {
-                    results.push(u.holdPosition = !u.holdPosition);
+                    u.holdPosition = !u.holdPosition;
                 }
-            } else {
-                results.push(void 0);
             }
         }
-        return results;
-    };
+    }
 
     selfDestructOrder(player: Player, additive: any) {
-        let l, len1, ref, results, u;
         if (!player) {
             return;
         }
@@ -914,21 +841,18 @@ export class Sim {
             return;
         }
         player.actions += 1;
-        ref = player.selection;
-        results = [];
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            u = ref[l];
+
+        let u;
+        for (let l = 0; l < player.selection.length; l++) {
+            u = player.selection[l];
             if (u.owner === player.number) {
-                results.push(u.selfDestruct());
-            } else {
-                results.push(void 0);
+                u.selfDestruct();
             }
         }
-        return results;
     };
 
     buildUnit(pid: number, number: number, pos: Float64Array) {
-        let _, _where, l, len1, player, ref, ref1, spec, totalUnits, u, unit, w;
+        let _where, l, len1, player, ref, ref1, spec, totalUnits, u, unit, w;
         player = this.players[pid];
 
         if (!player) {
@@ -940,9 +864,8 @@ export class Sim {
         }
 
         totalUnits = 0;
-        ref = this.things;
-        for (_ in ref) {
-            u = ref[_];
+        for (let thing_id in this.things) {
+            u = this.things[thing_id];
             if (u.unit && u.owner === player.number) {
                 totalUnits += 1;
             }
@@ -955,6 +878,7 @@ export class Sim {
             return;
         }
         player.actions += 1;
+
         unit = new Unit(spec);
         unit.owner = player.number;
         unit.side = player.side;
@@ -965,12 +889,12 @@ export class Sim {
         }
         player.money -= unit.cost;
         this.things[unit.id] = (unit as Thing);
+
         if (pos) {
             v2.set(pos, unit.pos);
             unit.rot = v2.angle(unit.pos) + Math.PI;
-            ref1 = unit.weapons;
-            for (l = 0, len1 = ref1.length; l < len1; l++) {
-                w = ref1[l];
+            for (let l = 0; l < unit.weapons.length; l++) {
+                w = unit.weapons[l];
                 w.rot = unit.rot;
             }
         }
@@ -1011,7 +935,7 @@ export class Sim {
     }
 
     findSpawnPoint(player: Player) {
-        let _, ref, unit;
+        let unit;
         if ((player != null ? player.usingSpawn : void 0)) {
             if (player.usingSpawn.side === player.side) {
                 return player.usingSpawn;
@@ -1020,21 +944,35 @@ export class Sim {
                 player.usingSpawn = null;
             }
         }
-        ref = this.things;
-        for (_ in ref) {
-            unit = ref[_];
+
+        for (let thing_id in this.things) {
+            unit = this.things[thing_id];
             if (unit.spawn === player.side) {
                 return unit;
             }
         }
     }
 
+    findSpawnPointBySide(side: string): SpawnPoint | null {
+        let unit;
+        for (let thing_id in this.things) {
+            unit = this.things[thing_id];
+
+            if (unit.spawnPoint) {
+                if (unit.side === side) {
+                    return (unit as SpawnPoint);
+                }
+            }
+        }
+
+        return null;
+    }
+
     canBuildHere(pos: Float64Array, side: string, cls: Unit) {
-        let _, dist, inRange, ref, unit;
+        let dist, inRange, unit;
         inRange = false;
-        ref = this.things;
-        for (_ in ref) {
-            unit = ref[_];
+        for (let thing_id in this.things) {
+            unit = this.things[thing_id];
             if (unit.unit || unit.commandPoint) {
                 dist = v2.distance(pos, unit.pos);
                 if (unit.unit) {
@@ -1053,109 +991,36 @@ export class Sim {
     }
 
     playerSelected(player: Player, selection: any[]) {
-        let id, l, len1, ref, ref1, results, t, u;
+        let id, ref1, results, thing, u;
         if (!player) {
             return;
         }
-        ref = player.selection;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            u = ref[l];
+
+        for (let l = 0; l < player.selection.length; l++) {
+            u = player.selection[l];
             if (u.owner === player.number) {
                 u.underPlayerControl = false;
             }
         }
         player.selection = [];
-        ref1 = this.things;
-        results = [];
-        for (id in ref1) {
-            t = ref1[id];
-            results.push((function () {
-                let len2, m, results1;
-                results1 = [];
-                for (m = 0, len2 = selection.length; m < len2; m++) {
-                    id = selection[m];
-                    if (t.id === id) {
-                        results1.push(player.selection.push(t));
-                    } else {
-                        results1.push(void 0);
-                    }
+        for (id in this.things) {
+            thing = this.things[id];
+            for (let m = 0; m < selection.length; m++) {
+                let selection_id = selection[m];
+                if (thing.id === selection_id) {
+                    player.selection.push(thing);
                 }
-                return results1;
-            })());
+            }
         }
-        return results;
     }
 
-    surrender(player: Player) {
-        if (!player) {
-            return;
-        }
-        if (this.winningSide) {
-            return;
-        }
-        if (this.state !== "running") {
-            return;
-        }
-
-        if (this.surrender_votes === undefined) {
-            this.surrender_votes = {};
-        }
-
-        let team_players = this.players.filter(function (filter_players: Player) {
-            return filter_players.ai === false &&
-                filter_players.side === player.side;
-        });
-
-        if (team_players.length === 1) {
-            if (player.side === "beta") {
-                this.winningSide = "alpha";
-            } else if (player.side === "alpha") {
-                this.winningSide = "beta";
-            } else {
-                return;
-            }
-
-            Sim.say(player.name + " surrendered");
-
-            return this.endOfGame();
-        } else if (team_players.length >= 1) {
-            if (!player.surrendered === undefined) {
-                player.surrendered = false;
-            }
-
-            if (!player.surrendered) {
-                if (this.surrender_votes[player.side] === undefined) {
-                    this.surrender_votes[player.side] = 1;
-                } else {
-                    this.surrender_votes[player.side] += 1;
-                }
-                player.surrendered = true;
-            } else {
-                return;
-            }
-
-            if (this.surrender_votes[player.side] > (team_players.length - 1)) {
-                if (player.side === "beta") {
-                    this.winningSide = "alpha";
-                } else if (player.side === "alpha") {
-                    this.winningSide = "beta";
-                } else {
-                    return;
-                }
-
-                Sim.say(player.name + " surrendered");
-                return this.endOfGame();
-            } else {
-                Sim.say(player.name + " voted to surrender");
-                Sim.say((team_players.length - this.surrender_votes[player.side]) + " vote(s) more required");
-                return;
-            }
-        }
+    surrender(player: Player): void {
+        this.gameMode.surrender(player);
     }
 
     checkAfkPlayers() {
-        let l, len1, player;
-        for (l = 0, len1 = this.players.length; l < len1; l++) {
+        let player;
+        for (let l = 0; l < this.players.length; l++) {
             player = this.players[l];
 
             if (player.ai) {
@@ -1176,11 +1041,10 @@ export class Sim {
     }
 
     numInTeam(side: string) {
-        let l, len1, num, player, ref;
-        num = 0;
-        ref = this.players;
-        for (l = 0, len1 = ref.length; l < len1; l++) {
-            player = ref[l];
+        let num = 0;
+        let player;
+        for (let l = 0; l < this.players.length; l++) {
+            player = this.players[l];
             if (player.side === side) {
                 num += 1;
             }
@@ -1192,9 +1056,11 @@ export class Sim {
         if (this.state === "starting") {
             this.state = "running";
         }
+
         if (this.state === "ended") {
             this.state = "waiting";
         }
+
         if (this.countDown > 0) {
             this.countDown -= 1;
             if (!this.canStart(true)) {
@@ -1206,6 +1072,7 @@ export class Sim {
                 this.start();
             }
         }
+
         if (this.state === "waiting" && this.serverType === "1v1r" && this.canStart(false) && this.countDown === 0) {
             Sim.say("Challenger appears, game is about to start!");
             return this.countDown = 16 * 6;
@@ -1213,133 +1080,100 @@ export class Sim {
     }
 
     simulate() {
-        let id, l, len1, len2, m, player, ref, ref1, ref2, ref3, ref4, t, thing;
         this.timeStart("sim");
         this.step += 1;
         this.startingSim();
         this.checkAfkPlayers();
         this.whoIsHost();
-        this.timeIt("spacesRebuild", (function (_this) {
-            return function () {
-                return _this.spacesRebuild();
-            };
-        })(this));
+
+        this.timeStart("spacesRebuild");
+        this.spacesRebuild();
+        this.timeEnd("spacesRebuild");
 
         this.timeStart("units");
-        this.units = [
-            // @ts-ignore
-            (function () {
-                let ref;
-                let results: Unit[] = [];
-                ref = Sim.Instance.things;
-                for (id in ref) {
-                    t = ref[id];
-                    if (t.unit) {
-                        results.push((t as Unit));
-                    }
-                }
-                return results;
-            }).call(this)
-        ];
+        this.units = [];
+        for (let id in this.things) {
+            if (this.things[id].unit) {
+                this.units.push((this.things[id] as Unit));
+            }
+        }
         this.timeEnd("units");
 
         this.timeStart("bullets");
-        this.bullets = [
-            // @ts-ignore
-            (function () {
-                let ref;
-                let results: Bullet[] = [];
-                ref = Sim.Instance.things;
-                for (id in ref) {
-                    t = ref[id];
-                    if (t.bullet) {
-                        results.push((t as Bullet));
-                    }
-                }
-                return results;
-            }).call(this)
-        ];
+        this.bullets = [];
+        for (let id in this.things) {
+            if (this.things[id].bullet) {
+                this.bullets.push((this.things[id] as Bullet));
+            }
+        }
         this.timeEnd("bullets");
 
         this.timeStart("commandPoint");
-        this.commandPoint = [
-            (function () {
-                let ref, results;
-                ref = Sim.Instance.things;
-                results = [];
-                for (id in ref) {
-                    t = ref[id];
-                    if (t.bullet) {
-                        results.push(t);
-                    }
-                }
-                return results;
-            }).call(this)
-        ];
+        this.commandPoint = [];
+        for (let id in this.things) {
+            if (this.things[id].commandPoint) {
+                this.commandPoint.push((this.things[id] as CommandPoint));
+            }
+        }
         this.timeEnd("commandPoint");
 
         this.timeStart("death");
-        ref = Sim.Instance.things;
-        for (id in ref) {
-            thing = ref[id];
-            if (thing.dead) {
-                if (typeof thing.postDeath === "function") {
-                    thing.postDeath();
+        for (let id in this.things) {
+            if (this.things[id].dead) {
+                if (typeof this.things[id].postDeath === "function") {
+                    this.things[id].postDeath();
                 }
+
                 delete this.things[id];
+                // @ts-ignore
+                this.things.splice(id, 1);
             }
         }
         this.timeEnd("death");
 
         this.timeStart("tick");
-        ref1 = this.things;
-        for (id in ref1) {
-            thing = ref1[id];
-            if (typeof thing.tick === "function") {
-                thing.tick();
+        for (let id in this.things) {
+            if (typeof this.things[id].tick === "function") {
+                if (!this.things[id].dead) {
+                    this.things[id].tick();
+                }
             }
         }
         this.timeEnd("tick");
 
         this.timeStart("move");
-        ref2 = this.things;
-        for (id in ref2) {
-            thing = ref2[id];
-            if (typeof thing.move === "function") {
-                thing.move();
+        for (let id in this.things) {
+            if (typeof this.things[id].move === "function") {
+                this.things[id].move();
             }
         }
         this.timeEnd("move");
 
-        this.timeIt("unitsCollide", (function (_this) {
-            return function () {
-                return _this.unitsCollide();
-            };
-        })(this));
+        this.timeStart("unitsCollide");
+        this.unitsCollide();
+        this.timeEnd("unitsCollide");
 
 
         this.timeStart("players");
         if (this.state === "running" || this.serverType === "sandbox") {
-            ref3 = this.players;
-            for (l = 0, len1 = ref3.length; l < len1; l++) {
-                player = ref3[l];
-                if (player.side !== "spectators") {
-                    player.tick();
+            for (let l = 0; l < this.players.length; l++) {
+                if (this.players[l].side !== "spectators") {
+                    this.players[l].tick();
                 }
             }
         }
-        ref4 = this.players;
-        for (m = 0, len2 = ref4.length; m < len2; m++) {
-            player = ref4[m];
-            if (this.state === "waiting" && player.afk) {
-                player.side = "spectators";
+
+        for (let m = 0; m < this.players.length; m++) {
+            if (this.state === "waiting" && this.players[m].afk) {
+                this.players[m].side = "spectators";
             }
-            if (player.side === null) {
-                player.side = "spectators";
+            if (this.players[m].side === null) {
+                this.players[m].side = "spectators";
             }
         }
         this.timeEnd("players");
 
+        this.timeStart("victoryConditions");
         this.victoryConditions();
         // @ts-ignore
         if (typeof this.extra === "function") {
@@ -1352,141 +1186,26 @@ export class Sim {
                 ref5.tick();
             }
         }*/
-        return this.timeEnd("sim");
+        this.timeEnd("victoryConditions");
+
+        this.timeStart("extrasim");
+        this.gameMode.extra_simulate();
+        this.timeEnd("extrasim");
+
+
+        this.timeEnd("sim");
     }
 
     spacesRebuild() {
-        let ref1, thing;
-        this.unitSpaces = {
-            "alpha": new HSpace(500),
-            "beta": new HSpace(500)
-        };
-        this.bulletSpaces = {
-            "alpha": new HSpace(100),
-            "beta": new HSpace(100)
-        };
-        this.maxRadius = {
-            alpha: 0,
-            beta: 0
-        };
-
-        for (let id in this.things) {
-            thing = this.things[id];
-            if (thing.dead) {
-                continue;
-            }
-            if (thing.unit) {
-                if ((ref1 = this.unitSpaces[thing.side]) != null) {
-                    ref1.insert(thing);
-                }
-                if (this.maxRadius[thing.side] != null) {
-                    if (thing.radius > this.maxRadius[thing.side]) {
-                        this.maxRadius[thing.side] = thing.radius;
-                    }
-                }
-            }
-            if (thing.bullet) {
-                this.bulletSpaces[thing.side].insert(thing);
-            }
-        }
+        this.gameMode.spacesRebuild();
     }
 
     victoryConditions() {
-        let cappedArr, id, k, l, len1, player, ref, ref1, stillThere, thing;
-        if (this.state !== "running") {
-            return;
-        }
-        let capped: { [key: string]: number; } = {};
-        ref = this.things;
-        for (id in ref) {
-            thing = ref[id];
-            if (thing.commandPoint) {
-                capped[thing.side] = (capped[thing.side] || 0) + 1;
-            }
-        }
-        cappedArr = (function () {
-            let results;
-            results = [];
-            for (k in capped) {
-                results.push(k);
-            }
-            return results;
-        })();
-        if (cappedArr.length === 0) {
-            return;
-        }
-        if (cappedArr.length === 1 && cappedArr[0] !== "neutral") {
-            this.winningSide = cappedArr[0];
-        }
-        if (this.winningSide) {
-            this.endOfGame();
-            return;
-        }
-        if (!this.local && !this.aiTestMode) {
-            stillThere = false;
-            ref1 = this.players;
-            for (l = 0, len1 = ref1.length; l < len1; l++) {
-                player = ref1[l];
-                if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
-                    stillThere = true;
-                }
-            }
-            if (!stillThere) {
-                Sim.say("Every one left. Ending game.");
-                this.winningSide = "";
-                this.endOfGame();
-            }
-        } else if (this.step > 16 * 60 * 30) {
-            this.winningSide = "";
-            this.endOfGame();
-        }
+        this.gameMode.victoryConditions();
     }
 
     endOfGame() {
-        let player;
-
-        if (this.surrender_votes === undefined) {
-            this.surrender_votes = {};
-        }
-        this.surrender_votes["alpha"] = 0;
-        this.surrender_votes["beta"] = 0;
-
-        if (this.winningSide) {
-            Sim.say(this.winningSide + " has won!");
-        } else {
-            Sim.say("Game ends in a draw!");
-        }
-        this.numBattles += 1;
-        if (this.numBattles > 100) {
-            this.awaitRestart = true;
-        }
-        // TODO: READD
-        //if (typeof this.sendGameReport === "function") {
-        //    this.sendGameReport();
-        //}
-        if (this.serverType === "1v1r" && this.winningSide) {
-            for (let l = 0; l < this.players.length; l++) {
-                player = this.players[l];
-                if (player.side !== "spectators") {
-                    if (player.side === this.winningSide) {
-                        player.streak += 1;
-                        if (player.streak === 1) {
-                            Sim.say(player.name + " wins a battle");
-                        } else {
-                            Sim.say(player.name + " wins " + player.streak + " battles");
-                        }
-                        player.host = true;
-                    } else {
-                        player.side = "spectators";
-                        player.host = false;
-                        player.streak = 0;
-                        Sim.say(player.name + " lost and was kicked");
-                        player.kickTime = Utils.now();
-                    }
-                }
-            }
-        }
-        return this.state = "ended";
+        this.gameMode.endOfGame();
     }
 
     unitsCollide() {
@@ -1690,10 +1409,10 @@ export class Sim {
         this.timeEnd("things");
         this.timeStart("players");
         splayers = [];
-        ref10 = this.players;
+
         let s;
-        for (q = 0, len4 = ref10.length; q < len4; q++) {
-            player = ref10[q];
+        for (q = 0, len4 = this.players.length; q < len4; q++) {
+            player = this.players[q];
             changes = [];
             changes.push(["playerNumber", player.number]);
             if (player.net == null) {
@@ -1702,9 +1421,8 @@ export class Sim {
                 s = player.net;
             }
 
-            ref11 = this.playerFields;
-            for (r = 0, len5 = ref11.length; r < len5; r++) {
-                f = ref11[r];
+            for (r = 0, len5 = this.playerFields.length; r < len5; r++) {
+                f = this.playerFields[r];
                 // @ts-ignore
                 v = player[f];
                 if ((v != null) && !this.simpleEquals(s[f], v)) {
@@ -1764,13 +1482,13 @@ export class Sim {
             if (this.DEBUG) {
                 send = true;
             } else {
-                ref13 = this.players;
-                for (z = 0, len8 = ref13.length; z < len8; z++) {
-                    player = ref13[z];
-                    if ((player.name === "treeform") && player.connected) {
+                /*for (z = 0, len8 = this.players.length; z < len8; z++) {
+                    player = this.players[z];
+                    if ((player.name === "treeform") &&
+                        player.connected) {
                         send = true;
                     }
-                }
+                }*/
             }
             if (send) {
                 // @ts-ignore
@@ -1785,20 +1503,19 @@ export class Sim {
                         }).call(this)).length,
                         sthings: sthings.length,
                         players: ((function () {
-                            let i1, len9, ref14 = Sim.Instance.players;
+                            let i1, len9;
                             let results = [];
-                            for (i1 = 0, len9 = ref14.length; i1 < len9; i1++) {
-                                p = ref14[i1];
+                            for (i1 = 0, len9 = Sim.Instance.things.length; i1 < len9; i1++) {
+                                p = Sim.Instance.things[i1];
                                 results.push(p);
                             }
                             return results;
                         }).call(this)).length,
                         splayers: splayers.length,
                         units: ((function () {
-                            let ref14 = Sim.Instance.things;
                             let results = [];
-                            for (_ in ref14) {
-                                t = ref14[_];
+                            for (_ in Sim.Instance.things) {
+                                t = Sim.Instance.things[_];
                                 if (t.unit) {
                                     results.push(t);
                                 }
@@ -1806,10 +1523,9 @@ export class Sim {
                             return results;
                         }).call(this)).length,
                         bullets: ((function () {
-                            let ref14 = Sim.Instance.things;
                             let results = [];
-                            for (_ in ref14) {
-                                t = ref14[_];
+                            for (_ in Sim.Instance.things) {
+                                t = Sim.Instance.things[_];
                                 if (t.bullet) {
                                     results.push(t);
                                 }
@@ -1817,10 +1533,9 @@ export class Sim {
                             return results;
                         }).call(this)).length,
                         others: ((function () {
-                            let ref14 = Sim.Instance.things;
                             let results = [];
-                            for (_ in ref14) {
-                                t = ref14[_];
+                            for (_ in Sim.Instance.things) {
+                                t = Sim.Instance.things[_];
                                 if (!t.bullet && !t.unit) {
                                     results.push(t);
                                 }
@@ -1840,7 +1555,7 @@ export class Sim {
         this.timeEnd("zJson");
         this.timeEnd("send");
         return packet;
-    };
+    }
 
     clearNetState() {
         console.log("Clearing net state");
@@ -1862,12 +1577,12 @@ export class Sim {
                 delete this.players[m].net;
             }
         }
-    };
+    }
 
     timeStart(what: string) {
         this.timePath.push(what);
         return this.timeStarts[this.timePath.join(">")] = Utils.now();
-    };
+    }
 
     timeEnd(what: string) {
         let delta, key;
@@ -1881,14 +1596,14 @@ export class Sim {
         } else {
             return this.timeings[key] += delta;
         }
-    };
+    }
 
     timeIt(what: string, fn: { (): void; }) {
         this.timeStart(what);
         let ret = fn();
         this.timeEnd(what);
         return ret;
-    };
+    }
 
     timeReport() {
         let bar, i, l, ref1;
@@ -1901,5 +1616,5 @@ export class Sim {
             console.log(bar, k, v);
         }
         return this.timeings = {};
-    };
+    }
 }

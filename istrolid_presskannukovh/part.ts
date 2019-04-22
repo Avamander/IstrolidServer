@@ -191,27 +191,6 @@ export class Engine extends Part {
     }
 }
 
-export class TorpTurret extends Part {
-    name = "Torpedo Launcher";
-    desc = "Launches torpedos that move in straight line.";
-    hp = 10;
-    cost = 5;
-    image = "turTorp.png";
-    size = [2, 2];
-    reloadTime = 52;
-    trackSpeed = 45;
-    bulletCls = TorpBullet.constructor.name;
-    range = 1100;
-    shotEnergy = 1300;
-    mass = 10;
-    bulletSpeed = 16;
-    damage = 24;
-
-    constructor() {
-        super();
-    }
-}
-
 export class Turret extends Part {
     tab: string = "weapons";
     image: string = "turret01.png";
@@ -621,8 +600,8 @@ export class Turret extends Part {
     }
 }
 
+
 import {Bullets} from "./bullets";
-import TorpBullet = Bullets.TorpBullet;
 import {Explosions} from "./explosions";
 import HitExplosion = Explosions.HitExplosion;
 import BattleCannonBullet = Bullets.BattleCannonBullet;

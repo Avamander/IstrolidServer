@@ -105,7 +105,7 @@ export class Unit extends Thing {
         id: number;
         range: number;
         noFinish: boolean;
-        begun: boolean;
+        begun: boolean
         pos: Float64Array;
         target: Unit;
         distance: number;
@@ -835,7 +835,7 @@ export class Unit extends Thing {
         }
 
         //sim.timeStart("cooldowntick");
-        if (isNaN(this.cooldown) && this.hp <= 0) {
+        if (isNaN(this.cooldown) && this.hp <= 0 && !this.dead) {
             exp = new ShipExplosion();
             exp.z = 1000;
             exp.pos = new Float64Array([this.pos[0], this.pos[1]]);
@@ -1575,7 +1575,9 @@ export class Unit extends Thing {
             }
             return true;
         }
-        if (this.jump > this.jumpDistance && this.energy > JumpEngine.useEnergy * this.mass && !this.holdPosition) {
+        if (this.jump > this.jumpDistance &&
+            this.energy > JumpEngine.useEnergy * this.mass &&
+            !this.holdPosition) {
             jumpDist = this.jumpDistance;
             needDist = v2.distance(this.pos, pos) - Math.max(this.stopDistance, 100);
             jumpDist = Math.min(jumpDist, needDist);

@@ -102,6 +102,7 @@ export class Grid {
                 return "Ship has parts outside the build area.";
             }
 
+            /*
             if (!player.ai) {
                 if (Grid.check(grid, function (part: Part) {
                     return part.locked;
@@ -109,6 +110,8 @@ export class Grid {
                     return "Has parts that have not been unlocked.";
                 }
             }
+            */
+
             if (Grid.check(grid, function (part: Part) {
                 return part.overlap;
             })) {
@@ -269,10 +272,10 @@ export class Grid {
                             }
                         }*/
                         //if (Account.Instance !== undefined && Account.Instance !== null && !Account.Instance.hasDLCBonus() && part.dir && part.dir !== 0) { // TODO: server exclude
-                        if (part.dir && part.dir !== 0) {
+                        /*if (part.dir && part.dir !== 0) {
                             t.bad = true;
                             t.locked = true;
-                        }
+                        }*/
                     }
                     // TODO: Fix
                     /*if (Sim.Instance.galaxyStar && player.id === Account.Instance.id && !galaxyMode.unlockedParts[part.constructor.name]) {

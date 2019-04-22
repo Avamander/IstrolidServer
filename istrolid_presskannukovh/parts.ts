@@ -1,6 +1,7 @@
 import {Part, Engine, Turret} from "./part";
 import {Bullets} from "./bullets";
 import {Explosions} from "./explosions";
+import {Rock, Thing} from "./things";
 
 export namespace Parts {
     import LightPlasmaBullet = Bullets.LightPlasmaBullet;
@@ -30,6 +31,7 @@ export namespace Parts {
     import ArtilleryBullet = Bullets.ArtilleryBullet;
 
     import AoeExplosion = Explosions.AoeExplosion;
+    import TorpBullet = Bullets.TorpBullet;
 
     export class Mount360 extends Part {
         name = "360 Turret Mount";
@@ -1383,7 +1385,7 @@ export namespace Parts {
                     continue;
                 }
                 if (other.owner === this.unit.owner) {
-                    if (other.side !== this.unit.side){
+                    if (other.side !== this.unit.side) {
 
                     } else {
                         continue;
@@ -1559,8 +1561,6 @@ export namespace Parts {
     }
 
     export class Battery1x1 extends Battery {
-
-
         name = "Battery";
         hp = 5;
         cost = 10;
@@ -1575,8 +1575,6 @@ export namespace Parts {
     }
 
     export class Battery2x1 extends Battery {
-
-
         name = "Battery";
         hp = 10;
         cost = 20;
@@ -1829,7 +1827,8 @@ export namespace Parts {
     }
 
     export class JumpEngine extends Engine {
-        static useEnergy: number;
+        useEnergy: number = 15;
+        static useEnergy: number = 15; // TODO: WARNING!
         name = "Jump Engine";
         desc = "Allows you to perform short jumps.";
         trailTime = 0;
@@ -1840,7 +1839,6 @@ export namespace Parts {
         rechargeRate = 160;
         thrust = 0;
         turnSpeed = 0;
-        useEnergy = 15;
         exhaust = false;
         image = "engineJump.png";
         size = [2, 1];
@@ -1952,6 +1950,27 @@ export namespace Parts {
         turnSpeed = 3.15;
         image = "Wing1x1Notch.png";
         size = [1, 1];
+
+        constructor() {
+            super();
+        }
+    }
+
+    export class TorpTurret extends Turret {
+        name = "Torpedo Launcher";
+        desc = "Launches torpedos that move in straight line.";
+        hp = 10;
+        cost = 5;
+        image = "turTorp.png";
+        size = [2, 2];
+        reloadTime = 52;
+        trackSpeed = 45;
+        bulletCls = TorpBullet.name;
+        range = 1100;
+        shotEnergy = 1300;
+        mass = 10;
+        bulletSpeed = 16;
+        damage = 24;
 
         constructor() {
             super();
@@ -2438,7 +2457,7 @@ export namespace Parts {
 
         makeRealBullet() {
             let particle;
-            particle = new (<any> Bullets)[this.bulletCls]();
+            particle = new (<any>Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
@@ -2502,7 +2521,7 @@ export namespace Parts {
 
         makeRealBullet() {
             let particle;
-            particle = new (<any> Bullets)[this.bulletCls]();
+            particle = new (<any>Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
@@ -2593,7 +2612,7 @@ export namespace Parts {
         zap(from: Float64Array, thing: Thing): void {
             let closestUnit, minD: number, particle, range;
             this.zapped.push(thing.id);
-            particle = new (<any> Bullets)[this.bulletCls]();
+            particle = new (<any>Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.owner = this.unit.owner;
@@ -2621,35 +2640,8 @@ export namespace Parts {
             Sim.Instance.unitSpaces[Sim.otherSide(this.unit.side)].findInRange(thing.pos, range + Sim.Instance.maxRadius[Sim.otherSide(this.unit.side)],
                 // @ts-ignore
                 (function (_this) {
-                return function (other: Unit) {
-                    let d, ref;
-                    if (other.owner === _this.unit.owner) {
-                        if (other.side !== _this.unit.side){
-
-                        } else {
-                            return false;
-                        }
-                    }
-                    ref = other.id;
-                    // @ts-ignore
-                    if (other.cloakFade === 0 && ([].indexOf.call(_this.zapped, other.id) < 0)) {
-                        d = v2.distance(thing.pos, other.pos) - other.radius;
-                        if (d < 0) {
-                            d = 0;
-                        }
-                        if (d < minD) {
-                            minD = d;
-                            closestUnit = other;
-                        }
-                    }
-                    return false;
-                };
-            })(this));
-            if (this.hitsMissiles) {
-                Sim.Instance.bulletSpaces[Sim.otherSide(this.unit.side)].findInRange(thing.pos, range,
-                    // @ts-ignore
-                    (function (_this) {
                     return function (other: Unit) {
+                        let d, ref;
                         if (other.owner === _this.unit.owner) {
                             if (other.side !== _this.unit.side) {
 
@@ -2657,10 +2649,10 @@ export namespace Parts {
                                 return false;
                             }
                         }
-                        let ref = other.id;
+                        ref = other.id;
                         // @ts-ignore
-                        if ([].indexOf.call(_this.zapped, other.id) < 0) {
-                            let d = v2.distance(thing.pos, other.pos) - other.radius;
+                        if (other.cloakFade === 0 && ([].indexOf.call(_this.zapped, other.id) < 0)) {
+                            d = v2.distance(thing.pos, other.pos) - other.radius;
                             if (d < 0) {
                                 d = 0;
                             }
@@ -2672,6 +2664,33 @@ export namespace Parts {
                         return false;
                     };
                 })(this));
+            if (this.hitsMissiles) {
+                Sim.Instance.bulletSpaces[Sim.otherSide(this.unit.side)].findInRange(thing.pos, range,
+                    // @ts-ignore
+                    (function (_this) {
+                        return function (other: Unit) {
+                            if (other.owner === _this.unit.owner) {
+                                if (other.side !== _this.unit.side) {
+
+                                } else {
+                                    return false;
+                                }
+                            }
+                            let ref = other.id;
+                            // @ts-ignore
+                            if ([].indexOf.call(_this.zapped, other.id) < 0) {
+                                let d = v2.distance(thing.pos, other.pos) - other.radius;
+                                if (d < 0) {
+                                    d = 0;
+                                }
+                                if (d < minD) {
+                                    minD = d;
+                                    closestUnit = other;
+                                }
+                            }
+                            return false;
+                        };
+                    })(this));
             }
             if (closestUnit) {
                 return this.zap(thing.pos, closestUnit);
@@ -2760,7 +2779,7 @@ export namespace Parts {
         }
 
         init() {
-            return this.unit.warhead = true;
+            this.unit.warhead = true;
         };
 
         tick() {
@@ -2768,7 +2787,7 @@ export namespace Parts {
             if (this.unit.warheadTest !== Sim.Instance.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = Sim.Instance.step;
                 ref = this.unit.closestEnemies;
-                results = [];
+
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
@@ -2776,13 +2795,11 @@ export namespace Parts {
                             continue;
                         }
                     }
+
                     if (CollisionUtils.closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
-                        results.push(this.unit.hp = 0);
-                    } else {
-                        results.push(void 0);
+                        this.unit.hp = 0;
                     }
                 }
-                return results;
             }
         };
 
@@ -4202,7 +4219,7 @@ export namespace Parts {
 
         makeRealBullet(spread: number, pos: number) {
             let particle, tempPos;
-            particle = new (<any> Bullets)[this.bulletCls]();
+            particle = new (<any>Bullets)[this.bulletCls]();
             Sim.Instance.things[particle.id] = particle;
             particle.side = this.unit.side;
             particle.life = 0;
@@ -4229,16 +4246,163 @@ export namespace Parts {
         };
     }
 
-    export class Flag {
-        image = "parts/decals/Symbol12.png";
+    export class Flag extends Rock {
+        image: string = "parts/decals/Symbol12.png";
         color: [number, number, number, number] = [245, 171, 53, 255];
-        size = [5, 5];
-        range = 100;
-        stopFriction = .8;
-        slow = .85;
+        size = new Float64Array([5, 5]);
+        range: number = 100;
+        stopFriction: number = .8;
+        slow: number = .85;
+        flag: boolean = true;
+        "static": boolean = false;
+        torq: number = Math.random() * .2;
+        z: number = 2;
 
         constructor() {
+            super();
         }
+
+        tick() {
+            let closest, eHome, eHomeDist, enemySpawn, home, homeDist;
+            let minDist: number = 10;
+            let ref, ref1, ref2, ref3, spawn;
+            closest = function (pos: Float64Array, fn: (arg0: Thing) => boolean, maxDist: number | null) {
+                let _, dist, minDist, minT, ref, t;
+                if (maxDist == null) {
+                    maxDist = 10000000;
+                }
+                minDist = 0;
+                minT = null;
+                ref = Sim.Instance.things;
+                for (_ in ref) {
+                    t = ref[_];
+                    if (fn(t)) {
+                        dist = v2.distance(pos, t.pos);
+                        if (dist > maxDist) {
+                            continue;
+                        }
+                        if (dist < minDist || minT === null) {
+                            minDist = dist;
+                            minT = t;
+                        }
+                    }
+                }
+                return minT;
+            };
+            spawn = Sim.Instance.findSpawnPointBySide(this.side);
+            enemySpawn = Sim.Instance.findSpawnPointBySide(Sim.otherSide(this.side));
+            if (!spawn || !enemySpawn) {
+                return;
+            }
+            home = closest(spawn.pos, function (t: Thing) {
+                return t.commandPoint;
+            }, 4000) || spawn;
+
+            eHome = closest(enemySpawn.pos, function (t: Thing) {
+                return t.commandPoint;
+            }, 4000) || enemySpawn;
+
+            homeDist = v2.distance(this.pos, home.pos);
+            eHomeDist = v2.distance(this.pos, eHome.pos);
+            if (homeDist < home.radius) {
+                this.home = true;
+                if (this.side === ((ref = this.target) != null ? ref.side : void 0)) {
+                    if (this.target) {
+                        this.target.carryFlag = false;
+                        this.target = null;
+                    }
+                }
+            } else {
+                this.home = false;
+                if (eHomeDist < eHome.radius) {
+                    this.side = Sim.otherSide(this.side);
+                    if (this.target) {
+                        this.target.carryFlag = false;
+                        if ((ref1 = Sim.Instance.players[this.target.owner]) != null) {
+                            ref1.capps += 1;
+                        }
+                        this.target = null;
+                    }
+                }
+            }
+            if (!this.target || v2.distance(this.pos, this.target.pos) > Flag.prototype.range || this.target.dead) {
+                if ((ref2 = this.target) != null) {
+                    ref2.carryFlag = false;
+                }
+                closest = null;
+                minDist = 2e308;
+                if (homeDist > home.radius) {
+                    Sim.Instance.unitSpaces[this.side].findInRange(this.pos, Flag.prototype.range, (function (_this) {
+                        return function (u: Unit | Thing) {
+                            let dist;
+                            if (u.carryFlag) {
+                                return false;
+                            }
+
+                            dist = v2.distanceSq(_this.pos, u.pos);
+                            if (dist < minDist) {
+                                closest = u;
+                                minDist = dist;
+                            }
+                            return false;
+                        };
+                    })(this));
+                }
+                if (eHomeDist > eHome.radius) {
+                    Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos, Flag.prototype.range, (function (_this) {
+                        return function (u: Unit | Thing) {
+                            let dist;
+                            if (u.carryFlag) {
+                                return false;
+                            }
+
+                            dist = v2.distanceSq(_this.pos, u.pos);
+                            if (dist < minDist) {
+                                closest = u;
+                                minDist = dist;
+                            }
+                            return false;
+                        };
+                    })(this));
+                }
+                this.target = closest;
+                if ((ref3 = this.target) != null) {
+                    (ref3 as Thing | Unit).carryFlag = true;
+                }
+            }
+            if (this.target) {
+                this.target.cloak = 0;
+                if (this.target.unit) {
+                    (this.target as Unit).jump = 0;
+                }
+                return v2.scale_r(this.target.vel, Flag.prototype.slow);
+            }
+        };
+
+        move() {
+            let s;
+            if (this.target) {
+                this.vel = new Float64Array([this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]]);
+                v2.scale_r(v2.norm_r(this.vel), v2.distance(this.pos, this.target.pos) / (Flag.prototype.range - 10) * this.target.maxSpeed);
+            } else {
+                v2.scale_r(this.vel, Flag.prototype.stopFriction);
+            }
+            v2.add_r(this.pos, this.vel);
+            this.rot += this.torq;
+            s = 20000;
+            if (this.pos[0] > s) {
+                this.pos[0] = s;
+            }
+            if (this.pos[0] < -s) {
+                this.pos[0] = -s;
+            }
+            if (this.pos[1] > s) {
+                this.pos[1] = s;
+            }
+            if (this.pos[1] < -s) {
+                return this.pos[1] = -s;
+            }
+        };
     }
 
     export class NeedleGun extends Turret {
@@ -4405,4 +4569,3 @@ import {baseAtlas, intp} from "./dummy";
 import {CollisionUtils} from "./collision";
 import {Sim} from "./sim";
 import {Unit} from "./unit";
-import {Thing} from "./things";

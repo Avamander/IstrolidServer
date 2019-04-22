@@ -1,7 +1,7 @@
-import {v2} from "./maths";
+import {v2, v4} from "./maths";
 import {MTwist} from "./mtwist";
 import {Sim} from "./sim";
-import {CommandPoint, SpawnPoint, Thing} from "./things";
+import {CommandPoint, Rock, SpawnPoint, Thing} from "./things";
 import {Unit} from "./unit";
 import {IstrolidServer} from "../server";
 
@@ -208,7 +208,7 @@ export class Mapping {
 
     static chooseNumber(n: number) {
         let i, j;
-        i = Math.floor(v2.random(new Float64Array([0, 0]))[0] * n) + 1;
+        i = Math.floor((Math.random() * n) + 1);
         j = i.toString();
         if (j.length === 1) {
             return "0" + j;
@@ -217,7 +217,7 @@ export class Mapping {
     };
 
     static chooseOne(l: number[] | string[] | {}[]): any {
-        return l[Math.floor(v2.random(new Float64Array([0, 0]))[0] * l.length)];
+        return l[Math.floor(Math.random() * l.length)];
     };
 
     static randomVector(v: Float64Array) {
@@ -264,63 +264,6 @@ export class Mapping {
         return [Math.floor(pos[0]), Math.floor(pos[1])];
     }
 
-    static generate(seed: number) {
-        Mapping.mr = new MTwist(seed);
-        Sim.Instance.things = [];
-
-        /*
-        if mr.random() < .1
-            sim.theme = chooseOne(mapping.themes)
-        else
-            a = mr.random()
-            spotColor = colors.hsl2rgb([a, .5, .7, 255])
-            fillColor = colors.hsl2rgb([a+mr.random()*.8-.4, .3, .2, 255])
-            sim.theme =
-                rockColor: spotColor
-                spotColor: spotColor
-                fillColor: fillColor
-         */
-        Sim.Instance.theme = Mapping.chooseOne(Mapping.themes);
-        switch (Sim.Instance.serverType) {
-            case "Survival":
-            //genSurvival();
-            //break;
-            case "IO":
-            //genIO();
-            //break;
-            case "CTF":
-            //genCTF();
-            //break;
-            case "TicTacToe":
-            //genTTT();
-            //break;
-            case "FFA":
-                //genFFA();
-                //break;
-                IstrolidServer.say("Other gamemodes are currently not migrated");
-                break;
-            default:
-                Mapping.genSymmetrical();
-        }
-        /* // TODO:
-        if (Sim.Instance.makeRocks) {
-            fns = this.shuffle([genClouds, genDebris, genRocks, genDodads]);
-            r = v2.random(null);
-            if (r < .2) {
-                fns.pop()();
-                fns.pop()();
-                return fns.pop()();
-            } else if (r < .5) {
-                fns.pop()();
-                return fns.pop()();
-            } else if (r < .9) {
-                return fns.pop()();
-            } else {
-                return "nothing";
-            }
-        }*/
-    };
-
     static genSymmetrical() {
         let alpha_spawn = new SpawnPoint();
         alpha_spawn.side = "alpha";
@@ -336,7 +279,7 @@ export class Mapping {
         beta_spawn.pos[1] = -alpha_spawn.pos[1];
 
         Sim.Instance.things[beta_spawn.id] = beta_spawn;
-        let results = [];
+
         for (let i = 0; i < Sim.Instance.numComPoints / 2; i++) {
             let commandPoint = new CommandPoint();
             commandPoint.z = -.01;
@@ -364,19 +307,17 @@ export class Mapping {
             }
             Sim.Instance.things[commandPoint.id] = commandPoint;
             let beta_commandpoint = new CommandPoint();
-            beta_commandpoint.z = -.01;
+            beta_commandpoint.z = -0.01;
             beta_commandpoint.pos[0] = -commandPoint.pos[0];
             beta_commandpoint.pos[1] = -commandPoint.pos[1];
             commandPoint.side = "alpha";
             beta_commandpoint.side = "beta";
-            results.push(Sim.Instance.things[beta_commandpoint.id] = beta_commandpoint);
+            Sim.Instance.things[beta_commandpoint.id] = beta_commandpoint;
         }
-        return results;
     };
 
-    genTower() {
-        let results, spec, thing, u;
-        results = [];
+    static genTower() {
+        let spec, thing, u;
         for (let _ in Sim.Instance.things) {
             thing = Sim.Instance.things[_];
             if (thing.commandPoint) {
@@ -389,25 +330,202 @@ export class Mapping {
             u.side = thing.side;
             u.rot = v2.angle(u.pos) + Math.PI;
             Sim.Instance.things[u.id] = (u as Thing);
-            results.push((function () {
-                let results1 = [];
-                for (let i = 0; i < 6; i++) {
-                    if (thing.commandPoint) {
-                        spec = Mapping.blocks[0];
-                    } else {
-                        continue;
-                    }
-                    u = new Unit(spec);
-                    u.pos = v2.create(thing.pos);
-                    u.pos[0] += Math.sin(i / 3 * Math.PI) * thing.radius * .8;
-                    u.pos[1] += Math.cos(i / 3 * Math.PI) * thing.radius * .8;
-                    u.side = thing.side;
-                    u.rot = Math.PI / 2;
-                    results1.push(Sim.Instance.things[u.id] = (u as Thing));
+
+            for (let i = 0; i < 6; i++) {
+                if (thing.commandPoint) {
+                    spec = Mapping.blocks[0];
+                } else {
+                    continue;
                 }
-                return results1;
-            })());
+                u = new Unit(spec);
+                u.pos = v2.create(thing.pos);
+                u.pos[0] += Math.sin(i / 3 * Math.PI) * thing.radius * .8;
+                u.pos[1] += Math.cos(i / 3 * Math.PI) * thing.radius * .8;
+                u.side = thing.side;
+                u.rot = Math.PI / 2;
+                Sim.Instance.things[u.id] = (u as Thing);
+            }
         }
-        return results;
+    };
+
+    static genClouds() {
+        let alpha, c, cloud, clouds, i, len, m, n, o, otherCloud, overlaps, ref, results, s, type;
+        if (Mapping.mr.random() < .3) {
+            c = 0;
+        } else {
+            c = 255;
+        }
+        alpha = 15 + 20 * Mapping.mr.random();
+        type = Mapping.chooseOne(["s", "v", "a", "g"]);
+        n = Math.PI * Sim.Instance.mapScale * Sim.Instance.mapScale * 8;
+        clouds = [];
+        for (i = m = 0, ref = n * Mapping.mr.random(); 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
+            cloud = new Rock();
+            cloud.image = "img/debree/" + type + "cloud" + (Mapping.chooseNumber(4)) + ".png";
+            Mapping.randomVector(cloud.pos);
+            v2.scale_r(cloud.pos, (Mapping.mr.random() * 3200) * Sim.Instance.mapScale);
+            overlaps = 0;
+            for (o = 0, len = clouds.length; o < len; o++) {
+                otherCloud = clouds[o];
+                if (v2.distance(cloud.pos, otherCloud.pos) < 1200) {
+                    overlaps += 1;
+                }
+            }
+            if (overlaps > 2) {
+                continue;
+            }
+            cloud.color = Sim.Instance.theme.rockColor;
+            cloud.color[0] = c;
+            cloud.color[1] = c;
+            cloud.color[2] = c;
+            cloud.color[3] = alpha;
+            s = 4 + Mapping.mr.random() * 4;
+            cloud.size = new Float64Array([s, s]);
+            cloud.z = (Mapping.mr.random() - .5) * 200;
+            cloud.rot = Mapping.mr.random() * Math.PI * 2;
+            if (Mapping.mr.random() > .5) {
+                cloud.z *= 5;
+            }
+            Sim.Instance.things[cloud.id] = cloud;
+            clouds.push(cloud);
+        }
+    }
+
+    static genRocks() {
+        let i, m, ref, rock;
+        for (i = m = 0, ref = Sim.Instance.numRocks; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
+            rock = new Rock();
+            rock.image = Mapping.chooseOne(["img/rocks/srock01.png", "img/rocks/srock02.png", "img/rocks/srock03.png", "img/rocks/srock04.png", "img/rocks/srock05.png", "img/rocks/srock06.png", "img/rocks/srock07.png", "img/rocks/mrock01.png", "img/rocks/mrock02.png", "img/rocks/mrock03.png", "img/rocks/mrock04.png", "img/rocks/mrock05.png", "img/rocks/mrock06.png", "img/rocks/lrock01.png", "img/rocks/lrock02.png", "img/rocks/lrock03.png", "img/rocks/lrock04.png", "img/rocks/lrock05.png"]);
+            Mapping.randomVector(rock.pos);
+            v2.scale_r(rock.pos, (300 + Mapping.mr.random() * 3000) * Sim.Instance.mapScale);
+            rock.color = Sim.Instance.theme.spotColor;
+            rock.rot = 2 * Math.PI * Mapping.mr.random();
+            rock.z = (Mapping.mr.random() - .5) * 200;
+            if (rock.z > 0) {
+                rock.z += 1;
+            }
+            Sim.Instance.things[rock.id] = rock;
+        }
+    }
+
+    static genBox() {
+        let rock, a;
+        for (let x = -5; x <= 5; x++) {
+            for (let y = -5; y <= 5; y++) {
+                for (let z = -5; z <= 5; z++) {
+                    rock = new Rock();
+                    a = 1000;
+                    rock.pos = new Float64Array([x * a, y * a]);
+                    rock.z = z * 50;
+                    rock.color = [255, 255, 255, 255];
+                    rock.image = "img/pip1.png";
+                    Sim.Instance.things[rock.id] = rock;
+                }
+            }
+        }
+    }
+
+    static genDebree() {
+        let c, clusterCenter, debree, debreeColor, i, m, n, ref, results;
+        debreeColor = Sim.Instance.theme.spotColor;
+        n = Math.PI * Sim.Instance.mapScale * Sim.Instance.mapScale * 4;
+
+        for (c = m = 0, ref = n * Mapping.mr.random(); 0 <= ref ? m < ref : m > ref; c = 0 <= ref ? ++m : --m) {
+            clusterCenter = v2.create_r();
+            Mapping.randomVector(clusterCenter);
+            v2.scale_r(clusterCenter, (300 + Mapping.mr.random() * 3000) * Sim.Instance.mapScale);
+            if (Mapping.mr.random() < .7) {
+                debree = new Rock();
+                if (Mapping.mr.random() > .2) {
+                    debree.image = "img/debree/bigdebree" + (Mapping.chooseNumber(12)) + ".png";
+                } else {
+                    debree.image = "img/debree/civ" + (Mapping.chooseNumber(5)) + ".png";
+                }
+                v2.add_r(debree.pos, clusterCenter);
+                debree.z = (Mapping.mr.random() - .5) * 200;
+                debree.color = debreeColor;
+                debree.rot = Mapping.mr.random() * 2 * Math.PI;
+                Sim.Instance.things[debree.id] = debree;
+            }
+
+            let o, ref1;
+
+            for (i = o = 0, ref1 = 20 * Mapping.mr.random(); 0 <= ref1 ? o < ref1 : o > ref1; i = 0 <= ref1 ? ++o : --o) {
+                debree = new Rock();
+                debree.image = "img/debree/debree" + (Mapping.chooseNumber(25)) + ".png";
+                Mapping.randomVector(debree.pos);
+                v2.scale_r(debree.pos, Mapping.mr.random() * 600);
+                v2.add_r(debree.pos, clusterCenter);
+                debree.z = (Mapping.mr.random() - .5) * 200;
+                debree.color = debreeColor;
+                debree.rot = Mapping.mr.random() * 2 * Math.PI;
+                Sim.Instance.things[debree.id] = debree;
+            }
+        }
+    };
+
+    static genRing(pos: Float64Array, radius: number) {
+        let dodad, i, image, level, m, ref;
+        let z;
+        image = Mapping.chooseDodad();
+        z = -Mapping.mr.random() * 6 - 3;
+        for (level = m = 0, ref = Mapping.mr.random() * 4; 0 <= ref ? m < ref : m > ref; level = 0 <= ref ? ++m : --m) {
+            let o;
+            for (i = o = 0; o < 6; i = ++o) {
+                dodad = new Rock();
+                dodad.image = image;
+                dodad.color = Sim.Instance.theme.spotColor;
+                dodad.pos = pos;
+                dodad.pos[0] += Math.sin(i / 3 * Math.PI) * radius * .8;
+                dodad.pos[1] += Math.cos(i / 3 * Math.PI) * radius * .8;
+                dodad.rot = (6 - i) / 3 * Math.PI + Math.PI / 2;
+                dodad.z = z - level * 10;
+                Sim.Instance.things[dodad.id] = dodad;
+            }
+        }
+    }
+
+    static chooseDodad() {
+        return Mapping.chooseOne([
+            "img/dodads/bigdodad01.png",
+            "img/dodads/bigdodad02.png",
+            "img/dodads/bigdodad03.png",
+            "img/dodads/bigdodad04.png",
+            "img/dodads/bigdodad05.png",
+            "img/dodads/meddodad01.png",
+            "img/dodads/meddodad02.png",
+            "img/dodads/meddodad03.png",
+            "img/dodads/meddodad04.png"
+        ]);
+    }
+
+    static single(pos: Float64Array) {
+        let image = Mapping.chooseDodad();
+        let dodad = new Rock();
+        dodad.image = image;
+        dodad.color = Sim.Instance.theme.spotColor;
+        dodad.pos = pos;
+        dodad.rot = Mapping.mr.random() * 2 * Math.PI;
+        dodad.z = -2 + Mapping.mr.random();
+        Sim.Instance.things[dodad.id] = dodad;
+    }
+
+
+    static genDodads() {
+        let thing;
+        for (let thing_id in Sim.Instance.things) {
+            thing = Sim.Instance.things[thing_id];
+            if (Mapping.mr.random() < .5) {
+                continue;
+            }
+            if (!(thing.spawn || thing.commandPoint)) {
+                continue;
+            }
+            if (Mapping.mr.random() < 0.5) {
+                Mapping.genRing(thing.pos, thing.radius * 3);
+            } else {
+                Mapping.single(thing.pos);
+            }
+        }
     };
 }

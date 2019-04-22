@@ -24,11 +24,11 @@ export class CommandsManager {
 
     repick: number = 0;
 
-    public static get Instance(){
+    public static get Instance() {
         return this._instance || (this._instance = new this());
     }
 
-    constructor () {
+    constructor() {
 
     }
 
@@ -447,10 +447,10 @@ export class CommandsManager {
                 }
 
                 Sim.say("Balanced!");
-                Sim.say("Current (im)balance index is " +  CommandsManager.get_balance_index());
+                Sim.say("Current (im)balance index is " + CommandsManager.get_balance_index());
                 break;
             case "getbalance":
-                Sim.say("Current (im)balance index is " +  CommandsManager.get_balance_index());
+                Sim.say("Current (im)balance index is " + CommandsManager.get_balance_index());
                 break;
             case "gethost":
                 if (!(CommandsManager.checkHost(player))) {
@@ -493,25 +493,29 @@ export class CommandsManager {
                     break;
                 }
 
-                type = (function () {
-                    switch (cmds[1]) {
-                        case "surv":
-                        case "Surv":
-                        case "survival":
-                            return "Survival";
-                        case "io":
-                            return "IO";
-                        case "ctf":
-                            return "CTF";
-                        case "ttt":
-                        case "TTT":
-                            return "TicTacToe";
-                        case "ffa":
-                            return "FFA";
-                        default:
-                            return cmds[1];
-                    }
-                })();
+                switch (cmds[1]) {
+                    case "surv":
+                    case "Surv":
+                    case "survival":
+                        type = "Survival";
+                    case "io":
+                        type = "IO";
+                    case "ctf":
+                        type = "CTF";
+                    case "ttt":
+                    case "TTT":
+                        type = "TicTacToe";
+                    case "FFA":
+                    case "ffa":
+                        type = "FFA";
+                    case "NVN":
+                    case "NvN":
+                    case "nvn":
+                        type = "nvn";
+                    default:
+                        type = cmds[1];
+                }
+
                 if (Sim.Instance.validTypes[type] != null) {
                     return Sim.Instance.configGame(player, {
                         type: type
@@ -655,9 +659,7 @@ export class CommandsManager {
                 Sim.say(" * WebSocket compression");
                 Sim.say(" * Rewritten in TypeScript");
                 Sim.say(" * Surrendering requires majority to agree");
-                Sim.say(" * Temporary: Nukes do not self-explode");
-                Sim.say(" * Temporary: Jump does not work");
-                Sim.say(" * Temporary: Custom gamemodes are disabled");
+                Sim.say(" * Explosive Warhead requires manual detonation");
                 /*
                 results = [];
                 for (n in this.diffStats) {
@@ -682,40 +684,40 @@ export class CommandsManager {
                 return Sim.say("Reset to default stats");
             case "export":
                 return Sim.say("Not implemented due to being hacky");
-                /*
-                Sim.Instance.things = Sim.Instance.things || {};
-                ref3 = Sim.Instance.things;
-                for (_ in ref3) {
-                    t = ref3[_];
-                    if (t.owner === -1) {
-                        t.hp = 0;
-                    }
+            /*
+            Sim.Instance.things = Sim.Instance.things || {};
+            ref3 = Sim.Instance.things;
+            for (_ in ref3) {
+                t = ref3[_];
+                if (t.owner === -1) {
+                    t.hp = 0;
                 }
-                u = this.genStatUnit(diffStats);
-                u.pos = [0, 0];
-                u.rot = Math.PI;
-                u.owner = -1;
-                u.color = [255, 255, 0, 255];
-                u.canCapture = false;
-                Sim.Instance.things[u.id] = u;
-                return Sim.say("Stat changes exported, copy the unit with copy script to save it");
-                */
+            }
+            u = this.genStatUnit(diffStats);
+            u.pos = [0, 0];
+            u.rot = Math.PI;
+            u.owner = -1;
+            u.color = [255, 255, 0, 255];
+            u.canCapture = false;
+            Sim.Instance.things[u.id] = u;
+            return Sim.say("Stat changes exported, copy the unit with copy script to save it");
+            */
             case "import":
                 return Sim.say("Not implemented due to being hacky");
-                /*
-                if (!this.checkHost(player)) {
-                    break;
-                }
-                if (cmds.length < 2) {
-                    Sim.say(this.helpMessage(cmds[0]));
-                    break;
-                }
-                this.resetStats();
-                i = parseInt(cmds[1]);
-                Sim.say("Loading stats from " + player.name + "'s slot: " + i);
-                window.diffStats = statFromSpec(player.buildBar[i - 1]);
-                return applyDiff(diffStats);
-                */
+            /*
+            if (!this.checkHost(player)) {
+                break;
+            }
+            if (cmds.length < 2) {
+                Sim.say(this.helpMessage(cmds[0]));
+                break;
+            }
+            this.resetStats();
+            i = parseInt(cmds[1]);
+            Sim.say("Loading stats from " + player.name + "'s slot: " + i);
+            window.diffStats = statFromSpec(player.buildBar[i - 1]);
+            return applyDiff(diffStats);
+            */
             case "fw":
             case "firework":
             case "fireworks":
@@ -951,32 +953,32 @@ export class CommandsManager {
 
     resetStats() {
         return Sim.say("Not implemented");
-    /*
-        let k, ref, ref1, ref2, stat, type, v;
-        ref = this.defStats.parts;
-        for (type in ref) {
-            stat = ref[type];
-            for (k in stat) {
-                v = stat[k];
-                parts[type].prototype[k] = v;
+        /*
+            let k, ref, ref1, ref2, stat, type, v;
+            ref = this.defStats.parts;
+            for (type in ref) {
+                stat = ref[type];
+                for (k in stat) {
+                    v = stat[k];
+                    parts[type].prototype[k] = v;
+                }
             }
-        }
-        ref1 = this.defStats.types;
-        for (type in ref1) {
-            stat = ref1[type];
-            for (k in stat) {
-                v = stat[k];
-                types[type].prototype[k] = v;
+            ref1 = this.defStats.types;
+            for (type in ref1) {
+                stat = ref1[type];
+                for (k in stat) {
+                    v = stat[k];
+                    types[type].prototype[k] = v;
+                }
             }
-        }
-        ref2 = this.diffStats.sim;
-        for (k in ref2) {
-            v = ref2[k];
-            Sim.Instance[k] = Sim.constructor.prototype[k];
-        }
-        return window.diffStats = {
-            sim: {}
-        };*/
+            ref2 = this.diffStats.sim;
+            for (k in ref2) {
+                v = ref2[k];
+                Sim.Instance[k] = Sim.constructor.prototype[k];
+            }
+            return window.diffStats = {
+                sim: {}
+            };*/
     };
 
     runText(text: string, color: [number, number, number, number]) {

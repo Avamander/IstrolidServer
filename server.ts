@@ -63,7 +63,7 @@ export class IstrolidServer {
             console.log("Connection from", req.headers["x-forwarded-for"]);
 
             let id: number = IstrolidServer.atob_number((req.headers["sec-websocket-key"] as string));
-            console.log("Player with ID")
+            console.log("Player with ID:", id, ", key:", req.headers["sec-websocket-key"]);
 
             ws.on("message", function (msg: Iterable<number>) {
                 let packet = new DataView(new Uint8Array(msg).buffer);
@@ -287,7 +287,7 @@ export class IstrolidServer {
             switch (data[0]) {
                 case "message":
                     if (data[1].channel === IstrolidServer.config.name && data[1].text.startsWith("!")) {
-                        let p = Sim.Instance.players.filter(function (p) {
+                        let p = Sim.Instance.players.filter(function (p: Player) {
                             return p.name === data[1].name;
                         })[0];
 

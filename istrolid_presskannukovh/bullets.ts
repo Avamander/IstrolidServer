@@ -64,6 +64,10 @@ export namespace Bullets {
         }
 
         tick(): void {
+            if (this.dead) {
+                return;
+            }
+
             if (this.life > this.maxLife) {
                 this.dead = true;
                 return;
@@ -135,6 +139,7 @@ export namespace Bullets {
             if (!this.hitsCloak && thing.cloak && thing.cloaked()) {
                 return false;
             }
+
             if (Sim.Instance.ffa) {
                 if (this.owner === thing.owner) {
                     return false;
@@ -144,12 +149,14 @@ export namespace Bullets {
                     return false;
                 }
             }
+
             if (thing.unit) {
                 let this_pos = new Float64Array([this.vel[0] - thing.vel[0], this.vel[1] - thing.vel[1]]);
                 let dist = CollisionUtils.closestDistance(thing.getBoundPoints(), [this.pos, v2.add_r(this_pos, this.pos)]);
                 this.t = 0;
                 return dist < this.radius;
             }
+
             return this.collideCircles(thing);
         }
 
@@ -250,6 +257,10 @@ export namespace Bullets {
         };
 
         tick() {
+            if (this.dead) {
+                return;
+            }
+
             this.life += 1;
             if (this.life > this.maxLife) {
                 this.dead = true;
