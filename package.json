@@ -12,8 +12,14 @@
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "R26",
+  "authors": [
+    "R26",
+    "Avamander"
+  ],
   "optionalDependencies": {
     "bufferutil": "^4.0.1"
-  }
+  },
+  "license": "UNLICENSED",
+  "repository": "git://github.com/Avamander/IstrolidServer",
+  "private": true
 }
