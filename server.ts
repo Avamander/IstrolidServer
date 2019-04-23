@@ -86,6 +86,8 @@ export class IstrolidServer {
                             ws.close();
                         } else if (Sim.Instance.players[id].webSocketKey === "") {
                             Sim.Instance.players[id].webSocketKey = webSocketKey;
+                        } else {
+                            Sim.Instance.players[id].afk = false;
                         }
                     }
                 } else if (id === undefined && data[0] !== "playerJoin") {

@@ -283,7 +283,6 @@ export class Sim {
 
     start() {
         // Cleanup first
-        let l, len1, p, ref;
         this.net = {};
         this.step = 0;
         this.timeDelta = 0;
@@ -294,10 +293,10 @@ export class Sim {
         if (this.players == null) {
             this.players = [];
         } else {
-            for (let l in this.players) {
-                this.players[l].reset();
-                if (this.players[l].connected) {
-                    this.validateBuildBar(this.players[l]);
+            for (let player_id in this.players) {
+                this.players[player_id].reset();
+                if (this.players[player_id].connected) {
+                    this.validateBuildBar(this.players[player_id]);
                 }
             }
         }
@@ -1296,6 +1295,7 @@ export class Sim {
                 f = this.thingFields[l];
                 // @ts-ignore
                 v = thing[f];
+                // WARN: undefined is okay but null is not!
                 if ((v != null) && !this.simpleEquals(s[f], v)) {
                     if (Sim.isArray(v)) {
                         if (s.length !== v.length) {
@@ -1538,7 +1538,7 @@ export class Sim {
 
     timeStart(what: string) {
         this.timePath.push(what);
-        return this.timeStarts[this.timePath.join(">")] = Utils.now();
+        this.timeStarts[this.timePath.join(">")] = Utils.now();
     }
 
     timeEnd(what: string) {
@@ -1549,9 +1549,9 @@ export class Sim {
         }
         delta = Utils.now() - this.timeStarts[key];
         if (this.timeings[key] == null) {
-            return this.timeings[key] = delta;
+            this.timeings[key] = delta;
         } else {
-            return this.timeings[key] += delta;
+            this.timeings[key] += delta;
         }
     }
 
@@ -1572,7 +1572,7 @@ export class Sim {
             }
             console.log(bar, k, v);
         }
-        return this.timeings = {};
+        this.timeings = {};
     }
 }
 

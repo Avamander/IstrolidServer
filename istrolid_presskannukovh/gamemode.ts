@@ -1029,19 +1029,25 @@ export namespace GameModes {
     }
 
     export class gTournament extends GameMode {
-        serverType = "Tournament";
-        playing_players: Player[] = [];
-        playing_pairs: [Player, Player][] = [];
-        roundMatchCount!: number;
-        matchCount: number = 0;
-        current_pair!: [Player, Player];
+        serverType = "Tournament";              // Tournament gamemode
+        playing_players: Player[] = [];         // All the playing players in a tournament
+        playing_pairs: [Player, Player][] = []; // All the pairs of players in a tournament
+        roundMatchCount!: number;               // Amount of rounds in a tournament
+        matchCount: number = 0;                 // The current index of the match
+        current_pair!: [Player, Player];        // The current playing players
+        roundCount: number = 0;                 // The amount of rounds so far
+        totalMatchCount: number = 0;            // The amount of matches in total
+
 
         constructor(sim: Sim) {
             super(sim);
         }
 
         start(): void {
-            this.movePlayersAndGeneratePairs();
+            if (this.playing_pairs.length === 0) {
+                Sim.say("--------------- ROUND " + this.roundCount + " COMMENCE! --------------");
+                this.movePlayersAndGeneratePairs();
+            }
             this.setupNextGame();
         }
 
@@ -1071,8 +1077,9 @@ export namespace GameModes {
                 return;
             }
 
-            Sim.say("Match is about to start!");
-            this.sim.countDown = 16 * 6;
+            Sim.say("A tournament is about to start! \n " +
+                "Please do not AFK!");
+            this.sim.countDown = 16 * 10;
         }
 
         victoryConditions(): void {
@@ -1124,10 +1131,16 @@ export namespace GameModes {
             if (!this.sim.local && !this.sim.aiTestMode) {
                 stillThere = false;
 
-                for (let player of this.sim.players) {
+                for (let player_id in this.sim.players) {
+                    let player = this.sim.players[player_id];
+                    if (!player) {
+                        console.log("Player was lost somewhere", player_id);
+                        continue;
+                    }
+
                     if (player.connected &&
                         !player.afk &&
-                        (player.side === "alpha" || player.side === "beta")) {
+                        (player.side !== "spectators")) {
                         stillThere = true;
                     }
                 }
@@ -1135,12 +1148,8 @@ export namespace GameModes {
                 if (!stillThere) {
                     Sim.say("Everyone left this match, ending it!");
                     this.sim.winningSide = "";
-                    for (let player of this.sim.players) {
-                        if ((player.side === "alpha" || player.side === "beta")) {
-                            player.side = "spectators";
-                        }
-                    }
-                    for (l = 0, len1 = this.playing_players.length; l < len1; l++) {
+                    let player;
+                    for (let l = 0; l < this.playing_players.length; l++) {
                         player = this.playing_players[l];
                         if ((player.side === "alpha" || player.side === "beta")) {
                             this.playing_players.slice(l, 1);
@@ -1201,7 +1210,7 @@ export namespace GameModes {
                 }
             }
 
-            Sim.say(player.name + " surrendered and has been removed from the game");
+            Sim.say(player.name + " surrendered and has lost!");
             player.side = "spectators";
 
             this.endOfGame();
@@ -1274,28 +1283,57 @@ export namespace GameModes {
             if (this.sim.winningSide) {
                 Sim.say(this.sim.winningSide + " has won this match!");
             } else {
-                Sim.say("This match ends in a draw, both lose!");
+                Sim.say("Boo! You both are the weakest links.");
             }
 
+            this.recountPlayers();
             if (this.playing_players.length <= 1) {
                 this.sim.state = "waiting";
                 Sim.say("The winner is " + this.playing_players[0].name);
+                Sim.say("After " +
+                    this.totalMatchCount +
+                    " matches and " +
+                    this.roundCount +
+                    " rounds! 🎉🎉🎉");
+                this.totalMatchCount = 0;
+                this.roundCount = 0;
+
+                if (this.playing_players[1]) {
+                    Sim.say("The second place goes to " + this.playing_players[1].name);
+
+                    if (this.playing_pairs[this.matchCount - 1]) {
+                        if (this.playing_pairs[this.matchCount - 1][0]) {
+                            if (this.playing_pairs[this.matchCount - 1][0].name !== this.playing_players[1].name) {
+                                Sim.say("The third place goes to " + this.playing_pairs[this.matchCount - 1][0].name);
+                            }
+                        } else if (this.playing_pairs[this.matchCount - 1][1]) {
+                            if (this.playing_pairs[this.matchCount - 1][1].name !== this.playing_players[1].name) {
+                                Sim.say("The third place goes to " + this.playing_pairs[this.matchCount - 1][1].name);
+                            }
+                        }
+                    }
+                }
+
+                for (let player_id in this.sim.players) {
+                    let player: Player = this.sim.players[player_id];
+                    player.side = "spectators";
+                }
             } else {
                 if (this.matchCount >= this.roundMatchCount) {
-                    this.movePlayersAndGeneratePairs();
+                    this.roundCount += 1;
+                    this.totalMatchCount += this.matchCount;
                     this.matchCount = 0;
+                    this.playing_pairs = [];
+                    // @ts-ignore
+                    this.current_pair = undefined;
                     Sim.say("Next round of matches! Everyone prepare your donkey!")
                 }
 
-                this.setupNextGame();
-                this.sim.start();
+                this.sim.start(); // This calls start();
             }
         }
 
-        /*
-         * Called when the game is first starting
-         */
-        movePlayersAndGeneratePairs() {
+        recountPlayers() {
             this.playing_players = [];
 
             for (let player_id in this.sim.players) {
@@ -1307,6 +1345,13 @@ export namespace GameModes {
                     this.playing_players.push(player);
                 }
             }
+        }
+
+        /*
+         * Called when the game is first starting
+         */
+        movePlayersAndGeneratePairs() {
+            this.recountPlayers();
 
             Sim.say("Epic match table:");
             this.playing_pairs = [];
@@ -1332,7 +1377,7 @@ export namespace GameModes {
         }
 
         /*
-         * Called when one game ends
+         * Called when new game is going to start
          */
         setupNextGame() {
             this.current_pair = this.playing_pairs[this.matchCount];
