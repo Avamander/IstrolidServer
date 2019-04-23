@@ -1,8 +1,4 @@
-import {actionMixer, baseAtlas, intp} from "./dummy";
-import {v2} from "./maths";
-import {Sim} from "./sim";
-import {CollisionUtils} from "./collision";
-import {Debree, Particle, Thing} from "./things";
+import {Particle} from "./particle";
 
 export namespace Explosions {
     export class Explosion extends Particle {
@@ -25,6 +21,7 @@ export namespace Explosions {
             if (this.dead) {
                 return;
             }
+
             let fade = this.life / this.maxLife;
             let s = 0.1 + fade * fade * this.radius;
             this.color[3] = (1 - fade) * 255;
@@ -345,3 +342,10 @@ export namespace Explosions {
         }
     }
 }
+
+import {actionMixer, baseAtlas, intp} from "./dummy";
+import {v2} from "./maths";
+import {Sim} from "./sim";
+import {CollisionUtils} from "./collision";
+import {Thing} from "./things";
+import {Debree} from "./particle";

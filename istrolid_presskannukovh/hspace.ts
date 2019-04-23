@@ -1,5 +1,4 @@
 import {Sim} from "./sim";
-import {v2} from "./maths";
 import {Thing} from "./things";
 import {Unit} from "./unit";
 
@@ -28,11 +27,11 @@ export class HSpace {
         dx = point[0] - HSpace.clamp(point[0], x, x + w);
         dy = point[1] - HSpace.clamp(point[1], y, y + h);
         return (dx * dx + dy * dy) <= (radius * radius);
-    };
+    }
 
     key(pos: Float64Array) {
         return Math.floor(pos[0] / this.resolution) + Math.floor(pos[1] / this.resolution) * this.PRIME;
-    };
+    }
 
     insert(thing: { pos: Float64Array }) {
         let posKey = this.key(thing.pos);
@@ -42,7 +41,7 @@ export class HSpace {
         } else {
             things.push(thing);
         }
-    };
+    }
 
     findInRange(point: number[] | Float64Array, range: number, cb: (thing: Thing | Unit) => boolean) {
         let d, k, len, posKey, px, py, rx, ry, things, x, y;
@@ -69,5 +68,5 @@ export class HSpace {
             }
         }
         Sim.Instance.timeEnd("findInRange");
-    };
+    }
 }

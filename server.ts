@@ -2,6 +2,10 @@ import {Player} from "./istrolid_presskannukovh/things";
 import {Sim} from "./istrolid_presskannukovh/sim";
 import {Utils} from "./istrolid_presskannukovh/utils";
 import {CommandsManager} from "./istrolid_presskannukovh/commands";
+import {Thing} from "./istrolid_presskannukovh/things";
+
+let bogus_thing = new Thing();
+
 const WebSocket = require("ws");
 //import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
 //require("./fix"); // Enable DLC when server and replace window with global
@@ -10,7 +14,6 @@ export class IstrolidServer {
     private static readonly config = require("./config.json");
     static readonly allowedCmds = [
         "playerJoin",
-        "alpha",
         "mouseMove",
         "playerSelected",
         "setRallyPoint",
@@ -47,7 +50,7 @@ export class IstrolidServer {
             perMessageDeflateOptions: {
                 chunkSize: 256,
                 memLevel: 9,
-                level: 5
+                level: 9
             },
             zlibInflateOptions: {
                 chunkSize: 256
@@ -60,32 +63,64 @@ export class IstrolidServer {
         });
 
         this.wss.on("connection", function (ws: any, req: any) {
-            console.log("Connection from", req.headers["x-forwarded-for"]);
+            let source_ip: string = (req.headers["x-forwarded-for"] as string);
+            console.log("Connection from", source_ip);
 
-            let id: number = IstrolidServer.atob_number((req.headers["sec-websocket-key"] as string));
-            console.log("Player with ID:", id, ", key:", req.headers["sec-websocket-key"]);
+            let webSocketKey: string = (req.headers["sec-websocket-key"] as string);
+            let id: number = Sim.Instance.WSKeyToPlayerID[webSocketKey];
+
+            console.log("Player with key:", req.headers["sec-websocket-key"]);
 
             ws.on("message", function (msg: Iterable<number>) {
                 let packet = new DataView(new Uint8Array(msg).buffer);
                 // @ts-ignore
                 let data: string[] = Sim.Instance.zJson.loadDv(packet);
                 //console.log(data);
+
+                if (id !== undefined) {
+                    if (Sim.Instance.players[id] !== undefined) {
+                        if (Sim.Instance.players[id].webSocketKey !== webSocketKey &&
+                            Sim.Instance.players[id].webSocketKey !== "") {
+                            console.log("Player violated key check ", Sim.Instance.players[id].name);
+                            ws.send("Stop it you dumb cunt");
+                            ws.close();
+                        } else if (Sim.Instance.players[id].webSocketKey === "") {
+                            Sim.Instance.players[id].webSocketKey = webSocketKey;
+                        }
+                    }
+                } else if (id === undefined && data[0] !== "playerJoin") {
+                    console.log("Not a player joining and he doesn't have ID");
+                }
+
                 switch (data[0]) {
                     case "playerJoin": {
+                        console.log("Player joined", data[0], data[1], data[2], data[3]);
+                        for (let player_id in Sim.Instance.players) {
+                            let player = Sim.Instance.players[player_id];
+                            if (!player.ai) {
+                                if (player.name === data[1]) {
+                                    if (player.webSocketKey !== webSocketKey) {
+                                        console.log(
+                                            "Player ",
+                                            player.name,
+                                            " if attemted to be impersonated by commander.id ",
+                                            data[0],
+                                            " and IP address ",
+                                            source_ip);
+                                        ws.close();
+                                    }
+                                }
+                            }
+                        }
                         // @ts-ignore
                         let player = Sim.Instance.playerJoin(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
                         player.ws = ws;
-                        if (Sim.Instance.players[id] !== undefined) {
-                            console.log("Player reconnected", player.name);
+                        if (!id) {
+                            Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
+                            id = player.number;
                         }
-                        Sim.Instance.players[id] = player;
+                        player.afk = false;
                         Sim.Instance.clearNetState();
-                        break;
-                    }
-                    case "alpha": {
-                        console.log("What the fuck is alpha", data);
-                        // @ts-ignore Look up function in simulation and execute it with arguments given
-                        Sim.Instance.alpha.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
                         break;
                     }
                     case "mouseMove": {
@@ -183,9 +218,12 @@ export class IstrolidServer {
 
             ws.on("close", function (e: any) {
                 console.log("WebSocket closed", e);
-                if (Sim.Instance.players[id]) {
-                    Sim.Instance.players[id].connected = false;
-                    delete Sim.Instance.players[id];
+                for (let player_id in Sim.Instance.players) {
+                    if (Sim.Instance.players[player_id] &&
+                        Sim.Instance.players[player_id].webSocketKey === webSocketKey) {
+                        Sim.Instance.players[player_id].connected = false;
+                        delete Sim.Instance.players[player_id];
+                    }
                 }
             });
         });
@@ -280,6 +318,7 @@ export class IstrolidServer {
             IstrolidServer.rootsendData(["authSignIn", account_info]);
             IstrolidServer.rootsendData(["registerBot"]);
             IstrolidServer.Instance.lastInfoTime = Utils.now();
+            Sim.say("I'm now back online!");
         });
 
         IstrolidServer.Instance.root.on("message", function (msg: string) {

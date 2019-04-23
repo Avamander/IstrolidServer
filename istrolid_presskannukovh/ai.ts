@@ -772,7 +772,7 @@ export class AI {
     }
 
     static filter(t: Thing, unit: Unit) {
-        return t.unit && t.id !== unit.id && t.side === unit.side && t.energyCaster;
+        return t && unit && t.unit && t.id !== unit.id && t.side === unit.side && t.energyCaster;
     };
 
     chargeAI(unit: Unit, rule: [string, string, string, string, string]) {
@@ -1415,7 +1415,7 @@ export class AI {
                 break;
             case "stay in #m range of friendly units":
                 friendly = AI.closest(unit.pos, (function (t: Thing) {
-                    return t.unit && t.id !== unit.id && t.side === unit.side;
+                    return unit && t.unit && t.id !== unit.id && t.side === unit.side;
                 }), 4000);
                 if (friendly && v2.distance(unit.pos, friendly.pos) > parseInt(rule[1])) {
                     AI.stayClose(friendly, unit);
@@ -1424,7 +1424,7 @@ export class AI {
                 break;
             case "stay in #m range of slot # units":
                 friendly = AI.closest(unit.pos, (function (t: Thing) {
-                    return t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
+                    return unit && t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
                 }), 4000);
                 if (friendly && v2.distance(unit.pos, friendly.pos) > parseInt(rule[1])) {
                     AI.stayClose(friendly, unit);
@@ -1433,7 +1433,7 @@ export class AI {
                 break;
             case "stayaway in #m range from slot # units":
                 friendly = AI.closest(unit.pos, (function (t: Thing) {
-                    return t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
+                    return unit && t.unit && (t as Unit).number === (parseInt(rule[2]) - 1) && t.id !== unit.id && t.side === unit.side && t.owner === unit.owner;
                 }), 4000);
                 if (friendly && AI.goAway(unit, (friendly as Thing), parseInt(rule[1]))) {
                     return true;
@@ -1462,7 +1462,7 @@ export class AI {
                 }
                 break;
             case "finish player orders":
-                if (unit.hasHumanOrder()) {
+                if (unit && unit.hasHumanOrder()) {
                     if (unit.orders[0].ai) {
                         unit.orders.shift();
                     }
@@ -1499,6 +1499,7 @@ export class AI {
                 return false;
             };
         })(this));
+
         // @ts-ignore
         if (doWhat === "Flee") {
             // @ts-ignore

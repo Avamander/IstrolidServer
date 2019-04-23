@@ -95,6 +95,7 @@ export class Grid {
             if (Grid.hasPart("StasisField", unit) && Grid.hasPart("CloakGenerator", unit)) {
                 return "Cloak Generator and Stasis Field can't be on the same ship.";
             }
+
             ref1 = Grid.computeGrid(player, unit, null);
             let grid: Part[][] = ref1[0];
             let badParts: Part[] = ref1[1];

@@ -1,4 +1,4 @@
-import {Debree, Player, Thing} from "./things";
+import {Player, Thing} from "./things";
 import {v2} from "./maths";
 import {Sim} from "./sim";
 import {Utils} from "./utils";
@@ -8,6 +8,7 @@ import {CollisionUtils} from "./collision";
 import {Parts} from "./parts";
 import {UnitUtils} from "./unitutils";
 import {Part} from "./part";
+import {Debree} from "./particle";
 
 export class Unit extends Thing {
     parts: Part[];

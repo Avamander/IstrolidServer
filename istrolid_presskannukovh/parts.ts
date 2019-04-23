@@ -29,9 +29,9 @@ export namespace Parts {
     import SniperLaser = Bullets.SniperLaser;
     import Bomb = Bullets.Bomb;
     import ArtilleryBullet = Bullets.ArtilleryBullet;
+    import TorpBullet = Bullets.TorpBullet;
 
     import AoeExplosion = Explosions.AoeExplosion;
-    import TorpBullet = Bullets.TorpBullet;
 
     export class Mount360 extends Part {
         name = "360 Turret Mount";

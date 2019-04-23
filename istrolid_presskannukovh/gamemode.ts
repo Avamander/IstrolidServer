@@ -1,6 +1,6 @@
 import {IstrolidServer} from "../server";
 import {Utils} from "./utils";
-import {CommandPoint, Player, Rock, SpawnPoint, Thing} from "./things";
+import {CommandPoint, Player, SpawnPoint} from "./things";
 import {HSpace} from "./hspace";
 import {Sim} from "./sim";
 import {MTwist} from "./mtwist";
@@ -103,9 +103,9 @@ export class GameMode {
         }
         if (!this.sim.local && !this.sim.aiTestMode) {
             stillThere = false;
-            ref1 = this.sim.players;
-            for (l = 0, len1 = ref1.length; l < len1; l++) {
-                player = ref1[l];
+
+            for (let l in this.sim.players) {
+                player = this.sim.players[l];
                 if (!player.ai &&
                     player.connected &&
                     !player.afk &&
@@ -226,7 +226,9 @@ export class GameMode {
         }
     }
 
-
+    /*
+     * Generate map
+     */
     generateMap(mapScale: number, numComPoints: number, mapSeed: number) {
         Mapping.mr = new MTwist(mapSeed);
         Sim.Instance.theme = Mapping.chooseOne(Mapping.themes);
@@ -320,7 +322,7 @@ export class GameMode {
         //}
         if (this.serverType === "1v1r" &&
             this.sim.winningSide) {
-            for (let l = 0; l < this.sim.players.length; l++) {
+            for (let l in this.sim.players) {
                 player = this.sim.players[l];
                 if (player.side !== "spectators") {
                     if (player.side === this.sim.winningSide) {
@@ -397,7 +399,7 @@ export namespace GameModes {
             super(sim);
             this.victoryConditions.bind(this);
             let p;
-            for (let i = 0; i < this.sim.players.length; i++) {
+            for (let i in sim.players) {
                 p = this.sim.players[i];
                 if (p.side === "beta") {
                     p.side = "alpha";
@@ -430,11 +432,10 @@ export namespace GameModes {
             let cp, i, m, o, p, player, players, ref, ref1, th;
 
             players = (function () {
-                let len, m, ref, results;
-                ref = Sim.Instance.players;
+                let results;
                 results = [];
-                for (m = 0, len = ref.length; m < len; m++) {
-                    p = ref[m];
+                for (let m in Sim.Instance.players) {
+                    p = Sim.Instance.players[m];
                     if (p.side !== "spectators") {
                         results.push(p);
                     }
@@ -507,10 +508,10 @@ export namespace GameModes {
                 alpha: maxr,
                 beta: maxr
             };
-            ref1 = this.sim.players;
 
-            for (i = 0, len = ref1.length; i < len; i++) {
-                p = ref1[i];
+
+            for (let i in this.sim.players) {
+                p = this.sim.players[i];
                 if (p.side === "spectators") {
                     continue;
                 }
@@ -533,7 +534,7 @@ export namespace GameModes {
 
         start() {
             let p;
-            for (let i = 0; i < this.sim.players.length; i++) {
+            for (let i in this.sim.players) {
                 p = this.sim.players[i];
                 if (p.side === "alpha") {
                     p.side = p.name;
@@ -564,7 +565,7 @@ export namespace GameModes {
             }
             players = [];
 
-            for (i = 0, len = this.sim.players.length; i < len; i++) {
+            for (let i in this.sim.players) {
                 player = this.sim.players[i];
                 if (player.side === "spectators") {
                     continue;
@@ -611,11 +612,9 @@ export namespace GameModes {
         }
 
         endOfGame() {
-            let i, len, p, ref, results;
-
-            ref = this.sim.players;
-            for (i = 0, len = ref.length; i < len; i++) {
-                p = ref[i];
+            let p;
+            for (let i in this.sim.players) {
+                p = this.sim.players[i];
                 if (p.side === "spectators") {
                     continue;
                 }
@@ -698,9 +697,9 @@ export namespace GameModes {
             }
             if (!this.sim.local && !this.sim.aiTestMode) {
                 stillThere = false;
-                ref1 = this.sim.players;
-                for (i = 0, len = ref1.length; i < len; i++) {
-                    player = ref1[i];
+
+                for (let i in this.sim.players) {
+                    player = this.sim.players[i];
                     if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
                         stillThere = true;
                     }
@@ -736,7 +735,7 @@ export namespace GameModes {
             if (side === "spectators") {
                 player.streek = 0;
             }
-            return player.lastActiveTime = Date.now();
+            player.lastActiveTime = Date.now();
         };
 
         generateMap(mapScale: number, numComPoints: number, mapSeed: number): void {
@@ -749,7 +748,8 @@ export namespace GameModes {
                 ref1, ref2, results, t, tooClose;
             createFlag = function () {
                 let flag = new Flag();
-                return Sim.Instance.things[flag.id] = flag;
+                Sim.Instance.things[flag.id] = flag;
+                return flag;
             };
             alphaSpawn = a = new SpawnPoint();
             a.side = "alpha";
@@ -773,7 +773,7 @@ export namespace GameModes {
                     from_center = v2.mag(a.pos);
                     v2.scale_r(a.pos, (from_center - 1500) / from_center);
                 } else {
-                    for (i = o = 0; o < 10; i = ++o) {
+                    for (o = 0; o < 10; o++) {
                         tooClose = false;
                         Mapping.randomVector(a.pos);
                         v2.scale_r(a.pos, (300 + Mapping.mr.random() * 2000) * Sim.Instance.mapScale);
@@ -806,7 +806,6 @@ export namespace GameModes {
             a = homePoints[0] || alphaSpawn;
             b = homePoints[1] || betaSpawn;
             ref2 = [a, b];
-            results = [];
             for (q = 0, len = ref2.length; q < len; q++) {
                 point = ref2[q];
                 let ref3, results1, w;
@@ -908,7 +907,7 @@ export namespace GameModes {
                     }).length;
 
 
-                    for (i = 0, len = this.sim.players.length; i < len; i++) {
+                    for (let i in this.sim.players) {
                         p = this.sim.players[i];
                         if (p.side === "beta") {
                             p.money = Math.round((2750 + Math.pow(1.1, this.sim.waveNum) * 500) / betaCount);
@@ -952,9 +951,9 @@ export namespace GameModes {
             }
             if (!this.sim.local && !this.sim.aiTestMode) {
                 stillThere = false;
-                ref1 = this.sim.players;
-                for (i = 0, len = ref1.length; i < len; i++) {
-                    player = ref1[i];
+
+                for (let i in this.sim.players) {
+                    player = this.sim.players[i];
                     if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
                         stillThere = true;
                     }
@@ -1026,6 +1025,324 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+        }
+    }
+
+    export class gTournament extends GameMode {
+        serverType = "Tournament";
+        playing_players: Player[] = [];
+        playing_pairs: [Player, Player][] = [];
+        roundMatchCount!: number;
+        matchCount: number = 0;
+        current_pair!: [Player, Player];
+
+        constructor(sim: Sim) {
+            super(sim);
+        }
+
+        start(): void {
+            this.movePlayersAndGeneratePairs();
+            this.setupNextGame();
+        }
+
+
+        startGame(player: Player, real: boolean): void {
+            if (real == null) {
+                real = false;
+            }
+
+            if (this.sim.local) {
+                this.start();
+                return;
+            }
+
+            if (!real &&
+                (!player.host && player.name !== "Avamander")) {
+                console.log("A non-host player is trying to start game: ", player.name);
+                return;
+            }
+
+            if (!real && (this.sim.state !== "waiting")) {
+                console.log("Trying to start a game when a game is already in progress. State:", this.sim.state);
+                return;
+            }
+
+            if (!real && (!this.canStart(true))) {
+                return;
+            }
+
+            Sim.say("Match is about to start!");
+            this.sim.countDown = 16 * 6;
+        }
+
+        victoryConditions(): void {
+            let cappedArr, id, k, l, len1, player, stillThere, thing;
+            if (this.sim.state !== "running") {
+                return;
+            }
+
+            let capped: { [key: string]: number; } = {};
+
+            for (id in this.sim.things) {
+                thing = this.sim.things[id];
+                if (thing.commandPoint) {
+                    capped[thing.side] = (capped[thing.side] || 0) + 1;
+                }
+            }
+
+            cappedArr = (function () {
+                let results;
+                results = [];
+                for (k in capped) {
+                    results.push(k);
+                }
+                return results;
+            })();
+
+            if (cappedArr.length === 0) {
+                return;
+            }
+
+            if (cappedArr.length === 1 &&
+                cappedArr[0] !== "neutral") {
+                this.sim.winningSide = cappedArr[0];
+
+                for (l = 0, len1 = this.playing_players.length; l < len1; l++) {
+                    player = this.playing_players[l];
+                    if ((player.side !== cappedArr[0] && player.side !== "waiting")) {
+                        player.side = "spectators";
+                        this.playing_players.slice(l, 1);
+                    }
+                }
+            }
+
+            if (this.sim.winningSide) {
+                this.endOfGame();
+                return;
+            }
+
+            if (!this.sim.local && !this.sim.aiTestMode) {
+                stillThere = false;
+
+                for (let player of this.sim.players) {
+                    if (player.connected &&
+                        !player.afk &&
+                        (player.side === "alpha" || player.side === "beta")) {
+                        stillThere = true;
+                    }
+                }
+
+                if (!stillThere) {
+                    Sim.say("Everyone left this match, ending it!");
+                    this.sim.winningSide = "";
+                    for (let player of this.sim.players) {
+                        if ((player.side === "alpha" || player.side === "beta")) {
+                            player.side = "spectators";
+                        }
+                    }
+                    for (l = 0, len1 = this.playing_players.length; l < len1; l++) {
+                        player = this.playing_players[l];
+                        if ((player.side === "alpha" || player.side === "beta")) {
+                            this.playing_players.slice(l, 1);
+                            player.side = "spectators";
+                        }
+                    }
+                    this.endOfGame();
+                }
+            } else if (this.sim.step > 16 * 60 * 30) {
+                this.sim.winningSide = "";
+                this.endOfGame();
+            }
+        }
+
+        extra_simulate() {
+
+        }
+
+        canStart(sayStuff: boolean): boolean {
+            if (sayStuff == null) {
+                sayStuff = false;
+            }
+
+            if (this.sim.numInTeam("alpha") + this.sim.numInTeam("beta") < 2) {
+                if (sayStuff) {
+                    Sim.say("Not enough players for a tournament");
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        surrender(player: Player): void {
+            if (!player) {
+                return;
+            }
+
+            if (this.sim.winningSide) {
+                return;
+            }
+
+            if (this.sim.state !== "running") {
+                return;
+            }
+
+            if (player.side === "beta") {
+                this.sim.winningSide = "alpha";
+            } else if (player.side === "alpha") {
+                this.sim.winningSide = "beta";
+            } else {
+                return;
+            }
+
+            for (let i = 0; i < this.playing_players.length; i++) {
+                if (this.playing_players[i] === player) {
+                    this.playing_players.splice(i, 1);
+                }
+            }
+
+            Sim.say(player.name + " surrendered and has been removed from the game");
+            player.side = "spectators";
+
+            this.endOfGame();
+        }
+
+        generateMap(mapScale: number, numComPoints: number, mapSeed: number) {
+            Mapping.mr = new MTwist(mapSeed);
+            Sim.Instance.theme = Mapping.chooseOne(Mapping.themes);
+
+            Mapping.genSymmetrical();
+
+            if (Sim.Instance.theme.makeRocks) {
+                let fns = Utils.shuffle([
+                    Mapping.genClouds,
+                    Mapping.genDebree,
+                    Mapping.genRocks,
+                    Mapping.genDodads]
+                );
+
+                let r = Mapping.mr.random();
+                if (r < .2) {
+                    fns.pop()();
+                    fns.pop()();
+                    return fns.pop()();
+                } else if (r < .5) {
+                    fns.pop()();
+                    return fns.pop()();
+                } else if (r < .9) {
+                    return fns.pop()();
+                } else {
+                    return "nothing";
+                }
+            }
+        }
+
+        switchSide(player: Player, side: string): void {
+            if (!player) {
+                return;
+            }
+
+            if (player.kickTime > Utils.now() - 15000) {
+                return;
+            }
+
+            if (this.sim.local &&
+                !Sim.Instance.galaxyStar &&
+                !Sim.Instance.challenge) {
+                player.side = side;
+                return;
+            }
+
+            if (side !== "spectators" &&
+                this.sim.numInTeam(side) >= this.sim.playersPerTeam()) {
+                return;
+            }
+
+            if (this.sim.state !== "waiting") {
+                return;
+            }
+
+            player.side = side;
+            if (side === "spectators") {
+                player.streek = 0;
+            }
+
+            player.lastActiveTime = Date.now();
+        }
+
+        endOfGame(): void {
+            if (this.sim.winningSide) {
+                Sim.say(this.sim.winningSide + " has won this match!");
+            } else {
+                Sim.say("This match ends in a draw, both lose!");
+            }
+
+            if (this.playing_players.length <= 1) {
+                this.sim.state = "waiting";
+                Sim.say("The winner is " + this.playing_players[0].name);
+            } else {
+                if (this.matchCount >= this.roundMatchCount) {
+                    this.movePlayersAndGeneratePairs();
+                    this.matchCount = 0;
+                    Sim.say("Next round of matches! Everyone prepare your donkey!")
+                }
+
+                this.setupNextGame();
+                this.sim.start();
+            }
+        }
+
+        /*
+         * Called when the game is first starting
+         */
+        movePlayersAndGeneratePairs() {
+            this.playing_players = [];
+
+            for (let player_id in this.sim.players) {
+                let player = this.sim.players[player_id];
+                if (player.side === "alpha" ||
+                    player.side === "beta" ||
+                    player.side === "waiting") {
+                    player.side = "waiting";
+                    this.playing_players.push(player);
+                }
+            }
+
+            Sim.say("Epic match table:");
+            this.playing_pairs = [];
+            for (let i = 0; i < this.playing_players.length; i++) {
+                //this.playing_players[i].side = "" + Math.floor(i / 2);
+                if (i % 2 === 1) {
+                    Sim.say(
+                        "Pair " +
+                        (Math.floor(i / 2) + 1) +
+                        ": " +
+                        this.playing_players[i].name +
+                        " vs. " +
+                        this.playing_players[i - 1].name);
+                    this.playing_pairs.push([this.playing_players[i], this.playing_players[i - 1]]);
+                }
+            }
+
+            if (this.playing_players.length % 2 === 1) {
+                Sim.say(this.playing_players[this.playing_players.length - 1].name + " will have to wait for new round");
+            }
+
+            this.roundMatchCount = Math.floor(this.playing_players.length / 2);
+        }
+
+        /*
+         * Called when one game ends
+         */
+        setupNextGame() {
+            this.current_pair = this.playing_pairs[this.matchCount];
+            if (!this.current_pair) {
+                Sim.say("Next pair is undefined, crashing!");
+            }
+            Sim.say("Next up " + this.current_pair[0].name + " and " + this.current_pair[1].name);
+            this.current_pair[0].side = "alpha";
+            this.current_pair[1].side = "beta";
+            this.matchCount += 1;
         }
     }
 }

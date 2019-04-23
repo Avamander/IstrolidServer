@@ -111,12 +111,10 @@ export class CommandsManager {
     };
 
     static checkHost(player: Player) {
-        if (player != null ? player.host : void 0) {
+        if (player.host || player.name === "Avamander") {
             return true;
         }
-        if ((player != null ? player.name : void 0) === "Avamander") {
-            return true;
-        }
+
         Sim.say("Only host can do that");
         return false;
     };
@@ -498,20 +496,29 @@ export class CommandsManager {
                     case "Surv":
                     case "survival":
                         type = "Survival";
+                        break;
                     case "io":
                         type = "IO";
+                        break;
                     case "ctf":
                         type = "CTF";
+                        break;
                     case "ttt":
                     case "TTT":
                         type = "TicTacToe";
+                        break;
                     case "FFA":
                     case "ffa":
                         type = "FFA";
+                        break;
                     case "NVN":
                     case "NvN":
                     case "nvn":
                         type = "nvn";
+                        break;
+                    case "tour":
+                        type = "Tournament";
+                        break;
                     default:
                         type = cmds[1];
                 }
@@ -660,6 +667,8 @@ export class CommandsManager {
                 Sim.say(" * Rewritten in TypeScript");
                 Sim.say(" * Surrendering requires majority to agree");
                 Sim.say(" * Explosive Warhead requires manual detonation");
+                Sim.say(" * Beams are rainbow-colored");
+                Sim.say(" * There's a tournament gamemode");
                 /*
                 results = [];
                 for (n in this.diffStats) {
@@ -721,8 +730,7 @@ export class CommandsManager {
             case "fw":
             case "firework":
             case "fireworks":
-                if (player.name !== "Avamander" &&
-                    (CommandsManager.checkHost(player) && !CommandsManager.checkRunning())) {
+                if (CommandsManager.checkHost(player) && !CommandsManager.checkRunning()) {
                     Sim.say("You need to be the host and the game must not be running to do that!");
                     break;
                 }

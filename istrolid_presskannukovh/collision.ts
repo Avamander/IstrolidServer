@@ -54,7 +54,7 @@ export class CollisionUtils {
             if (p[0] === 0 && p[1] === 0) {
                 return 0;
             }
-            if ((typeof _p !== "undefined" && _p !== null) && v2.dot(p, p) >= v2.dot(_p, _p)) {
+            if (_p && v2.dot(p, p) >= v2.dot(_p, _p)) {
                 da = v2.dot(a, d);
                 db = v2.dot(b, d);
                 return v2.mag(_p) * Math.sign(da * db);
