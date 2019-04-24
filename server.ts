@@ -3,9 +3,6 @@ import {Sim} from "./istrolid_presskannukovh/sim";
 import {Utils} from "./istrolid_presskannukovh/utils";
 import {CommandsManager} from "./istrolid_presskannukovh/commands";
 import {Thing} from "./istrolid_presskannukovh/things";
-
-let bogus_thing = new Thing();
-
 const WebSocket = require("ws");
 //import {CommandsManager} from "./istrolid_presskannukovh/995src_commands";
 //require("./fix"); // Enable DLC when server and replace window with global
@@ -495,25 +492,31 @@ export class IstrolidServer {
     }
 
     static sendInfo () {
+        let observer_count: number = Sim.Instance.players.filter(function (player: Player) {
+            return player.connected && !player.ai;
+        }).length;
+
+        if (observer_count > 7) {
+            observer_count = 7;
+        }
+
+        let connected_players: { side: string; name: string; ai: boolean }[] = Sim.Instance.players.filter(
+            function (player: Player) {
+                return player.connected;
+            }).map(function (player: Player) {
+            return {
+                name: player.name,
+                side: player.side,
+                ai: false
+            }
+        });
+
         // Send server info
         let info = {
             name: IstrolidServer.config.name,
             address: "wss://" + IstrolidServer.config.addr + ":" + IstrolidServer.config.port,
-
-            observers: Sim.Instance.players.filter(function (player: Player) {
-                return player.connected && !player.ai;
-            }).length,
-
-            players: Sim.Instance.players.filter(function (player: Player) {
-                return player.connected;
-            }).map(function (player: Player) {
-                return {
-                    name: player.name,
-                    side: player.side,
-                    ai: false
-                }
-            }),
-
+            observers: observer_count,
+            players: connected_players,
             type: Sim.Instance.serverType,
             version: Sim.Instance.VERSION,
             state: Sim.Instance.state
@@ -523,8 +526,7 @@ export class IstrolidServer {
 }
 
 let server = new IstrolidServer();
-Sim.Instance.cheatSimInterval = -12;
-Sim.Instance.lastSimInterval = 0;
+
 
 /*
 // Remote repl

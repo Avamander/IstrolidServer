@@ -37,7 +37,7 @@ export class Sim {
     nGamesPlayed: number = 0;
     lastId: number = 0;
     costLimit: number = 1000;
-    cheatSimInterval: number = -10;
+    cheatSimInterval: number = -12;
     moneyInc: number = 0;
     lastSimInterval: number = 0;
     numComPoints: number = 8;
