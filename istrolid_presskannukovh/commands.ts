@@ -268,7 +268,7 @@ export class CommandsManager {
     processCommand(player: Player, cmds: string[]) {
         let aiBuildBar, debug, hostP, index, l, len, len1, name, p, picked, ref, current_players, ref2,
             repick, playing_players, playing_teams,
-            results, side, total, type;
+            side, total, type;
 
 
         // noinspection FallThroughInSwitchStatementJS
@@ -325,6 +325,7 @@ export class CommandsManager {
 
                 if (playing_players.length > 0) {
                     playing_players[0].connected = false;
+                    delete playing_players[0];
                 }
                 break;
             case "takehost":
@@ -477,6 +478,25 @@ export class CommandsManager {
                     Sim.say("No such player was found on either of the teams!");
                 }
                 break;
+            case "beta":
+                if (player) {
+                    player.side = "beta";
+                }
+                break;
+            case "alpha":
+                if (player) {
+                    player.side = "alpha";
+                }
+                break;
+            case "tournament":
+                if (Sim.Instance.validTypes["tournament"] != null) {
+                    return Sim.Instance.configGame(player, {
+                        type: "tournament"
+                    });
+                } else {
+                    return Sim.say("Unknown mode tournament");
+                }
+                break;
             case "m":
             case "mode":
                 if (cmds.length < 2) {
@@ -517,6 +537,11 @@ export class CommandsManager {
                         type = "nvn";
                         break;
                     case "tour":
+                    case "Tour":
+                    case "tourn":
+                    case "Tourn":
+                    case "tou":
+                    case "Tou":
                         type = "Tournament";
                         break;
                     default:
@@ -663,12 +688,16 @@ export class CommandsManager {
                 return this.changeStat(cmds[1], cmds[2], cmds[3], false);
             case "changes":
                 Sim.say("List of changes:");
-                Sim.say(" * WebSocket compression");
+                Sim.say(" * WebSocket compression is enabled");
                 Sim.say(" * Rewritten in TypeScript");
                 Sim.say(" * Surrendering requires majority to agree");
                 Sim.say(" * Explosive Warhead requires manual detonation");
-                Sim.say(" * Beams are rainbow-colored");
-                Sim.say(" * There's a tournament gamemode");
+                Sim.say(" * Heavy beams are rainbow-colored");
+                Sim.say(" * Sidewinder is more backstabby");
+                Sim.say(" * Most of the math is now done with 64bit floats");
+                Sim.say(" * There's a tournament gamemode, do !mode Tournament");
+                Sim.say(" * Math is more precise");
+                Sim.say(" * Server runs on newer and faster Node.js 11");
                 /*
                 results = [];
                 for (n in this.diffStats) {
@@ -989,8 +1018,8 @@ export class CommandsManager {
             };*/
     };
 
-    runText(text: string, color: [number, number, number, number]) {
-        let j, results, x, y;
+    static runText(text: string, color: [number, number, number, number]) {
+        let x, y;
         if (!Sim.Instance.things) {
             return;
         }
@@ -1004,8 +1033,6 @@ export class CommandsManager {
                 255
             ];
         }
-
-        results = [];
 
         for (let x = 0; x < 4000; x += 4000) {
             for (let y = -5000; y < 5000; y += 500) {

@@ -102,11 +102,11 @@ export class AI {
 
     private static _instance: AI;
 
-    public static get Instance() {
+    public static get Instance(): AI {
         return this._instance || (this._instance = new this());
     }
 
-    static esc_string(s: string) {
+    static esc_string(s: string): string {
         return '"' + s.replace(/[\\"]/g, '\\$1') + '"';
     }
 
@@ -851,7 +851,7 @@ export class AI {
                 spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === Sim.otherSide(unit.side);
-                }), 4000);
+                }), 10000);
                 if (spawn) {
                     pos = spawn.pos;
                 }
@@ -860,7 +860,7 @@ export class AI {
                 spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === unit.side;
-                }), 4000);
+                }), 10000);
                 if (spawn) {
                     pos = spawn.pos;
                 }
@@ -869,11 +869,11 @@ export class AI {
                 spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === Sim.otherSide(unit.side);
-                }), 4000);
+                }), 10000);
                 if (spawn) {
                     cp = AI.closest(spawn.pos, (function (t: Thing) {
                         return t.commandPoint;
-                    }), 4000);
+                    }), 10000);
                 }
                 if (cp) {
                     pos = cp.pos;
@@ -883,11 +883,11 @@ export class AI {
                 spawn = AI.closest(unit.pos, (function (t: Thing) {
                     return t.spawn &&
                         t.side === unit.side;
-                }), 4000);
+                }), 10000);
                 if (spawn) {
                     cp = AI.closest(spawn.pos, (function (t: Thing) {
                         return t.commandPoint;
-                    }), 4000);
+                    }), 10000);
                 }
                 if (cp) {
                     pos = cp.pos;
@@ -1195,12 +1195,12 @@ export class AI {
         ref = Sim.Instance.things;
         for (let _ in ref) {
             u = ref[_];
-            if (u.unit && u.owner === player.number && u.side === player.side) {
+            if (u && player && u.unit && u.owner === player.number && u.side === player.side) {
                 countsFielded[(u as Unit).number] += 1;
                 countsTotal += 1;
             }
-            if (u.unit && u.owner !== player.number && u.side === Sim.otherSide(player.side)) {
-                type = this.classifyShip((u as Unit));
+            if (u && player && u.unit && u.owner !== player.number && u.side === Sim.otherSide(player.side)) {
+                type = AI.classifyShip((u as Unit));
                 enemysFielded[type] = (enemysFielded[type] || 0) + 1;
             }
         }
@@ -1351,8 +1351,8 @@ export class AI {
                     if (!AI.attackFilter(t, unit, rule[1], rule[2])) {
                         return false;
                     }
-                    // @ts-ignore
-                    return this.classifyShip((t as Unit)) === rule[2];
+
+                    return AI.classifyShip((t as Unit)) === rule[2];
                 };
 
                 enemy = AI.closest(unit.pos, filter, parseInt(rule[3]));
@@ -1512,7 +1512,7 @@ export class AI {
         }
     }
 
-    rymarq_system(unit: Unit) {
+    static rymarq_system(unit: Unit) {
         let k, l, len1, list, part, ref, v;
         let type: { [key: string]: number } = {
             brick: 0,
@@ -1565,16 +1565,16 @@ export class AI {
         }
         type.support = 10;
         list = (function () {
-            let results;
-            results = [];
+            let results: [number, string][] = [];
             for (k in type) {
                 v = type[k];
                 results.push([Math.floor(v), k]);
             }
             return results;
         })();
-        // @ts-ignore
-        list = list.sort(function (a: number[], b: number[]) {
+
+
+        list = list.sort(function (a: [number, string], b: [number, string]) {
             return b[0] - a[0];
         });
         return list[0][1];
@@ -1611,12 +1611,12 @@ export class AI {
     }
 
 
-    classifyShip(unit: Unit) {
+    static classifyShip(unit: Unit) {
         if (unit.shipClass != null) {
             return unit.shipClass;
         }
 
-        unit.shipClass = this.rymarq_system(unit);
+        unit.shipClass = AI.rymarq_system(unit);
         return unit.shipClass;
     }
 

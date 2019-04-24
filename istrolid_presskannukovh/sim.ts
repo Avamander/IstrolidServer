@@ -37,7 +37,7 @@ export class Sim {
     nGamesPlayed: number = 0;
     lastId: number = 0;
     costLimit: number = 1000;
-    cheatSimInterval: number = -12;
+    cheatSimInterval: number = -10;
     moneyInc: number = 0;
     lastSimInterval: number = 0;
     numComPoints: number = 8;
@@ -146,7 +146,7 @@ export class Sim {
         this.gameMode = new (<any>GameModes)["g" + battleType](this);
     }
 
-    public static get Instance() {
+    public static get Instance(): Sim {
         return this._instance || (this._instance = new this(this.defaultBattleType));
     }
 
@@ -283,6 +283,7 @@ export class Sim {
 
     start() {
         // Cleanup first
+        console.log("Cleaning up!");
         this.net = {};
         this.step = 0;
         this.timeDelta = 0;
@@ -315,11 +316,14 @@ export class Sim {
         this.captures = 0;
         this.deaths = 0;
         this.nGamesPlayed += 1;
+        this.clearNetState();
+        console.log("Cleaned up!");
         this.generateMap(
             this.mapScale,
             this.numComPoints,
             this.mapSeed);
         this.gameMode.start();
+        console.log("Game started, cleaning net state!");
         this.clearNetState();
     };
 
@@ -681,6 +685,7 @@ export class Sim {
             return;
         }
 
+        this.fullUpdate = true;
         this.gameMode.startGame(player, real);
     }
 
@@ -1356,7 +1361,8 @@ export class Sim {
                     let s: { targetId: number, working: boolean, range: number } = part.net;
 
                     if (!s) {
-                        part.net = s = {targetId: 0, working: true, range: 0};
+                        // @ts-ignore
+                        part.net = s = {};
                     }
 
                     if ((part.working != null) && (s.working !== part.working)) {

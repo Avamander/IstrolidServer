@@ -12,7 +12,7 @@ const WebSocket = require("ws");
 
 export class IstrolidServer {
     private static readonly config = require("./config.json");
-    static readonly allowedCmds = [
+    static readonly allowedCmds: string[] = [
         "playerJoin",
         "mouseMove",
         "playerSelected",
@@ -40,7 +40,7 @@ export class IstrolidServer {
 
     static _instance: IstrolidServer;
 
-    public static get Instance(){
+    public static get Instance(): IstrolidServer {
         return this._instance;
     }
 
@@ -97,7 +97,8 @@ export class IstrolidServer {
                 switch (data[0]) {
                     case "playerJoin": {
                         console.log("Player joined", data[0], data[1], data[2], data[3]);
-                        for (let player_id in Sim.Instance.players) {
+                        let player_id: string;
+                        for (player_id in Sim.Instance.players) {
                             let player = Sim.Instance.players[player_id];
                             if (!player.ai) {
                                 if (player.name === data[1]) {
