@@ -6,23 +6,21 @@
   "dependencies": {
     "assemblyscript": "github:assemblyscript/assemblyscript",
     "ws": "^6.1.0",
-    "typescript": "^3.4.5"
+    "typescript": "^3.4.5",
+    "bufferutil": "^4.0.1"
   },
   "devDependencies": {},
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "asbuild:untouched": "asc server.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate --debug",
-    "asbuild:optimized": "asc server.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate --optimize",
+    "asbuild:untouched": "asc istrolid_presskannukovh/maths.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate --debug",
+    "asbuild:optimized": "asc istrolid_presskannukovh/maths.ts -b build/optimized.wasm -t build/optimized.wat --sourceMap --validate --optimize",
     "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
   },
   "authors": [
     "R26",
     "Avamander"
   ],
-  "optionalDependencies": {
-    "bufferutil": "^4.0.1"
-  },
   "license": "UNLICENSED",
   "repository": "git://github.com/Avamander/IstrolidServer",
   "private": true
