@@ -23,6 +23,23 @@ export class CommandsManager {
     static _instance: CommandsManager;
 
     repick: number = 0;
+    allowedSimVariables: string[] = [
+        "overrideSpeed",
+        "NxN",
+        "numComPoints",
+        "mapScale",
+        "moneyRatio",
+        "unitLimit",
+        "fullUpdate",
+        "defaultMoney",
+        "costLimit",
+        "cheatSimInterval",
+        "enableAi",
+        "check",
+        "load_protection",
+        "connection_limit",
+        "paused"
+    ];
 
     public static get Instance() {
         return this._instance || (this._instance = new this());
@@ -128,18 +145,16 @@ export class CommandsManager {
     };
 
     static muha(x: number, y: number, color: [number, number, number, number], text: string) {
-        let filename, letter, ref, results;
-        ref = text.toUpperCase();
-        results = [];
+        let ref = text.toUpperCase();
         for (let j = 0; j < ref.length; j++) {
-            letter = ref[j];
+            let letter = ref[j];
             if (letter === " ") {
                 x += 400;
                 continue;
             }
 
             let mu: Rock = new Rock();
-            filename = (function () {
+            let filename = (function () {
                 switch (letter) {
                     case "#":
                         return "letterPound.png";
@@ -165,9 +180,8 @@ export class CommandsManager {
                 return v2.add_r(this.pos, this.vel);
             };
             Sim.Instance.things[mu.id] = (mu as Thing);
-            results.push(x += 400);
+            x += 400;
         }
-        return results;
     };
 
     find_best_teams(players: Player[]): Player[][] {
@@ -281,6 +295,7 @@ export class CommandsManager {
                 }
 
                 if (!(CommandsManager.checkHost(player))) {
+                    Sim.say("You have to be the host");
                     break;
                 }
 
@@ -291,6 +306,9 @@ export class CommandsManager {
                 if (playing_players.length > 0) {
                     if (cmds.length > 2) {
                         playing_players[0].side = cmds[2];
+                        if (playing_players[1]) {
+                            playing_players[1].side = cmds[2];
+                        }
                     } else {
                         Sim.say("Specify the team too!");
                     }
@@ -323,9 +341,16 @@ export class CommandsManager {
                     return filter_players.name === cmds[1];
                 });
 
-                if (playing_players.length > 0) {
-                    playing_players[0].connected = false;
-                    delete playing_players[0];
+                for (let i = 0; i < playing_players.length; i++) {
+                    if (playing_players[i]) {
+                        playing_players[i].connected = false;
+                        if (playing_players[i].ws) {
+                            if (playing_players[i].ws.close) {
+                                playing_players[i].ws.close();
+                            }
+                        }
+                        delete playing_players[i];
+                    }
                 }
                 break;
             case "takehost":
@@ -384,8 +409,8 @@ export class CommandsManager {
 
                 playing_players = Sim.Instance.players.filter(function (filter_players) {
                     return filter_players.connected &&
-                        !filter_players.afk
-                        && (filter_players.side === "alpha"
+                        filter_players.afk === false &&
+                        (filter_players.side === "alpha"
                             || filter_players.side === "beta");
                 });
 
@@ -395,6 +420,7 @@ export class CommandsManager {
                     break;
                 }
 
+                // noinspection JSUnusedLocalSymbols
                 playing_players = playing_players.sort(function (a, b) {
                     return Math.random() - 0.5;
                 });
@@ -423,7 +449,7 @@ export class CommandsManager {
 
                 playing_players = Sim.Instance.players.filter(function (filter_players) {
                     return filter_players.connected &&
-                        !filter_players.afk
+                        filter_players.afk === false
                         && (filter_players.side === "alpha"
                             || filter_players.side === "beta");
                 });
@@ -480,21 +506,29 @@ export class CommandsManager {
                 break;
             case "beta":
                 if (player) {
-                    player.side = "beta";
+                    if (CommandsManager.checkRunning()) {
+                        break;
+                    }
+
+                    Sim.Instance.switchSide(player, "beta");
                 }
                 break;
             case "alpha":
                 if (player) {
-                    player.side = "alpha";
+                    if (CommandsManager.checkRunning()) {
+                        break;
+                    }
+
+                    Sim.Instance.switchSide(player, "alpha");
                 }
                 break;
             case "tournament":
-                if (Sim.Instance.validTypes["tournament"] != null) {
+                if (Sim.Instance.validTypes["Tournament"] != null) {
                     return Sim.Instance.configGame(player, {
-                        type: "tournament"
+                        type: "Tournament"
                     });
                 } else {
-                    return Sim.say("Unknown mode tournament");
+                    Sim.say("Mode is not allowed!");
                 }
                 break;
             case "m":
@@ -553,7 +587,7 @@ export class CommandsManager {
                         type: type
                     });
                 } else {
-                    return Sim.say("unknown mode " + type);
+                    return Sim.say("Unknown mode " + type);
                 }
                 break;
             case "start":
@@ -575,7 +609,7 @@ export class CommandsManager {
                 if (CommandsManager.checkRunning()) {
                     break;
                 }
-                if ((ref = cmds[1]) === "alpha" || ref === "beta" || ref === "spectators") {
+                if (cmds[1] === "alpha" || cmds[1] === "beta" || cmds[1] === "spectators") {
                     return Sim.Instance.switchSide(player, cmds[1]);
                 } else {
                     return Sim.say("Unknown team");
@@ -601,11 +635,10 @@ export class CommandsManager {
                 player.repick = true;
                 total = 0;
                 repick = 0;
-                current_players = Sim.Instance.players;
 
-                for (index = 0, len = current_players.length; index < len; index++) {
-                    p = current_players[index];
-                    if (!p.connected || p.afk || p.ai) {
+                for (let player_id in Sim.Instance.players) {
+                    p = Sim.Instance.players[player_id];
+                    if (!p.connected || (p.afk === true) || p.ai) {
                         continue;
                     }
                     total += 1;
@@ -615,7 +648,7 @@ export class CommandsManager {
                 }
 
                 if (Sim.Instance.players.filter(function (f_player) {
-                    return f_player.connected && !f_player.afk && (f_player.side === "alpha" || f_player.side === "beta");
+                    return f_player.connected && (f_player.afk === false) && (f_player.side === "alpha" || f_player.side === "beta");
                 }).length < 2) {
                     Sim.say("Not enough players in the game");
                     break;
@@ -623,31 +656,38 @@ export class CommandsManager {
 
                 if (repick > total / 2) {
                     picked = false;
-                    hostP = {};
-                    ref2 = Sim.Instance.players;
-                    for (l = 0, len1 = ref2.length; l < len1; l++) {
-                        p = ref2[l];
+                    hostP = null;
+                    for (let l in Sim.Instance.players) {
+                        p = Sim.Instance.players[l];
                         p.repick = false;
                         if (p.host) {
                             hostP = p;
                         }
                     }
+
                     while (!picked) {
                         p = Sim.Instance.players[Math.floor(Math.random() * Sim.Instance.players.length)];
                         if (p.host) {
                             continue;
                         }
-                        if ((p.side === "alpha" || p.side === "beta") && !(p.ai || p.afk) && p.connected) {
+                        if ((p.side === "alpha" || p.side === "beta") &&
+                            !(p.ai || (p.afk === true)) &&
+                            p.connected) {
                             p.host = true;
                             picked = true;
                         }
                     }
-                    // @ts-ignore
-                    hostP.host = false;
-                    return Sim.say("Host repicked");
+
+                    if (hostP) {
+                        hostP.host = false;
+                        return Sim.say("Host repicked");
+                    } else {
+                        return Sim.say("I might have failed to repick the host");
+                    }
                 } else {
                     return Sim.say((Math.floor(total / 2) + 1 - repick) + " more votes needed");
                 }
+                break;
             case "addai":
                 if (cmds.length < 3) {
                     Sim.say(this.helpMessage(cmds[0]));
@@ -671,13 +711,17 @@ export class CommandsManager {
                     Sim.say("Cannot find " + name + ", using your current fleet");
                     aiBuildBar = player.buildBar;
                 }
+
                 if (aiBuildBar) {
                     Sim.Instance.addAi(player, name, side, aiBuildBar, true);
                     return Sim.say("Added " + name + " to " + side);
+                } else {
+                    Sim.say("Could not add AI due to your build bar being bad somehow");
                 }
                 break;
             case "s":
             case "set":
+                Sim.say("Use !sim, !turret, !bullet, !explosion instead");
                 if (!CommandsManager.checkHost(player)) {
                     break;
                 }
@@ -685,18 +729,101 @@ export class CommandsManager {
                     Sim.say(this.helpMessage(cmds[0]));
                     break;
                 }
-                return this.changeStat(cmds[1], cmds[2], cmds[3], false);
+                return;
+            case "getconnectioncount":
+                if (!CommandsManager.checkHost(player)) {
+                    break;
+                }
+                Sim.say("There's " + Number(Sim.Instance.connection_count) + " connections");
+                break;
+            case "tournamenthelp":
+                Sim.say("_______________ QUICK HELP _______________");
+                Sim.say("* Use !alpha or !beta to join the game");
+                Sim.say("* Game consists of 1v1 matches in brackets");
+                Sim.say("* Fleet swap and AI are both allowed");
+                Sim.say("* There is no countdown between matches to ensure clients don't crap out, ");
+                Sim.say("* Pay attention to the changes of the explosive warhead, sidewinder and targeting changes");
+                Sim.say("* Strict 15 minute time limit to one match");
+                Sim.say("* No client mod required for playing");
+                Sim.say("* Use !beta or !alpha to join the tournament");
+                Sim.say("* The server is in the EU so if you're 40 000 km away then take account the lag, if both players lag then Avamander can slow down the game to make it more playable!");
+                break;
+            case "sim":
+                if (!CommandsManager.checkHost(player)) {
+                    break;
+                }
+
+                if (cmds.length < 3) {
+                    // Sim.say(this.helpMessage(cmds[0])); // TODO:
+                    Sim.say("More parameters are needed");
+                    break;
+                }
+
+                if (this.allowedSimVariables.includes(cmds[1])) {
+                    let parsed_type:
+                        "string" |
+                        "number" |
+                        "bigint" |
+                        "boolean" |
+                        "symbol" |
+                        "undefined" |
+                        "object" |
+                        "function" |
+                        "null";
+                    let parsed_value: number | boolean | null;
+
+                    // Set default and do not set default
+                    parsed_type = "null";
+                    parsed_value = null;
+                    if (!isNaN(parseInt(cmds[2]))) {
+                        parsed_type = "number";
+                        parsed_value = parseInt(cmds[2]);
+                    }
+
+                    if (cmds[2] === "true") {
+                        parsed_type = "boolean";
+                        parsed_value = true;
+                    } else if (cmds[2] === "false") {
+                        parsed_type = "boolean";
+                        parsed_value = false;
+                    }
+
+                    if (parsed_type === "null" || parsed_value === null) {
+                        Sim.say("Invalid type or value!");
+                        return;
+                    }
+
+                    if (this.trackVariableChanges(
+                        "sim",
+                        cmds[1],
+                        // @ts-ignore
+                        Sim.Instance[cmds[1]],
+                        parsed_value
+                    )) {
+                        // @ts-ignore
+                        Sim.Instance[cmds[1]] = parsed_value;
+                        Sim.say("Changed!");
+                    } else {
+                        Sim.say("Did not set anything!");
+                    }
+                } else {
+                    Sim.say("Changing this variable is not allowed!");
+                }
+                break;
+            case "ffascript":
+                Sim.say("https://gist.github.com/Rio6/df4b990ddd0d25f9ad3b48e0fc8d0f35");
+                break;
             case "changes":
                 Sim.say("List of changes:");
+                Sim.say(" * Server is in the EU");
                 Sim.say(" * WebSocket compression is enabled");
                 Sim.say(" * Rewritten in TypeScript");
                 Sim.say(" * Surrendering requires majority to agree");
-                Sim.say(" * Explosive Warhead requires manual detonation");
+                Sim.say(" * Explosive Warhead requires manual detonation!");
                 Sim.say(" * Heavy beams are rainbow-colored");
                 Sim.say(" * Sidewinder is more backstabby");
                 Sim.say(" * Most of the math is now done with 64bit floats");
                 Sim.say(" * There's a tournament gamemode, do !mode Tournament");
-                Sim.say(" * Math is more precise");
                 Sim.say(" * Server runs on newer and faster Node.js 11");
                 /*
                 results = [];
@@ -712,14 +839,15 @@ export class CommandsManager {
                     })());
                 }
                 return results*/
-                return;
+                break;
             case "r":
             case "reset":
                 if (!CommandsManager.checkHost(player)) {
                     break;
                 }
                 this.resetStats();
-                return Sim.say("Reset to default stats");
+                Sim.say("Reset to default stats");
+                break;
             case "export":
                 return Sim.say("Not implemented due to being hacky");
             /*
@@ -759,19 +887,20 @@ export class CommandsManager {
             case "fw":
             case "firework":
             case "fireworks":
-                if (CommandsManager.checkHost(player) && !CommandsManager.checkRunning()) {
+                if (!CommandsManager.checkHost(player) &&
+                    !CommandsManager.checkRunning()) {
                     Sim.say("You need to be the host and the game must not be running to do that!");
                     break;
                 }
 
-                for (let _ in Sim.Instance.things) {
-                    (Sim.Instance.things[_] as Unit).hp = 0;
+                for (let thing_id in Sim.Instance.things) {
+                    (Sim.Instance.things[thing_id] as Unit).hp = 0;
                 }
                 Sim.say("Poof!");
                 return;
             case "debug":
                 if (player.name !== "Avamander") {
-                    Sim.say("only Avamander can do that");
+                    Sim.say("Only Avamander can do that.");
                     break;
                 }
                 if (cmds.length > 1) {
@@ -1045,4 +1174,45 @@ export class CommandsManager {
             }
         }
     };
+
+    private tracked_changes:
+        {
+            [object_name: string]:
+                {
+                    [object_property_name: string]:
+                        {
+                            "original": any,
+                            "new": any
+                        };
+                }
+        } = {};
+
+    private trackVariableChanges(object_name: string, object_property_name: string, object_value: any, new_value: any): boolean {
+        let changes = this.tracked_changes[object_name];
+        if (!this.tracked_changes[object_name]) {
+            this.tracked_changes[object_name] = {};
+            changes = this.tracked_changes[object_name];
+        }
+
+        let original_type;
+        if (!changes[object_property_name]) {
+            changes[object_property_name] = {
+                "original": object_value,
+                "new": null
+            };
+            original_type = typeof object_value;
+        } else {
+            original_type = typeof changes[object_property_name]["original"];
+        }
+
+        if (typeof new_value !== original_type) {
+            Sim.say("Value type mismatch!");
+            return false;
+        } else {
+            changes[object_property_name]["new"] = new_value;
+            return true;
+        }
+
+        return false;
+    }
 }

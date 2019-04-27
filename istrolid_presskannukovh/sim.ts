@@ -6,7 +6,6 @@ export class Sim {
     MINOR_VERSION = 2;
 
     local: boolean = false;
-    fullUpdate: boolean = false;
     awaitRestart: boolean = false;
     galaxyStar: boolean = false;
     challenge: boolean = false;
@@ -18,8 +17,6 @@ export class Sim {
     gainsMoney: boolean = true;
     makeRocks: boolean = true;
     aiTestMode: boolean = false;
-    enableAi: boolean = true;
-    check: boolean = true;
 
     step: number = 0;
     timeDelta: number = 0;
@@ -33,19 +30,11 @@ export class Sim {
     axisSort: number = 0;
     deathPenalty: number = 0;
     ticksPerSec: number = 16;
-    defaultMoney: number = 2000;
     nGamesPlayed: number = 0;
     lastId: number = 0;
-    costLimit: number = 1000;
-    cheatSimInterval: number = -12;
     moneyInc: number = 0;
     lastSimInterval: number = 0;
-    numComPoints: number = 8;
-    mapScale: number = 1.5;
-    moneyRatio: number = 1;
     tickTime: number = 63;
-    unitLimit: number = 100;
-    NxN: number = 24;
 
     winningSide: string;
     battleType: string;
@@ -104,7 +93,8 @@ export class Sim {
         "CTF": "CTF",
         ///"TicTacToe": "TicTacToe",
         "FFA": "FFA",
-        "Tournament": "Tournament"
+        "Tournament": "Tournament",
+        "Race": "Race"
     };
 
     gameFields = ["players", "things", "aiTestMode", "nGamesPlayed", "numBattles", "local", "step", "timeDelta", "winningSide", "numBattles", "unitSpaces", "projSpaces", "zJson", "serverType", "theme"];
@@ -123,6 +113,23 @@ export class Sim {
     victoryGoal: number = 1;
     numFlags: number = 1;
 
+    // Variables changeable with !sim
+    overrideSpeed: boolean = false;
+    NxN: number = 24;
+    numComPoints: number = 8;
+    mapScale: number = 1.5;
+    moneyRatio: number = 1;
+    unitLimit: number = 100;
+    fullUpdate: boolean = false;
+    defaultMoney: number = 2000;
+    costLimit: number = 1000;
+    cheatSimInterval: number = -12;
+    enableAi: boolean = true;
+    check: boolean = true;
+    load_protection: boolean = false;
+    connection_limit: number = 20;
+
+    connection_count: number = 0;
 
     constructor(battleType: string) {
         this.battleType = battleType;
@@ -312,6 +319,16 @@ export class Sim {
             this.things = [];
         }
 
+        if (!this.units) {
+            this.units = [];
+        } else {
+            for (let id in this.units) {
+                delete this.units[id];
+            }
+            delete this.units;
+            this.units = [];
+        }
+
         this.state = "starting";
         this.captures = 0;
         this.deaths = 0;
@@ -445,7 +462,10 @@ export class Sim {
                 return 3;
             }
             case "FFA": {
-                return 4;
+                return 8;
+            }
+            case "Tou": {
+                return 60;
             }
             default: {
                 return 3;
@@ -466,7 +486,6 @@ export class Sim {
         if (ai == null) {
             ai = false;
         }
-        console.log("playerJoin", pid, name, color);
 
         for (let l in this.players) {
             p = this.players[l];
@@ -497,9 +516,9 @@ export class Sim {
                 this.players.push(player);
             } else {
                 // @ts-ignore
-                player.number = dcIndex;
+                player.number = parseInt(dcIndex);
                 // @ts-ignore
-                this.players[dcIndex] = player;
+                this.players[parseInt(dcIndex)] = player;
             }
 
             if (this.local) {
@@ -619,10 +638,12 @@ export class Sim {
             if (nocheck) {
                 return AI.useAiFleet(name, side, aiBuildBar); // TODO:
             }
-            if (this.numInTeam(side) >= this.playersPerTeam()) {
+
+            if (this.numInTeam(side) >= this.playersPerTeam() && (player && player.name !== "Avamander")) {
                 console.log("Enough players in team");
                 return;
             }
+
             if (this.state !== "waiting") {
                 return;
             }
@@ -857,7 +878,13 @@ export class Sim {
         if (totalUnits >= this.unitLimit) {
             return;
         }
+
         spec = player.buildBar[number];
+        if (!(spec && spec.parts && spec.parts.length > 0) &&
+            !(spec && spec.length > 35)) {
+            return;
+        }
+
         if (player.money < UnitUtils.specCost(spec)) {
             return;
         }
@@ -1155,7 +1182,7 @@ export class Sim {
         }
 
         for (let m in this.players) {
-            if (this.state === "waiting" && this.players[m].afk) {
+            if (this.state === "waiting" && this.players[m].afk === true) {
                 this.players[m].side = "spectators";
             }
             if (this.players[m].side === null) {

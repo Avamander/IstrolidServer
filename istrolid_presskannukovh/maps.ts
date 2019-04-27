@@ -199,7 +199,8 @@ export class Mapping {
         Mapping.lemondarkred,
         Mapping.tanslate,
         Mapping.yellowpuce,
-        Mapping.space
+        Mapping.space,
+        Mapping.bluepurple
     ];
     static blocks = ["ExULFRUIERUIExcIExMI", "FBQUExgHGBUJFRAHEBMJEBUJFRgHExAHGBMJ"];
     static towers = ["ERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQBFBQw", "FBQDERQQFxQQEREIFxEIFBcJFBEJERcKFxcKFBQy", "ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ4", "ERQQFBcJFxQQEREIFxEIFBQDERcKFxcKFBESFBQ1"];
@@ -426,7 +427,7 @@ export class Mapping {
     }
 
     static genDebree() {
-        let c, clusterCenter, debree, debreeColor, i, m, n, ref, results;
+        let c, clusterCenter, debree, debreeColor, i, m, n, ref;
         debreeColor = Sim.Instance.theme.spotColor;
         n = Math.PI * Sim.Instance.mapScale * Sim.Instance.mapScale * 4;
 

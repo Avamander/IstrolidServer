@@ -552,21 +552,17 @@ export class Unit extends Thing {
         return v2.add_r(p, this.pos);
     }
 
-    computeBoundPoints() {
-        Sim.Instance.timeStart("computeBoundPoints");
-        let results = [];
-        // @ts-ignore
-        for (let j = 0; j < this.boundPointsLocal.length; j++) {
-            // @ts-ignore
-            results.push(this.toWorld(this.boundPointsLocal[j]));
-        }
-        this.boundPoints = results;
-        Sim.Instance.timeEnd("computeBoundPoints");
-    }
-
     getBoundPoints(): Float64Array[] {
-        if (this.boundPoints === undefined || this.boundPoints === null || this.boundPoints === undefined) {
-            this.computeBoundPoints();
+        if (!this.boundPoints) {
+            Sim.Instance.timeStart("computeBoundPoints");
+            let results = [];
+            // @ts-ignore
+            for (let j = 0; j < this.boundPointsLocal.length; j++) {
+                // @ts-ignore
+                results.push(this.toWorld(this.boundPointsLocal[j]));
+            }
+            this.boundPoints = results;
+            Sim.Instance.timeEnd("computeBoundPoints");
         }
         // @ts-ignore
         return this.boundPoints;
@@ -688,38 +684,55 @@ export class Unit extends Thing {
 
         Sim.Instance.timeStart("sorts");
 
-        Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos,
-            this.maxRange + Sim.Instance.maxRadius[Sim.otherSide(this.side)] + 500,
-            // @ts-ignore because unitSpaces contains Unit
-            (function (_this) {
-                return function (u: Unit) {
-                    if (u.id !== _this.id) {
-                        _this.closestEnemies.push(u);
-                    }
-                    return false;
-                };
-            })(this));
+        if (Sim.Instance.unitSpaces[Sim.otherSide(this.side)]) {
+            Sim.Instance.unitSpaces[Sim.otherSide(this.side)].findInRange(this.pos,
+                this.maxRange + Sim.Instance.maxRadius[Sim.otherSide(this.side)] + 500,
+                // @ts-ignore because unitSpaces contains Unit
+                (function (_this) {
+                    return function (u: Unit) {
+                        if (u.id !== _this.id) {
+                            _this.closestEnemies.push(u);
+                        }
+                        return false;
+                    };
+                })(this));
+        } else {
+            Sim.Instance.timeEnd("sorts");
+            Sim.Instance.timeEnd("unittick");
+            return;
+        }
 
-        Sim.Instance.unitSpaces[this.side].findInRange(this.pos, this.maxRange + Sim.Instance.maxRadius[this.side] + 500,
-            // @ts-ignore because unitSpaces contains Unit
-            (function (_this) {
-            return function (u: Unit) {
-                if (u.id !== _this.id) {
-                    _this.closestFriends.push(u);
-                }
-                return false;
-            };
-        })(this));
+        if (Sim.Instance.unitSpaces[this.side]) {
+            Sim.Instance.unitSpaces[this.side].findInRange(this.pos, this.maxRange + Sim.Instance.maxRadius[this.side] + 500,
+                // @ts-ignore because unitSpaces contains Unit
+                (function (_this) {
+                    return function (u: Unit) {
+                        if (u.id !== _this.id) {
+                            _this.closestFriends.push(u);
+                        }
+                        return false;
+                    };
+                })(this));
+        } else {
+            Sim.Instance.timeEnd("sorts");
+            Sim.Instance.timeEnd("unittick");
+            return;
+        }
 
-
-        Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.maxRange + 100,
-            // @ts-ignore because bulletSpaces contains Unit
-            (function (_this) {
-            return function (b: Bullet) {
-                _this.closestEnemyBullets.push(b);
-                return false;
-            };
-        })(this));
+        if (Sim.Instance.bulletSpaces[Sim.otherSide(this.side)]) {
+            Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.maxRange + 100,
+                // @ts-ignore because bulletSpaces contains Unit
+                (function (_this) {
+                    return function (b: Bullet) {
+                        _this.closestEnemyBullets.push(b);
+                        return false;
+                    };
+                })(this));
+        } else {
+            Sim.Instance.timeEnd("sorts");
+            Sim.Instance.timeEnd("unittick");
+            return;
+        }
 
         this.closestEnemies.sort((function (_this) {
             return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {

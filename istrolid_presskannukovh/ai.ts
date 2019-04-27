@@ -7,6 +7,7 @@ import {AIData} from "./aidata";
 import {Bullets} from "./bullets";
 import Bullet = Bullets.Bullet;
 import MissileBullet = Bullets.MissileBullet;
+import BulletUtils = Bullets.BulletUtils;
 
 export class AI {
     all: {
@@ -1477,28 +1478,32 @@ export class AI {
         let minEnemy: Unit;
         let doWhat: string;
         let stayAwayRange: number = 0;
-        // @ts-ignore
-        Sim.Instance.unitSpaces[Sim.otherSide(unit.side)].findInRange(unit.pos, 3000, (function (_this) {
-            return function (enemy: Unit) {
-                let dist: number;
-                if (enemy.weaponDPS * 16 > dps) {
-                    dist = v2.distance(unit.pos, enemy.pos);
-                    if (dist < minDist) {
-                        stayAwayRange = enemy.weaponRange + enemy.radius + unit.radius + enemy.maxSpeed * 16;
-                        if (dist < stayAwayRange) {
-                            minDist = dist;
-                            minEnemy = enemy;
-                            doWhat = "Flee";
-                        } else if (dist < stayAwayRange * 1.10) {
-                            minDist = dist;
-                            minEnemy = enemy;
-                            doWhat = "Stop";
+        if (Sim.Instance.unitSpaces[Sim.otherSide(unit.side)]) {
+            // @ts-ignore
+            Sim.Instance.unitSpaces[Sim.otherSide(unit.side)].findInRange(unit.pos, 3000, (function (_this) {
+                return function (enemy: Unit) {
+                    let dist: number;
+                    if (enemy.weaponDPS * 16 > dps) {
+                        dist = v2.distance(unit.pos, enemy.pos);
+                        if (dist < minDist) {
+                            stayAwayRange = enemy.weaponRange + enemy.radius + unit.radius + enemy.maxSpeed * 16;
+                            if (dist < stayAwayRange) {
+                                minDist = dist;
+                                minEnemy = enemy;
+                                doWhat = "Flee";
+                            } else if (dist < stayAwayRange * 1.10) {
+                                minDist = dist;
+                                minEnemy = enemy;
+                                doWhat = "Stop";
+                            }
                         }
                     }
-                }
-                return false;
-            };
-        })(this));
+                    return false;
+                };
+            })(this));
+        } else {
+            return false;
+        }
 
         // @ts-ignore
         if (doWhat === "Flee") {
@@ -1633,10 +1638,14 @@ export class AI {
         if (!aiName) {
             return;
         }
-        if (side === "beta") {
-            color = [46, 204, 113, 255];
+        if (Sim.Instance.gameMode.serverType !== "Tournament") {
+            if (side === "beta") {
+                color = [46, 204, 113, 255];
+            } else {
+                color = [230, 126, 34, 255];
+            }
         } else {
-            color = [230, 126, 34, 255];
+            color = BulletUtils.rainbow_colors[Math.floor(Math.random() * (BulletUtils.rainbow_colors.length - 1))];
         }
         for (i = l = 0, len1 = aiBuildBar.length; l < len1; i = ++l) {
             u = aiBuildBar[i];

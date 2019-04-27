@@ -1,6 +1,6 @@
 import {IstrolidServer} from "../server";
 import {Utils} from "./utils";
-import {CommandPoint, Player, SpawnPoint} from "./things";
+import {CommandPoint, Player, SpawnPoint, Thing} from "./things";
 import {HSpace} from "./hspace";
 import {Sim} from "./sim";
 import {MTwist} from "./mtwist";
@@ -9,16 +9,40 @@ import {Unit} from "./unit";
 import {v2} from "./maths";
 import {Parts} from "./parts";
 import {CommandsManager} from "./commands";
+import {RaceMap} from "./race_map";
 
 export class GameMode {
     sim: Sim;
     serverType: string = "unknown";
+    ffa = false;
+    numComPoints = 8;
+    mapScale = 1;
+    unitLimit = 100;
 
     /*
      * Sets sim variables
      */
     constructor(sim: Sim) {
         this.sim = sim;
+        this.setSimVariables();
+        for (let i in sim.players) {
+            p = this.sim.players[i];
+            if (p.side !== "spectators") {
+                p.side = "spectators";
+            }
+        }
+    }
+
+    /*
+     * Should set all the variables required and reset if needed
+     *
+     */
+    setSimVariables() {
+        this.sim.ffa = this.ffa;
+        this.sim.serverType = this.serverType;
+        this.sim.numComPoints = this.numComPoints;
+        this.sim.mapScale = this.mapScale;
+        this.sim.unitLimit = this.unitLimit;
     }
 
     /*
@@ -109,7 +133,7 @@ export class GameMode {
                 player = this.sim.players[l];
                 if (!player.ai &&
                     player.connected &&
-                    !player.afk &&
+                    !(player.afk === true) &&
                     player.side !== "spectators") {
                     stillThere = true;
                 }
@@ -269,6 +293,7 @@ export class GameMode {
         }
 
         if (player.kickTime > Utils.now() - 15000) {
+            console.log("Player has been recently kicked", player.name)
             return;
         }
 
@@ -321,7 +346,7 @@ export class GameMode {
         //if (typeof this.sendGameReport === "function") {
         //    this.sendGameReport();
         //}
-        if (this.serverType === "1v1r" &&
+        if (this.sim.serverType === "1v1r" &&
             this.sim.winningSide) {
             for (let l in this.sim.players) {
                 player = this.sim.players[l];
@@ -351,7 +376,6 @@ export class GameMode {
      * Rebuilds unit spaces based on the gamemode
      */
     spacesRebuild(): void {
-        let ref1, thing;
         this.sim.unitSpaces = {
             "alpha": new HSpace(500),
             "beta": new HSpace(500)
@@ -365,14 +389,16 @@ export class GameMode {
             beta: 0
         };
 
+        let thing;
         for (let id in this.sim.things) {
             thing = this.sim.things[id];
             if (thing.dead) {
+                delete this.sim.things[id];
                 continue;
             }
             if (thing.unit) {
-                if ((ref1 = this.sim.unitSpaces[thing.side]) != null) {
-                    ref1.insert(thing);
+                if (this.sim.unitSpaces[thing.side] != null) {
+                    this.sim.unitSpaces[thing.side].insert(thing);
                 }
                 if (this.sim.maxRadius[thing.side] != null) {
                     if (thing.radius > this.sim.maxRadius[thing.side]) {
@@ -381,7 +407,11 @@ export class GameMode {
                 }
             }
             if (thing.bullet) {
-                this.sim.bulletSpaces[thing.side].insert(thing);
+                if (this.sim.bulletSpaces[thing.side]) {
+                    this.sim.bulletSpaces[thing.side].insert(thing);
+                } else {
+                    delete this.sim.things[id];
+                }
             }
         }
     }
@@ -406,15 +436,20 @@ export namespace GameModes {
                     p.side = "alpha";
                 }
             }
-            this.sim.ffa = true;
-            this.sim.serverType = "FFA";
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.ffa = this.ffa;
+            this.sim.serverType = this.serverType;
+            this.sim.numComPoints = this.numComPoints;
         }
 
         surrender(player: Player) {
 
         }
 
-        makePoint(r: number, th: number, side: any, type: new () => CommandPoint | SpawnPoint) {
+        static makePoint(r: number, th: number, side: any, type: new () => CommandPoint | SpawnPoint) {
             let point;
             point = new type();
             point.z = -.01;
@@ -447,17 +482,17 @@ export namespace GameModes {
             for (i = m = 0, ref = players.length; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
                 th = i * Math.PI * 2 / players.length;
                 player = players[i];
-                let sp: SpawnPoint = this.makePoint(1800, th, player.side, SpawnPoint);
+                let sp: SpawnPoint = GameModes.gFFA.makePoint(1800, th, player.side, SpawnPoint);
                 sp.spawn = player.name;
                 sp.side = player.name;
-                let cp: CommandPoint = (this.makePoint(1800, th, player.side, CommandPoint) as CommandPoint);
+                let cp: CommandPoint = (GameModes.gFFA.makePoint(1800, th, player.side, CommandPoint) as CommandPoint);
                 cp.linkedSpawn = sp;
                 cp.radius = sp.radius;
                 cp.size = [cp.radius / 250, cp.radius / 250];
                 players[i].usingSpawn = sp;
             }
 
-            cp = (this.makePoint(0, 0, "neutral", CommandPoint) as CommandPoint);
+            cp = (GameModes.gFFA.makePoint(0, 0, "neutral", CommandPoint) as CommandPoint);
             cp.radius = 300;
             cp.size = [cp.radius / 250, cp.radius / 250];
             cp.value = 1.2;
@@ -465,9 +500,9 @@ export namespace GameModes {
             for (i = o = 0, ref1 = Sim.Instance.numComPoints - 1; 0 <= ref1 ? o < ref1 : o > ref1; i = 0 <= ref1 ? ++o : --o) {
                 th = i * Math.PI * 2 / (Sim.Instance.numComPoints - 1);
                 if (i % 2 === 0) {
-                    this.makePoint(640, th, "neutral", CommandPoint);
+                    GameModes.gFFA.makePoint(640, th, "neutral", CommandPoint);
                 } else {
-                    cp = this.makePoint(880, th, "neutral", CommandPoint);
+                    cp = GameModes.gFFA.makePoint(880, th, "neutral", CommandPoint);
                     cp.radius = 200;
                     cp.size = [cp.radius / 250, cp.radius / 250];
                     // @ts-ignore
@@ -477,13 +512,13 @@ export namespace GameModes {
         }
 
         spacesRebuild() {
-            let _, bspace, i, len, maxr, p, ref, ref1, results, t, uspace;
-            uspace = new HSpace(500);
-            bspace = new HSpace(100);
-            maxr = 0;
-            ref = this.sim.things;
-            for (_ in ref) {
-                t = ref[_];
+            let p, t;
+            let uspace = new HSpace(500);
+            let bspace = new HSpace(100);
+            let maxr = 0;
+
+            for (let thing_id in this.sim.things) {
+                t = this.sim.things[thing_id];
                 if (t.dead) {
                     continue;
                 }
@@ -558,7 +593,6 @@ export namespace GameModes {
         }
 
         victoryConditions() {
-            let i, len;
             let player: Player;
             let players, spawns, thing;
             if (this.sim.state !== "running") {
@@ -573,8 +607,8 @@ export namespace GameModes {
                 }
                 spawns = (function () {
                     let results = [];
-                    for (let _ in Sim.Instance.things) {
-                        thing = Sim.Instance.things[_];
+                    for (let thing_id in Sim.Instance.things) {
+                        thing = Sim.Instance.things[thing_id];
                         if (thing.spawn === player.side) {
                             results.push(thing);
                         }
@@ -606,7 +640,7 @@ export namespace GameModes {
 
             if (this.sim.winningSide) {
                 this.endOfGame();
-            } else if (this.sim.step > 16 * 60 * 30) {
+            } else if (this.sim.step > 16 * 60 * 15) {
                 this.sim.winningSide = "";
                 this.endOfGame();
             }
@@ -666,7 +700,7 @@ export namespace GameModes {
         };
 
         victoryConditions() {
-            let cappedArr, i, id, k, len, player, ref, ref1, stillThere, thing;
+            let cappedArr, id, k, player, ref, stillThere, thing;
             if (this.sim.state !== "running") {
                 return;
             }
@@ -701,7 +735,10 @@ export namespace GameModes {
 
                 for (let i in this.sim.players) {
                     player = this.sim.players[i];
-                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+                    if (!player.ai &&
+                        player.connected &&
+                        player.afk === false &&
+                        player.side !== "spectators") {
                         stillThere = true;
                     }
                 }
@@ -739,32 +776,39 @@ export namespace GameModes {
             player.lastActiveTime = Date.now();
         };
 
+        createFlag() {
+            let flag = new Flag();
+            Sim.Instance.things[flag.id] = flag;
+            return flag;
+        }
+
         generateMap(mapScale: number, numComPoints: number, mapSeed: number): void {
             Mapping.mr = new MTwist(mapSeed);
             Sim.Instance.theme = Mapping.chooseOne(Mapping.themes);
 
-            let _, a, alphaSpawn, b, betaSpawn, createFlag, flag, from_center;
+            let _, a, alphaSpawn, b, betaSpawn, flag, from_center;
+
             let homePoints: SpawnPoint[];
-            let i, len, m, o, point, pos, q, ref,
-                ref1, ref2, results, t, tooClose;
-            createFlag = function () {
-                let flag = new Flag();
-                Sim.Instance.things[flag.id] = flag;
-                return flag;
-            };
-            alphaSpawn = a = new SpawnPoint();
+
+            let i, len, m, o, point, q, ref,
+                ref1, ref2, t, tooClose;
+
+            alphaSpawn = new SpawnPoint();
+            a = alphaSpawn;
             a.side = "alpha";
             a.spawn = "alpha";
             a.pos[0] = -Sim.Instance.mapScale * 3000;
             a.pos[1] = Mapping.mr.random() * 3000 - 1500;
             Sim.Instance.things[a.id] = a;
-            betaSpawn = b = new SpawnPoint();
+
+            betaSpawn = new SpawnPoint();
+            b = betaSpawn;
             b.side = "beta";
             b.spawn = "beta";
             b.pos[0] = Sim.Instance.mapScale * 3000;
             b.pos[1] = -a.pos[1];
             Sim.Instance.things[b.id] = b;
-            pos = [];
+
             homePoints = [];
             for (i = m = 0, ref = Sim.Instance.numComPoints / 2; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
                 a = new CommandPoint();
@@ -812,7 +856,7 @@ export namespace GameModes {
                 let ref3, results1, w;
                 results1 = [];
                 for (i = w = 0, ref3 = Sim.Instance.numFlags; 0 <= ref3 ? w < ref3 : w > ref3; i = 0 <= ref3 ? ++w : --w) {
-                    flag = createFlag();
+                    flag = this.createFlag();
                     flag.side = point.side;
                     v2.add_r(v2.scale_r(v2.random(flag.pos), Math.random() * point.radius), point.pos);
                 }
@@ -825,9 +869,14 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            this.setSimVariables();
         }
 
-        canStart(sayStuff: boolean) {
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
+        }
+
+        canStart(sayStuff: boolean | null) {
             if (sayStuff == null) {
                 sayStuff = false;
             }
@@ -836,6 +885,9 @@ export namespace GameModes {
                 return true;
             }
 
+            if (sayStuff) {
+                Sim.say("There's most likely");
+            }
             Sim.say("Not enough players");
             return false;
         }
@@ -848,29 +900,30 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.victoryConditions = this.victoryConditions.prototype.bind(this);
+            this.victoryConditions.bind(this);
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
+            this.sim.numComPoints = 12;
         }
 
         start() {
-            let p, results;
+            let p;
             super.start.call(this);
             this.sim.waveNum = 0;
-            results = [];
+
             for (let key in this.sim.players) {
                 p = this.sim.players[key];
                 if (p && p.connected) {
                     if (p.side === 'beta') {
                         p.money = 1;
-                        results.push(p.moneyRatio = 0);
-                    } else {
-                        results.push(void 0);
+                        p.moneyRatio = 0;
                     }
-                } else {
-                    results.push(void 0);
                 }
             }
-            return results;
-        };
+        }
 
         endOfGame() {
             let object, p;
@@ -898,7 +951,7 @@ export namespace GameModes {
         }
 
         extra_simulate() {
-            let betaCount, i, len, p, ref, results;
+            let betaCount;
             if (this.sim.state === 'running') {
                 if ((this.sim.step / 16) % this.waveFreq === 0 && this.sim.step !== 0) {
                     this.sim.waveNum += 1;
@@ -908,6 +961,7 @@ export namespace GameModes {
                     }).length;
 
 
+                    let p;
                     for (let i in this.sim.players) {
                         p = this.sim.players[i];
                         if (p.side === "beta") {
@@ -919,7 +973,7 @@ export namespace GameModes {
         }
 
         victoryConditions() {
-            let cappedArr, i, id, k, len, player, ref, ref1, stillThere, thing;
+            let cappedArr, id, k, player, stillThere, thing;
             if (this.sim.state !== "running") {
                 return;
             }
@@ -955,7 +1009,10 @@ export namespace GameModes {
 
                 for (let i in this.sim.players) {
                     player = this.sim.players[i];
-                    if (!player.ai && player.connected && !player.afk && player.side !== "spectators") {
+                    if (!player.ai &&
+                        player.connected &&
+                        player.afk === false &&
+                        player.side !== "spectators") {
                         stillThere = true;
                     }
                 }
@@ -985,7 +1042,8 @@ export namespace GameModes {
             if (side === "spectators") {
                 player.streek = 0;
             }
-            return player.lastActiveTime = Date.now();
+            player.lastActiveTime = Date.now();
+            return;
         }
     }
 
@@ -994,6 +1052,11 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
         }
     }
 
@@ -1002,6 +1065,11 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
         }
     }
 
@@ -1010,6 +1078,11 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
         }
     }
 
@@ -1018,6 +1091,11 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
         }
     }
 
@@ -1026,6 +1104,11 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.serverType = this.serverType;
         }
     }
 
@@ -1042,6 +1125,13 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+        }
+
+        setSimVariables() {
+            this.sim.ffa = this.ffa;
+            this.sim.serverType = this.serverType;
+            this.sim.numComPoints = this.numComPoints;
+            this.sim.mapScale = this.mapScale;
         }
 
         start(): void {
@@ -1078,30 +1168,32 @@ export namespace GameModes {
                 return;
             }
 
-            Sim.say("A tournament is about to start! \n " +
-                "Please do not AFK!");
+            Sim.say("A tournament is about to start.");
+            Sim.say("Please pay attention when your match is going to start, there is no countdown.");
+            Sim.say("There's a strict 15 min match limit.");
+            Sim.say("------------------------------------");
             this.sim.countDown = 16 * 10;
         }
 
         victoryConditions(): void {
-            let cappedArr, id, k, l, len1, player, stillThere, thing;
             if (this.sim.state !== "running") {
                 return;
             }
 
             let capped: { [key: string]: number; } = {};
 
-            for (id in this.sim.things) {
-                thing = this.sim.things[id];
+            let thing;
+            for (let thing_id in this.sim.things) {
+                thing = this.sim.things[thing_id];
                 if (thing.commandPoint) {
                     capped[thing.side] = (capped[thing.side] || 0) + 1;
                 }
             }
 
-            cappedArr = (function () {
+            let cappedArr = (function () {
                 let results;
                 results = [];
-                for (k in capped) {
+                for (let k in capped) {
                     results.push(k);
                 }
                 return results;
@@ -1115,7 +1207,8 @@ export namespace GameModes {
                 cappedArr[0] !== "neutral") {
                 this.sim.winningSide = cappedArr[0];
 
-                for (l = 0, len1 = this.playing_players.length; l < len1; l++) {
+                let player;
+                for (let l = 0; l < this.playing_players.length; l++) {
                     player = this.playing_players[l];
                     if ((player.side !== cappedArr[0] && player.side !== "waiting")) {
                         player.side = "spectators";
@@ -1130,7 +1223,8 @@ export namespace GameModes {
             }
 
             if (!this.sim.local && !this.sim.aiTestMode) {
-                stillThere = false;
+                let stillThere = false;
+                let allAi = true;
 
                 for (let player_id in this.sim.players) {
                     let player = this.sim.players[player_id];
@@ -1140,9 +1234,14 @@ export namespace GameModes {
                     }
 
                     if (player.connected &&
-                        !player.afk &&
+                        player.afk === false &&
                         (player.side !== "spectators")) {
                         stillThere = true;
+                    }
+
+                    if ((player.side === "alpha" || player.side === "beta") &&
+                        !player.ai) {
+                        allAi = false;
                     }
                 }
 
@@ -1159,7 +1258,21 @@ export namespace GameModes {
                     }
                     this.endOfGame();
                 }
-            } else if (this.sim.step > 16 * 60 * 30) {
+
+                if (!this.sim.overrideSpeed) {
+                    if (!allAi) {
+                        if (this.sim.cheatSimInterval === -40) {
+                            this.sim.cheatSimInterval = -20;
+                        }
+                    } else {
+                        if (this.sim.cheatSimInterval === -20) {
+                            this.sim.cheatSimInterval = -40;
+                        }
+                    }
+                }
+            }
+
+            if (this.sim.step > 16 * 60 * 30) {
                 this.sim.winningSide = "";
                 this.endOfGame();
             }
@@ -1185,6 +1298,7 @@ export namespace GameModes {
         }
 
         surrender(player: Player): void {
+            /*
             if (!player) {
                 return;
             }
@@ -1215,6 +1329,7 @@ export namespace GameModes {
             player.side = "spectators";
 
             this.endOfGame();
+            */
         }
 
         cleanupMore() {
@@ -1263,6 +1378,16 @@ export namespace GameModes {
                 }
                 delete this.sim.units;
                 this.sim.units = [];
+            }
+
+            if (!this.sim.bullets) {
+                this.sim.bullets = [];
+            } else {
+                for (let id in this.sim.bullets) {
+                    delete this.sim.bullets[id];
+                }
+                delete this.sim.bullets;
+                this.sim.bullets = [];
             }
 
             this.sim.state = "starting";
@@ -1343,12 +1468,24 @@ export namespace GameModes {
                 Sim.say(this.sim.winningSide + " has won this match!");
             } else {
                 Sim.say("Boo! You both are the weakest links.");
+                if (this.current_pair) {
+                    if (this.current_pair[0]) {
+                        this.current_pair[0].side = "spectators";
+                    }
+                    if (this.current_pair[1]) {
+                        this.current_pair[1].side = "spectators";
+                    }
+                }
+                this.sim.fullUpdate = true;
             }
 
             this.cleanupMore();
 
             this.recountPlayers();
-            if (this.playing_players.length <= 1) {
+            if (this.playing_players.length <= 0) {
+                this.sim.state = "waiting";
+                Sim.say("The is no winner because everyone left");
+            } else if (this.playing_players.length == 1) {
                 this.sim.state = "waiting";
                 Sim.say("The winner is " + this.playing_players[0].name);
                 Sim.say("After " +
@@ -1360,20 +1497,12 @@ export namespace GameModes {
                 this.roundCount = 0;
 
                 if (this.playing_pairs[this.matchCount]) {
-                    if (this.playing_pairs[this.matchCount][1]) {
-                        Sim.say("The second place goes to " + this.playing_players[1].name);
-
-                        if (this.playing_pairs[this.matchCount - 1]) {
-                            if (this.playing_pairs[this.matchCount - 1][0]) {
-                                if (this.playing_pairs[this.matchCount - 1][0].name !== this.playing_pairs[this.matchCount][1].name) {
-                                    Sim.say("The third place goes to " + this.playing_pairs[this.matchCount - 1][0].name);
-                                }
-                            } else if (this.playing_pairs[this.matchCount - 1][1]) {
-                                if (this.playing_pairs[this.matchCount - 1][1].name !== this.playing_pairs[this.matchCount][1].name) {
-                                    Sim.say("The third place goes to " + this.playing_pairs[this.matchCount - 1][1].name);
-                                }
-                            }
-                        }
+                    if (this.playing_pairs[this.matchCount][0] &&
+                        this.playing_pairs[this.matchCount][0].name !== this.playing_players[0].name) {
+                        Sim.say("The second place goes to " + this.playing_pairs[this.matchCount][0].name);
+                    } else if (this.playing_pairs[this.matchCount][1] &&
+                        this.playing_pairs[this.matchCount][1].name !== this.playing_players[0].name) {
+                        Sim.say("The second place goes to " + this.playing_pairs[this.matchCount][1].name);
                     }
                 }
 
@@ -1456,6 +1585,219 @@ export namespace GameModes {
             this.current_pair[0].side = "alpha";
             this.current_pair[1].side = "beta";
             this.matchCount += 1;
+        }
+    }
+
+    export class gRace extends GameMode {
+        ffa = true;
+        numComPoints = 13;
+        serverType = "Race";
+        unitLimit = 1; // TODO:
+
+        constructor(sim: Sim) {
+            super(sim);
+            this.victoryConditions.bind(this);
+            let p;
+            for (let player_id in sim.players) {
+                p = this.sim.players[player_id];
+                if (p.side === "beta") {
+                    p.side = "alpha";
+                }
+            }
+            this.setSimVariables();
+        }
+
+        setSimVariables() {
+            this.sim.ffa = this.ffa;
+            this.sim.serverType = this.serverType;
+            this.sim.numComPoints = this.numComPoints;
+            this.sim.mapScale = this.mapScale;
+            this.sim.unitLimit = this.unitLimit;
+        }
+
+
+        surrender(player: Player) {
+
+        }
+
+        generateMap(mapScale: number, numComPoints: number, mapSeed: number) {
+            Mapping.mr = new MTwist(mapSeed);
+            Sim.Instance.theme = Mapping.chooseOne(Mapping.themes);
+
+            let p, player, players;
+
+            players = (function () {
+                let results;
+                results = [];
+                for (let m in Sim.Instance.players) {
+                    p = Sim.Instance.players[m];
+                    if (p.side !== "spectators") {
+                        results.push(p);
+                    }
+                }
+                return results;
+            })();
+
+
+            for (let i = 0; i < players.length; i++) {
+                player = players[i];
+                if (i > RaceMap.spawn_points.length - 1) {
+                    player.side = "spectators";
+                    console.log("Too many players");
+                }
+                let sp: SpawnPoint = new SpawnPoint();
+                sp.z = -0.01;
+                sp.pos[0] = RaceMap.spawn_points[i][0] * Sim.Instance.mapScale;
+                sp.pos[1] = RaceMap.spawn_points[i][1] * Sim.Instance.mapScale;
+                sp["static"] = false;
+                sp.spawn = player.name;
+                sp.side = player.name;
+                sp.radius = 100;
+                sp.canCapture = false;
+
+                let cp: CommandPoint = new CommandPoint();
+                cp.z = -0.007;
+                cp.pos[0] = RaceMap.spawn_points[i][0] * Sim.Instance.mapScale;
+                cp.pos[1] = RaceMap.spawn_points[i][1] * Sim.Instance.mapScale;
+                cp["static"] = false;
+                cp.spawn = player.name;
+                cp.side = player.name;
+                cp.linkedSpawn = sp;
+                cp.radius = sp.radius;
+                cp.size = [cp.radius / 250, cp.radius / 250];
+                cp.canCapture = false;
+
+                Sim.Instance.things[sp.id] = sp;
+                Sim.Instance.things[cp.id] = cp;
+                players[i].usingSpawn = sp;
+            }
+        }
+
+        spacesRebuild() {
+            let p, t;
+            let uspace = new HSpace(500);
+            let bspace = new HSpace(100);
+            let maxr = 0;
+
+            for (let thing_id in this.sim.things) {
+                t = this.sim.things[thing_id];
+                if (t.dead) {
+                    continue;
+                }
+                if (t.unit) {
+                    uspace.insert(t);
+                    if (t.radius > maxr) {
+                        maxr = t.radius;
+                    }
+                }
+                if (t.bullet) {
+                    bspace.insert(t);
+                }
+            }
+            this.sim.unitSpaces = {
+                alpha: uspace,
+                beta: uspace
+            };
+            this.sim.bulletSpaces = {
+                alpha: bspace,
+                beta: uspace
+            };
+            this.sim.maxRadius = {
+                alpha: maxr,
+                beta: maxr
+            };
+
+
+            for (let i in this.sim.players) {
+                p = this.sim.players[i];
+                if (p.side === "spectators") {
+                    continue;
+                }
+                this.sim.unitSpaces[p.side] = uspace;
+                this.sim.bulletSpaces[p.side] = bspace;
+                this.sim.maxRadius[p.side] = maxr;
+            }
+        }
+
+        startGame(player: Player, real: boolean) {
+            if (real == null) {
+                real = false;
+            }
+
+            Sim.say("For better gameplay either install the FFA UI script");
+            Sim.say("or use https://presskannuk.ovh (if you're in the EU)");
+            Sim.say("https://gist.github.com/Rio6/df4b990ddd0d25f9ad3b48e0fc8d0f35");
+            super.startGame.call(this, player, real);
+        }
+
+        start() {
+            let p;
+            for (let i in this.sim.players) {
+                p = this.sim.players[i];
+                if (p.side === "alpha") {
+                    p.side = p.name;
+                }
+            }
+            super.start.call(this);
+            this.setupMap();
+        }
+
+        setupMap() {
+            let map = RaceMap.map;
+            for (let ship of map) {
+                gRace.createShip(ship["spec"], ship["pos"]);
+            }
+        }
+
+        static createShip(spec: string, pos: { "0": number, "1": number }) {
+            let unit = new Unit(spec);
+            unit.pos = new Float64Array(
+                [
+                    Math.floor((pos[0]) / 100) * 100,
+                    Math.floor((pos[1]) / 100) * 100
+                ]
+            );
+            unit.owner = 0;
+            unit.side = "Avamander";
+            unit.color = [0, 0, 0, 255];
+            unit.number = 1;
+            unit.postDeath = function () {
+                setTimeout(function () {
+                    gRace.createShip(spec, pos);
+                }, 1500);
+            };
+            unit.move = function () {
+            };
+            Sim.Instance.things[unit.id] = (unit as Thing);
+        }
+
+        canStart(sayStuff: boolean) {
+            if (sayStuff == null) {
+                sayStuff = false;
+            }
+
+            if (this.sim.numInTeam("alpha") > 1) {
+                return true;
+            }
+
+            Sim.say("Not enough players");
+            return false;
+        }
+
+        victoryConditions() {
+
+        }
+
+        endOfGame() {
+            let p;
+            for (let i in this.sim.players) {
+                p = this.sim.players[i];
+                if (p.side === "spectators") {
+                    continue;
+                }
+                p.side = "alpha";
+            }
+            super.endOfGame.call(this);
         }
     }
 }

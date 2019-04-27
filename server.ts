@@ -34,6 +34,7 @@ export class IstrolidServer {
     players: Player[] = [];
     lastInfoTime: number = 0;
     interval: NodeJS.Timeout;
+    serverInfoInterval: NodeJS.Timeout;
 
     static _instance: IstrolidServer;
 
@@ -62,9 +63,10 @@ export class IstrolidServer {
         this.wss.on("connection", function (ws: any, req: any) {
             let source_ip: string = (req.headers["x-forwarded-for"] as string);
             console.log("Connection from", source_ip);
+            Sim.Instance.connection_count += 1;
 
             let webSocketKey: string = (req.headers["sec-websocket-key"] as string);
-            let id: number = Sim.Instance.WSKeyToPlayerID[webSocketKey];
+            let id: number | undefined = Sim.Instance.WSKeyToPlayerID[webSocketKey];
 
             console.log("Player with key:", req.headers["sec-websocket-key"]);
 
@@ -74,52 +76,122 @@ export class IstrolidServer {
                 let data: string[] = Sim.Instance.zJson.loadDv(packet);
                 //console.log(data);
 
-                if (id !== undefined) {
-                    if (Sim.Instance.players[id] !== undefined) {
-                        if (Sim.Instance.players[id].webSocketKey !== webSocketKey &&
-                            Sim.Instance.players[id].webSocketKey !== "") {
-                            console.log("Player violated key check ", Sim.Instance.players[id].name);
-                            ws.send("Stop it you dumb cunt");
-                            ws.close();
-                        } else if (Sim.Instance.players[id].webSocketKey === "") {
-                            Sim.Instance.players[id].webSocketKey = webSocketKey;
-                        } else {
-                            Sim.Instance.players[id].afk = false;
-                        }
-                    }
-                } else if (id === undefined && data[0] !== "playerJoin") {
-                    console.log("Not a player joining and he doesn't have ID");
-                }
-
                 switch (data[0]) {
                     case "playerJoin": {
                         console.log("Player joined", data[0], data[1], data[2], data[3]);
-                        let player_id: string;
-                        for (player_id in Sim.Instance.players) {
-                            let player = Sim.Instance.players[player_id];
-                            if (!player.ai) {
-                                if (player.name === data[1]) {
-                                    if (player.webSocketKey !== webSocketKey) {
-                                        console.log(
-                                            "Player ",
-                                            player.name,
-                                            " if attemted to be impersonated by commander.id ",
-                                            data[0],
-                                            " and IP address ",
-                                            source_ip);
-                                        ws.close();
+
+                        if (id === undefined || id === null) { // Clearly this player is unknown, let's hope it's returning
+                            let player_id: string;
+                            for (player_id in Sim.Instance.players) {
+                                let player = Sim.Instance.players[player_id];
+                                if (!player.ai) {
+                                    if (player.name === data[2]) {
+                                        if (player.id !== data[1]) {
+                                            // Player ID doesn't match, if websocket
+                                            // key doesn't either then disconnect
+                                            if (player.webSocketKey !== webSocketKey) {
+                                                console.log(
+                                                    "Player ",
+                                                    player.name,
+                                                    "if attemted to be impersonated by commander.id",
+                                                    data[0],
+                                                    "and IP address",
+                                                    source_ip);
+                                                ws.close();
+                                            } else {
+                                                // Surprisingly the player changed his ID
+                                                console.log(
+                                                    "Player ",
+                                                    player.name,
+                                                    "changed their commander.id",
+                                                    data[0],
+                                                    "and maybe IP address",
+                                                    source_ip);
+                                                player.id = data[0];
+                                                id = player.number;
+                                                if (typeof id !== "number") {
+                                                    id = parseInt(id);
+                                                }
+                                                if (typeof player.number !== "number") {
+                                                    player.number = parseInt(player.number);
+                                                }
+                                            }
+                                        } else {
+                                            if (player.webSocketKey !== webSocketKey) {
+                                                console.log(
+                                                    "Player",
+                                                    player.name,
+                                                    "reconnected with commander.id",
+                                                    isNaN(parseInt(data[1])) ? parseInt(data[1]) : data[1],
+                                                    "and IP address",
+                                                    source_ip);
+                                                // Key doesn't match but the rest does
+                                                // Let's assume commander.id is a secret :P
+                                                player.webSocketKey = webSocketKey;
+                                                Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
+
+                                                id = player.number;
+                                                player.afk = false;
+                                                player.connected = true;
+                                                player.lastActiveTime = Date.now();
+                                                if (typeof id !== "number") {
+                                                    id = parseInt(id);
+                                                }
+                                                if (typeof player.number !== "number") {
+                                                    player.number = parseInt(player.number);
+                                                    // @ts-ignore
+                                                    Sim.Instance.WSKeyToPlayerID[webSocketKey] = parseInt(player.number);
+                                                }
+                                            } else {
+                                                // Everything is fine, set ID
+                                                id = player.number;
+                                                player.afk = false;
+                                                player.connected = true;
+                                                player.lastActiveTime = Date.now();
+                                                if (typeof id !== "number") {
+                                                    id = parseInt(id);
+                                                }
+                                                if (typeof player.number !== "number") {
+                                                    player.number = parseInt(player.number);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+
+                        // Turns out no such player exists already, let's enforce connection limit
+                        if (id === undefined || id === null) {
+                            if ((Sim.Instance.connection_count > Sim.Instance.connection_limit) &&
+                                (data[2] !== "Avamander")) {
+                                console.log("Load limit exceeded, disconnecting new client");
+                                Sim.say(data[2] + ", you have been disconnected because the server has reached the connection limit");
+                                ws.close();
+                                break;
+                            }
+                        }
                         // @ts-ignore
-                        let player = Sim.Instance.playerJoin(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+                        let player: Player = Sim.Instance.playerJoin(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
                         player.ws = ws;
-                        if (!id) {
+                        player.afk = false;
+                        player.connected = true;
+                        player.lastActiveTime = Date.now();
+
+                        if (id === undefined || id === null) { // Now we have a new player, let's remember it
                             Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
                             id = player.number;
+                            player.webSocketKey = webSocketKey;
+
+                            if (typeof id !== "number") {
+                                id = parseInt(id);
+                            }
+                            if (typeof player.number !== "number") {
+                                player.number = parseInt(player.number);
+                                // @ts-ignore
+                                Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
+                            }
                         }
-                        player.afk = false;
                         Sim.Instance.clearNetState();
                         break;
                     }
@@ -213,16 +285,33 @@ export class IstrolidServer {
                         Sim.Instance.surrender.apply(Sim.Instance, [Sim.Instance.players[id], ...data.slice(1)]);
                         break;
                     }
+                    case "gameKey": {
+                        console.log(data);
+                        break;
+                    }
+                    default: {
+                        console.log(data);
+                        break;
+                    }
                 }
             });
 
             ws.on("close", function (e: any) {
-                console.log("WebSocket closed", e);
+                Sim.Instance.connection_count -= 1;
+                console.log("WebSocket closed: ", e);
                 for (let player_id in Sim.Instance.players) {
-                    if (Sim.Instance.players[player_id] &&
-                        Sim.Instance.players[player_id].webSocketKey === webSocketKey) {
-                        Sim.Instance.players[player_id].connected = false;
-                        delete Sim.Instance.players[player_id];
+                    let player = Sim.Instance.players[player_id];
+                    if (player &&
+                        player.webSocketKey === webSocketKey) {
+                        player.connected = false;
+                        player.afk = true;
+                        player.ws = undefined;
+                        if (Sim.Instance.state === "waiting") {
+                            player.side = "spectators";
+                            player.host = false;
+                        }
+                        console.log("Player disconnected:", player_id, player.name);
+                        //delete Sim.Instance.players[player_id];
                     }
                 }
             });
@@ -230,30 +319,34 @@ export class IstrolidServer {
 
         this.interval = setInterval(function () {
             let rightNow = Utils.now();
-            if (Sim.Instance.lastSimInterval + 1000 / 16 + Sim.Instance.cheatSimInterval <= rightNow) {
-                Sim.Instance.lastSimInterval = rightNow;
+            let current_sim = Sim.Instance;
+            if (rightNow - current_sim.lastSimInterval >= ((1000 / 16) + current_sim.cheatSimInterval)) {
+                current_sim.lastSimInterval = rightNow;
 
-                if (!Sim.Instance.paused) {
-                    Sim.Instance.simulate();
+                if (!current_sim.paused) {
+                    current_sim.simulate();
                 } else {
-                    Sim.Instance.startingSim();
+                    current_sim.startingSim();
                 }
 
-                let packet = Sim.Instance.send();
+                let packet = current_sim.send();
 
-                IstrolidServer.Instance.wss.clients.forEach((client: { readyState: any; send: (arg0: DataView) => void; }) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(packet);
-                    }
-                });
+                try {
+                    IstrolidServer.Instance.wss.clients.forEach((client: { readyState: any; send: (arg0: DataView) => void; }) => {
+                        if (client.readyState === WebSocket.OPEN) {
+                            client.send(packet);
+                        }
+                    });
+                } catch (e) {
+                    console.log("Error at sending packet!", e);
+                }
             }
+        }, 5);
 
-            if (rightNow - IstrolidServer.Instance.lastInfoTime > 15000) {
-                IstrolidServer.sendInfo();
-                IstrolidServer.Instance.lastInfoTime = rightNow;
-            }
-        }, 17);
-
+        this.serverInfoInterval = setInterval(function () {
+            IstrolidServer.sendInfo();
+            IstrolidServer.Instance.lastInfoTime = Utils.now();
+        }, 10000);
 
         this.root = new WebSocket(IstrolidServer.config.root_addr);
 
@@ -265,22 +358,9 @@ export class IstrolidServer {
     static send (player: Player, data: any) {
         let packet = Sim.Instance.zJson.dumpDv(data);
         let client = player.ws;
-        if (client && client.readyState === WebSocket.OPEN) {
+        if (client !== null && client !== undefined && client.readyState === WebSocket.OPEN) {
             client.send(packet);
         }
-    }
-
-    static readonly charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-    static atob_number (input: string): number {
-        let result: number = 0;
-
-        for (var i = 0; i < input.length; i++) {
-            result *= 64;
-            result += IstrolidServer.charset.indexOf(input[i]);
-        }
-
-        return result;
     }
 
     sendToRoot (data: any) {
@@ -288,9 +368,10 @@ export class IstrolidServer {
     }
 
     static stop () {
-        console.log("stopping server");
+        console.log("Stopping server");
         IstrolidServer.Instance.wss.close();
         clearInterval(IstrolidServer.Instance.interval);
+        clearInterval(IstrolidServer.Instance.serverInfoInterval);
     }
 
     static say (msg: string) {
@@ -330,9 +411,11 @@ export class IstrolidServer {
                             return p.name === data[1].name;
                         })[0];
 
-                        if (p != null) {
+                        if (p !== undefined && p !== null) {
                             let cmds = data[1].text.slice(1).split(" ");
-                            console.log("Command issued, ", cmds);
+                            console.log(p.name, "issued command:", cmds);
+                            p.afk = false;
+                            p.lastActiveTime = Date.now();
                             return CommandsManager.Instance.processCommand(p, cmds);
                         }
                     } /*else if (data[1].channel === config.name && data[1].text.startsWith("#")) {
@@ -496,8 +579,8 @@ export class IstrolidServer {
             return player.connected && !player.ai;
         }).length;
 
-        if (observer_count > 7) {
-            observer_count = 7;
+        if (!Sim.Instance.load_protection && observer_count > 10) {
+            observer_count = 10;
         }
 
         let connected_players: { side: string; name: string; ai: boolean }[] = Sim.Instance.players.filter(
@@ -507,10 +590,13 @@ export class IstrolidServer {
             return {
                 name: player.name,
                 side: player.side,
-                ai: false
+                ai: player.ai
             }
         });
 
+        if (!Sim.Instance.load_protection) {
+            connected_players = connected_players.splice(0, 10);
+        }
         // Send server info
         let info = {
             name: IstrolidServer.config.name,
