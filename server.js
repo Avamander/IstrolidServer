@@ -3,11 +3,11 @@ var WebSocket = require('ws');
 require('./fix');
 var Istrolid = require('./istrolid.js');
 
-const CMD_WHITELIST = ["alpha", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "buildRq", "configGame", "startGame", "startGame", "addAi", "switchSide", "switchSide", "kickPlayer", "surrender"];
+const allowedCmds = ["playerJoin", "mouseMove", "playerSelected", "setRallyPoint", "buildRq", "stopOrder", "holdPositionOrder", "followOrder", "selfDestructOrder", "moveOrder", "configGame", "startGame", "addAi", "switchSide", "kickPlayer", "surrender"]
 
 global.sim = new Sim();
-sim.cheatSimInterval = -12;
-sim.lastSimInterval = 0;
+Sim.prototype.cheatSimInterval = -12;
+Sim.prototype.lastSimInterval = 0;
 
 global.Server = function() {
 
@@ -15,7 +15,8 @@ global.Server = function() {
     var root = null;
 
     var players = {};
-    var info = {};
+
+    var lastInfoTime = 0;
 
     this.send = (player, data) => {
         let packet = sim.zJson.dumpDv(data);
@@ -49,8 +50,9 @@ global.Server = function() {
         root = new WebSocket(config.root_addr);
 
         root.on('open', () => {
-            console.log("connected to root proxy");
-            info = {};
+            console.log("connected to root");
+            sendInfo();
+            lastInfoTime = now();
         });
 
         root.on('close', () => {
@@ -69,6 +71,24 @@ global.Server = function() {
         }
     };
 
+    var sendInfo = () => {
+        // Send server info
+        let info = {
+            name: config.name,
+            address: "ws://" + config.addr + ":" + config.port,
+            observers: sim.players.filter(p => p.connected).length,
+            players: sim.players.filter(p => p.connected && !p.ai).map(p => { return {
+                name: p.name,
+                side: p.side,
+                ai: false
+            }}),
+            type: sim.serverType,
+            version: VERSION,
+            state: sim.state
+        };
+        root.sendData(['setServer', info]);
+    };
+
     connectToRoot();
 
     wss.on('connection', (ws, req) => {
@@ -85,14 +105,16 @@ global.Server = function() {
                 player.ws = ws;
                 players[id] = player;
                 sim.clearNetState();
-            } else if(CMD_WHITELIST.includes(data[0])) {
+            } else if(allowedCmds.includes(data[0])) {
                 sim[data[0]].apply(sim, [players[id],...data.slice(1)]);
             }
         });
 
         ws.on('close', e => {
-            players[id].connected = false;
-            delete players[id];
+            if(players[id]) {
+                players[id].connected = false;
+                delete players[id];
+            }
         });
     });
 
@@ -113,33 +135,10 @@ global.Server = function() {
                     client.send(packet);
                 }
             });
-
-            // Send server info
-            let newInfo = {
-                name: config.name,
-                address: "ws://" + config.addr + ":" + config.port,
-                observers: sim.players.filter(p => p.connected).length,
-                players: sim.players.filter(p => p.connected).map(p => { return {
-                    name: p.name,
-                    side: p.side,
-                    ai: p.ai
-                }}),
-                type: sim.serverType,
-                version: VERSION,
-                state: sim.state
-            };
-
-            let diffInfo = {};
-            for(let k in newInfo) {
-                if(!simpleEquals(info[k], newInfo[k])) {
-                    diffInfo[k] = newInfo[k];
-                }
-            }
-
-            if(Object.keys(diffInfo).length > 0) {
-                root.sendData(['info', config.name, diffInfo]);
-                info = newInfo;
-            }
+        }
+        if(rightNow - lastInfoTime > 15000) {
+            sendInfo();
+            lastInfoTime = rightNow;
         }
     }, 17);
 };
