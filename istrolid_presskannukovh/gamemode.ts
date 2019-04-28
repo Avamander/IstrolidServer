@@ -1,6 +1,6 @@
 import {IstrolidServer} from "../server";
 import {Utils} from "./utils";
-import {CommandPoint, Player, SpawnPoint, Thing} from "./things";
+import {CommandPoint, Player, Rock, SpawnPoint, Thing} from "./things";
 import {HSpace} from "./hspace";
 import {Sim} from "./sim";
 import {MTwist} from "./mtwist";
@@ -10,6 +10,8 @@ import {v2} from "./maths";
 import {Parts} from "./parts";
 import {CommandsManager} from "./commands";
 import {RaceMap} from "./race_map";
+import {AI} from "./ai";
+import {control} from "./dummy";
 
 export class GameMode {
     sim: Sim;
@@ -26,7 +28,7 @@ export class GameMode {
         this.sim = sim;
         this.setSimVariables();
         for (let i in sim.players) {
-            p = this.sim.players[i];
+            let p = sim.players[i];
             if (p.side !== "spectators") {
                 p.side = "spectators";
             }
@@ -393,7 +395,7 @@ export class GameMode {
         for (let id in this.sim.things) {
             thing = this.sim.things[id];
             if (thing.dead) {
-                delete this.sim.things[id];
+                //delete this.sim.things[id];
                 continue;
             }
             if (thing.unit) {
@@ -410,7 +412,8 @@ export class GameMode {
                 if (this.sim.bulletSpaces[thing.side]) {
                     this.sim.bulletSpaces[thing.side].insert(thing);
                 } else {
-                    delete this.sim.things[id];
+                    //delete this.sim.things[id];
+                    continue;
                 }
             }
         }
@@ -1593,6 +1596,9 @@ export namespace GameModes {
         numComPoints = 13;
         serverType = "Race";
         unitLimit = 1; // TODO:
+        mapScale = 0.8;
+
+        ai_number!: number;
 
         constructor(sim: Sim) {
             super(sim);
@@ -1631,7 +1637,7 @@ export namespace GameModes {
                 results = [];
                 for (let m in Sim.Instance.players) {
                     p = Sim.Instance.players[m];
-                    if (p.side !== "spectators") {
+                    if (p.side !== "spectators" && p.name !== "Judge Judy") {
                         results.push(p);
                     }
                 }
@@ -1639,12 +1645,14 @@ export namespace GameModes {
             })();
 
 
+            // Setup spawn points
             for (let i = 0; i < players.length; i++) {
                 player = players[i];
                 if (i > RaceMap.spawn_points.length - 1) {
                     player.side = "spectators";
-                    console.log("Too many players");
+                    console.log("Too many players", player.name);
                 }
+
                 let sp: SpawnPoint = new SpawnPoint();
                 sp.z = -0.01;
                 sp.pos[0] = RaceMap.spawn_points[i][0] * Sim.Instance.mapScale;
@@ -1670,6 +1678,49 @@ export namespace GameModes {
                 Sim.Instance.things[sp.id] = sp;
                 Sim.Instance.things[cp.id] = cp;
                 players[i].usingSpawn = sp;
+            }
+
+            let controlpoint_radius = 100 * Sim.Instance.mapScale;
+            let angle = (2 * (Math.PI + 0.01)) / players.length;
+            let distance = ((controlpoint_radius / 2) + (60 * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
+            let radius = Math.sqrt(0.5 * (distance * distance));
+
+            for (let i = 0; i < RaceMap.capture_point_centers.length; i++) {
+                let cp_point = RaceMap.capture_point_centers[i];
+
+                for (let j = 0; j < players.length; j++) {
+                    let player = players[j];
+                    let cp: CommandPoint = new CommandPoint();
+                    let x = (cp_point[0] * Sim.Instance.mapScale) + (radius * Math.cos((angle * j)));
+                    let y = (cp_point[1] * Sim.Instance.mapScale) + (radius * Math.sin((angle * j)));
+
+                    cp.z = -1.1;
+                    cp.pos[0] = x;
+                    cp.pos[1] = y;
+                    cp["static"] = false;
+                    cp.spawn = "Judge Judy";
+                    cp.side = "Judge Judy";
+                    cp.radius = controlpoint_radius;
+                    cp.size = [cp.radius / 250, cp.radius / 250];
+                    cp.canCapture = false;
+                    cp.maxCapp = 1;
+
+                    let mu: Rock = new Rock();
+                    mu.image = "parts/decals/letter" + j + ".png";
+                    mu.color = player.color;
+                    mu.z = -1.0;
+                    mu["static"] = false;
+                    mu.size = new Float64Array([1, 1]);
+                    mu.vel = new Float64Array(2);
+                    mu.pos = new Float64Array([x, y]);
+                    mu.tick = function () {
+                    };
+                    mu.move = function () {
+                    };
+
+                    Sim.Instance.things[mu.id] = (mu as Thing);
+                    Sim.Instance.things[cp.id] = cp;
+                }
             }
         }
 
@@ -1726,6 +1777,7 @@ export namespace GameModes {
 
             Sim.say("For better gameplay either install the FFA UI script");
             Sim.say("or use https://presskannuk.ovh (if you're in the EU)");
+            Sim.say("if you already have it then make sure you have the latest version");
             Sim.say("https://gist.github.com/Rio6/df4b990ddd0d25f9ad3b48e0fc8d0f35");
             super.startGame.call(this, player, real);
         }
@@ -1737,34 +1789,56 @@ export namespace GameModes {
                 if (p.side === "alpha") {
                     p.side = p.name;
                 }
+                if (p.name === "Judge Judy" && p.ai) {
+                    this.ai_number = p.number;
+                }
             }
+
             super.start.call(this);
-            this.setupMap();
+            if (this.ai_number === undefined || this.ai_number === null) {
+                let ai = AI.useAiFleet("Judge Judy", "Judge Judy",
+                    ["null", "null", "null", "null", "null", "null", "null", "null", "null", "null"]);
+                if (!ai) {
+                    Sim.say("Unable to add Judge Judy");
+                } else {
+                    this.ai_number = ai.number;
+                }
+            }
+
+            GameModes.gRace.setupMap(this.ai_number);
         }
 
-        setupMap() {
+        static setupMap(ai_number: number) {
             let map = RaceMap.map;
             for (let ship of map) {
-                gRace.createShip(ship["spec"], ship["pos"]);
+                GameModes.gRace.createShip(ship["spec"], ship["pos"], ai_number);
             }
         }
 
-        static createShip(spec: string, pos: { "0": number, "1": number }) {
+        static createShip(spec: string, pos: { "0": number, "1": number }, owner: number) {
             let unit = new Unit(spec);
             unit.pos = new Float64Array(
                 [
-                    Math.floor((pos[0]) / 100) * 100,
-                    Math.floor((pos[1]) / 100) * 100
+                    Math.floor((pos[0] * Sim.Instance.mapScale) / 100) * 100,
+                    Math.floor((pos[1] * Sim.Instance.mapScale) / 100) * 100
                 ]
             );
-            unit.owner = 0;
-            unit.side = "Avamander";
+            if (spec.indexOf("RaceWall") != -1 ||
+                spec.indexOf("RaceTesla") != -1) {
+                unit.forcecloak = true;
+            }
+            unit.owner = owner;
+            unit.side = "Judge Judy";
             unit.color = [0, 0, 0, 255];
             unit.number = 1;
             unit.postDeath = function () {
+                for (let j = 0; j < this.parts.length; j++) {
+                    this.parts[j].postDeath();
+                }
                 setTimeout(function () {
-                    gRace.createShip(spec, pos);
+                    gRace.createShip(spec, pos, owner);
                 }, 1500);
+                Sim.Instance.deaths += 1;
             };
             unit.move = function () {
             };

@@ -525,7 +525,7 @@ export class Sim {
                 this.clearNetState();
             }
         } else {
-            this.clearNetState();
+            // this.clearNetState(); Let's do this manually
         }
         this.playerEdit(_, pid, name, color, buildBar, aiRules, ai);
         return player;

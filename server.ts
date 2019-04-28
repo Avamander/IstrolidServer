@@ -80,7 +80,8 @@ export class IstrolidServer {
                     case "playerJoin": {
                         console.log("Player joined", data[0], data[1], data[2], data[3]);
 
-                        if (id === undefined || id === null) { // Clearly this player is unknown, let's hope it's returning
+                        // Clearly this player is unknown, let's hope it's returning
+                        if (id === undefined || id === null) {
                             let player_id: string;
                             for (player_id in Sim.Instance.players) {
                                 let player = Sim.Instance.players[player_id];
@@ -142,6 +143,7 @@ export class IstrolidServer {
                                                     // @ts-ignore
                                                     Sim.Instance.WSKeyToPlayerID[webSocketKey] = parseInt(player.number);
                                                 }
+                                                Sim.Instance.clearNetState();
                                             } else {
                                                 // Everything is fine, set ID
                                                 id = player.number;
@@ -171,6 +173,7 @@ export class IstrolidServer {
                                 break;
                             }
                         }
+
                         // @ts-ignore
                         let player: Player = Sim.Instance.playerJoin(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
                         player.ws = ws;
@@ -178,7 +181,8 @@ export class IstrolidServer {
                         player.connected = true;
                         player.lastActiveTime = Date.now();
 
-                        if (id === undefined || id === null) { // Now we have a new player, let's remember it
+                        // Now we have a new player, let's remember it
+                        if (id === undefined || id === null) {
                             Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
                             id = player.number;
                             player.webSocketKey = webSocketKey;
@@ -191,8 +195,8 @@ export class IstrolidServer {
                                 // @ts-ignore
                                 Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
                             }
+                            Sim.Instance.clearNetState();
                         }
-                        Sim.Instance.clearNetState();
                         break;
                     }
                     case "mouseMove": {
@@ -358,7 +362,9 @@ export class IstrolidServer {
     static send (player: Player, data: any) {
         let packet = Sim.Instance.zJson.dumpDv(data);
         let client = player.ws;
-        if (client !== null && client !== undefined && client.readyState === WebSocket.OPEN) {
+        if (client !== null &&
+            client !== undefined &&
+            client.readyState === WebSocket.OPEN) {
             client.send(packet);
         }
     }

@@ -7,7 +7,7 @@ import {baseAtlas, battleMode, commander, control, intp} from "./dummy";
 import {CollisionUtils} from "./collision";
 import {Parts} from "./parts";
 import {UnitUtils} from "./unitutils";
-import {Part} from "./part";
+import {Part, Turret} from "./part";
 import {Debree} from "./particle";
 
 export class Unit extends Thing {
@@ -41,7 +41,7 @@ export class Unit extends Thing {
     limitBonus: number = 0;
     maxJump: number = 500;
     cost: number = 100;
-    stopFriction: number = 0.9;
+    stopFriction: number = 0.975;
     maxRange: number = 0;
     number: number = 0;
     minArc: number = 0;
@@ -78,7 +78,7 @@ export class Unit extends Thing {
 
     ghostCopy: boolean = false;
     underPlayerControl: boolean = false;
-    building = false;
+    building: { "dead": boolean } | undefined = undefined;
     holdPosition: boolean = false;
     canCapture: boolean = true;
     multiShoot: boolean = false;
@@ -151,6 +151,16 @@ export class Unit extends Thing {
     onOrderId: number;
     // @ts-ignore
     mainWeapon: { range: number; bulletSpeed: number; };
+
+    forcecloak: boolean = false; // Force cloak
+    disable_friends_check_and_follow: boolean = false;
+
+    haspointdefenseweapons: boolean = false;
+    hasenergytransfer: boolean = false;
+    hasturrets: boolean = false;
+    hascloakgenerator: boolean = false;
+    hasmodprojector: boolean = false;
+    hasstasis: boolean = false;
 
     constructor(spec1: string) {
         super();
@@ -306,9 +316,11 @@ export class Unit extends Thing {
             part.pos = v2.create(p.pos);
             part.dir = p.dir || 0;
             part.partNum = i;
+
             if (part.weapon) {
                 this.weapons.push(part);
             }
+
             if (p.ghostCopy) {
                 part.ghostCopy = true;
             }
@@ -335,16 +347,33 @@ export class Unit extends Thing {
             }
 
             if (p.type === EnergyTransfer) {
+                this.hasenergytransfer = true;
                 if (part.range > this.maxRange) {
                     this.maxRange = part.range;
                 }
             }
 
             if (p.type === StasisField) {
+                this.hasstasis = true;
                 this.stasisRange = part.range + Math.sqrt(part.pos * part.pos + this.center[0] * this.center[1]) + 100;
                 if (this.stasisRange > this.maxRange) {
                     this.maxRange = this.stasisRange;
                 }
+            }
+
+            if (p.turret) {
+                this.hasturrets = true;
+                if ((p as Turret).hitsMissiles) {
+                    this.haspointdefenseweapons = true;
+                }
+            }
+
+            if (p.type === ModProjector) {
+                this.hasmodprojector = true;
+            }
+
+            if (p.type === CloakGenerator) {
+                this.hascloakgenerator = true;
             }
         }
 
@@ -354,7 +383,8 @@ export class Unit extends Thing {
         this.maxSpeed = this.thrust / this.mass * 9;
         this.maxShield = this.shield;
         this.damageRatio = 1;
-        this.jumpDistance = this.jump = Math.min(this.maxJump / 500, 41 * this.jumpCount / this.mass) * 500;
+        this.jump = Math.min(this.maxJump / 500, 41 * this.jumpCount / this.mass) * 500;
+        this.jumpDistance = this.jump;
         this.computeCenter();
 
         for (let i = 0; i < this.parts.length; i++) {
@@ -469,10 +499,10 @@ export class Unit extends Thing {
     }
 
     computeRadius() {
-        let j, len, part, radius, ref, results, v;
+        let j, len, part, radius, ref, v;
         v = v2.create_r();
         ref = this.parts;
-        results = [];
+
         for (j = 0, len = ref.length; j < len; j++) {
             part = ref[j];
             if (!(!part.decal)) {
@@ -482,12 +512,9 @@ export class Unit extends Thing {
             v2.sub_r(v, this.center);
             radius = v2.mag(v);
             if (radius > this.radius) {
-                results.push(this.radius = radius);
-            } else {
-                results.push(void 0);
+                this.radius = radius;
             }
         }
-        return results;
     }
 
     extend(u: Float64Array, v: Float64Array, points: Float64Array[]): Float64Array[] {
@@ -602,11 +629,10 @@ export class Unit extends Thing {
     }
 
     createDebree() {
-        let exp, j, len, part, ref, results;
-        ref = this.parts;
-        results = [];
-        for (j = 0, len = ref.length; j < len; j++) {
-            part = ref[j];
+        let exp, j, len, part, ref;
+
+        for (j = 0, len = this.parts.length; j < len; j++) {
+            part = this.parts[j];
             if (Math.random() < .5 || part.decal) {
                 continue;
             }
@@ -625,9 +651,8 @@ export class Unit extends Thing {
             exp.vel[1] += (part.worldPos[1] - this.pos[1]) * .1 + (Math.random() - 0.5);
             exp.rot = this.rot;
             exp.vrot = Math.random() - 0.5;
-            results.push(intp.particles[exp.id] = exp);
+            intp.particles[exp.id] = exp;
         }
-        return results;
     }
 
     gotoAndStop(goto: Float64Array) {
@@ -676,7 +701,7 @@ export class Unit extends Thing {
 
     tick() {
         Sim.Instance.timeStart("unittick");
-        let burnTick, cloakOn, cloakRange, exp, killer, l, len1, p, part, penalty, ref2, ref4, speed, target;
+        let burnTick, exp, killer, l, p, part, penalty, speed, target;
 
         this.closestEnemies = [];
         this.closestFriends = [];
@@ -702,55 +727,65 @@ export class Unit extends Thing {
             return;
         }
 
-        if (Sim.Instance.unitSpaces[this.side]) {
-            Sim.Instance.unitSpaces[this.side].findInRange(this.pos, this.maxRange + Sim.Instance.maxRadius[this.side] + 500,
-                // @ts-ignore because unitSpaces contains Unit
-                (function (_this) {
-                    return function (u: Unit) {
-                        if (u.id !== _this.id) {
-                            _this.closestFriends.push(u);
-                        }
-                        return false;
-                    };
-                })(this));
-        } else {
-            Sim.Instance.timeEnd("sorts");
-            Sim.Instance.timeEnd("unittick");
-            return;
+        if (this.hasenergytransfer || this.hasmodprojector) {
+            if (Sim.Instance.unitSpaces[this.side]) {
+                Sim.Instance.unitSpaces[this.side].findInRange(this.pos, this.maxRange + Sim.Instance.maxRadius[this.side] + 500,
+                    // @ts-ignore because unitSpaces contains Unit
+                    (function (_this) {
+                        return function (u: Unit) {
+                            if (u.id !== _this.id) {
+                                _this.closestFriends.push(u);
+                            }
+                            return false;
+                        };
+                    })(this));
+            } else {
+                Sim.Instance.timeEnd("sorts");
+                Sim.Instance.timeEnd("unittick");
+                return;
+            }
         }
 
-        if (Sim.Instance.bulletSpaces[Sim.otherSide(this.side)]) {
-            Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.maxRange + 100,
-                // @ts-ignore because bulletSpaces contains Unit
-                (function (_this) {
-                    return function (b: Bullet) {
-                        _this.closestEnemyBullets.push(b);
-                        return false;
-                    };
-                })(this));
-        } else {
-            Sim.Instance.timeEnd("sorts");
-            Sim.Instance.timeEnd("unittick");
-            return;
+        if (this.haspointdefenseweapons) {
+            if (Sim.Instance.bulletSpaces[Sim.otherSide(this.side)]) {
+                Sim.Instance.bulletSpaces[Sim.otherSide(this.side)].findInRange(this.pos, this.maxRange + 100,
+                    // @ts-ignore because bulletSpaces contains Unit
+                    (function (_this) {
+                        return function (b: Bullet) {
+                            _this.closestEnemyBullets.push(b);
+                            return false;
+                        };
+                    })(this));
+            } else {
+                Sim.Instance.timeEnd("sorts");
+                Sim.Instance.timeEnd("unittick");
+                return;
+            }
         }
 
-        this.closestEnemies.sort((function (_this) {
-            return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {
-                return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-            };
-        })(this));
+        if (this.hasturrets && this.hascloakgenerator) {
+            this.closestEnemies.sort((function (_this) {
+                return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+        }
 
-        this.closestFriends.sort((function (_this) {
-            return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {
-                return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-            };
-        })(this));
+        if (!this.disable_friends_check_and_follow || this.hasenergytransfer || this.hasmodprojector) {
+            this.closestFriends.sort((function (_this) {
+                return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+        }
 
-        this.closestEnemyBullets.sort((function (_this) {
-            return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {
-                return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
-            };
-        })(this));
+        if (this.haspointdefenseweapons) {
+            this.closestEnemyBullets.sort((function (_this) {
+                return function (a: { pos: Float64Array; }, b: { pos: Float64Array; }) {
+                    return v2.distanceSq(a.pos, _this.pos) - v2.distanceSq(b.pos, _this.pos);
+                };
+            })(this));
+        }
 
         if (this.cloak > 0) {
             target = this.closestEnemy();
@@ -761,16 +796,18 @@ export class Unit extends Thing {
         Sim.Instance.timeEnd("sorts");
 
         Sim.Instance.timeStart("untilparts");
-        if (this.topOrderIs("Follow") &&
-            // @ts-ignore
-            (Sim.Instance.things[this.orders[0].targetId] != null) &&
-            (Sim.Instance.ffa &&
+        if (!this.disable_friends_check_and_follow) {
+            if (this.topOrderIs("Follow") &&
                 // @ts-ignore
-                Sim.Instance.things[this.orders[0].targetId].side !== this.side ||
+                (Sim.Instance.things[this.orders[0].targetId] != null) &&
+                (Sim.Instance.ffa &&
+                    // @ts-ignore
+                    Sim.Instance.things[this.orders[0].targetId].side !== this.side ||
+                    // @ts-ignore
+                    Sim.Instance.things[this.orders[0].targetId].owner !== this.owner)) {
                 // @ts-ignore
-                Sim.Instance.things[this.orders[0].targetId].owner !== this.owner)) {
-            // @ts-ignore
-            this.target = Sim.Instance.things[this.orders[0].targetId];
+                this.target = Sim.Instance.things[this.orders[0].targetId];
+            }
         }
 
         this.boundPoints = null;
@@ -789,20 +826,24 @@ export class Unit extends Thing {
             this.warpIn = 1;
         }
 
-        this.cloakFade = 0;
-        if (this.cloak > 0) {
-            speed = v2.mag(this.vel);
-            if (speed > 1) {
-                this.cloak -= 0.20 / 16 * this.mass;
+        if (!this.forcecloak) {
+            this.cloakFade = 0;
+            if (this.cloak > 0) {
+                speed = v2.mag(this.vel);
+                if (speed > 1) {
+                    this.cloak -= 0.20 / 16 * this.mass;
+                }
+                if (Sim.Instance.step % 16 === 0) {
+                    this.cloak -= 0.01 * this.mass;
+                }
+
+                if (this.cloak > this.mass * .5) {
+                    this.cloakFade = (this.cloak - this.mass * .5) / (this.mass * .5);
+                }
             }
-            if (Sim.Instance.step % 16 === 0) {
-                this.cloak -= 0.01 * this.mass;
-            }
-            cloakOn = this.mass * .5;
-            if (this.cloak > cloakOn) {
-                cloakRange = this.mass - cloakOn;
-                this.cloakFade = (this.cloak - cloakOn) / cloakRange;
-            }
+        } else {
+            this.cloakFade = 1.27; // Leave one point of alpha
+            this.cloak = this.mass;
         }
 
         if (this.energy < -this.genEnergy * 16 * 3) {
@@ -813,9 +854,8 @@ export class Unit extends Thing {
         Sim.Instance.timeEnd("untilparts");
 
         Sim.Instance.timeStart("parts");
-        ref2 = this.parts;
-        for (l = 0, len1 = ref2.length; l < len1; l++) {
-            part = ref2[l];
+        for (l = 0; l < this.parts.length; l++) {
+            part = this.parts[l];
             part.computeWorldPos();
             if (part.genEnergy) {
                 this.energy += part.genEnergy;
@@ -828,10 +868,12 @@ export class Unit extends Thing {
         if (this.energy > this.storeEnergy) {
             this.energy = this.storeEnergy;
         }
+
         if (this.shield > this.maxShield) {
             this.shield = this.maxShield;
         }
-        if ((ref4 = this.target) != null ? ref4.dead : void 0) {
+
+        if (this.target !== undefined && this.target !== null && this.target.dead) {
             this.target = null;
         }
 
@@ -888,7 +930,7 @@ export class Unit extends Thing {
     };
 
     applyNearbyBuffs() {
-        let buffs, j, l, len, len1, ref, ref1, results, u, w;
+        let buffs, j, l, len, len1, ref, ref1, u, w;
         buffs = {
             weaponRange: 1,
             weaponRangeFlat: 0,
@@ -915,12 +957,12 @@ export class Unit extends Thing {
             }
         }
         ref1 = this.weapons;
-        results = [];
+
         for (l = 0, len1 = ref1.length; l < len1; l++) {
             w = ref1[l];
-            results.push(w.applyAdditionalBuffs(buffs));
+            w.applyAdditionalBuffs(buffs);
         }
-        return results;
+
     }
 
     canBuildHere() {
@@ -1221,7 +1263,7 @@ export class Unit extends Thing {
     }
 
     drawSelection() {
-        let alpha, angle, distance, i, j, len, order, orders, prev, results, target;
+        let alpha, angle, distance, i, j, len, order, orders, prev, target;
         this.drawHPBar();
         this.drawEnergyBar();
         if (this.holdPosition) {
@@ -1236,7 +1278,6 @@ export class Unit extends Thing {
         if (this.owner === commander.number) {
             prev = this.pos;
             orders = this.preOrders;
-            results = [];
             for (i = j = 0, len = orders.length; j < len; i = ++j) {
                 order = orders[i];
                 if (order.type === "Move") {
@@ -1255,24 +1296,19 @@ export class Unit extends Thing {
                     } else {
                         baseAtlas.drawSprite("img/arrow01.png", order.dest, [.8, .8], angle, [255, 255, 255, alpha]);
                     }
-                    results.push(prev = order.dest);
+                    prev = order.dest;
                 } else if (order.type === "Follow") {
                     target = intp.things[order.targetId];
                     if (target != null) {
-                        results.push(baseAtlas.drawSprite("img/unitBar/target.png", target.pos, [1, 1], 0, [255, 0, 0, 100]));
-                    } else {
-                        results.push(void 0);
+                        baseAtlas.drawSprite("img/unitBar/target.png", target.pos, [1, 1], 0, [255, 0, 0, 100]);
                     }
-                } else {
-                    results.push(void 0);
                 }
             }
-            return results;
         }
     }
 
     drawEnergyBar() {
-        let color, healthScale, i, j, max, number, pipScale, ref, results, s;
+        let color, healthScale, i, j, max, number, pipScale, ref, s;
         max = this.storeEnergy;
         if (max < 30000) {
             healthScale = 1000;
@@ -1282,7 +1318,7 @@ export class Unit extends Thing {
             pipScale = 1;
         }
         number = Math.floor(this.storeEnergy / healthScale);
-        results = [];
+
         for (i = j = 0, ref = number; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
             s = 20;
             let _pipPos = new Float64Array([0, 0]);
@@ -1294,14 +1330,13 @@ export class Unit extends Thing {
                 color = [20, 20, 20, 50];
             }
             v2.add(this.pos, _pipPos, _pipPos);
-            results.push(baseAtlas.drawSprite("img/unitBar/energyPip.png", _pipPos, [pipScale, pipScale], 0, color));
+            baseAtlas.drawSprite("img/unitBar/energyPip.png", _pipPos, [pipScale, pipScale], 0, color);
         }
-        return results;
     }
 
 
     drawHPBar() {
-        let burnColor, color, healthScale, i, j, max, number, pipScale, ref, results, s;
+        let burnColor, color, healthScale, i, j, max, number, pipScale, ref, s;
         burnColor = Colors.blackOrWhite(this.color);
         max = this.maxHP + this.maxShield;
         if (max < 300) {
@@ -1312,7 +1347,7 @@ export class Unit extends Thing {
             pipScale = 1;
         }
         number = Math.floor(this.maxHP / healthScale) + Math.floor(this.maxShield / healthScale);
-        results = [];
+
         for (i = j = 0, ref = number; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
             s = 20;
             let _pipPos = new Float64Array([0, 0]);
@@ -1339,12 +1374,9 @@ export class Unit extends Thing {
             v2.add(this.pos, new Float64Array(_pipPos), _pipPos);
             baseAtlas.drawSprite("img/pip1.png", _pipPos, [pipScale, pipScale], 0, color);
             if (this.burn * 1 / healthScale > i) {
-                results.push(baseAtlas.drawSprite("img/unitBar/flame.png", _pipPos, [pipScale * .25, pipScale * .25], Math.PI, burnColor));
-            } else {
-                results.push(void 0);
+                baseAtlas.drawSprite("img/unitBar/flame.png", _pipPos, [pipScale * .25, pipScale * .25], Math.PI, burnColor);
             }
         }
-        return results;
     }
 
     addOrder(order: {
@@ -1642,3 +1674,4 @@ import FlameBulletGhost = Bullets.FlameBulletGhost;
 import {Explosions} from "./explosions";
 import ShipExplosion = Explosions.ShipExplosion;
 import Bullet = Bullets.Bullet;
+import CloakGenerator = Parts.CloakGenerator;

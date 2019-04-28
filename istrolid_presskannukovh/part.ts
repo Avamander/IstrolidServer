@@ -84,16 +84,15 @@ export class Part {
     }
 
     postDeath() {
-
+        return;
     }
 
     init() {
-
-
+        return;
     }
 
     preDraw() {
-
+        return;
     }
 
     flippedSize() {
@@ -252,6 +251,8 @@ export class Turret extends Part {
     weaponSpeed: number = 1;
     weaponReload: number = 1;
     weaponEnergy: number = 1;
+
+    maxLife: number | undefined = undefined;
 
     constructor() {
         super();

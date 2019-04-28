@@ -775,9 +775,9 @@ export class CommandsManager {
                     // Set default and do not set default
                     parsed_type = "null";
                     parsed_value = null;
-                    if (!isNaN(parseInt(cmds[2]))) {
+                    if (!isNaN(parseFloat(cmds[2]))) {
                         parsed_type = "number";
-                        parsed_value = parseInt(cmds[2]);
+                        parsed_value = parseFloat(cmds[2]);
                     }
 
                     if (cmds[2] === "true") {

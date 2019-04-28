@@ -1306,7 +1306,7 @@ export namespace Parts {
         };
 
         tick() {
-            let amount, distance, giveTo, i, j, len, len1, ref, ref1, results, thing;
+            let amount, distance, giveTo, i, j, len, len1, ref, ref1, thing;
             if ((Sim.Instance.step + this.unit.id) % 16 === 0 && this.unit.energy > 100) {
                 this.working = false;
                 giveTo = [];
@@ -1324,7 +1324,7 @@ export namespace Parts {
                     }
                 }
                 ref1 = this.shuffle(giveTo);
-                results = [];
+
                 for (j = 0, len1 = ref1.length; j < len1; j++) {
                     thing = ref1[j];
                     amount = thing.storeEnergy - thing.energy;
@@ -1336,9 +1336,8 @@ export namespace Parts {
                     }
                     thing.energy += amount;
                     this.unit.energy -= amount;
-                    results.push(this.working = true);
+                    this.working = true;
                 }
-                return results;
             }
         };
 
@@ -1373,12 +1372,12 @@ export namespace Parts {
         }
 
         tick() {
-            let distance, i, len, other, ref, results, speed;
+            let distance, i, len, other, ref, speed;
             this.unit.cloak = 0;
             this.working = false;
             this.stasisPos = new Float64Array([this.worldPos[0] + (Math.sin(this.unit.rot) * 100), this.worldPos[1] - (Math.cos(this.unit.rot) * 100)]);
             ref = this.unit.closestEnemies;
-            results = [];
+
             for (i = 0, len = ref.length; i < len; i++) {
                 other = ref[i];
                 if (other.slowed === true) {
@@ -1400,12 +1399,9 @@ export namespace Parts {
                         v2.scale_r(other.vel, 0.9);
                     }
                     this.working = true;
-                    results.push(other.slowed = true);
-                } else {
-                    results.push(void 0);
+                    other.slowed = true;
                 }
             }
-            return results;
         };
 
         draw() {
@@ -2595,18 +2591,17 @@ export namespace Parts {
         }
 
         makeBullet(distance: number) {
-            let i, id, len, ref, results, unit;
+            let i, id, len, ref, unit;
             this.unit.cloak = 0;
             this.zapped = [];
             this.zap(this.worldPos, this.target);
             ref = this.zapped;
-            results = [];
+
             for (i = 0, len = ref.length; i < len; i++) {
                 id = ref[i];
                 unit = Sim.Instance.things[id];
-                results.push(unit.applyDamage(this.damage / this.zapped.length, (this.unit as Thing)));
+                unit.applyDamage(this.damage / this.zapped.length, (this.unit as Thing));
             }
-            return results;
         };
 
         zap(from: Float64Array, thing: Thing): void {
@@ -2783,7 +2778,7 @@ export namespace Parts {
         };
 
         tick() {
-            let i, len, other, ref, results;
+            let i, len, other, ref;
             if (this.unit.warheadTest !== Sim.Instance.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = Sim.Instance.step;
                 ref = this.unit.closestEnemies;
@@ -2844,11 +2839,10 @@ export namespace Parts {
         };
 
         tick() {
-            let i, len, other, ref, results;
+            let i, len, other, ref;
             if (this.unit.warheadTest !== Sim.Instance.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = Sim.Instance.step;
                 ref = this.unit.closestEnemies;
-                results = [];
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
@@ -2857,12 +2851,9 @@ export namespace Parts {
                         }
                     }
                     if (CollisionUtils.closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
-                        results.push(this.unit.hp = 0);
-                    } else {
-                        results.push(void 0);
+                        this.unit.hp = 0;
                     }
                 }
-                return results;
             }
         };
 
@@ -2910,11 +2901,11 @@ export namespace Parts {
         };
 
         tick() {
-            let i, len, other, ref, results;
+            let i, len, other, ref;
             if (this.unit.warheadTest !== Sim.Instance.step && (this.unit.shapeDamage == null)) {
                 this.unit.warheadTest = Sim.Instance.step;
                 ref = this.unit.closestEnemies;
-                results = [];
+
                 for (i = 0, len = ref.length; i < len; i++) {
                     other = ref[i];
                     if (other.owner === this.unit.owner) {
@@ -2923,12 +2914,9 @@ export namespace Parts {
                         }
                     }
                     if (CollisionUtils.closestDistance(this.unit.getBoundPoints(), other.getBoundPoints()) <= 50) {
-                        results.push(this.unit.hp = 0);
-                    } else {
-                        results.push(void 0);
+                        this.unit.hp = 0;
                     }
                 }
-                return results;
             }
         };
 
@@ -2980,7 +2968,6 @@ export namespace Parts {
                 this.unit.shapeDamage = 0;
                 ref = this.unit.parts;
 
-                let results = [];
                 for (i = 0, len = ref.length; i < len; i++) {
                     part = ref[i];
                     if (part.doesShapedDamage) {
@@ -3047,10 +3034,10 @@ export namespace Parts {
         };
 
         init() {
-            let effect, i, len, results, w, ws;
+            let effect, i, len, w, ws;
             ws = this.effected_weapons();
             effect = (1 / 0.85) * (Math.pow(0.85, ws.length));
-            results = [];
+
             for (i = 0, len = ws.length; i < len; i++) {
                 w = ws[i];
                 w.weaponRange *= 1 + this.weaponRange / 100 * effect;
@@ -3058,9 +3045,8 @@ export namespace Parts {
                 w.weaponDamage *= 1 + this.weaponDamage / 100 * effect;
                 w.weaponSpeed += this.weaponSpeed / 100 * effect;
                 w.weaponReload *= 1 + this.weaponReload / 100 * effect;
-                results.push(w.weaponEnergy *= 1 + this.weaponEnergy / 100 * effect);
+                w.weaponEnergy *= 1 + this.weaponEnergy / 100 * effect;
             }
-            return results;
         };
     }
 
@@ -3207,14 +3193,13 @@ export namespace Parts {
         };
 
         init() {
-            let i, len, results, w, ws;
+            let i, len, w, ws;
             ws = this.effected_weapons();
-            results = [];
+
             for (i = 0, len = ws.length; i < len; i++) {
                 w = ws[i];
-                results.push(w.noOverkill = true);
+                w.noOverkill = true;
             }
-            return results;
         };
     }
 
