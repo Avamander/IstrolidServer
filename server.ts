@@ -108,6 +108,7 @@ export class IstrolidServer {
                                                     data[0],
                                                     "and maybe IP address",
                                                     source_ip);
+                                                player.ip = source_ip;
                                                 player.id = data[0];
                                                 id = player.number;
                                                 if (typeof id !== "number") {
@@ -128,6 +129,7 @@ export class IstrolidServer {
                                                     source_ip);
                                                 // Key doesn't match but the rest does
                                                 // Let's assume commander.id is a secret :P
+                                                player.ip = source_ip;
                                                 player.webSocketKey = webSocketKey;
                                                 Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
 
@@ -146,6 +148,7 @@ export class IstrolidServer {
                                                 Sim.Instance.clearNetState();
                                             } else {
                                                 // Everything is fine, set ID
+                                                player.ip = source_ip;
                                                 id = player.number;
                                                 player.afk = false;
                                                 player.connected = true;
@@ -186,6 +189,7 @@ export class IstrolidServer {
                             Sim.Instance.WSKeyToPlayerID[webSocketKey] = player.number;
                             id = player.number;
                             player.webSocketKey = webSocketKey;
+                            player.ip = source_ip;
 
                             if (typeof id !== "number") {
                                 id = parseInt(id);

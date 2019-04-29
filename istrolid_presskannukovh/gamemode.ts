@@ -1663,6 +1663,8 @@ export namespace GameModes {
                 sp.radius = 100;
                 sp.canCapture = false;
 
+                player.usingSpawn = sp;
+
                 let cp: CommandPoint = new CommandPoint();
                 cp.z = -0.007;
                 cp.pos[0] = RaceMap.spawn_points[i][0] * Sim.Instance.mapScale;
@@ -1674,15 +1676,16 @@ export namespace GameModes {
                 cp.radius = sp.radius;
                 cp.size = [cp.radius / 250, cp.radius / 250];
                 cp.canCapture = false;
+                cp.owner = player.number;
 
                 Sim.Instance.things[sp.id] = sp;
                 Sim.Instance.things[cp.id] = cp;
-                players[i].usingSpawn = sp;
             }
 
+            let buffer_zone_between_points = 100;
             let controlpoint_radius = 100 * Sim.Instance.mapScale;
             let angle = (2 * (Math.PI + 0.01)) / players.length;
-            let distance = (controlpoint_radius + (60 * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
+            let distance = (controlpoint_radius + (buffer_zone_between_points * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
             let radius = Math.sqrt(0.5 * (distance * distance));
 
             for (let i = 0; i < RaceMap.capture_point_centers.length; i++) {
@@ -1690,10 +1693,11 @@ export namespace GameModes {
 
                 for (let j = 0; j < players.length; j++) {
                     let player = players[j];
-                    let cp: CommandPoint = new CommandPoint();
                     let x = (cp_point[0] * Sim.Instance.mapScale) + (radius * Math.cos((angle * j)));
                     let y = (cp_point[1] * Sim.Instance.mapScale) + (radius * Math.sin((angle * j)));
 
+                    // Create the control point
+                    let cp: CommandPoint = new CommandPoint();
                     cp.z = -1.1;
                     cp.pos[0] = x;
                     cp.pos[1] = y;
@@ -1704,13 +1708,28 @@ export namespace GameModes {
                     cp.size = [cp.radius / 250, cp.radius / 250];
                     cp.canCapture = false;
                     cp.maxCapp = 1;
+                    cp.color = player.color;
+                    cp.color[3] = 20;
 
+                    // Create the spawn point around the control point
+                    let sp: SpawnPoint = new SpawnPoint();
+                    sp.z = -1.1;
+                    sp.pos[0] = x;
+                    sp.pos[1] = y;
+                    sp["static"] = false;
+                    sp.spawn = "Judge Judy";
+                    sp.side = "Judge Judy";
+                    sp.owner = this.ai_number;
+                    sp.radius = 100;
+                    sp.canCapture = false;
+
+                    // Create a number rock for each point for those without FFA UI
                     let mu: Rock = new Rock();
                     mu.image = "parts/decals/letter" + j + ".png";
                     mu.color = player.color;
                     mu.z = -1.0;
                     mu["static"] = false;
-                    mu.size = new Float64Array([1, 1]);
+                    mu.size = new Float64Array([2, 2]);
                     mu.vel = new Float64Array(2);
                     mu.pos = new Float64Array([x, y]);
                     mu.tick = function () {
@@ -1718,13 +1737,19 @@ export namespace GameModes {
                     mu.move = function () {
                     };
 
+                    // Create a stasis drone for control points
                     let unit: Unit = new Unit("{\"parts\":[{\"pos\":[0,0],\"type\":\"StasisField\",\"dir\":0}],\"name\":\"StasisDrone\",\"aiRules\":[]}");
                     unit.pos[0] = cp_point[0];
                     unit.pos[1] = cp_point[1];
                     unit.move = function () {
-                    }
-                    Sim.Instance.things[mu.id] = (mu as Thing);
+                    };
+                    unit.color = [255, 255, 255, 255];
+                    unit.forcecloak = true;
+                    unit.disable_friends_check_and_follow = true;
+
                     Sim.Instance.things[cp.id] = cp;
+                    Sim.Instance.things[mu.id] = (mu as Thing);
+                    Sim.Instance.things[unit.id] = (unit as Thing);
                 }
             }
         }

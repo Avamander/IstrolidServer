@@ -128,6 +128,7 @@ export class Player {
     repick: any;
     lastSpawnCount: number = 0;
     webSocketKey: string = "";
+    ip!: string;
 
     constructor(id1: number | string) {
         this.id = id1;
@@ -139,7 +140,7 @@ export class Player {
         this.money = Sim.Instance.defaultMoney;
         this.maxMoney = 2e308;
         this.mouse = [0, 0];
-        this.rallyPoint = new Float64Array([0, 0]);
+        this.rallyPoint = new Float64Array(2);
         this.selection = [];
         this.buildQ = [];
         this.validBar = [false, false, false, false, false, false, false, false, false, false];
@@ -157,7 +158,7 @@ export class Player {
     earnMoney(amount: number) {
         amount = Math.round(amount * this.moneyRatio * Sim.Instance.moneyRatio);
         this.money += amount;
-        return this.moneyEarned += amount;
+        this.moneyEarned += amount;
     }
 
     tick() {
@@ -558,8 +559,8 @@ export class Rock extends Thing {
         this.id = Sim.Instance.nid();
         this.dead = false;
         this.hp = this.maxHP;
-        this.pos = new Float64Array([0, 0]);
-        this.vel = new Float64Array([0, 0]);
+        this.pos = new Float64Array(2);
+        this.vel = new Float64Array(2);
         this.rot = 0;
         this.size = new Float64Array([1, 1]);
     }
@@ -626,47 +627,43 @@ export class CommandPoint extends Thing {
             Sim.Instance.timeEnd("commandPoint");
             return;
         }
+
         if (Sim.Instance.serverType === "CTF") {
             Sim.Instance.timeEnd("commandPoint");
             return;
         }
+
         if (Sim.Instance.step % 16 === 0) {
-            if (this.side !== null) {
-                for (let curr_player in Sim.Instance.players) {
-                    if (Sim.Instance.players[curr_player]
-                        && Sim.Instance.players[curr_player].side === this.side) {
-                        if (Sim.Instance.players[curr_player].gainsMoney && Sim.Instance.gainsMoney) {
-                            Sim.Instance.players[curr_player].earnMoney(this.value);
+            if (Sim.Instance.serverType === "Race") {
+                if (this.side !== null) {
+                    for (let curr_player in Sim.Instance.players) {
+                        if (Sim.Instance.players[curr_player]
+                            && Sim.Instance.players[curr_player].side === this.side) {
+                            if (Sim.Instance.players[curr_player].gainsMoney && Sim.Instance.gainsMoney) {
+                                Sim.Instance.players[curr_player].earnMoney(this.value);
+                            }
                         }
                     }
                 }
-            }
 
-            let sides: { [key: string]: boolean; } = {};
-            let playerOnPoint = [];
-            for (let thing_id in Sim.Instance.things) {
-                if (Sim.Instance.things[thing_id].unit && Sim.Instance.things[thing_id].canCapture) {
-                    if (v2.distance(this.pos, Sim.Instance.things[thing_id].pos) < this.radius) {
-                        sides[Sim.Instance.things[thing_id].side] = true;
-                        if (Sim.Instance.players[Sim.Instance.things[thing_id].owner]) {
-                            playerOnPoint.push(Sim.Instance.players[Sim.Instance.things[thing_id].owner]);
+                let sides: { [key: string]: boolean; } = {};
+                let playerOnPoint = [];
+                for (let thing_id in Sim.Instance.things) {
+                    if (Sim.Instance.things[thing_id].unit && Sim.Instance.things[thing_id].canCapture) {
+                        if (v2.distance(this.pos, Sim.Instance.things[thing_id].pos) < this.radius) {
+                            sides[Sim.Instance.things[thing_id].side] = true;
+                            if (Sim.Instance.players[Sim.Instance.things[thing_id].owner]) {
+                                playerOnPoint.push(Sim.Instance.players[Sim.Instance.things[thing_id].owner]);
+                            }
                         }
                     }
                 }
-            }
 
-            let sides_arr = CommandPoint.object_to_array(sides);
+                let sides_arr = CommandPoint.object_to_array(sides);
 
-            if (sides_arr.length === 1 && (this.side !== sides_arr[0] || Sim.Instance.serverType === "IO")) {
-                this.capping += 1 / this.value;
-                if (this.capping >= this.maxCapp) {
-                    if (Sim.Instance.serverType !== "IO") {
-                        this.side = sides_arr[0];
-                        this.bonus(this.side, 100);
-                        if (this.linkedSpawn) {
-                            this.linkedSpawn.side = this.linkedSpawn.spawn = this.side;
-                        }
-                    } else {
+                if (sides_arr.length === 1 && (this.side !== sides_arr[0])) {
+                    this.capping += 1 / this.value;
+                    if (this.capping >= this.maxCapp) {
                         this.pos = new Float64Array([(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000]);
                         for (let thing_id in Sim.Instance.things) {
                             if ((Sim.Instance.things[thing_id].spawn || Sim.Instance.things[thing_id].commandPoint)
@@ -674,26 +671,82 @@ export class CommandPoint extends Thing {
                                 break;
                             }
                         }
-                    }
-                    Sim.Instance.captures += 1;
-                    this.capping = 0;
-                    let results = [];
-                    for (let l = 0; l < playerOnPoint.length; l++) {
-                        playerOnPoint[l].capps += 1;
-                        if (Sim.Instance.serverType === "IO") {
-                            playerOnPoint[l].earnMoney(Math.round(Sim.Instance.moneyInc * this.value));
-                            results.push(playerOnPoint[l].maxMoney = Math.max(playerOnPoint[l].maxMoney, playerOnPoint[l].money));
-                        } else {
-                            results.push(void 0);
+                        Sim.Instance.captures += 1;
+                        this.capping = 0;
+                        for (let l = 0; l < playerOnPoint.length; l++) {
+                            playerOnPoint[l].capps += 1;
                         }
+                        Sim.Instance.timeEnd("commandPoint");
+                        return;
                     }
-                    Sim.Instance.timeEnd("commandPoint");
-                    return results;
+                } else {
+                    if (this.capping > 0) {
+                        Sim.Instance.timeEnd("commandPoint");
+                        return this.capping -= 1 / this.value;
+                    }
                 }
             } else {
-                if (this.capping > 0) {
-                    Sim.Instance.timeEnd("commandPoint");
-                    return this.capping -= 1 / this.value;
+                if (this.side !== null) {
+                    for (let curr_player in Sim.Instance.players) {
+                        if (Sim.Instance.players[curr_player]
+                            && Sim.Instance.players[curr_player].side === this.side) {
+                            if (Sim.Instance.players[curr_player].gainsMoney && Sim.Instance.gainsMoney) {
+                                Sim.Instance.players[curr_player].earnMoney(this.value);
+                            }
+                        }
+                    }
+                }
+
+                let sides: { [key: string]: boolean; } = {};
+                let playerOnPoint = [];
+                for (let thing_id in Sim.Instance.things) {
+                    if (Sim.Instance.things[thing_id].unit && Sim.Instance.things[thing_id].canCapture) {
+                        if (v2.distance(this.pos, Sim.Instance.things[thing_id].pos) < this.radius) {
+                            sides[Sim.Instance.things[thing_id].side] = true;
+                            if (Sim.Instance.players[Sim.Instance.things[thing_id].owner]) {
+                                playerOnPoint.push(Sim.Instance.players[Sim.Instance.things[thing_id].owner]);
+                            }
+                        }
+                    }
+                }
+
+                let sides_arr = CommandPoint.object_to_array(sides);
+
+                if (sides_arr.length === 1 && (this.side !== sides_arr[0] || Sim.Instance.serverType === "IO")) {
+                    this.capping += 1 / this.value;
+                    if (this.capping >= this.maxCapp) {
+                        if (Sim.Instance.serverType !== "IO") {
+                            this.side = sides_arr[0];
+                            this.bonus(this.side, 100);
+                            if (this.linkedSpawn) {
+                                this.linkedSpawn.side = this.linkedSpawn.spawn = this.side;
+                            }
+                        } else {
+                            this.pos = new Float64Array([(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000]);
+                            for (let thing_id in Sim.Instance.things) {
+                                if ((Sim.Instance.things[thing_id].spawn || Sim.Instance.things[thing_id].commandPoint)
+                                    && v2.distance(Sim.Instance.things[thing_id].pos, this.pos) < (Sim.Instance.things[thing_id].radius + this.radius + 100)) {
+                                    break;
+                                }
+                            }
+                        }
+                        Sim.Instance.captures += 1;
+                        this.capping = 0;
+                        for (let l = 0; l < playerOnPoint.length; l++) {
+                            playerOnPoint[l].capps += 1;
+                            if (Sim.Instance.serverType === "IO") {
+                                playerOnPoint[l].earnMoney(Math.round(Sim.Instance.moneyInc * this.value));
+                                playerOnPoint[l].maxMoney = Math.max(playerOnPoint[l].maxMoney, playerOnPoint[l].money);
+                            }
+                        }
+                        Sim.Instance.timeEnd("commandPoint");
+                        return;
+                    }
+                } else {
+                    if (this.capping > 0) {
+                        Sim.Instance.timeEnd("commandPoint");
+                        return this.capping -= 1 / this.value;
+                    }
                 }
             }
         }
@@ -763,8 +816,8 @@ export class SpawnPoint extends Thing {
         this.dead = false;
         this.z = .01;
         this.hp = this.maxHP;
-        this.pos = new Float64Array([0, 0]);
-        this.vel = new Float64Array([0, 0]);
+        this.pos = new Float64Array(2);
+        this.vel = new Float64Array(2);
         this.rot = 0;
         this.color = [255, 255, 255, 255];
         this.side = "neutral";
