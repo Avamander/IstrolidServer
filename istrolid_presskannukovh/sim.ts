@@ -464,6 +464,9 @@ export class Sim {
             case "FFA": {
                 return 8;
             }
+            case "Rac": {
+                return 10;
+            }
             case "Tou": {
                 return 60;
             }

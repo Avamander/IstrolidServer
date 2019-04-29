@@ -1682,7 +1682,7 @@ export namespace GameModes {
 
             let controlpoint_radius = 100 * Sim.Instance.mapScale;
             let angle = (2 * (Math.PI + 0.01)) / players.length;
-            let distance = ((controlpoint_radius / 2) + (60 * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
+            let distance = (controlpoint_radius + (60 * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
             let radius = Math.sqrt(0.5 * (distance * distance));
 
             for (let i = 0; i < RaceMap.capture_point_centers.length; i++) {
@@ -1718,6 +1718,11 @@ export namespace GameModes {
                     mu.move = function () {
                     };
 
+                    let unit: Unit = new Unit("{\"parts\":[{\"pos\":[0,0],\"type\":\"StasisField\",\"dir\":0}],\"name\":\"StasisDrone\",\"aiRules\":[]}");
+                    unit.pos[0] = cp_point[0];
+                    unit.pos[1] = cp_point[1];
+                    unit.move = function () {
+                    }
                     Sim.Instance.things[mu.id] = (mu as Thing);
                     Sim.Instance.things[cp.id] = cp;
                 }
