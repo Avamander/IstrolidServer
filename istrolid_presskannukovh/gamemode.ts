@@ -1683,7 +1683,7 @@ export namespace GameModes {
             }
 
             let buffer_zone_between_points = 100;
-            let controlpoint_radius = 150 * Sim.Instance.mapScale;
+            let controlpoint_radius = 200 * Sim.Instance.mapScale;
             let angle = (2 * (Math.PI + 0.01)) / players.length;
             let distance = (controlpoint_radius + (buffer_zone_between_points * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
             let radius = Math.sqrt(0.5 * (distance * distance));
@@ -1731,7 +1731,7 @@ export namespace GameModes {
                     let mu: Rock = new Rock();
                     mu.image = "parts/decals/letter" + j + ".png";
                     mu.color = player.color;
-                    mu.z = -0.011;
+                    mu.z = 0;
                     mu["static"] = false;
                     mu.size = [2, 2];
                     mu.vel = new Float64Array(2);
@@ -1742,21 +1742,20 @@ export namespace GameModes {
                     };
 
                     // Create a stasis drone for control points
-                    let unit: Unit = new Unit("{\"parts\":[{\"pos\":[0,0],\"type\":\"StasisField\",\"dir\":0}],\"name\":\"StasisDrone\",\"aiRules\":[]}");
+                    /*let unit: Unit = new Unit("{\"parts\":[{\"pos\":[0,0],\"type\":\"StasisField\",\"dir\":0}],\"name\":\"StasisDrone\",\"aiRules\":[]}");
                     unit.z = -0.01;
-                    unit.pos[0] = cp_point[0];
-                    unit.pos[1] = cp_point[1];
+                    unit.pos[0] = x;
+                    unit.pos[1] = y;
                     unit.move = function () {
                     };
                     unit.color = [255, 255, 255, 255];
                     unit.forcecloak = true;
-                    unit.disable_friends_check_and_follow = true;
                     unit.side = "Judge Judy";
-                    unit.owner = this.ai_number;
+                    unit.owner = this.ai_number;*/
 
                     Sim.Instance.things[cp.id] = cp;
                     Sim.Instance.things[mu.id] = (mu as Thing);
-                    Sim.Instance.things[unit.id] = (unit as Thing);
+                    //Sim.Instance.things[unit.id] = (unit as Thing);
                 }
             }
         }
@@ -1812,9 +1811,10 @@ export namespace GameModes {
                 real = false;
             }
 
+            Sim.say("_________________________ RACE __________________________________");
             Sim.say("For better gameplay either install the FFA UI script");
-            Sim.say("or use https://presskannuk.ovh (if you're in the EU)");
-            Sim.say("if you already have it then make sure you have the latest version");
+            Sim.say("or use https://presskannuk.ovh (if you're in the EU)!");
+            Sim.say("If you already have it then make sure you have the latest version!");
             Sim.say("https://gist.github.com/Rio6/df4b990ddd0d25f9ad3b48e0fc8d0f35");
             super.startGame.call(this, player, real);
         }
@@ -1898,7 +1898,53 @@ export namespace GameModes {
         }
 
         victoryConditions() {
+            let id, player, stillThere, thing;
+            if (this.sim.state !== "running") {
+                return;
+            }
 
+            let capped: { [key: string]: number; } = {};
+
+            for (id in this.sim.things) {
+                thing = this.sim.things[id];
+                if (thing.commandPoint) {
+                    capped[thing.side] = (capped[thing.side] || 0) + 1;
+                }
+            }
+
+            for (let cap in capped) {
+                let result = capped[cap];
+                if (result > (RaceMap.capture_point_centers.length) && cap !== "Judge Judy") {
+                    this.sim.winningSide = cap;
+                }
+            }
+
+            if (this.sim.winningSide) {
+                this.endOfGame();
+                return;
+            }
+
+            if (!this.sim.local && !this.sim.aiTestMode) {
+                stillThere = false;
+
+                for (let l in this.sim.players) {
+                    player = this.sim.players[l];
+                    if (!player.ai &&
+                        player.connected &&
+                        player.afk === false &&
+                        player.side !== "spectators") {
+                        stillThere = true;
+                    }
+                }
+                if (!stillThere) {
+                    Sim.say("Every one left. Ending game.");
+                    this.sim.winningSide = "";
+                    this.endOfGame();
+                }
+            } else if (this.sim.step > 16 * 60 * 30) {
+                this.sim.winningSide = "";
+                this.endOfGame();
+            }
         }
 
         endOfGame() {
@@ -1910,7 +1956,24 @@ export namespace GameModes {
                 }
                 p.side = "alpha";
             }
-            super.endOfGame.call(this);
+
+            if (this.sim.winningSide) {
+                Sim.say(this.sim.winningSide + " has won!");
+            } else {
+                Sim.say("Game ends in a draw!");
+            }
+
+            this.sim.numBattles += 1;
+            if (this.sim.numBattles > 100) {
+                this.sim.awaitRestart = true;
+            }
+
+            // TODO: READD
+            //if (typeof this.sendGameReport === "function") {
+            //    this.sendGameReport();
+            //}
+
+            this.sim.state = "ended";
         }
     }
 }
