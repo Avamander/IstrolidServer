@@ -1,3 +1,5 @@
+import {RaceMap} from "./race_map";
+
 export class Sim {
     static defaultBattleType = "3v3";
     private static _instance: Sim;
@@ -184,9 +186,10 @@ export class Sim {
 
         for (let thing_id in Sim.Instance.things) {
             thing = Sim.Instance.things[thing_id];
-            if (thing.spawn === player.side &&
+            if (thing.spawnPoint &&
+                thing.spawn === player.side &&
                 v2.distance(thing.pos, point) < thing.radius) {
-                player.usingSpawn = thing;
+                player.usingSpawn = (thing as SpawnPoint);
                 player.rallyPoint = new Float64Array([0, 0]);
                 return;
             }
@@ -971,18 +974,31 @@ export class Sim {
     }
 
     findSpawnPointBySide(side: string): SpawnPoint | null {
-        let unit;
+        let unit: Thing | null = null;
+        let found_spawn: SpawnPoint | null = null;
         for (let thing_id in this.things) {
             unit = this.things[thing_id];
 
             if (unit.spawnPoint) {
                 if (unit.side === side) {
-                    return (unit as SpawnPoint);
+                    if (this.serverType === "Race") {
+                        if ((found_spawn === null || found_spawn === undefined) ||
+                            ((unit as SpawnPoint).race_index > found_spawn.race_index)) {
+                            found_spawn = (unit as SpawnPoint);
+
+                            // Exit the loop if we've found the last point
+                            if (found_spawn.race_index >= RaceMap.spawn_points.length) {
+                                break;
+                            }
+                        }
+                    } else {
+                        return (unit as SpawnPoint);
+                    }
                 }
             }
         }
 
-        return null;
+        return found_spawn;
     }
 
     canBuildHere(pos: Float64Array, side: string, cls: Unit) {
@@ -1268,25 +1284,25 @@ export class Sim {
         for (let i = 0; i < units.length; i++) {
             u = units[i];
             for (j = -4; j <= 4; j++) {
-                    u2 = units[i + j];
-                    if (j !== 0 && u2) {
-                        let _offset: Float64Array = new Float64Array([u.pos[0] - u2.pos[0], u.pos[1] - u2.pos[1]]);
-                        distance = v2.mag(_offset);
-                        if (distance < .001) {
-                            _offset = new Float64Array([0, -1]);
-                            distance = 1;
-                        }
-                        if (distance < u.radius + u2.radius) {
-                            force = (u.radius + u2.radius) - distance;
-                            ratio = u2.mass / (u.mass + u2.mass);
-                            let _push = v2.create_r();
-                            v2.scale(_offset, ratio * force / distance * .02, _push);
-                            v2.add_r(u.pos, _push);
-                            v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
-                            v2.add_r(u2.pos, _push);
-                        }
+                u2 = units[i + j];
+                if (j !== 0 && u2) {
+                    let _offset: Float64Array = new Float64Array([u.pos[0] - u2.pos[0], u.pos[1] - u2.pos[1]]);
+                    distance = v2.mag(_offset);
+                    if (distance < .001) {
+                        _offset = new Float64Array([0, -1]);
+                        distance = 1;
+                    }
+                    if (distance < u.radius + u2.radius) {
+                        force = (u.radius + u2.radius) - distance;
+                        ratio = u2.mass / (u.mass + u2.mass);
+                        let _push = v2.create_r();
+                        v2.scale(_offset, ratio * force / distance * .02, _push);
+                        v2.add_r(u.pos, _push);
+                        v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
+                        v2.add_r(u2.pos, _push);
                     }
                 }
+            }
         }
     }
 

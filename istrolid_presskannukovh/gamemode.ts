@@ -485,9 +485,11 @@ export namespace GameModes {
             for (i = m = 0, ref = players.length; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
                 th = i * Math.PI * 2 / players.length;
                 player = players[i];
+                // @ts-ignore
                 let sp: SpawnPoint = GameModes.gFFA.makePoint(1800, th, player.side, SpawnPoint);
                 sp.spawn = player.name;
                 sp.side = player.name;
+                // @ts-ignore
                 let cp: CommandPoint = (GameModes.gFFA.makePoint(1800, th, player.side, CommandPoint) as CommandPoint);
                 cp.linkedSpawn = sp;
                 cp.radius = sp.radius;
@@ -791,8 +793,6 @@ export namespace GameModes {
 
             let _, a, alphaSpawn, b, betaSpawn, flag, from_center;
 
-            let homePoints: SpawnPoint[];
-
             let i, len, m, o, point, q, ref,
                 ref1, ref2, t, tooClose;
 
@@ -812,7 +812,7 @@ export namespace GameModes {
             b.pos[1] = -a.pos[1];
             Sim.Instance.things[b.id] = b;
 
-            homePoints = [];
+            let homePoints: [CommandPoint | undefined, CommandPoint | undefined] = [undefined, undefined];
             for (i = m = 0, ref = Sim.Instance.numComPoints / 2; 0 <= ref ? m < ref : m > ref; i = 0 <= ref ? ++m : --m) {
                 a = new CommandPoint();
                 a.z = -.01;
@@ -1666,7 +1666,7 @@ export namespace GameModes {
                 player.usingSpawn = sp;
 
                 let cp: CommandPoint = new CommandPoint();
-                cp.z = -0.007;
+                cp.z = -0.01;
                 cp.pos[0] = RaceMap.spawn_points[i][0] * Sim.Instance.mapScale;
                 cp.pos[1] = RaceMap.spawn_points[i][1] * Sim.Instance.mapScale;
                 cp["static"] = false;
@@ -1683,7 +1683,7 @@ export namespace GameModes {
             }
 
             let buffer_zone_between_points = 100;
-            let controlpoint_radius = 100 * Sim.Instance.mapScale;
+            let controlpoint_radius = 150 * Sim.Instance.mapScale;
             let angle = (2 * (Math.PI + 0.01)) / players.length;
             let distance = (controlpoint_radius + (buffer_zone_between_points * Sim.Instance.mapScale)) / Math.sin(angle * 0.5);
             let radius = Math.sqrt(0.5 * (distance * distance));
@@ -1698,12 +1698,13 @@ export namespace GameModes {
 
                     // Create the control point
                     let cp: CommandPoint = new CommandPoint();
-                    cp.z = -1.1;
+                    cp.z = -0.01;
                     cp.pos[0] = x;
                     cp.pos[1] = y;
                     cp["static"] = false;
                     cp.spawn = "Judge Judy";
                     cp.side = "Judge Judy";
+                    cp.owner = player.number;
                     cp.radius = controlpoint_radius;
                     cp.size = [cp.radius / 250, cp.radius / 250];
                     cp.canCapture = false;
@@ -1713,23 +1714,26 @@ export namespace GameModes {
 
                     // Create the spawn point around the control point
                     let sp: SpawnPoint = new SpawnPoint();
-                    sp.z = -1.1;
+                    sp.z = -0.01;
                     sp.pos[0] = x;
                     sp.pos[1] = y;
                     sp["static"] = false;
                     sp.spawn = "Judge Judy";
                     sp.side = "Judge Judy";
-                    sp.owner = this.ai_number;
+                    sp.owner = player.number;
                     sp.radius = 100;
                     sp.canCapture = false;
+                    sp.race_index = i;
+
+                    cp.linkedSpawn = sp;
 
                     // Create a number rock for each point for those without FFA UI
                     let mu: Rock = new Rock();
                     mu.image = "parts/decals/letter" + j + ".png";
                     mu.color = player.color;
-                    mu.z = -1.0;
+                    mu.z = -0.011;
                     mu["static"] = false;
-                    mu.size = new Float64Array([2, 2]);
+                    mu.size = [2, 2];
                     mu.vel = new Float64Array(2);
                     mu.pos = new Float64Array([x, y]);
                     mu.tick = function () {
@@ -1739,6 +1743,7 @@ export namespace GameModes {
 
                     // Create a stasis drone for control points
                     let unit: Unit = new Unit("{\"parts\":[{\"pos\":[0,0],\"type\":\"StasisField\",\"dir\":0}],\"name\":\"StasisDrone\",\"aiRules\":[]}");
+                    unit.z = -0.01;
                     unit.pos[0] = cp_point[0];
                     unit.pos[1] = cp_point[1];
                     unit.move = function () {
@@ -1746,6 +1751,8 @@ export namespace GameModes {
                     unit.color = [255, 255, 255, 255];
                     unit.forcecloak = true;
                     unit.disable_friends_check_and_follow = true;
+                    unit.side = "Judge Judy";
+                    unit.owner = this.ai_number;
 
                     Sim.Instance.things[cp.id] = cp;
                     Sim.Instance.things[mu.id] = (mu as Thing);
@@ -1828,10 +1835,12 @@ export namespace GameModes {
             if (this.ai_number === undefined || this.ai_number === null) {
                 let ai = AI.useAiFleet("Judge Judy", "Judge Judy",
                     ["null", "null", "null", "null", "null", "null", "null", "null", "null", "null"]);
+
                 if (!ai) {
                     Sim.say("Unable to add Judge Judy");
                 } else {
                     this.ai_number = ai.number;
+                    ai.color = [0, 0, 0, 255];
                 }
             }
 

@@ -15,7 +15,7 @@ export namespace Bullets {
         image: string = "img/unitBar/pip1.png";
         damage: number = 1;
         speed: number = 10;
-        size: number[] = [1, 1];
+        size: [number, number] = [1, 1];
         radius: number = 10;
         hitsMultiple = false;
         hitExplosion: string = Explosions.SmallHitExplosion.name;
@@ -224,7 +224,7 @@ export namespace Bullets {
 
     export class AoeBullet extends Bullet {
         image = "img/unitBar/pip1.png";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [100, 100, 100, 255];
         speed = 30;
         aoe = 50;
@@ -286,7 +286,7 @@ export namespace Bullets {
 
     export class TrackingMissile extends Bullet {
         image = "img/unitBar/pip1.png";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [0, 0, 0, 255];
         speed = 15;
         damage = 8;
@@ -351,7 +351,7 @@ export namespace Bullets {
 
     export class LaserBullet extends Bullet {
         image = "img/laser01.png";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [179, 207, 255, 255];
         speed = 2000;
         damage = 2.5;
@@ -412,7 +412,7 @@ export namespace Bullets {
     export class AutoBullet extends Bullet {
         image = "parts/fireAuto.png";
         sound = "sounds/weapons/autocannon.wav";
-        size = [.6, .6];
+        size: [number, number] = [.6, .6];
         color: [number, number, number, number] = [179, 207, 255, 255];
         hitExplosion = SmallHitExplosion.name;
         turretNum: number = 0;
@@ -426,7 +426,7 @@ export namespace Bullets {
         image = "parts/fireEnergyBall.png";
         sound = "sounds/weapons/blaster1.wav";
         soundVolume = .05;
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -446,7 +446,7 @@ export namespace Bullets {
         image = "parts/fizzleMine.png";
         sound = "sounds/weapons/blaster1.wav";
         soundVolume = .05;
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [179, 207, 255, 255];
         split = 0;
 
@@ -540,7 +540,7 @@ export namespace Bullets {
     export class FlameBullet extends Bullet {
         image = "parts/fireFlame1.png";
         sound = "sounds/weapons/fireFlame.wav";
-        size = [0.7, 0.7];
+        size: [number, number] = [0.7, 0.7];
         color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 2;
         maxRadius = 64;
@@ -669,7 +669,7 @@ export namespace Bullets {
         turretNum: any;
         image = "parts/battleCannonBullet";
         sound = "sounds/weapons/torp2.wav";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         radius = 20;
         trailTime = 500;
 
@@ -681,7 +681,7 @@ export namespace Bullets {
     export class HeavyPDBullet extends Bullet {
         image = "parts/fireHex1.png";
         sound = "sounds/weapons/heavyPD.wav";
-        size = [.7, .7];
+        size: [number, number] = [.7, .7];
         color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 12;
         hitsMultiple = true;
@@ -694,7 +694,7 @@ export namespace Bullets {
     export class LightPlasmaBullet extends Bullet {
         image = "parts/fireShot1.png";
         sound = "sounds/weapons/blaster2.wav";
-        size = [.6, .6];
+        size: [number, number] = [.6, .6];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -705,7 +705,7 @@ export namespace Bullets {
     export class MachineBullet extends Bullet {
         image = "parts/fireBeamSmall.png";
         sound = "sounds/weapons/autocannon.wav";
-        size = [.6, .6];
+        size: [number, number] = [.6, .6];
         color: [number, number, number, number] = [179, 207, 255, 255];
         hitExplosion = SmallHitExplosion.name;
 
@@ -717,7 +717,7 @@ export namespace Bullets {
     export class NeedleGunBullet extends Bullet {
         image: string = "parts/needleGunBullet";
         sound: string = "sounds/weapons/blaster1.wav";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         radius: number = 20;
         trailTime: number = 500;
         trailSize: number = 0.02;
@@ -739,7 +739,7 @@ export namespace Bullets {
         image = "parts/fireLong1.png";
         sound = "sounds/weapons/artillery.wav";
         color: [number, number, number, number] = [255, 240, 244, 255];
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         missile = true;
         explodeClass = ArtilleryExplosion.name;
 
@@ -759,7 +759,7 @@ export namespace Bullets {
     export class PlasmaBullet extends Bullet {
         image = "parts/fireShot1.png";
         sound = "sounds/weapons/blaster2.wav";
-        size = [.6, .6];
+        size: [number, number] = [.6, .6];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -770,7 +770,7 @@ export namespace Bullets {
     export class LightBeam extends LaserBullet {
         image = "parts/fireBeamLarge.png";
         sound = "sounds/weapons/beam2.wav";
-        size = [.5, .5];
+        size: [number, number] = [.5, .5];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -781,7 +781,7 @@ export namespace Bullets {
     export class PDLaserBullet extends LaserBullet {
         image = "parts/fireBeamLarge.png";
         sound = "sounds/weapons/lightPD.wav";
-        size = [.3, .3];
+        size: [number, number] = [.3, .3];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -792,7 +792,7 @@ export namespace Bullets {
     export class TeslaBolt extends LaserBullet {
         image = "parts/zap1.png";
         sound = "sounds/weapons/tesla2.wav";
-        size = [.6, .6];
+        size: [number, number] = [.6, .6];
         color: [number, number, number, number] = [179, 207, 255, 255];
         drawLength = 250;
 
@@ -807,7 +807,7 @@ export namespace Bullets {
     export class TorpBullet extends StraightMissile {
         image = "parts/fireTorp1.png";
         sound = "sounds/weapons/torp2.wav";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         radius = 25;
         missile = true;
         trailTime = 750;
@@ -821,7 +821,7 @@ export namespace Bullets {
     export class MissileBullet extends TrackingMissile {
         image = "parts/fireMis1.png";
         sound = "sounds/weapons/torp1.wav";
-        size = [.8, .8];
+        size: [number, number] = [.8, .8];
         color: [number, number, number, number] = [0, 0, 0, 255];
         missile = true;
         tracking = true;
@@ -835,7 +835,7 @@ export namespace Bullets {
         image = "parts/fireFlack1.png";
         sound = "sounds/weapons/zingg.wav";
         color: [number, number, number, number] = [255, 240, 244, 255];
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         explodeClass = FlackExplosion.name;
 
         constructor() {
@@ -846,7 +846,7 @@ export namespace Bullets {
     export class RamBullet extends Bullet {
         image = "parts/fireWavePull.png";
         sound = "sounds/weapons/WavePull.wav";
-        size = [.5, .5];
+        size: [number, number] = [.5, .5];
         color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 30;
         direction = -1;
@@ -878,7 +878,7 @@ export namespace Bullets {
         image = "parts/fireRing.png";
         sound = "sounds/weapons/zingg.wav";
         hitExplosion = RingHitExplosion.name;
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -889,7 +889,7 @@ export namespace Bullets {
     export class SniperLaser extends Bullet {
         image = "parts/hit1.png";
         sound = "sounds/weapons/blaster2.wav";
-        size = [2, 2];
+        size: [number, number] = [2, 2];
         color: [number, number, number, number] = [179, 207, 255, 255];
         hitOnce: { [key: number]: boolean };
 
@@ -916,7 +916,7 @@ export namespace Bullets {
     export class WavePullArch extends Bullet {
         image = "parts/fireWavePull.png";
         sound = "sounds/weapons/WavePull.wav";
-        size = [.5, .5];
+        size: [number, number] = [.5, .5];
         color: [number, number, number, number] = [179, 207, 255, 255];
         radius = 30;
         maxRadius = 100;
@@ -981,7 +981,7 @@ export namespace Bullets {
         image = "parts/bombDormant.png";
         sound = "sounds/weapons/wewewee.wav";
         soundVolume = .03;
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [255, 255, 255, 255];
         explodeClass = BombExplosion.name;
         trailSize = .1;
@@ -1065,7 +1065,7 @@ export namespace Bullets {
     export class HeavyBeam extends LaserBullet {
         image = "parts/fireBeamLarge.png";
         sound = "sounds/weapons/beam4.wav";
-        size = [1, 1];
+        size: [number, number] = [1, 1];
         color: [number, number, number, number] = [179, 207, 255, 255];
 
         constructor() {
@@ -1085,7 +1085,7 @@ export namespace Bullets {
         image = "parts/fireMine.png";
         sound = "sounds/weapons/torp4.wav";
         soundVolume = .05;
-        size = [.8, .8];
+        size: [number, number] = [.8, .8];
         color: [number, number, number, number] = [0, 0, 0, 255];
         missile = true;
         tracking = true;

@@ -63,7 +63,7 @@ export namespace Explosions {
                 this.color[3] = 255 / (1 + this.frame);
                 baseAtlas.drawSprite(this.hitImage, this.pos, [s, s], this.rot, this.color);
             }
-            return this.frame += 1;
+            this.frame += 1;
         };
     }
 
@@ -90,7 +90,7 @@ export namespace Explosions {
                 this.color[3] = 255 / (1 + this.frame);
                 baseAtlas.drawSprite(this.hitImage, this.pos, [s, s], this.rot, this.color);
             }
-            return this.frame += 1;
+            this.frame += 1;
         };
     }
 
@@ -127,7 +127,7 @@ export namespace Explosions {
                     intp.particles[deb.id] = deb;
                 }
             }
-            return this.frame += 1;
+            this.frame += 1;
         };
     }
 
@@ -295,10 +295,9 @@ export namespace Explosions {
         }
 
         draw() {
-            let ex, i, n, results;
+            let ex, i, n;
             super.draw.call(this);
             if (this.life === 0) {
-                results = [];
                 for (n = i = 1; i < 15; n = ++i) {
                     ex = new Debree();
                     ex.image = "fireFlame" + "1.png"; //(chooseInt(1, 4)) + ".png";
@@ -314,9 +313,8 @@ export namespace Explosions {
                     ex._pos2 = v2.create(ex.pos);
                     ex._rot = ex.rot;
                     ex._rot2 = ex.rot;
-                    results.push(intp.particles[ex.id] = ex);
+                    intp.particles[ex.id] = ex;
                 }
-                return results;
             }
         };
     }

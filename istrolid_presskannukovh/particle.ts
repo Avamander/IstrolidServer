@@ -4,7 +4,7 @@ import {Thing} from "./things";
 
 export class Particle extends Thing {
     image: string = "";
-    size: number[] = [.1, .1];
+    size: [number, number] = [.1, .1];
     maxLife: number = 60;
     radius: number = 1;
     life: number = 0;

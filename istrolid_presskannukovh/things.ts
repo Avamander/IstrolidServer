@@ -109,7 +109,7 @@ export class Player {
     // @ts-ignore
     mouseTrail: any[];
     // @ts-ignore
-    usingSpawn: Thing;
+    usingSpawn: SpawnPoint;
     // Set by playerJoin
     number!: number;
     // @ts-ignore
@@ -452,6 +452,9 @@ export class Thing {
     maxHP: number = 10;
     z: number = 0.01;
 
+    size!: [number, number];
+    rot!: number;
+
     // @ts-ignore
     color: [number, number, number, number];
 
@@ -534,16 +537,16 @@ export class Thing {
 export class Rock extends Thing {
     flag: boolean = false;
     image: string = "img/unitBar/pip1.png";
-    size: Float64Array = new Float64Array([1, 1]);
+    size: [number, number] = [1, 1];
     "static" = true;
     maxHP = 1000;
     color: [number, number, number, number];
-    id: number;
-    dead: boolean;
+
+    dead: boolean = false;
     hp: number;
-    pos: Float64Array;
-    vel: Float64Array;
-    rot: number;
+    pos: Float64Array = new Float64Array(2);
+    vel: Float64Array = new Float64Array(2);
+    rot: number = 0;
     commandPoint: boolean = false;
     bullet: boolean = false;
 
@@ -556,13 +559,7 @@ export class Rock extends Thing {
         super();
         this.image = "img/rocks/srock01.png";
         this.color = Sim.Instance.theme.fillColor;
-        this.id = Sim.Instance.nid();
-        this.dead = false;
         this.hp = this.maxHP;
-        this.pos = new Float64Array(2);
-        this.vel = new Float64Array(2);
-        this.rot = 0;
-        this.size = new Float64Array([1, 1]);
     }
 
     tick(): void {
@@ -581,36 +578,27 @@ export class Rock extends Thing {
 export class CommandPoint extends Thing {
     image = "img/point02.png";
     sliceImage = "img/map/slice02.png";
-    size = [1, 1];
+    size: [number, number] = [1, 1];
     maxHP = 1000;
     radius = 250;
     commandPoint = true;
     capping = 0;
     maxCapp = 10;
     value = 1;
-    z: number;
-    side: string;
-    pos: Float64Array;
-    id: number;
-    color: [number, number, number, number];
-    rot: number;
-    vel: Float64Array;
+    z: number = 0.01;
+    side: string = "neutral";
+    pos: Float64Array = new Float64Array(2);
+    color: [number, number, number, number] = [255, 255, 255, 255];
+    rot: number = 0;
+    vel: Float64Array = new Float64Array(2);
     hp: number;
-    dead: boolean;
-    linkedSpawn: any;
+    dead: boolean = false;
+
+    linkedSpawn!: SpawnPoint;
 
     constructor() {
         super();
-        this.id = Sim.Instance.nid();
-        this.dead = false;
-        this.z = .01;
         this.hp = this.maxHP;
-        this.pos = new Float64Array([0, 0]);
-        this.vel = new Float64Array([0, 0]);
-        this.rot = 0;
-        this.color = [255, 255, 255, 255];
-        this.side = "neutral";
-        this.capping = 0;
     };
 
     static object_to_array(sides: { [key: string]: boolean; }) {
@@ -635,56 +623,29 @@ export class CommandPoint extends Thing {
 
         if (Sim.Instance.step % 16 === 0) {
             if (Sim.Instance.serverType === "Race") {
-                if (this.side !== null) {
-                    for (let curr_player in Sim.Instance.players) {
-                        if (Sim.Instance.players[curr_player]
-                            && Sim.Instance.players[curr_player].side === this.side) {
-                            if (Sim.Instance.players[curr_player].gainsMoney && Sim.Instance.gainsMoney) {
-                                Sim.Instance.players[curr_player].earnMoney(this.value);
-                            }
-                        }
-                    }
-                }
-
-                let sides: { [key: string]: boolean; } = {};
-                let playerOnPoint = [];
                 for (let thing_id in Sim.Instance.things) {
-                    if (Sim.Instance.things[thing_id].unit && Sim.Instance.things[thing_id].canCapture) {
-                        if (v2.distance(this.pos, Sim.Instance.things[thing_id].pos) < this.radius) {
-                            sides[Sim.Instance.things[thing_id].side] = true;
-                            if (Sim.Instance.players[Sim.Instance.things[thing_id].owner]) {
-                                playerOnPoint.push(Sim.Instance.players[Sim.Instance.things[thing_id].owner]);
+                    let thing = Sim.Instance.things[thing_id];
+                    if (thing.unit && thing.canCapture) {
+                        if (v2.distance(this.pos, thing.pos) < this.radius) {
+                            if (this.owner === thing.owner) {
+                                this.side = thing.side;
+                                this.color = thing.color;
+                                this.capping = 0;
+
+                                if (Sim.Instance.players[thing.owner]) {
+                                    if (this.linkedSpawn.race_index > Sim.Instance.players[thing.owner].usingSpawn.race_index) {
+                                        Sim.Instance.players[thing.owner].usingSpawn = this.linkedSpawn;
+                                        this.linkedSpawn.spawn = thing.side;
+                                        this.linkedSpawn.side = thing.side;
+                                        this.linkedSpawn.color = thing.color;
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                let sides_arr = CommandPoint.object_to_array(sides);
 
-                if (sides_arr.length === 1 && (this.side !== sides_arr[0])) {
-                    this.capping += 1 / this.value;
-                    if (this.capping >= this.maxCapp) {
-                        this.pos = new Float64Array([(Math.random() * 2 - 1) * 2000, (Math.random() * 2 - 1) * 2000]);
-                        for (let thing_id in Sim.Instance.things) {
-                            if ((Sim.Instance.things[thing_id].spawn || Sim.Instance.things[thing_id].commandPoint)
-                                && v2.distance(Sim.Instance.things[thing_id].pos, this.pos) < (Sim.Instance.things[thing_id].radius + this.radius + 100)) {
-                                break;
-                            }
-                        }
-                        Sim.Instance.captures += 1;
-                        this.capping = 0;
-                        for (let l = 0; l < playerOnPoint.length; l++) {
-                            playerOnPoint[l].capps += 1;
-                        }
-                        Sim.Instance.timeEnd("commandPoint");
-                        return;
-                    }
-                } else {
-                    if (this.capping > 0) {
-                        Sim.Instance.timeEnd("commandPoint");
-                        return this.capping -= 1 / this.value;
-                    }
-                }
             } else {
                 if (this.side !== null) {
                     for (let curr_player in Sim.Instance.players) {
@@ -793,34 +754,27 @@ export class SpawnPoint extends Thing {
     image: string = "";
     sliceImage: string = "img/map/spawnSlice.png";
     maxHP: number = 1000;
-    size: number[] = [1, 1];
+    hp: number;
+    size: [number, number] = [1, 1];
     static: boolean = true;
     radius: number = 400;
     spawn: string = "";
-    side: string;
-    id: number;
-    pos: Float64Array;
-    dead: boolean;
-    z: number;
-    vel: Float64Array;
-    rot: number;
-    hp: number;
-    color: [number, number, number, number];
+    side: string = "neutral";
+    pos: Float64Array = new Float64Array(2);
+    dead: boolean = false;
+    z: number = .01;
+    vel: Float64Array = new Float64Array(2);
+    rot: number = 0;
+    color: [number, number, number, number] = [255, 255, 255, 255];
     commandPoint: boolean = false;
     bullet: boolean = false;
     spawnPoint: boolean = true;
 
+    race_index: number = 0;
+
     constructor() {
         super();
-        this.id = Sim.Instance.nid();
-        this.dead = false;
-        this.z = .01;
         this.hp = this.maxHP;
-        this.pos = new Float64Array(2);
-        this.vel = new Float64Array(2);
-        this.rot = 0;
-        this.color = [255, 255, 255, 255];
-        this.side = "neutral";
     }
 
     draw() {

@@ -22,7 +22,7 @@ export class Unit extends Thing {
     preOrders: any[] | { id: number; }[];
     vel: Float64Array;
 
-    size: number[] = [1, 1];
+    size: [number, number] = [1, 1];
 
     z: number;
     cooldown: number;

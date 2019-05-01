@@ -4234,7 +4234,7 @@ export namespace Parts {
     export class Flag extends Rock {
         image: string = "parts/decals/Symbol12.png";
         color: [number, number, number, number] = [245, 171, 53, 255];
-        size = new Float64Array([5, 5]);
+        size: [number, number] = [5, 5];
         range: number = 100;
         stopFriction: number = .8;
         slow: number = .85;

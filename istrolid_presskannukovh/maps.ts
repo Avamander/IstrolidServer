@@ -350,7 +350,7 @@ export class Mapping {
     };
 
     static genClouds() {
-        let alpha, c, cloud, clouds, i, len, m, n, o, otherCloud, overlaps, ref, results, s, type;
+        let alpha, c, cloud, clouds, i, len, m, n, o, otherCloud, overlaps, ref, s, type;
         if (Mapping.mr.random() < .3) {
             c = 0;
         } else {
@@ -381,7 +381,7 @@ export class Mapping {
             cloud.color[2] = c;
             cloud.color[3] = alpha;
             s = 4 + Mapping.mr.random() * 4;
-            cloud.size = new Float64Array([s, s]);
+            cloud.size = [s, s];
             cloud.z = (Mapping.mr.random() - .5) * 200;
             cloud.rot = Mapping.mr.random() * Math.PI * 2;
             if (Mapping.mr.random() > .5) {

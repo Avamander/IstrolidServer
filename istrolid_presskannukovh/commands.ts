@@ -168,7 +168,7 @@ export class CommandsManager {
             mu.color = color;
             mu.z = 10;
             mu["static"] = false;
-            mu.size = new Float64Array([10, 10]);
+            mu.size = [10, 10];
             mu.vel = new Float64Array([-350, 0]);
             mu.pos = new Float64Array([x, y]);
             mu.tick = function () {
