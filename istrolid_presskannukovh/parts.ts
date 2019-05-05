@@ -4453,6 +4453,7 @@ export namespace Parts {
         reductionRatio = .2;
         splitRatio = .95;
         useEnergy = 50 / 16;
+        weapon = false;
         projector: boolean = true;
         disable: boolean = true;
         shotEnergy = 10;
@@ -4491,14 +4492,9 @@ export namespace Parts {
             for (i = 0, len = ref.length; i < len; i++) {
                 thing = ref[i];
                 weapons = (function () {
-                    let j, len1, ref1, results;
-                    ref1 = thing.weapons;
-                    results = [];
-                    for (j = 0, len1 = ref1.length; j < len1; j++) {
-                        w = ref1[j];
-                        if (!w.projector) {
-                            results.push(w);
-                        }
+                    let results = [];
+                    for (let j = 0; j < thing.weapons.length; j++) {
+                        results.push(thing.weapons[j]);
                     }
                     return results;
                 })();

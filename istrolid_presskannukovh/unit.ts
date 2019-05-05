@@ -11,22 +11,45 @@ import {Part, Turret} from "./part";
 import {Debree} from "./particle";
 
 export class Unit extends Thing {
-    parts: Part[];
     slice = [].slice;
-    color: [number, number, number, number];
     hasProp = {}.hasOwnProperty;
     thumb_cache = {};
 
     center: Float64Array;
     pos: Float64Array;
-    preOrders: any[] | { id: number; }[];
     vel: Float64Array;
-
+    preOrders: any[] | { id: number; }[] = [];
     size: [number, number] = [1, 1];
+    weapons: Turret[] = [];
+    color: [number, number, number, number] = [255, 0, 0, 255];
+    parts: Part[] = [];
+    closestEnemyBullets: Bullet[] = [];
+    closestFriends: Unit[] = [];
+    closestEnemies: Unit[] = [];
+    testStep: any[] = [];
+    testIntp: any[] = [];
+    boundPoints: Float64Array[] | null = null;
+    boundPointsLocal: Float64Array[] | null = null;
+    orders: {
+        type: string;
+        dest: Float64Array;
+        noStop: boolean;
+        targetId: number;
+        rally: boolean;
+        ai: boolean;
+        id: number;
+        range: number;
+        noFinish: boolean;
+        begun: boolean
+        pos: Float64Array;
+        target: Unit;
+        distance: number;
+    }[] = [];
+
 
     z: number;
-    cooldown: number;
-    rot: number;
+    cooldown: number = 0;
+    rot: number = 0;
 
     maxHP: number = 10;
     buildHP: number = 0;
@@ -40,15 +63,15 @@ export class Unit extends Thing {
     jump: number = 0;
     limitBonus: number = 0;
     maxJump: number = 500;
-    cost: number = 100;
-    stopFriction: number = 0.975;
+    cost: number = 0;
+    static stopFriction: number = 0.9;
     maxRange: number = 0;
     number: number = 0;
     minArc: number = 0;
     aiRules: any;
     storeEnergy: number = 0;
     genEnergy: number = 0;
-    baseGenEnergy: number = 2.5;
+    static baseGenEnergy: number = 2.5;
     energy: number = 0;
     mass: number = 0;
     hp: number = 5;
@@ -74,8 +97,6 @@ export class Unit extends Thing {
     wait: number = 0;
     wiggling: number = 0;
 
-    weapons: any[];
-
     ghostCopy: boolean = false;
     underPlayerControl: boolean = false;
     building: { "dead": boolean } | undefined = undefined;
@@ -84,41 +105,26 @@ export class Unit extends Thing {
     multiShoot: boolean = false;
     unit: boolean = true;
     fixed: boolean = false;
-    dead: boolean;
-    active: boolean;
+    dead: boolean = false;
+    active: boolean = true;
     slowed: boolean = false;
     warhead: boolean = false;
     energyCaster: boolean = false;
     commandPoint: boolean = false;
     needsCloak: boolean = false;
 
-    closestEnemyBullets: Bullet[];
-    closestFriends: Unit[];
-    closestEnemies: Unit[];
+    forcecloak: boolean = false; // Force cloak
+    disable_friends_check_and_follow: boolean = false;
 
-    orders: {
-        type: string;
-        dest: Float64Array;
-        noStop: boolean;
-        targetId: number;
-        rally: boolean;
-        ai: boolean;
-        id: number;
-        range: number;
-        noFinish: boolean;
-        begun: boolean
-        pos: Float64Array;
-        target: Unit;
-        distance: number;
-    }[];
-
-    testStep: any[];
-    testIntp: any[];
+    haspointdefenseweapons: boolean = false;
+    hasenergytransfer: boolean = false;
+    hasturrets: boolean = false;
+    hascloakgenerator: boolean = false;
+    hasmodprojector: boolean = false;
+    hasstasis: boolean = false;
 
     // Should be set
     data!: { name: string; aiRules: any[]; parts: any[]; };
-    boundPoints: Float64Array[] | null = null;
-    boundPointsLocal: Float64Array[] | null = null;
     target: Thing | null = null;
     softTarget: Thing | null = null;
     export: any;
@@ -128,9 +134,8 @@ export class Unit extends Thing {
 
     lastDamager: Thing | null = null;
 
-
     spec: string;
-    side: string;
+    side: string = "";
     name: string = "";
 
     // @ts-ignore
@@ -152,44 +157,20 @@ export class Unit extends Thing {
     // @ts-ignore
     mainWeapon: { range: number; bulletSpeed: number; };
 
-    forcecloak: boolean = false; // Force cloak
-    disable_friends_check_and_follow: boolean = false;
-
-    haspointdefenseweapons: boolean = false;
-    hasenergytransfer: boolean = false;
-    hasturrets: boolean = false;
-    hascloakgenerator: boolean = false;
-    hasmodprojector: boolean = false;
-    hasstasis: boolean = false;
-
     constructor(spec1: string) {
         super();
-        this.unit = true;
-        this.spec = spec1;
-        if (this.spec === null) {
+
+        if (!spec1) {
             this.spec = "{}";
+        } else {
+            this.spec = spec1;
         }
-        this.side = "0";
-        this.color = [255, 0, 0, 255];
+
         this.center = v2.create_r();
-        this.parts = [];
-        this.weapons = [];
         this.fromSpec(this.spec);
-        this.dead = false;
         this.z = Math.random();
         this.pos = v2.create_r();
         this.vel = v2.create_r();
-        this.active = true;
-        this.rot = 0;
-        this.warpIn = 0;
-        this.cooldown = 0;
-        this.testIntp = [];
-        this.testStep = [];
-        this.orders = [];
-        this.preOrders = [];
-        this.closestEnemies = [];
-        this.closestFriends = [];
-        this.closestEnemyBullets = [];
         this.closestUncloaked.bind(this);
         this.closestEnemy.bind(this);
     }
@@ -283,25 +264,7 @@ export class Unit extends Thing {
     }
 
     fromSpec(spec: string) {
-        this.cost = 0;
-        this.hp = 5;
-        this.jumpDistance = 0;
-        this.jumpCount = 0;
-        this.speed = 0;
-        this.turnSpeed = 1;
-        this.mass = 0;
-        this.energy = 0;
-        this.baseGenEnergy = 2.5;
-        this.genEnergy = this.baseGenEnergy;
-        this.storeEnergy = 0;
-        this.genShield = 0;
-        this.shield = 0;
-        this.cloak = 0;
-        this.radius = 20;
-        this.weaponArc = 0;
-        this.minArc = 0;
-        this.maxRange = 0;
-        this.thrust = 0;
+        this.genEnergy = Unit.baseGenEnergy;
         this.data = UnitUtils.fromShort(spec);
         this.name = this.data.name || "";
         this.aiRules = this.data.aiRules || [];
@@ -603,7 +566,7 @@ export class Unit extends Thing {
         this.shield -= d;
         if (this.shield < 0) {
             this.hp += this.shield;
-            return this.shield = 0;
+            this.shield = 0;
         }
     }
 
@@ -616,7 +579,7 @@ export class Unit extends Thing {
         if (this.burn < this.maxBurn) {
             this.burn += d;
             if (this.burn > this.maxBurn) {
-                return this.burn = this.maxBurn;
+                this.burn = this.maxBurn;
             }
         }
     }
@@ -816,7 +779,7 @@ export class Unit extends Thing {
             this.energy = -this.genEnergy * 2;
         } else if (this.cooldown <= 0) {
             this.energy = this.storeEnergy;
-            this.cooldown = 0 / 0;
+            this.cooldown = NaN;
         }
 
         this.slowed = false;
@@ -849,7 +812,7 @@ export class Unit extends Thing {
         if (this.energy < -this.genEnergy * 16 * 3) {
             this.energy = -this.genEnergy * 16 * 3;
         }
-        this.energy += this.baseGenEnergy;
+        this.energy += Unit.baseGenEnergy;
 
         Sim.Instance.timeEnd("untilparts");
 
@@ -930,8 +893,8 @@ export class Unit extends Thing {
     };
 
     applyNearbyBuffs() {
-        let buffs, j, l, len, len1, ref, ref1, u, w;
-        buffs = {
+        let j, l, len, len1, ref, ref1, u, w;
+        let buffs = {
             weaponRange: 1,
             weaponRangeFlat: 0,
             weaponDamage: 1,
@@ -942,9 +905,9 @@ export class Unit extends Thing {
             noOverkill: false
         };
 
-        ref = this.closestFriends;
-        for (j = 0, len = ref.length; j < len; j++) {
-            u = ref[j];
+
+        for (j = 0, len = this.closestFriends.length; j < len; j++) {
+            u = this.closestFriends[j];
             if (u.projector && v2.distance(this.pos, u.pos) < ModProjector.range) {
                 buffs.weaponRange *= UnitUtils.applyEffect(u.projector.weaponRange, u.effect);
                 buffs.weaponRangeFlat += u.projector.weaponRangeFlat * u.effect;
@@ -956,11 +919,9 @@ export class Unit extends Thing {
                 buffs.noOverkill = buffs.noOverkill || u.projector.noOverkill;
             }
         }
-        ref1 = this.weapons;
 
-        for (l = 0, len1 = ref1.length; l < len1; l++) {
-            w = ref1[l];
-            w.applyAdditionalBuffs(buffs);
+        for (l = 0, len1 = this.weapons.length; l < len1; l++) {
+            this.weapons[l].applyAdditionalBuffs(buffs);
         }
 
     }
@@ -978,7 +939,7 @@ export class Unit extends Thing {
 
     movement() {
         this.runOrders();
-        v2.scale_r(this.vel, this.stopFriction);
+        v2.scale_r(this.vel, Unit.stopFriction);
         let current_speed = v2.mag(this.vel);
         if (current_speed < .01) {
             this.vel[0] = 0;
@@ -997,7 +958,7 @@ export class Unit extends Thing {
             this.pos[1] = s;
         }
         if (this.pos[1] < -s) {
-            return this.pos[1] = -s;
+            this.pos[1] = -s;
         }
     }
 
@@ -1007,7 +968,7 @@ export class Unit extends Thing {
         v2.sub(goto, this.pos, _where);
         rot = v2.angle(_where);
         if (rot != null) {
-            return this.rot = Unit.turnAngle(this.rot, rot, this.turnSpeed);
+            this.rot = Unit.turnAngle(this.rot, rot, this.turnSpeed);
         }
     }
 
@@ -1038,7 +999,7 @@ export class Unit extends Thing {
             c = 25;
             while (stopSpeed > 1 && c > 0) {
                 this.stopDistance += stopSpeed;
-                stopSpeed = stopSpeed * this.stopFriction;
+                stopSpeed = stopSpeed * Unit.stopFriction;
                 c -= 1;
             }
         }
@@ -1206,7 +1167,7 @@ export class Unit extends Thing {
             exp._pos2 = v2.create(exp.pos);
             exp._rot = exp.rot;
             exp._rot2 = exp.rot;
-            return intp.particles[exp.id] = exp;
+            intp.particles[exp.id] = exp;
         }
     }
 
@@ -1433,11 +1394,13 @@ export class Unit extends Thing {
         target: Unit;
         distance: number;
     }) {
+
         order.ai = true;
+
         if (this.orders.length > 0 && (this.orders[0].ai || this.orders[0].rally)) {
-            return this.orders[0] = order;
+            this.orders[0] = order;
         } else {
-            return this.orders.unshift(order);
+            this.orders.unshift(order);
         }
     }
 
@@ -1594,11 +1557,11 @@ export class Unit extends Thing {
         if (Sim.Instance.serverType === "IO") {
             this.cooldown = 16 * (this.cost / 300 + 2);
         }
-        return this.hp = 0;
+        this.hp = 0;
     }
 
     toggleHoldPosition() {
-        return this.holdPosition = !this.holdPosition;
+        this.holdPosition = !this.holdPosition;
     }
 
     stopAndClearOrders() {

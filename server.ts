@@ -328,6 +328,7 @@ export class IstrolidServer {
         this.interval = setInterval(function () {
             let rightNow = Utils.now();
             let current_sim = Sim.Instance;
+
             if (rightNow - current_sim.lastSimInterval >= ((1000 / 16) + current_sim.cheatSimInterval)) {
                 current_sim.lastSimInterval = rightNow;
 
@@ -340,13 +341,16 @@ export class IstrolidServer {
                 let packet = current_sim.send();
 
                 try {
+                    Sim.Instance.timeStart("sending_updates");
                     IstrolidServer.Instance.wss.clients.forEach((client: { readyState: any; send: (arg0: DataView) => void; }) => {
                         if (client.readyState === WebSocket.OPEN) {
                             client.send(packet);
                         }
                     });
+                    Sim.Instance.timeEnd("sending_updates");
                 } catch (e) {
                     console.log("Error at sending packet!", e);
+                    Sim.Instance.timeEnd("sending_updates");
                 }
             }
         }, 5);

@@ -26,13 +26,15 @@ export class GameMode {
      */
     constructor(sim: Sim) {
         this.sim = sim;
-        this.setSimVariables();
         for (let i in sim.players) {
             let p = sim.players[i];
             if (p.side !== "spectators") {
                 p.side = "spectators";
             }
         }
+
+        Unit.stopFriction = 0.9;
+        this.setSimVariables();
     }
 
     /*
@@ -439,13 +441,7 @@ export namespace GameModes {
                     p.side = "alpha";
                 }
             }
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.ffa = this.ffa;
-            this.sim.serverType = this.serverType;
-            this.sim.numComPoints = this.numComPoints;
+            super.setSimVariables.call(this);
         }
 
         surrender(player: Player) {
@@ -673,6 +669,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
+            super.setSimVariables.call(this);
         }
 
         canStart(say_stuff: boolean) {
@@ -872,11 +869,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
+            super.setSimVariables.call(this);
         }
 
         canStart(sayStuff: boolean | null) {
@@ -904,12 +897,7 @@ export namespace GameModes {
         constructor(sim: Sim) {
             super(sim);
             this.victoryConditions.bind(this);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
-            this.sim.numComPoints = 12;
+            super.setSimVariables.call(this);
         }
 
         start() {
@@ -1055,11 +1043,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
+            super.setSimVariables.call(this);
         }
     }
 
@@ -1068,11 +1052,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
+            super.setSimVariables.call(this);
         }
     }
 
@@ -1081,11 +1061,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
+            super.setSimVariables.call(this);
         }
     }
 
@@ -1094,11 +1070,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
+            super.setSimVariables.call(this);
         }
     }
 
@@ -1107,11 +1079,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-            this.setSimVariables();
-        }
-
-        setSimVariables() {
-            this.sim.serverType = this.serverType;
+            super.setSimVariables.call(this);
         }
     }
 
@@ -1128,13 +1096,7 @@ export namespace GameModes {
 
         constructor(sim: Sim) {
             super(sim);
-        }
-
-        setSimVariables() {
-            this.sim.ffa = this.ffa;
-            this.sim.serverType = this.serverType;
-            this.sim.numComPoints = this.numComPoints;
-            this.sim.mapScale = this.mapScale;
+            super.setSimVariables.call(this);
         }
 
         start(): void {
@@ -1611,6 +1573,7 @@ export namespace GameModes {
                 }
             }
             this.setSimVariables();
+            Unit.stopFriction = 0.975;
         }
 
         setSimVariables() {
@@ -1731,9 +1694,10 @@ export namespace GameModes {
                     let mu: Rock = new Rock();
                     mu.image = "parts/decals/letter" + j + ".png";
                     mu.color = player.color;
-                    mu.z = 0;
+                    mu.color[3] = 255;
+                    mu.z = 0.01;
                     mu["static"] = false;
-                    mu.size = [2, 2];
+                    mu.size = [3, 3];
                     mu.vel = new Float64Array(2);
                     mu.pos = new Float64Array([x, y]);
                     mu.tick = function () {

@@ -23,23 +23,30 @@ export class CommandsManager {
     static _instance: CommandsManager;
 
     repick: number = 0;
-    allowedSimVariables: string[] = [
-        "overrideSpeed",
-        "NxN",
-        "numComPoints",
-        "mapScale",
-        "moneyRatio",
-        "unitLimit",
-        "fullUpdate",
-        "defaultMoney",
-        "costLimit",
-        "cheatSimInterval",
-        "enableAi",
-        "check",
-        "load_protection",
-        "connection_limit",
-        "paused"
-    ];
+    allowedVariables: { [key: string]: string[] } =
+        {
+            "Sim": [
+                "overrideSpeed",
+                "NxN",
+                "numComPoints",
+                "mapScale",
+                "moneyRatio",
+                "unitLimit",
+                "fullUpdate",
+                "defaultMoney",
+                "costLimit",
+                "cheatSimInterval",
+                "enableAi",
+                "check",
+                "load_protection",
+                "connection_limit",
+                "paused"
+            ],
+            "Unit": [
+                "stopFriction",
+                "baseGenEnergy"
+            ]
+        };
 
     public static get Instance() {
         return this._instance || (this._instance = new this());
@@ -173,7 +180,7 @@ export class CommandsManager {
             mu.pos = new Float64Array([x, y]);
             mu.tick = function () {
                 if (this.pos[0] < -10000) {
-                    return this.dead = true;
+                    this.dead = true;
                 }
             };
             mu.move = function () {
@@ -759,7 +766,7 @@ export class CommandsManager {
                     break;
                 }
 
-                if (this.allowedSimVariables.includes(cmds[1])) {
+                if (this.allowedVariables["Sim"].includes(cmds[1])) {
                     let parsed_type:
                         "string" |
                         "number" |
@@ -802,6 +809,68 @@ export class CommandsManager {
                     )) {
                         // @ts-ignore
                         Sim.Instance[cmds[1]] = parsed_value;
+                        Sim.say("Changed!");
+                    } else {
+                        Sim.say("Did not set anything!");
+                    }
+                } else {
+                    Sim.say("Changing this variable is not allowed!");
+                }
+                break;
+            case "unit":
+                if (!CommandsManager.checkHost(player)) {
+                    break;
+                }
+
+                if (cmds.length < 3) {
+                    // Sim.say(this.helpMessage(cmds[0])); // TODO:
+                    Sim.say("More parameters are needed");
+                    break;
+                }
+
+                if (this.allowedVariables["Unit"].includes(cmds[1])) {
+                    let parsed_type:
+                        "string" |
+                        "number" |
+                        "bigint" |
+                        "boolean" |
+                        "symbol" |
+                        "undefined" |
+                        "object" |
+                        "function" |
+                        "null";
+                    let parsed_value: number | boolean | null;
+
+                    // Set default and do not set default
+                    parsed_type = "null";
+                    parsed_value = null;
+                    if (!isNaN(parseFloat(cmds[2]))) {
+                        parsed_type = "number";
+                        parsed_value = parseFloat(cmds[2]);
+                    }
+
+                    if (cmds[2] === "true") {
+                        parsed_type = "boolean";
+                        parsed_value = true;
+                    } else if (cmds[2] === "false") {
+                        parsed_type = "boolean";
+                        parsed_value = false;
+                    }
+
+                    if (parsed_type === "null" || parsed_value === null) {
+                        Sim.say("Invalid type or value!");
+                        return;
+                    }
+
+                    if (this.trackVariableChanges(
+                        "unit",
+                        cmds[1],
+                        // @ts-ignore
+                        Unit[cmds[1]],
+                        parsed_value
+                    )) {
+                        // @ts-ignore
+                        Unit[cmds[1]] = parsed_value;
                         Sim.say("Changed!");
                     } else {
                         Sim.say("Did not set anything!");
@@ -920,7 +989,8 @@ export class CommandsManager {
                 Sim.Instance.DEBUG = debug;
                 return Sim.say("Debug is now " + (debug ? "on" : "off"));
             case "end":
-                if (player.name !== "Avamander") {
+                if (player.name !== "Avamander" &&
+                    player.name !== "Uthelz") {
                     Sim.say("only Avamander can do that");
                     break;
                 }

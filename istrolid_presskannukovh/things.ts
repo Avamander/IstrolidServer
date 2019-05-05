@@ -36,13 +36,10 @@ export class ThingUtil {
         if (!unit) {
             return;
         }
-        ref = unit.weapons;
+
         results = [];
-        for (j = 0, len = ref.length; j < len; j++) {
-            w = ref[j];
-            if (w.projector) {
-                continue;
-            }
+        for (j = 0, len = unit.weapons.length; j < len; j++) {
+            w = unit.weapons[j];
             range = w.range;
             arc = w.arc;
             cur = Math.PI * range * 2;

@@ -1201,7 +1201,8 @@ export class Sim {
         }
 
         for (let m in this.players) {
-            if (this.state === "waiting" && this.players[m].afk === true) {
+            if (this.state === "waiting" &&
+                this.players[m].afk === true) {
                 this.players[m].side = "spectators";
             }
             if (this.players[m].side === null) {
