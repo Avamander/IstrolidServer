@@ -133,6 +133,9 @@ export class Sim {
 
     connection_count: number = 0;
 
+    strong_collision: boolean = false;
+    collision_enabled: boolean = true;
+
     constructor(battleType: string) {
         this.battleType = battleType;
         this.victoryConditions.bind(this);
@@ -243,7 +246,7 @@ export class Sim {
     };
 
     simpleEquals(a: any, b: any) {
-        let e, i, k, l, len1, v;
+        let e, i, k, len1, v;
 
         if (a === b) {
             return true;
@@ -265,7 +268,7 @@ export class Sim {
             if (a.length !== b.length) {
                 return false;
             }
-            for (i = l = 0, len1 = a.length; l < len1; i = ++l) {
+            for (i = 0, len1 = a.length; i < len1; i++) {
                 e = a[i];
                 if (!this.simpleEquals(e, b[i])) {
                     return false;
@@ -570,7 +573,7 @@ export class Sim {
 
         player.connected = true;
         if (this.serverType === "1v1t" && this.state !== "waiting" && player.side !== "spectators") {
-            for (i = m = 0; m < 10; i = ++m) {
+            for (i = 0; i < 10; i++) {
                 if (JSON.stringify(player.buildBar[i]) !== JSON.stringify(buildBar[i]) && player.side !== "spectators") {
                     console.log("---");
                     console.log(JSON.stringify(player.buildBar[i]));
@@ -582,7 +585,7 @@ export class Sim {
             canEditShips = true;
         }
         if (canEditShips) {
-            for (i = o = 0; o < 10; i = ++o) {
+            for (i = 0; i < 10; i++) {
                 player.buildBar[i] = buildBar[i] || null;
             }
             this.validateBuildBar(player);
@@ -1282,25 +1285,75 @@ export class Sim {
         );
         this.axisSortedMissles = missles;
 
-        for (let i = 0; i < units.length; i++) {
-            u = units[i];
-            for (j = -4; j <= 4; j++) {
-                u2 = units[i + j];
-                if (j !== 0 && u2) {
-                    let _offset: Float64Array = new Float64Array([u.pos[0] - u2.pos[0], u.pos[1] - u2.pos[1]]);
-                    distance = v2.mag(_offset);
-                    if (distance < .001) {
-                        _offset = new Float64Array([0, -1]);
-                        distance = 1;
-                    }
-                    if (distance < u.radius + u2.radius) {
-                        force = (u.radius + u2.radius) - distance;
-                        ratio = u2.mass / (u.mass + u2.mass);
-                        let _push = v2.create_r();
-                        v2.scale(_offset, ratio * force / distance * .02, _push);
-                        v2.add_r(u.pos, _push);
-                        v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
-                        v2.add_r(u2.pos, _push);
+        if (this.collision_enabled) {
+            for (let i = 0; i < units.length; i++) {
+                u = units[i];
+                for (j = -4; j <= 4; j++) {
+                    u2 = units[i + j];
+                    if (j !== 0 && u2) {
+                        let _offset: Float64Array = new Float64Array([u.pos[0] - u2.pos[0], u.pos[1] - u2.pos[1]]);
+                        distance = v2.mag(_offset);
+                        if (distance < .001) {
+                            _offset = new Float64Array([0, -1]);
+                            distance = 1;
+                        }
+
+                        if (distance < u.radius + u2.radius) {
+                            if (!this.strong_collision) {
+                                force = (u.radius + u2.radius) - distance;
+
+                                let _push = v2.create_r();
+                                let ratio = u2.mass / (u.mass + u2.mass);
+                                v2.scale(_offset, ratio * force / distance * .02, _push);
+                                v2.add_r(u.pos, _push);
+                                v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
+                                v2.add_r(u2.pos, _push);
+                            } else {
+                                // This implements perfectly elastic 2d collision with masses
+                                // First calculate the collision axis and the velocities on that
+                                let collision_angle = Math.atan2(u2.pos[1] - u.pos[1], u2.pos[0] - u.pos[0]);
+                                let direction_1 = Math.atan2(u.vel[1], u.vel[0]);
+                                let vel_1_new_x_axis = u.vel[0] * Math.cos(direction_1 - collision_angle);
+                                let vel_1_new_y_axis = u.vel[0] * Math.sin(direction_1 - collision_angle);
+
+                                let direction_2 = Math.atan2(u2.vel[1], u2.vel[1]);
+                                let vel_2_new_x_axis = u2.vel[0] * Math.cos(direction_2 - collision_angle);
+                                let vel_2_new_y_axis = u2.vel[0] * Math.sin(direction_2 - collision_angle);
+
+                                let vel_1_new_x = ((u.mass - u2.mass) * vel_1_new_x_axis + (u2.mass + u2.mass) * vel_2_new_x_axis) / (u.mass + u2.mass);
+                                let vel_2_new_x = ((u.mass + u.mass) * vel_1_new_x_axis + (u2.mass - u.mass) * vel_2_new_x_axis) / (u.mass + u2.mass);
+
+                                let vel_1_new_y = vel_1_new_y_axis;
+                                let vel_2_new_y = vel_2_new_y_axis;
+
+                                let cos_a = Math.cos(collision_angle);
+                                let sin_a = Math.sin(collision_angle);
+
+                                // Convert from collision axis back to regular axis
+                                u.vel[0] = cos_a * vel_1_new_x - sin_a * vel_1_new_y;
+                                u.vel[1] = sin_a * vel_1_new_x - cos_a * vel_1_new_y;
+                                v2.scale_r(u.vel, 0.9);
+
+                                u2.vel[0] = cos_a * vel_2_new_x - sin_a * vel_2_new_y;
+                                u2.vel[1] = sin_a * vel_2_new_x - cos_a * vel_2_new_y;
+                                v2.scale_r(u2.vel, 0.9);
+
+                                let delta_pos = v2.sub(u.pos, u2.pos, new Float64Array(2));
+                                let distance = v2.distance(u.pos, u2.pos);
+                                let inverse_mass_1 = 1 / u.mass;
+                                let inverse_mass_2 = 1 / u2.mass;
+
+                                let minimum_anti_intersect = v2.scale_r(delta_pos, (((u.radius + u2.radius) - distance) / distance));
+
+                                let ratio_1 = inverse_mass_1 / (inverse_mass_1 + inverse_mass_2); // TODO: I think this can be sped up
+                                u.pos[0] = u.pos[0] + (minimum_anti_intersect[0] * ratio_1);
+                                u.pos[1] = u.pos[1] + (minimum_anti_intersect[1] * ratio_1);
+
+                                let ratio_2 = inverse_mass_2 / (inverse_mass_1 + inverse_mass_2);
+                                u2.pos[0] = u2.pos[0] - (minimum_anti_intersect[0] * ratio_2);
+                                u2.pos[1] = u2.pos[1] - (minimum_anti_intersect[1] * ratio_2);
+                            }
+                        }
                     }
                 }
             }
@@ -1308,7 +1361,7 @@ export class Sim {
     }
 
     send() {
-        let _, changes, e, f, i, id, l, len1, len5, len6, o, packet, part,
+        let _, changes, e, f, i, id, l, len1, len5, len6, packet, part,
             partId, player, predictable, r, ref2, ref3, ref4, ref5, ref6,
             ref7, ref9, send, splayers, sthings, t, targetId, thing, v, x, y;
 
@@ -1402,7 +1455,7 @@ export class Sim {
                 }
             }
             if (thing.parts) {
-                for (partId = o = 0; o < thing.parts.length; partId = ++o) {
+                for (partId = 0; partId < thing.parts.length; partId++) {
                     part = thing.parts[partId];
                     changes.push(["partId", partId]);
                     let s: { targetId: number, working: boolean, range: number } = part.net;
@@ -1462,7 +1515,7 @@ export class Sim {
                         if (s.length !== v.length) {
                             s[f] = new Array(v.length);
                         }
-                        for (i = x = 0, len6 = v.length; x < len6; i = ++x) {
+                        for (i = 0, len6 = v.length; i < len6; i++) {
                             e = v[i];
                             s[f][i] = e;
                         }

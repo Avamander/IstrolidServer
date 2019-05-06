@@ -309,14 +309,14 @@ export class Unit extends Thing {
                 this.minArc = part.arc;
             }
 
-            if (p.type === EnergyTransfer) {
+            if (p.type === "EnergyTransfer") {
                 this.hasenergytransfer = true;
                 if (part.range > this.maxRange) {
                     this.maxRange = part.range;
                 }
             }
 
-            if (p.type === StasisField) {
+            if (p.type === "StasisField") {
                 this.hasstasis = true;
                 this.stasisRange = part.range + Math.sqrt(part.pos * part.pos + this.center[0] * this.center[1]) + 100;
                 if (this.stasisRange > this.maxRange) {
@@ -331,11 +331,11 @@ export class Unit extends Thing {
                 }
             }
 
-            if (p.type === ModProjector) {
+            if (p.type === "ModProjector") {
                 this.hasmodprojector = true;
             }
 
-            if (p.type === CloakGenerator) {
+            if (p.type === "CloakGenerator") {
                 this.hascloakgenerator = true;
             }
         }
@@ -462,20 +462,15 @@ export class Unit extends Thing {
     }
 
     computeRadius() {
-        let j, len, part, radius, ref, v;
-        v = v2.create_r();
-        ref = this.parts;
-
-        for (j = 0, len = ref.length; j < len; j++) {
-            part = ref[j];
-            if (!(!part.decal)) {
+        let part, radius;
+        for (let j = 0; j < this.parts.length; j++) {
+            part = this.parts[j];
+            if (part.decal) {
                 continue;
             }
-            v2.set(part.pos, v);
-            v2.sub_r(v, this.center);
-            radius = v2.mag(v);
+            radius = v2.distance(part.pos, this.center);
             if (radius > this.radius) {
-                this.radius = radius;
+                this.radius = radius; // + 40 if shield
             }
         }
     }
@@ -592,7 +587,7 @@ export class Unit extends Thing {
     }
 
     createDebree() {
-        let exp, j, len, part, ref;
+        let exp, j, len, part;
 
         for (j = 0, len = this.parts.length; j < len; j++) {
             part = this.parts[j];
@@ -893,7 +888,7 @@ export class Unit extends Thing {
     };
 
     applyNearbyBuffs() {
-        let j, l, len, len1, ref, ref1, u, w;
+        let j, l, len, len1, u;
         let buffs = {
             weaponRange: 1,
             weaponRangeFlat: 0,
@@ -1027,9 +1022,8 @@ export class Unit extends Thing {
     closestEnemy() {
         let enemy, j, len, ref, u;
         enemy = null;
-        ref = this.closestEnemies;
-        for (j = 0, len = ref.length; j < len; j++) {
-            u = ref[j];
+        for (j = 0, len = this.closestEnemies.length; j < len; j++) {
+            u = this.closestEnemies[j];
             if (u.side !== this.side) {
                 enemy = u;
                 break;
@@ -1115,7 +1109,7 @@ export class Unit extends Thing {
             this.warpIn += 1 / 60;
         }
         ref1 = this.parts;
-        for (partNum = l = 0, len1 = ref1.length; l < len1; partNum = ++l) {
+        for (partNum = 0, len1 = ref1.length; partNum < len1; partNum++) {
             part = ref1[partNum];
             value = part.pos[1] / 700 - .5 + this.warpIn;
             if (value > 0) {

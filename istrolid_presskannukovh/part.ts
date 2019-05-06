@@ -8,7 +8,6 @@ import {CollisionUtils} from "./collision";
 
 export class Part {
     turret!: this;
-
     net!: {
         targetId: number;
         working: boolean;
@@ -222,7 +221,7 @@ export class Turret extends Part {
         bulletSpeed?: any;
         reloadTime?: any;
         shotEnergy?: any;
-    };
+    } = {};
 
     dps: number = 0;
     fireEnergy: number = 0;
@@ -231,10 +230,10 @@ export class Turret extends Part {
     targetId: number = 0;
     aoe: number = 0;
     burnAmount: number = 0;
-    reload: number;
-    fireTimer: number;
-    _rot: number;
-    _rot2: number;
+    reload: number = 0;
+    fireTimer: number = 0;
+    _rot: number = 0;
+    _rot2: number = 0;
     range: number = 500;
     damage: number = 0;
     energyDamage: number = 0;
@@ -254,18 +253,14 @@ export class Turret extends Part {
 
     maxLife: number | undefined = undefined;
 
+    rot = 0;
+
     constructor() {
         super();
         this.canShoot.bind(this);
-        this.reload = 0;
-        this.rot = 0;
-        this.fireTimer = 0;
         this.pos = v2.create_r();
         this.worldPos = v2.create_r();
         this.orignalImage = this.image;
-        this.baseStats = {};
-        this._rot = 0;
-        this._rot2 = 0;
     }
 
     init() {

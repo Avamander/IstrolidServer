@@ -19,7 +19,6 @@ export class CommandsManager {
 
     current_teams: string[] = ["alpha", "beta"];
 
-
     static _instance: CommandsManager;
 
     repick: number = 0;
@@ -40,13 +39,28 @@ export class CommandsManager {
                 "check",
                 "load_protection",
                 "connection_limit",
-                "paused"
+                "paused",
+                "strong_collision",
+                "collision_enabled"
             ],
             "Unit": [
                 "stopFriction",
                 "baseGenEnergy"
             ]
         };
+
+
+    private tracked_changes:
+        {
+            [object_name: string]:
+                {
+                    [object_property_name: string]:
+                        {
+                            "original": any,
+                            "new": any
+                        };
+                }
+        } = {};
 
     public static get Instance() {
         return this._instance || (this._instance = new this());
@@ -490,6 +504,14 @@ export class CommandsManager {
                 }
                 player.host = true;
                 Sim.say("Host given");
+                break;
+            case "getchanges":
+            case "variablechanges":
+                for (let class_name in this.tracked_changes) {
+                    for (let variable_name in this.tracked_changes[class_name]) {
+                        Sim.say(class_name + "." + variable_name + " === " + this.tracked_changes[class_name][variable_name]["new"] + " , originally " + this.tracked_changes[class_name][variable_name]["original"])
+                    }
+                }
                 break;
             case "givehost":
             case "sethost":
@@ -1184,11 +1206,11 @@ export class CommandsManager {
 
     // @ts-ignore
     changeStat(type, field, stat, quiet) {
-        return Sim.say("Not implemented");
+        return Sim.say("Use other commands instead!");
     };
 
     resetStats() {
-        return Sim.say("Not implemented");
+
         /*
             let k, ref, ref1, ref2, stat, type, v;
             ref = this.defStats.parts;
@@ -1244,18 +1266,6 @@ export class CommandsManager {
             }
         }
     };
-
-    private tracked_changes:
-        {
-            [object_name: string]:
-                {
-                    [object_property_name: string]:
-                        {
-                            "original": any,
-                            "new": any
-                        };
-                }
-        } = {};
 
     private trackVariableChanges(object_name: string, object_property_name: string, object_value: any, new_value: any): boolean {
         let changes = this.tracked_changes[object_name];

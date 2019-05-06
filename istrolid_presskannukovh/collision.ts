@@ -36,9 +36,15 @@ export class CollisionUtils {
     };
 
     static support(points1: Float64Array[], points2: Float64Array[], d: Float64Array): Float64Array {
+        let closest_1 = CollisionUtils.furthestPoint(points1, d);
+        let closest_2 = CollisionUtils.furthestPoint(points2, v2.neg(d, new Float64Array(2)));
+        if (!closest_1 || !closest_2) {
+            console.log("Error finding closest!:", points1, points2, d);
+            return new Float64Array(2);
+        }
         return new Float64Array([
-                CollisionUtils.furthestPoint(points1, d)[0] - CollisionUtils.furthestPoint(points2, v2.neg(d, new Float64Array([0, 0])))[0],
-                CollisionUtils.furthestPoint(points1, d)[1] - CollisionUtils.furthestPoint(points2, v2.neg(d, new Float64Array([0, 0])))[1]
+            closest_1[0] - closest_2[0],
+            closest_1[1] - closest_2[1]
             ]
         );
     };
