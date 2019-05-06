@@ -1309,7 +1309,7 @@ export class Sim {
                                 v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
                                 v2.add_r(u2.pos, _push);
                             } else {
-                                // This implements perfectly elastic 2d collision with masses
+                                // This implements elastic 2d collision with masses
                                 // First calculate the collision axis and the velocities on that
                                 let collision_angle = Math.atan2(u2.pos[1] - u.pos[1], u2.pos[0] - u.pos[0]);
                                 let direction_1 = Math.atan2(u.vel[1], u.vel[0]);
@@ -1332,17 +1332,18 @@ export class Sim {
                                 // Convert from collision axis back to regular axis
                                 u.vel[0] = cos_a * vel_1_new_x - sin_a * vel_1_new_y;
                                 u.vel[1] = sin_a * vel_1_new_x - cos_a * vel_1_new_y;
-                                v2.scale_r(u.vel, 0.9);
+                                v2.scale_r(u.vel, 0.9); // Lose energy to "heat"
 
                                 u2.vel[0] = cos_a * vel_2_new_x - sin_a * vel_2_new_y;
                                 u2.vel[1] = sin_a * vel_2_new_x - cos_a * vel_2_new_y;
-                                v2.scale_r(u2.vel, 0.9);
+                                v2.scale_r(u2.vel, 0.9); // Lose energy to "heat"
 
                                 let delta_pos = v2.sub(u.pos, u2.pos, new Float64Array(2));
                                 let distance = v2.distance(u.pos, u2.pos);
                                 let inverse_mass_1 = 1 / u.mass;
                                 let inverse_mass_2 = 1 / u2.mass;
 
+                                // TODO: This is jittery but I don't know better
                                 let minimum_anti_intersect = v2.scale_r(delta_pos, (((u.radius + u2.radius) - distance) / distance));
 
                                 let ratio_1 = inverse_mass_1 / (inverse_mass_1 + inverse_mass_2); // TODO: I think this can be sped up
