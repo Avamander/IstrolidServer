@@ -4,8 +4,8 @@ export class Sim {
     static defaultBattleType = "3v3";
     private static _instance: Sim;
     DEBUG = false;
-    VERSION = 49;
-    MINOR_VERSION = 2;
+    VERSION = 50;
+    MINOR_VERSION = 6;
 
     local: boolean = false;
     awaitRestart: boolean = false;
@@ -133,7 +133,7 @@ export class Sim {
 
     connection_count: number = 0;
 
-    strong_collision: boolean = false;
+    collision_type: string = "R26";
     collision_enabled: boolean = true;
 
     constructor(battleType: string) {
@@ -1299,7 +1299,7 @@ export class Sim {
                         }
 
                         if (distance < u.radius + u2.radius) {
-                            if (!this.strong_collision) {
+                            if (this.collision_type === "default") {
                                 force = (u.radius + u2.radius) - distance;
 
                                 let _push = v2.create_r();
@@ -1308,7 +1308,7 @@ export class Sim {
                                 v2.add_r(u.pos, _push);
                                 v2.scale(_offset, -(1 - ratio) * force / distance * .02, _push);
                                 v2.add_r(u2.pos, _push);
-                            } else {
+                            } else if (this.collision_type === "Avamander") {
                                 // This implements elastic 2d collision with masses
                                 // First calculate the collision axis and the velocities on that
                                 let collision_angle = Math.atan2(u2.pos[1] - u.pos[1], u2.pos[0] - u.pos[0]);
@@ -1332,11 +1332,11 @@ export class Sim {
                                 // Convert from collision axis back to regular axis
                                 u.vel[0] = cos_a * vel_1_new_x - sin_a * vel_1_new_y;
                                 u.vel[1] = sin_a * vel_1_new_x - cos_a * vel_1_new_y;
-                                v2.scale_r(u.vel, 0.9); // Lose energy to "heat"
+                                v2.scale_r(u.vel, 1.1); // Counter the v lost to friction
 
                                 u2.vel[0] = cos_a * vel_2_new_x - sin_a * vel_2_new_y;
                                 u2.vel[1] = sin_a * vel_2_new_x - cos_a * vel_2_new_y;
-                                v2.scale_r(u2.vel, 0.9); // Lose energy to "heat"
+                                v2.scale_r(u2.vel, 1.1); // Counter the v lost to friction
 
                                 let delta_pos = v2.sub(u.pos, u2.pos, new Float64Array(2));
                                 let distance = v2.distance(u.pos, u2.pos);
@@ -1353,6 +1353,25 @@ export class Sim {
                                 let ratio_2 = inverse_mass_2 / (inverse_mass_1 + inverse_mass_2);
                                 u2.pos[0] = u2.pos[0] - (minimum_anti_intersect[0] * ratio_2);
                                 u2.pos[1] = u2.pos[1] - (minimum_anti_intersect[1] * ratio_2);
+                            } else if (this.collision_type === "R26") {
+                                let dist = v2.distance(u.pos, u2.pos);
+                                let minDist = dist - u.radius - u2.radius;
+                                let xn = (u2.pos[0] - u.pos[0]) / dist;
+                                let yn = (u2.pos[1] - u.pos[1]) / dist;
+                                let c = minDist / (u.mass + u2.mass);
+                                let p = 2 * (u.vel[0] * xn + u.vel[1] * yn - u2.vel[0] * xn - u2.vel[1] * yn) / (u.mass + u2.mass);
+
+                                u.pos[0] += c * u2.mass * xn;
+                                u.pos[1] += c * u2.mass * yn;
+
+                                u2.pos[0] -= c * u.mass * xn;
+                                u2.pos[1] -= c * u.mass * yn;
+
+                                u.vel[0] -= p * u2.mass * xn;
+                                u.vel[1] -= p * u2.mass * yn;
+
+                                u2.vel[0] += p * u.mass * xn;
+                                u2.vel[1] += p * u.mass * yn;
                             }
                         }
                     }

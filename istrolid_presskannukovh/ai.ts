@@ -226,7 +226,7 @@ export class AI {
         if (!thing) {
             return false;
         }
-        AI.goInRange(thing.radius * .75, thing.radius, unit, thing);
+        AI.goInRange(thing.radius * .5, thing.radius, unit, thing);
         return true;
     }
 
@@ -262,10 +262,10 @@ export class AI {
         if (!thing) {
             return false;
         }
-        if (unit.topOrderIs("Move") && v2.distance(unit.orders[0].dest, thing.pos) < spread) {
+        if (v2.distance(unit.pos, thing.pos) < range) {
             return true;
         }
-        if (v2.distance(unit.pos, thing.pos) < range) {
+        if (unit.topOrderIs("Move") && v2.distance(unit.orders[0].dest, thing.pos) < spread) {
             return true;
         }
         let r = new Float64Array(2);
@@ -439,8 +439,13 @@ export class AI {
     }
 
     static attack(enemy: Unit, unit: Unit) {
-        if (enemy && AI.goInRange(0, unit.weaponRange, unit, (enemy as Thing))) {
-            unit.softTarget = (enemy as Thing);
+        if (enemy) {
+            // @ts-ignore
+            unit.aiOrder({
+                type: "Follow",
+                targetId: enemy.id
+            });
+            unit.softTarget = enemy;
             return true;
         }
     }
@@ -780,10 +785,7 @@ export class AI {
         let enemy: Unit;
         let friendly: Unit;
         let recharger: Unit;
-        if (unit.energy / unit.storeEnergy < parseInt(rule[1]) / 100 || unit.needsFullCharge) {
-            if (unit.needsFullCharge) {
-                unit.message += "[needs full charge]";
-            }
+        if (!unit.needsFullCharge && unit.energy / unit.storeEnergy < parseInt(rule[1]) / 100) {
             switch (rule[2].toLowerCase()) {
                 case "find recharger":
                     recharger = AI.closest(unit.pos, AI.filter, 3000);
@@ -791,11 +793,14 @@ export class AI {
                         AI.goInRange(500, 600, unit, (recharger as Thing));
                         if (v2.distance(unit.pos, recharger.pos) < 600) {
                             unit.needsFullCharge = (unit.energy <= (unit.storeEnergy * .98));
+                        } else {
+                            AI.goInRange(500, 600, unit, recharger);
+                            return true;
                         }
-                        return true;
                     }
                     return false;
                 case "rest":
+                    unit.needsFullCharge = true;
                     return true;
                 case "flee enemies":
                     enemy = AI.closest(unit.pos, (function (t: Thing) {
@@ -806,7 +811,12 @@ export class AI {
                     }
                     break;
                 case "return to spawn":
-                    return this.gotoLocation(unit, ["-", "friendly spawn", "", "", ""]);
+                    if (this.gotoLocation(unit, ["-", "friendly spawn", "", "", ""])) {
+                        return true;
+                    } else {
+                        unit.needsFullCharge = true;
+                    }
+                    break;
                 case "find friendlies":
                 case "find friendies":
                     friendly = AI.closest(unit.pos, (function (t: Thing) {
@@ -818,7 +828,19 @@ export class AI {
                     }
                     break;
                 default:
-                    return console.log("invalid chargeAI option", rule);
+                    console.log("invalid chargeAI option", rule);
+            }
+        }
+        if (unit.needsFullCharge) {
+            if (unit.energy > unit.storeEnergy * .98) {
+                unit.needsFullCharge = false;
+                return false;
+            } else {
+                // @ts-ignore
+                unit.aiOrder({
+                    type: "Stop"
+                });
+                return true;
             }
         }
     }
@@ -1315,7 +1337,6 @@ export class AI {
             return;
         }
         if (rules.length) {
-            unit.stopAi();
             for (l = 0, len1 = rules.length; l < len1; l++) {
                 rule = rules[l];
                 used = false;
@@ -1400,7 +1421,13 @@ export class AI {
             case "when below #% cloak, rest":
                 if (unit.unit && (unit.cloak / unit.mass < parseInt(rule[1]) / 100 || (unit as Unit).needsCloak)) {
                     (unit as Unit).needsCloak = unit.cloak < unit.mass;
+                    // @ts-ignore
+                    unit.aiOrder({
+                        type: "Stop"
+                    });
                     return true;
+                } else {
+                    return (unit as Unit).needsCloak = false;
                 }
                 break;
             case "when shields down to #%, flee":
@@ -1513,6 +1540,10 @@ export class AI {
         }
         // @ts-ignore
         if (doWhat === "Stop") {
+            // @ts-ignore
+            unit.aiOrder({
+                type: "Stop"
+            });
             return true;
         }
     }

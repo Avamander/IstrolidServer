@@ -338,6 +338,14 @@ export class Unit extends Thing {
             if (p.type === "CloakGenerator") {
                 this.hascloakgenerator = true;
             }
+
+            if (p.type === "PDTurret") {
+                this.haspointdefenseweapons = true;
+            }
+
+            if (p.type === "HeavyPDTurret") {
+                this.haspointdefenseweapons = true;
+            }
         }
 
         this.maxHP = this.hp;

@@ -155,15 +155,15 @@ export class v2 {
         return from;
     };
 
-    static distance(from: Float64Array, to: Float64Array): number {
-        let x: number = to[0] - from[0];
-        let y: number = to[1] - from[1];
+    static distance(point_a: Float64Array, point_b: Float64Array): number {
+        let x: number = point_b[0] - point_a[0];
+        let y: number = point_b[1] - point_a[1];
         return Math.sqrt(x * x + y * y);
     };
 
-    static distanceSq(from: Float64Array, to: Float64Array): number {
-        let x: number = to[0] - from[0];
-        let y: number = to[1] - from[1];
+    static distanceSq(point_a: Float64Array, point_b: Float64Array): number {
+        let x: number = point_b[0] - point_a[0];
+        let y: number = point_b[1] - point_a[1];
         return x * x + y * y;
     };
 

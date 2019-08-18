@@ -40,7 +40,7 @@ export class CommandsManager {
                 "load_protection",
                 "connection_limit",
                 "paused",
-                "strong_collision",
+                "collision_type",
                 "collision_enabled"
             ],
             "Unit": [
@@ -799,11 +799,11 @@ export class CommandsManager {
                         "object" |
                         "function" |
                         "null";
-                    let parsed_value: number | boolean | null;
+                    let parsed_value: string | number | boolean | null;
 
                     // Set default and do not set default
-                    parsed_type = "null";
-                    parsed_value = null;
+                    parsed_type = "string";
+                    parsed_value = cmds[2];
                     if (!isNaN(parseFloat(cmds[2]))) {
                         parsed_type = "number";
                         parsed_value = parseFloat(cmds[2]);
@@ -817,10 +817,10 @@ export class CommandsManager {
                         parsed_value = false;
                     }
 
-                    if (parsed_type === "null" || parsed_value === null) {
+                    /*if (parsed_type === "null" || parsed_value === null) {
                         Sim.say("Invalid type or value!");
                         return;
-                    }
+                    }*/
 
                     if (this.trackVariableChanges(
                         "sim",
@@ -913,9 +913,10 @@ export class CommandsManager {
                 Sim.say(" * Explosive Warhead requires manual detonation!");
                 Sim.say(" * Heavy beams are rainbow-colored");
                 Sim.say(" * Sidewinder is more backstabby");
-                Sim.say(" * Most of the math is now done with 64bit floats");
-                Sim.say(" * There's a tournament gamemode, do !mode Tournament");
+                Sim.say(" * Collision is now fixed");
+                Sim.say(" * There's a tournament and race gamemode");
                 Sim.say(" * Server runs on newer and faster Node.js 11");
+                Sim.say(" * You can use !variablechanges");
                 /*
                 results = [];
                 for (n in this.diffStats) {
@@ -990,8 +991,10 @@ export class CommandsManager {
                 Sim.say("Poof!");
                 return;
             case "debug":
-                if (player.name !== "Avamander") {
-                    Sim.say("Only Avamander can do that.");
+                if (player.name !== "Avamander" &&
+                    player.name !== "Uthelz" &&
+                    player.name !== "R26") {
+                    Sim.say("Only Avamander, Uthelz and R26 can do that.");
                     break;
                 }
                 if (cmds.length > 1) {
@@ -1013,13 +1016,13 @@ export class CommandsManager {
             case "end":
                 if (player.name !== "Avamander" &&
                     player.name !== "Uthelz") {
-                    Sim.say("only Avamander can do that");
+                    Sim.say("Only Avamander and Uthelz can do that");
                     break;
                 }
                 return Sim.Instance.endOfGame();
             case "restart":
                 if (player.name !== "Avamander") {
-                    Sim.say("only Avamander can do that");
+                    Sim.say("Only Avamander can do that");
                     break;
                 }
                 Sim.say("Restarting server");

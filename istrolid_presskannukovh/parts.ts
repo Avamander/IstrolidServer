@@ -1175,8 +1175,8 @@ export namespace Parts {
         hp = 30;
         cost = 50;
         mass = 50;
-        genEnergy = 25;
-        storeEnergy = 10000;
+        genEnergy = 15.5;
+        storeEnergy = 20000;
         image = "Reactor1x2.png";
         size = [1, 2];
 
@@ -1190,8 +1190,8 @@ export namespace Parts {
         hp = 30;
         cost = 50;
         mass = 50;
-        genEnergy = 25;
-        storeEnergy = 10000;
+        genEnergy = 15.5;
+        storeEnergy = 20000;
         image = "Reactor2x1.png";
         size = [2, 1];
 
@@ -1268,7 +1268,7 @@ export namespace Parts {
         working: boolean = true;
         name = "Energy Transfer";
         desc = "Gives energy to units in 800m range. Gives 960e per ship.";
-        hp = 0;
+        hp = 10;
         cost = 30;
         mass = 40;
         image = "EnergyTransfer.png";
@@ -1471,7 +1471,7 @@ export namespace Parts {
         mass = 2;
         genShield = .2;
         useEnergy = 18;
-        energyLine = .75;
+        energyLine = .4;
         shield = 15;
         image = "Shield2x1.png";
         size = [2, 1];
@@ -1601,7 +1601,7 @@ export namespace Parts {
     export class Engine05 extends Engine {
         name = "Battleship Thruster";
         desc = "An ultra-heavy thruster to provide a minimum speed for the heaviest ships.";
-        trailTime = 100;
+        trailTime = 6;
         trailSize = .4;
         hp = 0;
         cost = 80;
@@ -1625,7 +1625,7 @@ export namespace Parts {
     export class Engine09 extends Engine {
         name = "Large Bulk Thruster";
         desc = "Low energy thruster for high mass. Rated for 0-150 m/s ";
-        trailTime = 100;
+        trailTime = 6;
         trailSize = .2;
         hp = 0;
         cost = 47;
@@ -1648,7 +1648,7 @@ export namespace Parts {
     export class Engine02 extends Engine {
         name = "Bulk Thruster";
         desc = "Low energy thruster for high mass. Rated for 0-125 m/s ";
-        trailTime = 100;
+        trailTime = 6;
         trailSize = .2;
         hp = 0;
         cost = 35;
@@ -1671,7 +1671,7 @@ export namespace Parts {
     export class Engine01 extends Engine {
         name = "Cruiser Thruster";
         desc = "Efficient thruster for medium ships. Rated for 100-350 m/s";
-        trailTime = 100;
+        trailTime = 6;
         trailSize = .26;
         hp = 0;
         cost = 65;
@@ -1694,7 +1694,7 @@ export namespace Parts {
     export class Engine08 extends Engine {
         name = "Compact Cruiser Thruster";
         desc = "Efficient thruster for medium ships. Rated for 100-350 m/s";
-        trailTime = 100;
+        trailTime = 6;
         trailSize = .26;
         hp = 0;
         cost = 44;
@@ -1717,7 +1717,7 @@ export namespace Parts {
     export class Engine04 extends Engine {
         name = "Scout Thruster";
         desc = "The smallest thruster available. Rated for 100-400 m/s";
-        trailTime = 1000;
+        trailTime = 64;
         trailSize = .1;
         hp = 0;
         cost = 20;
@@ -1770,7 +1770,7 @@ export namespace Parts {
     export class Engine03 extends Engine {
         name = "Fighter Thruster";
         desc = "A light thruster good for fast ships. Rated for 250+ m/s";
-        trailTime = 1000;
+        trailTime = 64;
         trailSize = .13;
         hp = 0;
         cost = 45;
@@ -1802,7 +1802,7 @@ export namespace Parts {
     export class Engine07 extends Engine {
         name = "Interceptor Afterburner";
         desc = "A huge inefficient thruster. Burns a lot of energy to make ships move very fast. ";
-        trailTime = 1000;
+        trailTime = 64;
         hp = 0;
         cost = 145;
         mass = 80;
@@ -2114,8 +2114,8 @@ export namespace Parts {
         exactRange = true;
         range = 1600;
         minRange = 500;
-        shotEnergy = 4500;
-        mass = 70;
+        shotEnergy = 4100;
+        mass = 65;
         bulletSpeed = 7;
         damage = 120;
         aoe = 220;
@@ -2139,7 +2139,7 @@ export namespace Parts {
         range = 780;
         shotEnergy = 2000;
         mass = 10;
-        bulletSpeed = 17;
+        bulletSpeed = 19;
         damage = 35;
         radius = 40;
         overshoot = 0.5;
@@ -2577,7 +2577,7 @@ export namespace Parts {
         bulletCls = TeslaBolt.name;
         range = 540;
         bounceRange = 540;
-        shotEnergy = 1500;
+        shotEnergy = 1600;
         mass = 40;
         damage = 13;
         instant = true;
@@ -2740,7 +2740,7 @@ export namespace Parts {
         reloadTime = 8;
         trackSpeed = 90;
         bulletCls = FlameBullet.name;
-        range = 350;
+        range = 360;
         shotEnergy = 400;
         mass = 15;
         bulletSpeed = 16;

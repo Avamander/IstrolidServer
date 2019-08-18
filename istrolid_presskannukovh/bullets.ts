@@ -689,6 +689,14 @@ export namespace Bullets {
         constructor() {
             super();
         }
+
+        hitUnit(thing: Thing) {
+            thing.applyDamage(this.damage, this);
+            if (this.energyDamage) {
+                thing.applyEnergyDamage(this.energyDamage);
+            }
+            this.dead = true;
+        };
     }
 
     export class LightPlasmaBullet extends Bullet {
@@ -921,7 +929,7 @@ export namespace Bullets {
         radius = 30;
         maxRadius = 100;
         direction = 1;
-        waveEffect = 0.5;
+        waveEffect = 0.55;
         hitsMultiple = true;
         hitsCloak = true;
         hitOnce: { [key: number]: boolean } = {};
@@ -970,7 +978,7 @@ export namespace Bullets {
         sound = "sounds/weapons/WavePush.wav";
         direction = -1;
         maxRadius = 100;
-        waveEffect = 0.5;
+        waveEffect = 0.55;
 
         constructor() {
             super();
